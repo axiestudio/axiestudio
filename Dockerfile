@@ -28,7 +28,7 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=axiestudio-uv-cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=README.md,target=README.md \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
@@ -42,7 +42,7 @@ COPY ./src /app/src
 
 COPY src/frontend /tmp/src/frontend
 WORKDIR /tmp/src/frontend
-RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
+RUN --mount=type=cache,id=axiestudio-npm-cache,target=/root/.npm \
     npm ci \
     && npm run build \
     && cp -r build /app/src/backend/base/axiestudio/frontend \
@@ -53,7 +53,7 @@ COPY ./pyproject.toml /app/pyproject.toml
 COPY ./uv.lock /app/uv.lock
 COPY ./README.md /app/README.md
 
-RUN --mount=type=cache,id=uv-cache-final,target=/root/.cache/uv \
+RUN --mount=type=cache,id=axiestudio-uv-cache-final,target=/root/.cache/uv \
     uv sync --frozen --no-editable --extra postgresql
 
 
