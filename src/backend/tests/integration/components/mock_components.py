@@ -1,9 +1,9 @@
 import json
 
-from langflow.custom import Component
-from langflow.inputs import BoolInput, StrInput
-from langflow.schema import Data
-from langflow.template import Output
+from axiestudio.custom import Component
+from axiestudio.inputs import BoolInput, StrInput
+from axiestudio.schema import Data
+from axiestudio.template import Output
 
 
 class TextToData(Component):

@@ -3,8 +3,8 @@ import threading
 import time
 
 import pytest
-from langflow.__main__ import app
-from langflow.services import deps
+from axiestudio.__main__ import app
+from axiestudio.services import deps
 
 
 @pytest.fixture(scope="module")

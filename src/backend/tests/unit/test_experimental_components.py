@@ -1,4 +1,4 @@
-from langflow.components import prototypes
+from axiestudio.components import prototypes
 
 
 def test_python_function_component():

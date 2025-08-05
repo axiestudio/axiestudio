@@ -1,5 +1,5 @@
-from langflow.io.schema import create_input_schema_from_dict
-from langflow.schema.dotdict import dotdict
+from axiestudio.io.schema import create_input_schema_from_dict
+from axiestudio.schema.dotdict import dotdict
 
 
 def test_create_schema():

@@ -1,6 +1,6 @@
 import pytest
-from langflow.components.input_output.chat import ChatInput
-from langflow.schema.message import Message
+from axiestudio.components.input_output.chat import ChatInput
+from axiestudio.schema.message import Message
 
 
 @pytest.fixture

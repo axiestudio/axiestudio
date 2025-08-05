@@ -1,6 +1,6 @@
 import random
 
-from langflow.custom import CustomComponent
+from axiestudio.custom import CustomComponent
 
 
 class TestComponent(CustomComponent):

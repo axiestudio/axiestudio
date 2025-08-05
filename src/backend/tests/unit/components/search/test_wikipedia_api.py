@@ -1,9 +1,9 @@
 from unittest.mock import MagicMock
 
 import pytest
-from langflow.components.wikipedia import WikipediaComponent
-from langflow.custom import Component
-from langflow.custom.utils import build_custom_component_template
+from axiestudio.components.wikipedia import WikipediaComponent
+from axiestudio.custom import Component
+from axiestudio.custom.utils import build_custom_component_template
 
 # Import the base test class
 from tests.base import ComponentTestBaseWithoutClient

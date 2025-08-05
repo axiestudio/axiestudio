@@ -6,12 +6,12 @@ from typing import Any
 import pytest
 import requests
 from astrapy.admin import parse_api_endpoint
-from langflow.api.v1.schemas import InputValueRequest
-from langflow.custom import Component
-from langflow.custom.eval import eval_custom_component_code
-from langflow.field_typing import Embeddings
-from langflow.graph import Graph
-from langflow.processing.process import run_graph_internal
+from axiestudio.api.v1.schemas import InputValueRequest
+from axiestudio.custom import Component
+from axiestudio.custom.eval import eval_custom_component_code
+from axiestudio.field_typing import Embeddings
+from axiestudio.graph import Graph
+from axiestudio.processing.process import run_graph_internal
 
 
 def check_env_vars(*env_vars):

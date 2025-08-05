@@ -35,6 +35,7 @@ RUN apt-get update \
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=README.md,target=README.md \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=src/backend/base/README.md,target=src/backend/base/README.md \
     --mount=type=bind,source=src/backend/base/uv.lock,target=src/backend/base/uv.lock \
@@ -48,7 +49,7 @@ WORKDIR /tmp/src/frontend
 RUN --mount=type=cache,target=/root/.npm \
     npm ci \
     && npm run build \
-    && cp -r build /app/src/backend/axiestudio/frontend \
+    && cp -r build /app/src/backend/base/axiestudio/frontend \
     && rm -rf /tmp/src/frontend
 
 WORKDIR /app
@@ -82,8 +83,8 @@ ENV PATH="/app/.venv/bin:$PATH"
 LABEL org.opencontainers.image.title=axiestudio
 LABEL org.opencontainers.image.authors=['Axie Studio']
 LABEL org.opencontainers.image.licenses=MIT
-LABEL org.opencontainers.image.url=https://github.com/OGGsd/properaxiestudio
-LABEL org.opencontainers.image.source=https://github.com/OGGsd/properaxiestudio
+LABEL org.opencontainers.image.url=https://github.com/axiestudio/axiestudio
+LABEL org.opencontainers.image.source=https://github.com/axiestudio/axiestudio
 
 USER user
 WORKDIR /app

@@ -17,19 +17,19 @@ from blockbuster import blockbuster_ctx
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
-from langflow.components.input_output import ChatInput
-from langflow.graph import Graph
-from langflow.initial_setup.constants import STARTER_FOLDER_NAME
-from langflow.main import create_app
-from langflow.services.auth.utils import get_password_hash
-from langflow.services.database.models.api_key.model import ApiKey
-from langflow.services.database.models.flow.model import Flow, FlowCreate
-from langflow.services.database.models.folder.model import Folder
-from langflow.services.database.models.transactions.model import TransactionTable
-from langflow.services.database.models.user.model import User, UserCreate, UserRead
-from langflow.services.database.models.vertex_builds.crud import delete_vertex_builds_by_flow_id
-from langflow.services.database.utils import session_getter
-from langflow.services.deps import get_db_service, session_scope
+from axiestudio.components.input_output import ChatInput
+from axiestudio.graph import Graph
+from axiestudio.initial_setup.constants import STARTER_FOLDER_NAME
+from axiestudio.main import create_app
+from axiestudio.services.auth.utils import get_password_hash
+from axiestudio.services.database.models.api_key.model import ApiKey
+from axiestudio.services.database.models.flow.model import Flow, FlowCreate
+from axiestudio.services.database.models.folder.model import Folder
+from axiestudio.services.database.models.transactions.model import TransactionTable
+from axiestudio.services.database.models.user.model import User, UserCreate, UserRead
+from axiestudio.services.database.models.vertex_builds.crud import delete_vertex_builds_by_flow_id
+from axiestudio.services.database.utils import session_getter
+from axiestudio.services.deps import get_db_service, session_scope
 from loguru import logger
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import selectinload
@@ -248,14 +248,14 @@ def distributed_client_fixture(
     distributed_env,  # noqa: ARG001
 ):
     # Here we load the .env from ../deploy/.env
-    from langflow.core import celery_app
+    from axiestudio.core import celery_app
 
     db_dir = tempfile.mkdtemp()
     try:
         db_path = Path(db_dir) / "test.db"
         monkeypatch.setenv("LANGFLOW_DATABASE_URL", f"sqlite:///{db_path}")
         monkeypatch.setenv("AXIESTUDIO_AUTO_LOGIN", "false")
-        # monkeypatch langflow.services.task.manager.USE_CELERY to True
+        # monkeypatch axiestudio.services.task.manager.USE_CELERY to True
         # monkeypatch.setattr(manager, "USE_CELERY", True)
         monkeypatch.setattr(celery_app, "celery_app", celery_app.make_celery("langflow", Config))
 
@@ -374,7 +374,7 @@ def deactivate_tracing(monkeypatch):
 def use_noop_session(monkeypatch):
     monkeypatch.setenv("LANGFLOW_USE_NOOP_DATABASE", "1")
     # Optionally patch the Settings object if needed
-    # from langflow.services.settings.base import Settings
+    # from axiestudio.services.settings.base import Settings
     # monkeypatch.setattr(Settings, "use_noop_database", True)
     yield
     monkeypatch.undo()
@@ -404,7 +404,7 @@ async def client_fixture(
                 monkeypatch.setenv("LANGFLOW_LOAD_FLOWS_PATH", load_flows_dir)
                 monkeypatch.setenv("AXIESTUDIO_AUTO_LOGIN", "true")
             # Clear the services cache
-            from langflow.services.manager import service_manager
+            from axiestudio.services.manager import service_manager
 
             service_manager.factories.clear()
             service_manager.services.clear()  # Clear the services cache

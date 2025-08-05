@@ -1,6 +1,6 @@
 import pytest
-from langflow.custom import Component
-from langflow.inputs.inputs import MessageTextInput, StrInput
+from axiestudio.custom import Component
+from axiestudio.inputs.inputs import MessageTextInput, StrInput
 
 
 @pytest.fixture

@@ -1,8 +1,8 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from langflow.components.data import URLComponent
-from langflow.schema import DataFrame
+from axiestudio.components.data import URLComponent
+from axiestudio.schema import DataFrame
 
 from tests.base import ComponentTestBaseWithoutClient
 

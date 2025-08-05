@@ -51,7 +51,7 @@ export default defineConfig(({ mode }) => {
       ),
       "process.env.CI": JSON.stringify(envAxiestudio.CI ?? env.CI ?? false),
       "process.env.AXIESTUDIO_AUTO_LOGIN": JSON.stringify(
-        envAxiestudio.AXIESTUDIO_AUTO_LOGIN ?? env.AXIESTUDIO_AUTO_LOGIN ?? true,
+        envAxiestudio.AXIESTUDIO_AUTO_LOGIN ?? env.AXIESTUDIO_AUTO_LOGIN ?? false,
       ),
       "process.env.AXIESTUDIO_FEATURE_MCP_COMPOSER": JSON.stringify(
         envAxiestudio.AXIESTUDIO_FEATURE_MCP_COMPOSER ?? env.AXIESTUDIO_FEATURE_MCP_COMPOSER ?? "false",
@@ -66,7 +66,7 @@ export default defineConfig(({ mode }) => {
         envAxiestudio.AXIESTUDIO_SUPERUSER_PASSWORD ?? env.AXIESTUDIO_SUPERUSER_PASSWORD ?? "",
       ),
       "process.env.AXIESTUDIO_NEW_USER_IS_ACTIVE": JSON.stringify(
-        envAxiestudio.AXIESTUDIO_NEW_USER_IS_ACTIVE ?? env.AXIESTUDIO_NEW_USER_IS_ACTIVE ?? true,
+        envAxiestudio.AXIESTUDIO_NEW_USER_IS_ACTIVE ?? env.AXIESTUDIO_NEW_USER_IS_ACTIVE ?? false,
       ),
       "process.env.AXIESTUDIO_CACHE_TYPE": JSON.stringify(
         envAxiestudio.AXIESTUDIO_CACHE_TYPE ?? env.AXIESTUDIO_CACHE_TYPE ?? "simple",

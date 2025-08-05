@@ -27,9 +27,9 @@ class AuthSettings(BaseSettings):
     API_KEY_ALGORITHM: str = "HS256"
     API_V1_STR: str = "/api/v1"
 
-    AUTO_LOGIN: bool = True
+    AUTO_LOGIN: bool = False
     """If True, the application will attempt to log in automatically as a super user."""
-    skip_auth_auto_login: bool = True
+    skip_auth_auto_login: bool = False
     """If True, the application will skip authentication when AUTO_LOGIN is enabled.
     This will be removed in v1.6"""
 

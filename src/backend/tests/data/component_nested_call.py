@@ -1,8 +1,8 @@
 from random import randint
 
-from langflow.custom import Component
-from langflow.inputs.inputs import IntInput, MessageTextInput
-from langflow.template.field.base import Output
+from axiestudio.custom import Component
+from axiestudio.inputs.inputs import IntInput, MessageTextInput
+from axiestudio.template.field.base import Output
 
 
 class MultipleOutputsComponent(Component):

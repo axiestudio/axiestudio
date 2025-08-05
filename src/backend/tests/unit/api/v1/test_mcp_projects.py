@@ -4,18 +4,18 @@ from uuid import uuid4
 import pytest
 from fastapi import status
 from httpx import AsyncClient
-from langflow.api.v1.mcp_projects import (
+from axiestudio.api.v1.mcp_projects import (
     get_project_mcp_server,
     get_project_sse,
     init_mcp_servers,
     project_mcp_servers,
     project_sse_transports,
 )
-from langflow.services.auth.utils import get_password_hash
-from langflow.services.database.models.flow import Flow
-from langflow.services.database.models.folder import Folder
-from langflow.services.database.models.user import User
-from langflow.services.deps import session_scope
+from axiestudio.services.auth.utils import get_password_hash
+from axiestudio.services.database.models.flow import Flow
+from axiestudio.services.database.models.folder import Folder
+from axiestudio.services.database.models.user import User
+from axiestudio.services.deps import session_scope
 from mcp.server.sse import SseServerTransport
 
 # Mark all tests in this module as asyncio
@@ -45,7 +45,7 @@ def mock_flow(active_user, mock_project):
 
 @pytest.fixture
 def mock_project_mcp_server():
-    with patch("langflow.api.v1.mcp_projects.ProjectMCPServer") as mock:
+    with patch("axiestudio.api.v1.mcp_projects.ProjectMCPServer") as mock:
         server_instance = MagicMock()
         server_instance.server = MagicMock()
         server_instance.server.name = "test-server"
@@ -67,7 +67,7 @@ class AsyncContextManagerMock:
 
 @pytest.fixture
 def mock_sse_transport():
-    with patch("langflow.api.v1.mcp_projects.SseServerTransport") as mock:
+    with patch("axiestudio.api.v1.mcp_projects.SseServerTransport") as mock:
         transport_instance = MagicMock()
         # Create an async context manager for connect_sse
         connect_sse_mock = AsyncContextManagerMock()
@@ -79,7 +79,7 @@ def mock_sse_transport():
 
 @pytest.fixture(autouse=True)
 def mock_current_user_ctx(active_user):
-    with patch("langflow.api.v1.mcp_projects.current_user_ctx") as mock:
+    with patch("axiestudio.api.v1.mcp_projects.current_user_ctx") as mock:
         mock.get.return_value = active_user
         mock.set = MagicMock(return_value="dummy_token")
         mock.reset = MagicMock()
@@ -88,7 +88,7 @@ def mock_current_user_ctx(active_user):
 
 @pytest.fixture(autouse=True)
 def mock_current_project_ctx(mock_project):
-    with patch("langflow.api.v1.mcp_projects.current_project_ctx") as mock:
+    with patch("axiestudio.api.v1.mcp_projects.current_project_ctx") as mock:
         mock.get.return_value = mock_project.id
         mock.set = MagicMock(return_value="dummy_token")
         mock.reset = MagicMock()
@@ -141,7 +141,7 @@ async def test_handle_project_messages_success(
     client: AsyncClient, mock_project, mock_sse_transport, logged_in_headers
 ):
     """Test successful handling of project messages."""
-    with patch("langflow.api.v1.mcp_projects.session_scope") as mock_db:
+    with patch("axiestudio.api.v1.mcp_projects.session_scope") as mock_db:
         mock_session = AsyncMock()
         mock_db.return_value.__aenter__.return_value = mock_session
         mock_session.exec.return_value.first.return_value = mock_project
@@ -157,7 +157,7 @@ async def test_handle_project_messages_success(
 
 async def test_update_project_mcp_settings_invalid_json(client: AsyncClient, mock_project, logged_in_headers):
     """Test updating MCP settings with invalid JSON."""
-    with patch("langflow.api.v1.mcp_projects.session_scope") as mock_db:
+    with patch("axiestudio.api.v1.mcp_projects.session_scope") as mock_db:
         mock_session = AsyncMock()
         mock_db.return_value.__aenter__.return_value = mock_session
         mock_session.exec.return_value.first.return_value = mock_project
@@ -529,6 +529,6 @@ async def test_init_mcp_servers_error_handling():
         return original_get_project_sse(project_id)
 
     # Apply the patch
-    with patch("langflow.api.v1.mcp_projects.get_project_sse", side_effect=mock_get_project_sse):
+    with patch("axiestudio.api.v1.mcp_projects.get_project_sse", side_effect=mock_get_project_sse):
         # This should not raise any exception, as the error should be caught
         await init_mcp_servers()

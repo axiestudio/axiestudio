@@ -27,7 +27,7 @@ async def add_user(
     user: UserCreate,
     session: DbSession,
 ) -> User:
-    """Add a new user to the database."""
+    """Add a new user to the database. Admin access required."""
     new_user = User.model_validate(user, from_attributes=True)
     try:
         new_user.password = get_password_hash(user.password)

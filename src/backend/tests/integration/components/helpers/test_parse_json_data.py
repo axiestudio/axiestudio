@@ -1,6 +1,6 @@
-from langflow.components.input_output import ChatInput
-from langflow.components.processing.parse_json_data import ParseJSONDataComponent
-from langflow.schema import Data
+from axiestudio.components.input_output import ChatInput
+from axiestudio.components.processing.parse_json_data import ParseJSONDataComponent
+from axiestudio.schema import Data
 
 from tests.integration.components.mock_components import TextToData
 from tests.integration.utils import ComponentInputHandle, pyleak_marker, run_single_component

@@ -1,5 +1,5 @@
 import pytest
-from langflow.components.processing import PromptComponent
+from axiestudio.components.processing import PromptComponent
 
 from tests.base import ComponentTestBaseWithClient
 

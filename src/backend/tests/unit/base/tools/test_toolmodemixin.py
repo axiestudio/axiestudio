@@ -1,8 +1,8 @@
-from langflow.base.tools.component_tool import ComponentToolkit
-from langflow.custom import Component
+from axiestudio.base.tools.component_tool import ComponentToolkit
+from axiestudio.custom import Component
 
 # Import all input types
-from langflow.io import (
+from axiestudio.io import (
     BoolInput,
     DataFrameInput,
     DataInput,
@@ -20,14 +20,14 @@ from langflow.io import (
     StrInput,
     TableInput,
 )
-from langflow.schema import Data
+from axiestudio.schema import Data
 from pydantic import BaseModel
 
 
 class AllInputsComponent(Component):
     display_name = "All Inputs Component"
     description = "A component with all input types available in Langflow."
-    documentation: str = "http://docs.langflow.org/components/all_inputs"
+    documentation: str = "http://docs.axiestudio.org/components/all_inputs"
     icon = "code"
     name = "AllInputsComponent"
 

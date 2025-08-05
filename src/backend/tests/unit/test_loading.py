@@ -1,6 +1,6 @@
-from langflow.graph import Graph
-from langflow.initial_setup.setup import load_starter_projects
-from langflow.load import aload_flow_from_json
+from axiestudio.graph import Graph
+from axiestudio.initial_setup.setup import load_starter_projects
+from axiestudio.load import aload_flow_from_json
 
 # TODO: UPDATE BASIC EXAMPLE
 # def test_load_flow_from_json():

@@ -962,10 +962,10 @@ export const TABS_ORDER = [
   "chat widget html",
 ];
 
-export const AXIESTUDIO_ACCESS_TOKEN = "access_token_lf";
-export const AXIESTUDIO_API_TOKEN = "apikey_tkn_lflw";
-export const AXIESTUDIO_AUTO_LOGIN_OPTION = "auto_login_lf";
-export const AXIESTUDIO_REFRESH_TOKEN = "refresh_token_lf";
+export const AXIESTUDIO_ACCESS_TOKEN = "access_token_as";
+export const AXIESTUDIO_API_TOKEN = "apikey_tkn_axie";
+export const AXIESTUDIO_AUTO_LOGIN_OPTION = "auto_login_as";
+export const AXIESTUDIO_REFRESH_TOKEN = "refresh_token_as";
 
 export const AXIESTUDIO_ACCESS_TOKEN_EXPIRE_SECONDS = 60 * 60 - 60 * 60 * 0.1;
 export const AXIESTUDIO_ACCESS_TOKEN_EXPIRE_SECONDS_ENV =
@@ -1037,8 +1037,8 @@ export const POLLING_MESSAGES = {
 export const BUILD_POLLING_INTERVAL = 25;
 
 export const IS_AUTO_LOGIN =
-  !process?.env?.AXIESTUDIO_AUTO_LOGIN ||
-  String(process?.env?.AXIESTUDIO_AUTO_LOGIN)?.toLowerCase() !== "false";
+  process?.env?.AXIESTUDIO_AUTO_LOGIN &&
+  String(process?.env?.AXIESTUDIO_AUTO_LOGIN)?.toLowerCase() === "true";
 
 export const AUTO_LOGIN_RETRY_DELAY = 2000;
 export const AUTO_LOGIN_MAX_RETRY_DELAY = 60000;

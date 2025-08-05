@@ -5,7 +5,7 @@ import warnings
 from unittest.mock import Mock, patch
 
 import pytest
-from langflow.utils.validate import (
+from axiestudio.utils.validate import (
     _create_langflow_execution_context,
     add_type_ignores,
     build_class_constructor,
@@ -136,7 +136,7 @@ def test_func():
         assert any("nonexistent1" in err for err in result["imports"]["errors"])
         assert any("nonexistent2" in err for err in result["imports"]["errors"])
 
-    @patch("langflow.utils.validate.logger")
+    @patch("axiestudio.utils.validate.logger")
     def test_logging_on_parse_error(self, mock_logger):
         """Test that parsing errors are logged."""
         mock_logger.opt.return_value = mock_logger
@@ -388,20 +388,20 @@ class JsonHandler:
     def test_replaces_legacy_imports(self):
         """Test that legacy import statements are replaced."""
         code = """
-from langflow import CustomComponent
+from axiestudio import CustomComponent
 
 class MyComponent(CustomComponent):
     def build(self):
         return "test"
 """
         # Should not raise an error due to import replacement
-        with patch("langflow.utils.validate.prepare_global_scope") as mock_prepare:
+        with patch("axiestudio.utils.validate.prepare_global_scope") as mock_prepare:
             mock_prepare.return_value = {"CustomComponent": type("CustomComponent", (), {})}
-            with patch("langflow.utils.validate.extract_class_code") as mock_extract:
+            with patch("axiestudio.utils.validate.extract_class_code") as mock_extract:
                 mock_extract.return_value = Mock()
-                with patch("langflow.utils.validate.compile_class_code") as mock_compile:
+                with patch("axiestudio.utils.validate.compile_class_code") as mock_compile:
                     mock_compile.return_value = compile("pass", "<string>", "exec")
-                    with patch("langflow.utils.validate.build_class_constructor") as mock_build:
+                    with patch("axiestudio.utils.validate.build_class_constructor") as mock_build:
                         mock_build.return_value = lambda: None
                         create_class(code, "MyComponent")
 
@@ -428,7 +428,7 @@ class TestClass:
         validation_error = CoreValidationError.from_exception_data("TestClass", [])
 
         with (
-            patch("langflow.utils.validate.prepare_global_scope", side_effect=validation_error),
+            patch("axiestudio.utils.validate.prepare_global_scope", side_effect=validation_error),
             pytest.raises(ValueError, match=".*"),
         ):
             create_class(code, "TestClass")
@@ -628,7 +628,7 @@ class SimpleClass:
 class TestGetDefaultImports:
     """Test cases for get_default_imports function."""
 
-    @patch("langflow.utils.validate.CUSTOM_COMPONENT_SUPPORTED_TYPES", {"TestType": Mock()})
+    @patch("axiestudio.utils.validate.CUSTOM_COMPONENT_SUPPORTED_TYPES", {"TestType": Mock()})
     def test_returns_default_imports(self):
         """Test that default imports are returned."""
         code = "TestType and Optional"
@@ -644,7 +644,7 @@ class TestGetDefaultImports:
             assert "Dict" in imports
             assert "Union" in imports
 
-    @patch("langflow.utils.validate.CUSTOM_COMPONENT_SUPPORTED_TYPES", {"CustomType": Mock()})
+    @patch("axiestudio.utils.validate.CUSTOM_COMPONENT_SUPPORTED_TYPES", {"CustomType": Mock()})
     def test_includes_langflow_imports(self):
         """Test that langflow imports are included when found in code."""
         code = "CustomType is used here"

@@ -1,9 +1,9 @@
 import pandas as pd
 import pytest
-from langflow.components.processing.converter import TypeConverterComponent
-from langflow.schema.data import Data
-from langflow.schema.dataframe import DataFrame
-from langflow.schema.message import Message
+from axiestudio.components.processing.converter import TypeConverterComponent
+from axiestudio.schema.data import Data
+from axiestudio.schema.dataframe import DataFrame
+from axiestudio.schema.message import Message
 
 from tests.base import ComponentTestBaseWithoutClient
 

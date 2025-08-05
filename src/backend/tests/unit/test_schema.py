@@ -3,12 +3,12 @@ from types import NoneType
 from typing import Union
 
 import pytest
-from langflow.inputs.inputs import BoolInput, DictInput, FloatInput, InputTypes, IntInput, MessageTextInput
-from langflow.io.schema import schema_to_langflow_inputs
-from langflow.schema.data import Data
-from langflow.template import Input, Output
-from langflow.template.field.base import UNDEFINED
-from langflow.type_extraction.type_extraction import post_process_type
+from axiestudio.inputs.inputs import BoolInput, DictInput, FloatInput, InputTypes, IntInput, MessageTextInput
+from axiestudio.io.schema import schema_to_langflow_inputs
+from axiestudio.schema.data import Data
+from axiestudio.template import Input, Output
+from axiestudio.template.field.base import UNDEFINED
+from axiestudio.type_extraction.type_extraction import post_process_type
 from pydantic import BaseModel, Field, ValidationError
 
 

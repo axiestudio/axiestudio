@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
-from langflow.schema.data import Data
-from langflow.schema.dataframe import DataFrame
+from axiestudio.schema.data import Data
+from axiestudio.schema.dataframe import DataFrame
 
 
 @pytest.fixture

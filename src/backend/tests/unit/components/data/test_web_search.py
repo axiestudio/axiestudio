@@ -1,6 +1,6 @@
 import pytest
-from langflow.components.data.web_search import WebSearchComponent
-from langflow.schema import DataFrame
+from axiestudio.components.data.web_search import WebSearchComponent
+from axiestudio.schema import DataFrame
 
 from tests.base import ComponentTestBaseWithoutClient
 

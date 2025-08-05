@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 # Import langflow validation utilities
-from langflow.utils.template_validation import (
+from axiestudio.utils.template_validation import (
     validate_flow_can_build,
     validate_flow_execution,
     validate_template_structure,

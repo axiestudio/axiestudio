@@ -1,6 +1,6 @@
 import pytest
-from langflow.custom.custom_component.custom_component import CustomComponent
-from langflow.field_typing.constants import Data
+from axiestudio.custom.custom_component.custom_component import CustomComponent
+from axiestudio.field_typing.constants import Data
 
 
 @pytest.fixture

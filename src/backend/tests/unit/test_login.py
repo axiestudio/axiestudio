@@ -1,7 +1,7 @@
 import pytest
-from langflow.services.auth.utils import get_password_hash
-from langflow.services.database.models.user import User
-from langflow.services.deps import session_scope
+from axiestudio.services.auth.utils import get_password_hash
+from axiestudio.services.database.models.user import User
+from axiestudio.services.deps import session_scope
 from sqlalchemy.exc import IntegrityError
 
 

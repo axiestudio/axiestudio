@@ -2,10 +2,10 @@ from datetime import datetime, timezone
 
 from hypothesis import HealthCheck, example, given, settings
 from hypothesis import strategies as st
-from langflow.api.v1.schemas import ResultDataResponse, VertexBuildResponse
-from langflow.schema.schema import OutputValue
-from langflow.serialization import serialize
-from langflow.services.tracing.schema import Log
+from axiestudio.api.v1.schemas import ResultDataResponse, VertexBuildResponse
+from axiestudio.schema.schema import OutputValue
+from axiestudio.serialization import serialize
+from axiestudio.services.tracing.schema import Log
 from pydantic import BaseModel
 
 # Use a smaller test size for hypothesis

@@ -5,13 +5,13 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
-from langflow.custom.custom_component.component import Component
-from langflow.events.event_manager import EventManager
-from langflow.schema.content_block import ContentBlock
-from langflow.schema.content_types import TextContent, ToolContent
-from langflow.schema.message import Message
-from langflow.schema.properties import Properties, Source
-from langflow.template.field.base import Output
+from axiestudio.custom.custom_component.component import Component
+from axiestudio.events.event_manager import EventManager
+from axiestudio.schema.content_block import ContentBlock
+from axiestudio.schema.content_types import TextContent, ToolContent
+from axiestudio.schema.message import Message
+from axiestudio.schema.properties import Properties, Source
+from axiestudio.template.field.base import Output
 
 
 def blocking_cb(manager, event_type, data):

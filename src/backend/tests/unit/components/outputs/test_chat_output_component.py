@@ -1,9 +1,9 @@
 import pytest
-from langflow.components.input_output import ChatOutput
-from langflow.schema.data import Data
-from langflow.schema.dataframe import DataFrame
-from langflow.schema.message import Message
-from langflow.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI
+from axiestudio.components.input_output import ChatOutput
+from axiestudio.schema.data import Data
+from axiestudio.schema.dataframe import DataFrame
+from axiestudio.schema.message import Message
+from axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI
 
 from tests.base import ComponentTestBaseWithClient
 

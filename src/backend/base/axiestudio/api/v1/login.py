@@ -40,7 +40,7 @@ async def login_to_get_access_token(
     if user:
         tokens = await create_user_tokens(user_id=user.id, db=db, update_last_login=True)
         response.set_cookie(
-            "refresh_token_lf",
+            "refresh_token_as",
             tokens["refresh_token"],
             httponly=auth_settings.REFRESH_HTTPONLY,
             samesite=auth_settings.REFRESH_SAME_SITE,
@@ -49,7 +49,7 @@ async def login_to_get_access_token(
             domain=auth_settings.COOKIE_DOMAIN,
         )
         response.set_cookie(
-            "access_token_lf",
+            "access_token_as",
             tokens["access_token"],
             httponly=auth_settings.ACCESS_HTTPONLY,
             samesite=auth_settings.ACCESS_SAME_SITE,
@@ -58,7 +58,7 @@ async def login_to_get_access_token(
             domain=auth_settings.COOKIE_DOMAIN,
         )
         response.set_cookie(
-            "apikey_tkn_lflw",
+            "apikey_tkn_axie",
             str(user.store_api_key),
             httponly=auth_settings.ACCESS_HTTPONLY,
             samesite=auth_settings.ACCESS_SAME_SITE,
@@ -84,7 +84,7 @@ async def auto_login(response: Response, db: DbSession):
     if auth_settings.AUTO_LOGIN:
         user_id, tokens = await create_user_longterm_token(db)
         response.set_cookie(
-            "access_token_lf",
+            "access_token_as",
             tokens["access_token"],
             httponly=auth_settings.ACCESS_HTTPONLY,
             samesite=auth_settings.ACCESS_SAME_SITE,
@@ -100,7 +100,7 @@ async def auto_login(response: Response, db: DbSession):
                 user.store_api_key = ""
 
             response.set_cookie(
-                "apikey_tkn_lflw",
+                "apikey_tkn_axie",
                 str(user.store_api_key),  # Ensure it's a string
                 httponly=auth_settings.ACCESS_HTTPONLY,
                 samesite=auth_settings.ACCESS_SAME_SITE,
@@ -128,12 +128,12 @@ async def refresh_token(
 ):
     auth_settings = get_settings_service().auth_settings
 
-    token = request.cookies.get("refresh_token_lf")
+    token = request.cookies.get("refresh_token_as")
 
     if token:
         tokens = await create_refresh_token(token, db)
         response.set_cookie(
-            "refresh_token_lf",
+            "refresh_token_as",
             tokens["refresh_token"],
             httponly=auth_settings.REFRESH_HTTPONLY,
             samesite=auth_settings.REFRESH_SAME_SITE,
@@ -142,7 +142,7 @@ async def refresh_token(
             domain=auth_settings.COOKIE_DOMAIN,
         )
         response.set_cookie(
-            "access_token_lf",
+            "access_token_as",
             tokens["access_token"],
             httponly=auth_settings.ACCESS_HTTPONLY,
             samesite=auth_settings.ACCESS_SAME_SITE,
@@ -160,7 +160,7 @@ async def refresh_token(
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie("refresh_token_lf")
-    response.delete_cookie("access_token_lf")
-    response.delete_cookie("apikey_tkn_lflw")
+    response.delete_cookie("refresh_token_as")
+    response.delete_cookie("access_token_as")
+    response.delete_cookie("apikey_tkn_axie")
     return {"message": "Logout successful"}

@@ -8,20 +8,20 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from anyio import Path
 from httpx import AsyncClient
-from langflow.custom.directory_reader.utils import abuild_custom_component_list_from_path
-from langflow.initial_setup.constants import STARTER_FOLDER_NAME
-from langflow.initial_setup.setup import (
+from axiestudio.custom.directory_reader.utils import abuild_custom_component_list_from_path
+from axiestudio.initial_setup.constants import STARTER_FOLDER_NAME
+from axiestudio.initial_setup.setup import (
     detect_github_url,
     get_project_data,
     load_bundles_from_urls,
     load_starter_projects,
     update_projects_components_with_latest_component_versions,
 )
-from langflow.interface.components import aget_all_types_dict
-from langflow.services.auth.utils import create_super_user
-from langflow.services.database.models import Flow
-from langflow.services.database.models.folder.model import Folder
-from langflow.services.deps import get_settings_service, session_scope
+from axiestudio.interface.components import aget_all_types_dict
+from axiestudio.services.auth.utils import create_super_user
+from axiestudio.services.database.models import Flow
+from axiestudio.services.database.models.folder.model import Folder
+from axiestudio.services.deps import get_settings_service, session_scope
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
@@ -141,7 +141,7 @@ def add_edge(source, target, from_output, to_input):
 
 
 async def test_refresh_starter_projects():
-    data_path = str(await Path(__file__).parent.parent.parent.absolute() / "base" / "langflow" / "components")
+    data_path = str(await Path(__file__).parent.parent.parent.absolute() / "base" / "axiestudio" / "components")
     components = await abuild_custom_component_list_from_path(data_path)
 
     chat_input = find_component_by_name(components, "ChatInput")
@@ -269,9 +269,9 @@ async def test_load_bundles_from_urls():
 
 @pytest.fixture
 def set_fs_flows_polling_interval():
-    os.environ["LANGFLOW_FS_FLOWS_POLLING_INTERVAL"] = "100"
+    os.environ["AXIESTUDIO_FS_FLOWS_POLLING_INTERVAL"] = "100"
     yield
-    os.unsetenv("LANGFLOW_FS_FLOWS_POLLING_INTERVAL")
+    os.unsetenv("AXIESTUDIO_FS_FLOWS_POLLING_INTERVAL")
 
 
 @pytest.mark.usefixtures("set_fs_flows_polling_interval")

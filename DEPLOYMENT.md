@@ -17,7 +17,7 @@
    AXIESTUDIO_SECRET_KEY=your-secret-key-here-change-this
    AXIESTUDIO_SUPERUSER=admin@axiestudio.se
    AXIESTUDIO_SUPERUSER_PASSWORD=your-superuser-password
-   AXIESTUDIO_AUTO_LOGIN=true
+   AXIESTUDIO_AUTO_LOGIN=false
    AXIESTUDIO_NEW_USER_IS_ACTIVE=true
    AXIESTUDIO_WORKERS=1
    AXIESTUDIO_CACHE_TYPE=simple
@@ -78,7 +78,7 @@
 | `AXIESTUDIO_SECRET_KEY` | Secret key for JWT tokens | Required |
 | `AXIESTUDIO_SUPERUSER` | Admin email | Required |
 | `AXIESTUDIO_SUPERUSER_PASSWORD` | Admin password | Required |
-| `AXIESTUDIO_AUTO_LOGIN` | Enable auto-login | `true` |
+| `AXIESTUDIO_AUTO_LOGIN` | Enable auto-login | `false` |
 | `AXIESTUDIO_NEW_USER_IS_ACTIVE` | Auto-activate new users | `true` |
 | `AXIESTUDIO_WORKERS` | Number of workers | `1` |
 | `AXIESTUDIO_CACHE_TYPE` | Cache type (simple/redis) | `simple` |

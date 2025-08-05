@@ -1,14 +1,14 @@
-# Langflow Demo Codespace Readme
+# Axie Studio Demo Codespace Readme
 
-These instructions will walk you through the process of running a Langflow demo via GitHub Codespaces.
+These instructions will walk you through the process of running an Axie Studio demo via GitHub Codespaces.
 
-If you want a faster and easier demo experience with Langflow, DataStax Langflow is a hosted environment with zero setup: [Sign up for a free account.](https://astra.datastax.com/signup?type=langflow)
+If you want a faster and easier demo experience with Axie Studio, contact your administrator for hosted environment access.
 
 ## Create a Codespace in GitHub
 
 To setup the demo in Codespace:
 
-1. Navigate to the Langflow repo
+1. Navigate to the Axie Studio repo
 2. On the "Code <>" button, select the "Codespaces" tab
 3. Click the green "Create codespace on..." button (or "+" icon if you want more options) to create a new Codespace
 

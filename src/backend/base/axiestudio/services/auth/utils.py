@@ -223,7 +223,7 @@ async def get_current_user_for_websocket(
     websocket: WebSocket,
     db: AsyncSession,
 ) -> User | UserRead:
-    token = websocket.cookies.get("access_token_lf") or websocket.query_params.get("token")
+    token = websocket.cookies.get("access_token_as") or websocket.query_params.get("token")
     if token:
         user = await get_current_user_by_jwt(token, db)
         if user:

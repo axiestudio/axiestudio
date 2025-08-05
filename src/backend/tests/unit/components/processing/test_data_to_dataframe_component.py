@@ -1,6 +1,6 @@
 import pytest
-from langflow.components.processing.data_to_dataframe import DataToDataFrameComponent
-from langflow.schema import Data, DataFrame
+from axiestudio.components.processing.data_to_dataframe import DataToDataFrameComponent
+from axiestudio.schema import Data, DataFrame
 
 from tests.base import ComponentTestBaseWithoutClient
 

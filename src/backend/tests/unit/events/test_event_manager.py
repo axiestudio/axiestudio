@@ -4,8 +4,8 @@ import time
 import uuid
 
 import pytest
-from langflow.events.event_manager import EventManager
-from langflow.schema.log import LoggableType
+from axiestudio.events.event_manager import EventManager
+from axiestudio.schema.log import LoggableType
 
 
 class TestEventManager:

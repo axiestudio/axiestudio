@@ -1,6 +1,6 @@
-from langflow.components.input_output import ChatOutput
-from langflow.memory import aget_messages
-from langflow.schema.message import Message
+from axiestudio.components.input_output import ChatOutput
+from axiestudio.memory import aget_messages
+from axiestudio.schema.message import Message
 
 from tests.integration.utils import run_single_component
 

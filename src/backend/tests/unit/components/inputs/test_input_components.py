@@ -1,8 +1,8 @@
 import pytest
 from anyio import Path
-from langflow.components.input_output import ChatInput, TextInputComponent
-from langflow.schema.message import Message
-from langflow.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_USER, MESSAGE_SENDER_USER
+from axiestudio.components.input_output import ChatInput, TextInputComponent
+from axiestudio.schema.message import Message
+from axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_USER, MESSAGE_SENDER_USER
 
 from tests.base import ComponentTestBaseWithClient, ComponentTestBaseWithoutClient
 

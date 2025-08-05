@@ -12,7 +12,7 @@ const useAuthStore = create<AuthStoreType>((set, get) => ({
   accessToken: cookies.get(AXIESTUDIO_ACCESS_TOKEN) ?? null,
   userData: null,
   autoLogin: null,
-  apiKey: cookies.get("apikey_tkn_lflw"),
+  apiKey: cookies.get("apikey_tkn_axie"),
   authenticationErrorCount: 0,
 
   setIsAdmin: (isAdmin) => set({ isAdmin }),

@@ -1,5 +1,5 @@
-from langflow.components.data import FileComponent
-from langflow.io import Output
+from axiestudio.components.data import FileComponent
+from axiestudio.io import Output
 
 
 class TestFileComponentDynamicOutputs:

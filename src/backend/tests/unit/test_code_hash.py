@@ -1,13 +1,13 @@
 """Test code hash and module metadata functionality."""
 
 import pytest
-from langflow.interface.components import import_langflow_components
+from axiestudio.interface.components import import_axiestudio_components
 
 
 @pytest.mark.asyncio
 async def test_component_metadata_has_code_hash():
     """Test that built-in components have valid module and code_hash metadata."""
-    result = await import_langflow_components()
+    result = await import_axiestudio_components()
     assert result is not None
     assert "components" in result
     assert len(result["components"]) > 0

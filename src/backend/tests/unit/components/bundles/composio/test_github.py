@@ -2,8 +2,8 @@ from unittest.mock import patch
 
 import pytest
 from composio import Action
-from langflow.components.composio.github_composio import ComposioGitHubAPIComponent
-from langflow.schema.dataframe import DataFrame
+from axiestudio.components.composio.github_composio import ComposioGitHubAPIComponent
+from axiestudio.schema.dataframe import DataFrame
 
 from tests.base import DID_NOT_EXIST, ComponentTestBaseWithoutClient
 
@@ -19,7 +19,7 @@ class MockAction:
 class TestGitHubComponent(ComponentTestBaseWithoutClient):
     @pytest.fixture(autouse=True)
     def mock_composio_toolset(self):
-        with patch("langflow.base.composio.composio_base.ComposioToolSet", MockComposioToolSet):
+        with patch("axiestudio.base.composio.composio_base.ComposioToolSet", MockComposioToolSet):
             yield
 
     @pytest.fixture

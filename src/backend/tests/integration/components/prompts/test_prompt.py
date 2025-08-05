@@ -1,5 +1,5 @@
-from langflow.components.processing import PromptComponent
-from langflow.schema.message import Message
+from axiestudio.components.processing import PromptComponent
+from axiestudio.schema.message import Message
 
 from tests.integration.utils import pyleak_marker, run_single_component
 

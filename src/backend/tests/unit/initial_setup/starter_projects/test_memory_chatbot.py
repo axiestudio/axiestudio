@@ -3,16 +3,16 @@ from collections import deque
 from typing import TYPE_CHECKING
 
 import pytest
-from langflow.components.helpers.memory import MemoryComponent
-from langflow.components.input_output import ChatInput, ChatOutput
-from langflow.components.openai.openai_chat_model import OpenAIModelComponent
-from langflow.components.processing import PromptComponent
-from langflow.components.processing.converter import TypeConverterComponent
-from langflow.graph.graph.base import Graph
-from langflow.graph.graph.constants import Finish
+from axiestudio.components.helpers.memory import MemoryComponent
+from axiestudio.components.input_output import ChatInput, ChatOutput
+from axiestudio.components.openai.openai_chat_model import OpenAIModelComponent
+from axiestudio.components.processing import PromptComponent
+from axiestudio.components.processing.converter import TypeConverterComponent
+from axiestudio.graph.graph.base import Graph
+from axiestudio.graph.graph.constants import Finish
 
 if TYPE_CHECKING:
-    from langflow.graph.graph.schema import GraphDump
+    from axiestudio.graph.graph.schema import GraphDump
 
 
 @pytest.fixture

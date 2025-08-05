@@ -1,6 +1,6 @@
 import pytest
-from langflow.schema.content_block import ContentBlock
-from langflow.schema.content_types import CodeContent, ErrorContent, JSONContent, MediaContent, TextContent, ToolContent
+from axiestudio.schema.content_block import ContentBlock
+from axiestudio.schema.content_types import CodeContent, ErrorContent, JSONContent, MediaContent, TextContent, ToolContent
 
 
 class TestContentBlock:
