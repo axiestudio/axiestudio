@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  axiestudio:
+    build: .
+    ports:
+      - "7860:7860"
+    environment:
+      - AXIESTUDIO_SECRET_KEY=dev-secret-key-change-in-production
+      - DATABASE_URL=sqlite:////app/data/axiestudio.db
+      - AXIESTUDIO_HOST=0.0.0.0
+      - AXIESTUDIO_PORT=7860
+      - AXIESTUDIO_LOG_LEVEL=INFO
+      - AXIESTUDIO_AUTO_LOGIN=false
+    volumes:
+      - axiestudio_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health_check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: PostgreSQL for production-like testing
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=axiestudio
+      - POSTGRES_USER=axiestudio
+      - POSTGRES_PASSWORD=axiestudio_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    profiles:
+      - postgres
+
+volumes:
+  axiestudio_data:
+  postgres_data: 

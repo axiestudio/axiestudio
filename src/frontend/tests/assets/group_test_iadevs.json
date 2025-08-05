@@ -1,0 +1,1700 @@
+{
+  "id": "f12a6f21-973b-47db-8451-4bd90a0fb9c2",
+  "data": {
+    "nodes": [
+      {
+        "id": "GroupNode-7oRzc",
+        "type": "genericNode",
+        "position": {
+          "x": 3397.942946831683,
+          "y": 636.4111672321256
+        },
+        "data": {
+          "id": "GroupNode-7oRzc",
+          "type": "GroupNode",
+          "node": {
+            "display_name": "Avalia\u00e7\u00e3o",
+            "documentation": "",
+            "description": "Esse bloco carrega a parte de avalia\u00e7\u00e3o do flow.\n\n1. Score de similaridade do resumo com o artigo original\n2. Fator de redu\u00e7\u00e3o por n\u00famero de caracteres do resumo\n\nScore Final = Similaridade * Redu\u00e7\u00e3o",
+            "template": {
+              "chunk_size_OpenAIEmbeddings-B5dsW": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": 1000,
+                "name": "chunk_size",
+                "display_name": "Chunk Size",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "chunk_size"
+                }
+              },
+              "client_OpenAIEmbeddings-B5dsW": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "client",
+                "display_name": "Client",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "client"
+                }
+              },
+              "code_OpenAIEmbeddings-B5dsW": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langchain_openai.embeddings.base import OpenAIEmbeddings\n\nfrom axiestudio.base.embeddings.model import LCEmbeddingsModel\nfrom axiestudio.field_typing import Embeddings\nfrom axiestudio.io import BoolInput, DictInput, DropdownInput, FloatInput, IntInput, MessageTextInput, SecretStrInput\n\n\nclass OpenAIEmbeddingsComponent(LCEmbeddingsModel):\n    display_name = \"OpenAI Embeddings\"\n    description = \"Generate embeddings using OpenAI models.\"\n    icon = \"OpenAI\"\n    inputs = [\n        DictInput(\n            name=\"default_headers\",\n            display_name=\"Default Headers\",\n            advanced=True,\n            info=\"Default headers to use for the API request.\",\n        ),\n        DictInput(\n            name=\"default_query\",\n            display_name=\"Default Query\",\n            advanced=True,\n            info=\"Default query parameters to use for the API request.\",\n        ),\n        IntInput(name=\"chunk_size\", display_name=\"Chunk Size\", advanced=True, value=1000),\n        MessageTextInput(name=\"client\", display_name=\"Client\", advanced=True),\n        MessageTextInput(name=\"deployment\", display_name=\"Deployment\", advanced=True),\n        IntInput(name=\"embedding_ctx_length\", display_name=\"Embedding Context Length\", advanced=True, value=1536),\n        IntInput(name=\"max_retries\", display_name=\"Max Retries\", value=3, advanced=True),\n        DropdownInput(\n            name=\"model\",\n            display_name=\"Model\",\n            advanced=False,\n            options=[\n                \"text-embedding-3-small\",\n                \"text-embedding-3-large\",\n                \"text-embedding-ada-002\",\n            ],\n            value=\"text-embedding-3-small\",\n        ),\n        DictInput(name=\"model_kwargs\", display_name=\"Model Kwargs\", advanced=True),\n        SecretStrInput(name=\"openai_api_base\", display_name=\"OpenAI API Base\", advanced=True),\n        SecretStrInput(name=\"openai_api_key\", display_name=\"OpenAI API Key\", value=\"OPENAI_API_KEY\"),\n        SecretStrInput(name=\"openai_api_type\", display_name=\"OpenAI API Type\", advanced=True),\n        MessageTextInput(name=\"openai_api_version\", display_name=\"OpenAI API Version\", advanced=True),\n        MessageTextInput(\n            name=\"openai_organization\",\n            display_name=\"OpenAI Organization\",\n            advanced=True,\n        ),\n        MessageTextInput(name=\"openai_proxy\", display_name=\"OpenAI Proxy\", advanced=True),\n        FloatInput(name=\"request_timeout\", display_name=\"Request Timeout\", advanced=True),\n        BoolInput(name=\"show_progress_bar\", display_name=\"Show Progress Bar\", advanced=True),\n        BoolInput(name=\"skip_empty\", display_name=\"Skip Empty\", advanced=True),\n        MessageTextInput(\n            name=\"tiktoken_model_name\",\n            display_name=\"TikToken Model Name\",\n            advanced=True,\n        ),\n        BoolInput(\n            name=\"tiktoken_enable\",\n            display_name=\"TikToken Enable\",\n            advanced=True,\n            value=True,\n            info=\"If False, you must have transformers installed.\",\n        ),\n    ]\n\n    def build_embeddings(self) -> Embeddings:\n        return OpenAIEmbeddings(\n            tiktoken_enabled=self.tiktoken_enable,\n            default_headers=self.default_headers,\n            default_query=self.default_query,\n            allowed_special=\"all\",\n            disallowed_special=\"all\",\n            chunk_size=self.chunk_size,\n            deployment=self.deployment,\n            embedding_ctx_length=self.embedding_ctx_length,\n            max_retries=self.max_retries,\n            model=self.model,\n            model_kwargs=self.model_kwargs,\n            base_url=self.openai_api_base,\n            api_key=self.openai_api_key,\n            openai_api_type=self.openai_api_type,\n            api_version=self.openai_api_version,\n            organization=self.openai_organization,\n            openai_proxy=self.openai_proxy,\n            timeout=self.request_timeout or None,\n            show_progress_bar=self.show_progress_bar,\n            skip_empty=self.skip_empty,\n            tiktoken_model_name=self.tiktoken_model_name,\n        )\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "display_name": "code",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "code"
+                }
+              },
+              "default_headers_OpenAIEmbeddings-B5dsW": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": {},
+                "name": "default_headers",
+                "display_name": "Default Headers",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Default headers to use for the API request.",
+                "title_case": false,
+                "type": "dict",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "default_headers"
+                }
+              },
+              "default_query_OpenAIEmbeddings-B5dsW": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": {},
+                "name": "default_query",
+                "display_name": "Default Query",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Default query parameters to use for the API request.",
+                "title_case": false,
+                "type": "dict",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "default_query"
+                }
+              },
+              "deployment_OpenAIEmbeddings-B5dsW": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "deployment",
+                "display_name": "Deployment",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "deployment"
+                }
+              },
+              "embedding_ctx_length_OpenAIEmbeddings-B5dsW": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": 1536,
+                "name": "embedding_ctx_length",
+                "display_name": "Embedding Context Length",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "embedding_ctx_length"
+                }
+              },
+              "max_retries_OpenAIEmbeddings-B5dsW": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": 3,
+                "name": "max_retries",
+                "display_name": "Max Retries",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "max_retries"
+                }
+              },
+              "model_OpenAIEmbeddings-B5dsW": {
+                "trace_as_metadata": true,
+                "options": [
+                  "text-embedding-3-small",
+                  "text-embedding-3-large",
+                  "text-embedding-ada-002"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "text-embedding-3-small",
+                "name": "model",
+                "display_name": "Model",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "model"
+                }
+              },
+              "model_kwargs_OpenAIEmbeddings-B5dsW": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": {},
+                "name": "model_kwargs",
+                "display_name": "Model Kwargs",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "dict",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "model_kwargs"
+                }
+              },
+              "openai_api_base_OpenAIEmbeddings-B5dsW": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "openai_api_base",
+                "display_name": "OpenAI API Base",
+                "advanced": true,
+                "input_types": [],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "openai_api_base"
+                }
+              },
+              "openai_api_key_OpenAIEmbeddings-B5dsW": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "openai_api_key",
+                "display_name": "OpenAI API Key",
+                "advanced": false,
+                "input_types": [],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "openai_api_key"
+                }
+              },
+              "openai_api_type_OpenAIEmbeddings-B5dsW": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "openai_api_type",
+                "display_name": "OpenAI API Type",
+                "advanced": true,
+                "input_types": [],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "openai_api_type"
+                }
+              },
+              "openai_api_version_OpenAIEmbeddings-B5dsW": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "openai_api_version",
+                "display_name": "OpenAI API Version",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "openai_api_version"
+                }
+              },
+              "openai_organization_OpenAIEmbeddings-B5dsW": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "openai_organization",
+                "display_name": "OpenAI Organization",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "openai_organization"
+                }
+              },
+              "openai_proxy_OpenAIEmbeddings-B5dsW": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "openai_proxy",
+                "display_name": "OpenAI Proxy",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "openai_proxy"
+                }
+              },
+              "request_timeout_OpenAIEmbeddings-B5dsW": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "request_timeout",
+                "display_name": "Request Timeout",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "float",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "request_timeout"
+                }
+              },
+              "show_progress_bar_OpenAIEmbeddings-B5dsW": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "show_progress_bar",
+                "display_name": "Show Progress Bar",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "show_progress_bar"
+                }
+              },
+              "skip_empty_OpenAIEmbeddings-B5dsW": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "skip_empty",
+                "display_name": "Skip Empty",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "skip_empty"
+                }
+              },
+              "tiktoken_enable_OpenAIEmbeddings-B5dsW": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": true,
+                "name": "tiktoken_enable",
+                "display_name": "TikToken Enable",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If False, you must have transformers installed.",
+                "title_case": false,
+                "type": "bool",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "tiktoken_enable"
+                }
+              },
+              "tiktoken_model_name_OpenAIEmbeddings-B5dsW": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "tiktoken_model_name",
+                "display_name": "TikToken Model Name",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "proxy": {
+                  "id": "OpenAIEmbeddings-FBKdM",
+                  "field": "tiktoken_model_name"
+                }
+              },
+              "code_CosineSimilarityComponent-kFO3J": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.inputs import MessageTextInput, HandleInput\nfrom axiestudio.template import Output\nfrom axiestudio.schema import Data\nfrom typing import List\nimport numpy as np\n\nclass CosineSimilarityComponent(Component):\n    display_name = \"Cosine Similarity Component\"\n    description = \"Calculates cosine similarity between two texts.\"\n    icon = \"cosine\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"text1\",\n            display_name=\"Text 1\",\n            info=\"First text input for similarity calculation.\",\n        ),\n        HandleInput(\n            name=\"embedding\",\n            display_name=\"Embedding Model\",\n            input_types=[\"Embeddings\"],\n            info=\"Model to generate embeddings for the texts.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Cosine Similarity\", name=\"cosine_similarity\", method=\"calculate_cosine_similarity\"),\n    ]\n\n    def calculate_cosine_similarity(self) -> Data:\n        text1 = self.text1\n        \n        text2 = \"\"\"# Prompt Engineering Guide\n\n---\n\n# **Introdu\u00e7\u00e3o**\n\nA engenharia de prompts \u00e9 uma disciplina relativamente nova para desenvolver e otimizar prompts para usar eficientemente modelos de linguagem (LMs) para uma ampla variedade de aplicativos e t\u00f3picos de pesquisa. As habilidades imediatas de engenharia ajudam a entender melhor os recursos e as limita\u00e7\u00f5es dos modelos de linguagem grandes (LLMs). Os pesquisadores usam a engenharia de prompt para melhorar a capacidade dos LLMs em uma ampla gama de tarefas comuns e complexas, como resposta a perguntas e racioc\u00ednio aritm\u00e9tico. Os desenvolvedores usam engenharia de prompt para projetar t\u00e9cnicas de prompt robustas e eficazes que fazem interface com LLMs e outras ferramentas.\n\nEste guia aborda os fundamentos dos prompts para fornecer uma ideia aproximada de como utiliza-los para interagir e instruir modelos de linguagem grandes (LLMs).\n\nTodos os exemplos s\u00e3o testados com\u00a0`text-davinci-003`\u00a0(usando o playground do OpenAI), a menos que especificado de outra forma. Ele usa as configura\u00e7\u00f5es padr\u00e3o, ou seja,\u00a0`temperatura=0.7`\u00a0e\u00a0`top-p=1`.\n\n# **Configura\u00e7\u00f5es LLM**\n\nAo trabalhar com prompts, voc\u00ea estar\u00e1 interagindo com o LLM diretamente ou por meio de uma API. Voc\u00ea pode configurar alguns par\u00e2metros para obter resultados diferentes para seus prompts.\n\n**Temperatura**\u00a0- Resumindo, quanto menor a\u00a0`temperatura`, mais determin\u00edsticos s\u00e3o os resultados, no sentido de que o pr\u00f3ximo token prov\u00e1vel mais alto \u00e9 sempre escolhido. O aumento da temperatura pode levar a mais aleatoriedade, incentivando sa\u00eddas mais diversificadas ou criativas. Estamos essencialmente aumentando os pesos dos outros tokens poss\u00edveis. Em termos de aplica\u00e7\u00e3o, podemos querer usar um valor de temperatura mais baixo para tarefas como controle de qualidade baseado em fatos encorajando respostas mais factuais e concisas. Para gera\u00e7\u00e3o de poemas ou outras tarefas criativas, pode ser ben\u00e9fico aumentar o valor da temperatura.\n\n**Top_p**\u00a0- Da mesma forma, com o\u00a0`top_p`, uma t\u00e9cnica de amostragem com temperatura chamada amostragem de n\u00facleo, voc\u00ea pode controlar o grau de determinismo do modelo na gera\u00e7\u00e3o de uma resposta. Se voc\u00ea est\u00e1 procurando respostas exatas e factuais, mantenha isso baixo. Se voc\u00ea estiver procurando respostas mais diversificadas, aumente para um valor mais alto.\n\nA recomenda\u00e7\u00e3o geral \u00e9 alterar um, n\u00e3o ambos.\n\nAntes de come\u00e7ar com alguns exemplos b\u00e1sicos, lembre-se de que seus resultados podem variar dependendo da vers\u00e3o do LLM que voc\u00ea est\u00e1 usando.\n\n# **No\u00e7\u00f5es B\u00e1sicas de Prompt**\n\n## **Prompts B\u00e1sicos**\n\nVoc\u00ea pode conseguir muito com prompts simples, mas a qualidade dos resultados depende da quantidade de informa\u00e7\u00f5es que voc\u00ea fornece e de qu\u00e3o bem elaboradas s\u00e3o. Um prompt pode conter informa\u00e7\u00f5es como\u00a0*instru\u00e7\u00e3o*\u00a0ou\u00a0*pergunta*\u00a0que voc\u00ea est\u00e1 passando para o modelo e incluir outros detalhes como\u00a0*contexto*,\u00a0*entradas*\u00a0ou\u00a0*exemplos*. Voc\u00ea pode usar esses elementos para instruir melhor o modelo e, como resultado, obter melhores resultados.\n\nVamos come\u00e7ar analisando um exemplo b\u00e1sico de um prompt simples:\n\n*Prompt*\n\n```\nO c\u00e9u \u00e9\n```\n\n*Sa\u00edda:*\n\n```\nazulO c\u00e9u \u00e9 azul em um dia claro. Em um dia nublado, o c\u00e9u pode ser cinza ou branco.\n```\n\nComo voc\u00ea pode ver, o modelo de linguagem gera uma continua\u00e7\u00e3o de strings que fazem sentido no contexto\u00a0`\"O c\u00e9u \u00e9\"`. A sa\u00edda pode ser inesperada ou distante da tarefa que queremos realizar.\n\nEste exemplo b\u00e1sico tamb\u00e9m destaca a necessidade de fornecer mais contexto ou instru\u00e7\u00f5es sobre o que especificamente queremos alcan\u00e7ar.\n\nVamos tentar melhorar um pouco:\n\n*Prompt:*\n\n```\nComplete a senten\u00e7a:O c\u00e9u \u00e9\n```\n\n*Sa\u00edda:*\n\n```\nt\u00e3o lindo.\n```\n\nIsto \u00e9 melhor? Bem, dissemos ao modelo para completar a frase para que o resultado fique muito melhor, pois segue exatamente o que dissemos para fazer (\"complete a frase\"). Essa abordagem de projetar prompts ideais para instruir o modelo a executar uma tarefa \u00e9 chamada de\u00a0**engenharia de prompt**.\n\nO exemplo acima \u00e9 uma ilustra\u00e7\u00e3o b\u00e1sica do que \u00e9 poss\u00edvel com LLMs hoje. Os LLMs de hoje s\u00e3o capazes de executar todos os tipos de tarefas avan\u00e7adas que variam de resumo de texto a racioc\u00ednio matem\u00e1tico e gera\u00e7\u00e3o de c\u00f3digo.\n\n## **Formata\u00e7\u00e3o de prompt**\n\nTentamos um prompt muito simples acima. Um prompt padr\u00e3o tem o seguinte formato:\n\n```\n<Pergunta>?\n```\n\nou\n\n```\n<Instru\u00e7\u00e3o>\n```\n\nIsso pode ser formatado em um formato de resposta a perguntas (QA), que \u00e9 padr\u00e3o em muitos conjuntos de dados de QA, como segue:\n\n```\nQ: <Pergunta>?A:\n```\n\nAo solicitar como o acima, tamb\u00e9m chamado de\u00a0*prompt de tiro zero*, ou seja, voc\u00ea est\u00e1 solicitando diretamente ao modelo uma resposta sem nenhum exemplo ou demonstra\u00e7\u00e3o sobre a tarefa que deseja realizar. Alguns modelos de linguagem grandes t\u00eam a capacidade de executar prompts zero-shot, mas isso depende da complexidade e do conhecimento da tarefa em quest\u00e3o.\n\nDado o formato padr\u00e3o acima, uma t\u00e9cnica popular e eficaz para solicita\u00e7\u00e3o \u00e9 chamada de\u00a0*prompt de poucos tiros*, onde fornecemos exemplos (ou seja, demonstra\u00e7\u00f5es). Os prompts de poucos tiros podem ser formatados da seguinte maneira:\n\n```\n<Pergunta>?<Resposta><Pergunta>?<Resposta><Pergunta>?<Resposta><Pergunta>?\n```\n\nA vers\u00e3o do formato QA ficaria assim:\n\n```\nQ: <Pergunta>?A: <Resposta>Q: <Pergunta>?A: <Resposta>Q: <Pergunta>?A: <Resposta>Q: <Pergunta>?A:\n```\n\nLembre-se de que n\u00e3o \u00e9 necess\u00e1rio usar o formato QA. O formato do prompt depende da tarefa em m\u00e3os. Por exemplo, voc\u00ea pode executar uma tarefa de classifica\u00e7\u00e3o simples e fornecer exemplares que demonstrem a tarefa da seguinte forma:\n\n*Prompt:*\n\n```\nIsso \u00e9 incr\u00edvel! // PositivoIsto \u00e9 mau! // NegativoUau, esse filme foi radical! // PositivoQue espet\u00e1culo horr\u00edvel! //\n```\n\n*Sa\u00edda:*\n\n```\nNegativo\n```\n\nOs prompts de poucos tiros permitem o aprendizado no contexto, que \u00e9 a capacidade dos modelos de linguagem de aprender tarefas dadas algumas demonstra\u00e7\u00f5es.\n\n# **Elementos de um prompt**\n\n\u00c0 medida que abordamos mais e mais exemplos e aplicativos poss\u00edveis com a engenharia de prompt, voc\u00ea notar\u00e1 que existem certos elementos que comp\u00f5em um prompt.\n\nUm prompt pode conter qualquer um dos seguintes componentes:\n\n**Instru\u00e7\u00e3o**\u00a0- uma tarefa ou instru\u00e7\u00e3o espec\u00edfica que voc\u00ea deseja que o modelo execute\n\n**Contexto**\u00a0- pode envolver informa\u00e7\u00f5es externas ou contexto adicional que pode direcionar o modelo para melhores respostas\n\n**Dados de entrada**\u00a0- \u00e9 a entrada ou pergunta para a qual estamos interessados em encontrar uma resposta\n\n**Indicador de sa\u00edda**\u00a0- indica o tipo ou formato da sa\u00edda.\n\nNem todos os componentes s\u00e3o necess\u00e1rios para um prompt e o formato depende da tarefa em quest\u00e3o. Abordaremos exemplos mais concretos nos pr\u00f3ximos guias.\n\n# **Dicas gerais para projetar prompts**\n\nAqui est\u00e3o algumas dicas para manter em mente ao projetar seus prompts:\n\n### **Comece Simples**\n\nAo come\u00e7ar a criar prompts, voc\u00ea deve ter em mente que \u00e9 realmente um processo iterativo que requer muita experimenta\u00e7\u00e3o para obter os melhores resultados. Usar um playground simples como OpenAI ou Cohere's \u00e9 um bom ponto de partida.\n\nVoc\u00ea pode come\u00e7ar com prompts simples e continuar adicionando mais elementos e contexto \u00e0 medida que busca melhores resultados. O controle de vers\u00e3o do seu prompt ao longo do caminho \u00e9 vital por esse motivo. Ao ler o guia, voc\u00ea ver\u00e1 muitos exemplos em que a especificidade, a simplicidade e a concis\u00e3o geralmente lhe dar\u00e3o melhores resultados.\n\nQuando voc\u00ea tem uma grande tarefa que envolve muitas subtarefas diferentes, pode tentar dividir a tarefa em subtarefas mais simples e continuar aumentando conforme obt\u00e9m melhores resultados. Isso evita adicionar muita complexidade ao processo de design do prompt no in\u00edcio.\n\n### **A instru\u00e7\u00e3o**\n\nVoc\u00ea pode criar prompts eficazes para v\u00e1rias tarefas simples usando comandos para instruir o modelo sobre o que deseja alcan\u00e7ar, como \"Escrever\", \"Classificar\", \"Resumir\", \"Traduzir\", \"Ordenar\" etc.\n\nTenha em mente que voc\u00ea tamb\u00e9m precisa experimentar muito para ver o que funciona melhor. Experimente instru\u00e7\u00f5es diferentes com palavras-chave, contextos e dados diferentes e veja o que funciona melhor para seu caso de uso e tarefa espec\u00edficos. Normalmente, quanto mais espec\u00edfico e relevante for o contexto para a tarefa que voc\u00ea est\u00e1 tentando executar, melhor. Abordaremos a import\u00e2ncia da amostragem e da adi\u00e7\u00e3o de mais contexto nos pr\u00f3ximos guias.\n\nOutros recomendam que as instru\u00e7\u00f5es sejam colocadas no in\u00edcio do prompt. Tamb\u00e9m \u00e9 recomendado que algum separador claro como \"###\" seja usado para separar a instru\u00e7\u00e3o e o contexto.\n\nPor exemplo:\n\n*Prompt:*\n\n```\n### Instru\u00e7\u00e3o ###Traduza o texto abaixo para o espanhol:Texto: \"ol\u00e1!\"\n```\n\n*Sa\u00edda:*\n\n```\n\u00a1Hola!\n```\n\n### **Especificidade**\n\nSeja muito espec\u00edfico sobre a instru\u00e7\u00e3o e a tarefa que deseja que o modelo execute. Quanto mais descritivo e detalhado for o prompt, melhores ser\u00e3o os resultados. Isso \u00e9 particularmente importante quando voc\u00ea tem um resultado desejado ou estilo de gera\u00e7\u00e3o que est\u00e1 buscando. N\u00e3o h\u00e1 tokens ou palavras-chave espec\u00edficas que levem a melhores resultados. \u00c9 mais importante ter um bom formato e um prompt descritivo. Na verdade, fornecer exemplos no prompt \u00e9 muito eficaz para obter a sa\u00edda desejada em formatos espec\u00edficos.\n\nAo criar prompts, voc\u00ea tamb\u00e9m deve ter em mente o tamanho do prompt, pois h\u00e1 limita\u00e7\u00f5es em rela\u00e7\u00e3o a qu\u00e3o grande ele pode ser. Pensar em qu\u00e3o espec\u00edfico e detalhado voc\u00ea deve ser \u00e9 algo a se considerar. Incluir muitos detalhes desnecess\u00e1rios n\u00e3o \u00e9 necessariamente uma boa abordagem. Os detalhes devem ser relevantes e contribuir para a tarefa em m\u00e3os. Isso \u00e9 algo que voc\u00ea precisar\u00e1 experimentar muito. Incentivamos muita experimenta\u00e7\u00e3o e itera\u00e7\u00e3o para otimizar os prompts de seus aplicativos.\n\nComo exemplo, vamos tentar um prompt simples para extrair informa\u00e7\u00f5es espec\u00edficas de um texto.\n\n*Prompt:*\n\n```\nExtraia o nome dos lugares no texto a seguir.Formato desejado:Local: <lista_de_nomes_de_empresa_separados_por_v\u00edrgula>Input: \"Embora estes desenvolvimentos sejam encorajadores para os investigadores, muito ainda \u00e9 um mist\u00e9rio. \u201cMuitas vezes temos uma caixa preta entre o c\u00e9rebro e o efeito que vemos na periferia\u201d, diz Henrique Veiga-Fernandes, neuroimunologista do Centro Champalimaud para o Desconhecido em Lisboa. \u201cSe queremos utiliz\u00e1-lo no contexto terap\u00eautico, precisamos de facto de perceber o mecanismo.\"\n```\n\n*Sa\u00edda:*\n\n```\nLocal: Centro Champalimaud para o Desconhecido, Lisboa\n```\n\nO texto de entrada \u00e9 obtido\u00a0[neste artigo da Nature](https://www.nature.com/articles/d41586-023-00509-z).\n\n### **Evite Imprecis\u00f5es**\n\nDadas as dicas acima sobre como ser detalhado e melhorar o formato, \u00e9 f\u00e1cil cair na armadilha de querer ser muito inteligente sobre os prompts e potencialmente criar descri\u00e7\u00f5es imprecisas. Geralmente \u00e9 melhor ser espec\u00edfico e direto. A analogia aqui \u00e9 muito semelhante \u00e0 comunica\u00e7\u00e3o eficaz - quanto mais direta, mais eficaz a mensagem \u00e9 transmitida.\n\nPor exemplo, voc\u00ea pode estar interessado em aprender o conceito de engenharia de prompt. Voc\u00ea pode tentar algo como:\n\n```\nExplique o conceito de engenharia de prompt. Mantenha a explica\u00e7\u00e3o curta, apenas algumas frases, e n\u00e3o seja muito descritivo.\n```\n\nN\u00e3o est\u00e1 claro no prompt acima quantas frases usar e qual estilo. Voc\u00ea ainda pode obter uma boa resposta com o prompt acima, mas o melhor prompt seria aquele que \u00e9 muito espec\u00edfico, conciso e direto ao ponto. Algo como:\n\n```\nUse 2 a 3 frases para explicar o conceito de engenharia de prompt a um aluno do ensino m\u00e9dio.\n```\n\n### **Fazer ou n\u00e3o fazer?**\n\nOutra dica comum ao criar prompts \u00e9 evitar dizer o que n\u00e3o fazer, mas dizer o que fazer. Isso incentiva mais especificidade e concentra-se nos detalhes que levam a boas respostas do modelo.\n\nAqui est\u00e1 um exemplo de um chatbot de recomenda\u00e7\u00e3o de filme falhando exatamente no que eu n\u00e3o quero que ele fa\u00e7a por causa de como escrevi a instru\u00e7\u00e3o -- focando no que n\u00e3o fazer.\n\n*Prompt:*\n\n```\nO agente a seguir recomenda filmes para um cliente. N\u00c3O PE\u00c7A INTERESSES. N\u00c3O PE\u00c7A INFORMA\u00c7\u00d5ES PESSOAIS.Cliente: Por favor, recomende um filme baseado nos meus interesses.Agente:\n```\n\n*Sa\u00edda:*\n\n```\nClaro, posso recomendar um filme baseado em seus interesses. Que tipo de filme voc\u00ea gostaria de assistir? Voc\u00ea prefere a\u00e7\u00e3o, com\u00e9dia, romance ou outra coisa?\n```\n\nAqui est\u00e1 um prompt melhor:\n\n*Prompt:*\n\n```\nO agente a seguir recomenda filmes para um cliente. O agente \u00e9 respons\u00e1vel por recomendar um filme dos principais filmes de tend\u00eancias globais. Deve abster-se de perguntar aos usu\u00e1rios sobre suas prefer\u00eancias e evitar pedir informa\u00e7\u00f5es pessoais. Se o agente n\u00e3o tiver um filme para recomendar, ele deve responder \"Desculpe, n\u00e3o foi poss\u00edvel encontrar um filme para recomendar hoje.\".Cliente: Por favor, recomende um filme baseado nos meus interesses.Agente:\n```\n\n*Sa\u00edda:*\n\n```\nDesculpe, n\u00e3o tenho nenhuma informa\u00e7\u00e3o sobre seus interesses. No entanto, aqui est\u00e1 uma lista dos principais filmes de tend\u00eancias globais no momento: [lista de filmes]. Espero que encontre algo que goste!\n```\n\nAlguns dos exemplos acima foram adotados do\u00a0[artigo \"Melhores pr\u00e1ticas para engenharia de prompt com OpenAI API\".](https://help.openai.com/en/articles/6654000-best-practices-for-prompt-engineering-with-openai-api)\n\n# **Exemplos de Prompts**\n\nNa se\u00e7\u00e3o anterior, apresentamos e fornecemos exemplos b\u00e1sicos de como solicitar LLMs.\n\nNesta se\u00e7\u00e3o, forneceremos mais exemplos de como os prompts s\u00e3o usados para realizar diferentes tarefas e introduziremos os principais conceitos ao longo do caminho. Muitas vezes, a melhor maneira de aprender conceitos \u00e9 atrav\u00e9s de exemplos. Abaixo, abordamos alguns exemplos de como prompts bem elaborados podem ser usados para executar diferentes tipos de tarefas.\n\nT\u00f3picos:\n\n- [Resumo de Texto](https://www.promptingguide.ai/pt/introduction/examples#resumo-de-texto)\n- [Extra\u00e7\u00e3o de informa\u00e7\u00f5es](https://www.promptingguide.ai/pt/introduction/examples#extra%C3%A7%C3%A3o-de-informa%C3%A7%C3%B5es)\n- [Resposta \u00e0 pergunta](https://www.promptingguide.ai/pt/introduction/examples#resposta-a-pergunta)\n- [Classifica\u00e7\u00e3o de texto](https://www.promptingguide.ai/pt/introduction/examples#classifica%C3%A7%C3%A3o-de-texto)\n- [Conversa\u00e7\u00e3o](https://www.promptingguide.ai/pt/introduction/examples#conversa%C3%A7%C3%A3o)\n- [Gera\u00e7\u00e3o de c\u00f3digo](https://www.promptingguide.ai/pt/introduction/examples#gera%C3%A7%C3%A3o-de-c%C3%B3digo)\n- [Racioc\u00ednio](https://www.promptingguide.ai/pt/introduction/examples#racioc%C3%ADnio)\n\n---\n\n## **Resumo de texto**\n\nUma das tarefas padr\u00e3o na gera\u00e7\u00e3o de linguagem natural \u00e9 o resumo de texto. A sumariza\u00e7\u00e3o de texto pode incluir prefer\u00eancias e dom\u00ednios diferentes. Na verdade, uma das aplica\u00e7\u00f5es mais promissoras dos modelos de linguagem \u00e9 a capacidade de resumir artigos e conceitos em resumos r\u00e1pidos e f\u00e1ceis de ler. Vamos tentar uma tarefa b\u00e1sica de resumo usando prompts.\n\nDigamos que estou interessado em aprender sobre antibi\u00f3ticos, poderia tentar um prompt como este:\n\n*Prompt:*\n\n```\nExplique os antibi\u00f3ticosA:\n```\n\n*Sa\u00edda:*\n\n```\nOs antibi\u00f3ticos s\u00e3o um tipo de medicamento usado para tratar infec\u00e7\u00f5es bacterianas. Eles funcionam matando as bact\u00e9rias ou impedindo-as de se reproduzir, permitindo que o sistema imunol\u00f3gico do corpo combata a infec\u00e7\u00e3o. Os antibi\u00f3ticos s\u00e3o geralmente tomados por via oral na forma de comprimidos, c\u00e1psulas ou solu\u00e7\u00f5es l\u00edquidas, ou \u00e0s vezes administrados por via intravenosa. Eles n\u00e3o s\u00e3o eficazes contra infec\u00e7\u00f5es virais e us\u00e1-los de forma inadequada pode levar \u00e0 resist\u00eancia aos antibi\u00f3ticos.\n```\n\nO \"A:\" \u00e9 um formato de prompt expl\u00edcito usado para responder perguntas. Eu usei isso aqui para dizer ao modelo que h\u00e1 um futuro esperado. Neste exemplo, n\u00e3o est\u00e1 claro como isso \u00e9 \u00fatil ou n\u00e3o, mas deixaremos isso para exemplos posteriores. Vamos apenas supor que isso \u00e9 muita informa\u00e7\u00e3o e queremos resumi-la ainda mais. Na verdade, podemos instruir o modelo a resumir em uma frase da seguinte forma:\n\n*Prompt:*\n\n```\nOs antibi\u00f3ticos s\u00e3o um tipo de medicamento usado para tratar infec\u00e7\u00f5es bacterianas. Eles funcionam matando as bact\u00e9rias ou impedindo-as de se reproduzir, permitindo que o sistema imunol\u00f3gico do corpo combata a infec\u00e7\u00e3o. Os antibi\u00f3ticos s\u00e3o geralmente tomados por via oral na forma de comprimidos, c\u00e1psulas ou solu\u00e7\u00f5es l\u00edquidas, ou \u00e0s vezes administrados por via intravenosa. Eles n\u00e3o s\u00e3o eficazes contra infec\u00e7\u00f5es virais e us\u00e1-los de forma inadequada pode levar \u00e0 resist\u00eancia aos antibi\u00f3ticos.**Explique o que foi dito acima em uma frase**:\n```\n\n*Sa\u00edda:*\n\n```\nOs antibi\u00f3ticos s\u00e3o medicamentos usados para tratar infec\u00e7\u00f5es bacterianas, matando as bact\u00e9rias ou impedindo-as de se reproduzir, mas n\u00e3o s\u00e3o eficazes contra v\u00edrus e o uso excessivo pode levar \u00e0 resist\u00eancia aos antibi\u00f3ticos.\n```\n\nSem prestar muita aten\u00e7\u00e3o \u00e0 precis\u00e3o da sa\u00edda acima, algo que abordaremos em um guia posterior, o modelo tentou resumir o par\u00e1grafo em uma frase. Voc\u00ea pode ficar esperto com as instru\u00e7\u00f5es, mas deixaremos isso para um cap\u00edtulo posterior. Sinta-se \u00e0 vontade para fazer uma pausa aqui e experimentar para ver se obt\u00e9m melhores resultados.\n\n---\n\n## **Extra\u00e7\u00e3o de Informa\u00e7\u00f5es**\n\nEmbora os modelos de linguagem sejam treinados para executar a gera\u00e7\u00e3o de linguagem natural e tarefas relacionadas, eles tamb\u00e9m s\u00e3o muito capazes de realizar classifica\u00e7\u00e3o e uma s\u00e9rie de outras tarefas de processamento de linguagem natural (NLP).\n\nAqui est\u00e1 um exemplo de um prompt que extrai informa\u00e7\u00f5es de um determinado par\u00e1grafo.\n\n*Prompt:*\n\n```\nAs declara\u00e7\u00f5es de contribui\u00e7\u00e3o do autor e os agradecimentos em trabalhos de pesquisa devem indicar clara e especificamente se, e em que medida, os autores usaram tecnologias de IA, como ChatGPT, na prepara\u00e7\u00e3o de seus manuscritos e an\u00e1lises. Eles tamb\u00e9m devem indicar quais LLMs foram usados. Isso alertar\u00e1 os editores e revisores para examinar os manuscritos com mais cuidado em busca de poss\u00edveis vieses, imprecis\u00f5es e cr\u00e9ditos de origem impr\u00f3prios. Da mesma forma, os peri\u00f3dicos cient\u00edficos devem ser transparentes sobre o uso de LLMs, por exemplo, ao selecionar manuscritos enviados.**Mencione o produto baseado em modelo de linguagem grande mencionado no par\u00e1grafo acima**:\n```\n\n*Sa\u00edda:*\n\n```\nO produto baseado em modelo de linguagem grande mencionado no par\u00e1grafo acima \u00e9 o ChatGPT.\n```\n\nExistem muitas maneiras de melhorar os resultados acima, mas isso j\u00e1 \u00e9 muito \u00fatil.\n\nAt\u00e9 agora deve ser \u00f3bvio que voc\u00ea pode pedir ao modelo para executar diferentes tarefas simplesmente instruindo-o sobre o que fazer. Esse \u00e9 um recurso poderoso que os desenvolvedores de produtos de IA j\u00e1 est\u00e3o usando para criar produtos e experi\u00eancias poderosos.\n\nFonte do par\u00e1grafo:\u00a0[ChatGPT: cinco prioridades para pesquisa](https://www.nature.com/articles/d41586-023-00288-7)\n\n---\n\n## **Resposta a perguntas**\n\nUma das melhores maneiras de fazer com que o modelo responda a respostas espec\u00edficas \u00e9 melhorar o formato do prompt. Conforme abordado anteriormente, um prompt pode combinar instru\u00e7\u00f5es, contexto, entrada e indicadores de sa\u00edda para obter melhores resultados.\n\nEmbora esses componentes n\u00e3o sejam necess\u00e1rios, torna-se uma boa pr\u00e1tica, pois quanto mais espec\u00edfico voc\u00ea for com a instru\u00e7\u00e3o, melhores resultados obter\u00e1. Abaixo est\u00e1 um exemplo de como isso ficaria seguindo um prompt mais estruturado.\n\n*Prompt:*\n\n```\nResponda a pergunta com base no contexto abaixo. Mantenha a resposta curta e concisa. Responda \"N\u00e3o tenho certeza sobre a resposta\" se n\u00e3o tiver certeza da resposta.Contexto: Teplizumab tem suas ra\u00edzes em uma empresa farmac\u00eautica de Nova Jersey chamada Ortho Pharmaceutical. L\u00e1, os cientistas geraram uma vers\u00e3o inicial do anticorpo, apelidada de OKT3. Originalmente proveniente de camundongos, a mol\u00e9cula foi capaz de se ligar \u00e0 superf\u00edcie das c\u00e9lulas T e limitar seu potencial de morte celular. Em 1986, foi aprovado para ajudar a prevenir a rejei\u00e7\u00e3o de \u00f3rg\u00e3os ap\u00f3s transplantes renais, tornando-se o primeiro anticorpo terap\u00eautico permitido para uso humano.Pergunta: De onde veio originalmente o OKT3?Responder:\n```\n\n*Sa\u00edda:*\n\n```\nCamundongos.\n```\n\nContexto obtido da\u00a0[Nature](https://www.nature.com/articles/d41586-023-00400-x).\n\n---\n\n## **Classifica\u00e7\u00e3o de texto**\n\nAt\u00e9 agora, usamos instru\u00e7\u00f5es simples para executar uma tarefa. Como um engenheiro de prompt, voc\u00ea precisar\u00e1 melhorar o fornecimento de melhores instru\u00e7\u00f5es. Mas isso n\u00e3o \u00e9 tudo! Voc\u00ea tamb\u00e9m descobrir\u00e1 que, para casos de uso mais dif\u00edceis, apenas fornecer instru\u00e7\u00f5es n\u00e3o ser\u00e1 suficiente. \u00c9 aqui que voc\u00ea precisa pensar mais sobre o contexto e os diferentes elementos que pode usar em um prompt. Outros elementos que voc\u00ea pode fornecer s\u00e3o\u00a0`input data`\u00a0ou\u00a0`examples`.\n\nVamos tentar demonstrar isso fornecendo um exemplo de classifica\u00e7\u00e3o de texto.\n\n*Prompt:*\n\n```\nClassifique o texto em neutro, negativo ou positivo.Texto: Acho que a comida estava boa.Sentimento:\n```\n\n*Sa\u00edda:*\n\n```\nNeutro\n```\n\nDemos a instru\u00e7\u00e3o para classificar o texto e o modelo respondeu com\u00a0`'Neutro'`\u00a0que est\u00e1 correto. N\u00e3o h\u00e1 nada de errado nisso, mas digamos que o que realmente precisamos \u00e9 que o modelo d\u00ea o r\u00f3tulo no formato exato que queremos. Portanto, em vez de\u00a0`Neutral`, queremos que retorne\u00a0`neutral`. Como alcan\u00e7amos isso? Existem diferentes maneiras de fazer isso. N\u00f3s nos preocupamos com a especificidade aqui, portanto, quanto mais informa\u00e7\u00f5es pudermos fornecer, melhores ser\u00e3o os resultados. Podemos tentar fornecer exemplos para especificar o comportamento correto. Vamos tentar de novo:\n\n*Prompt:*\n\n```\nClassifique o texto em neutro, negativo ou positivo.Texto: Acho que as f\u00e9rias est\u00e3o boas.Sentimento: neutroTexto: Acho que a comida estava boa.Sentimento:\n```\n\n*Sa\u00edda:*\n\n```\nneutro\n```\n\nPerfeito! Desta vez, o modelo retornou\u00a0`neutro`, que \u00e9 o r\u00f3tulo espec\u00edfico que eu estava procurando. Parece que o exemplo fornecido no prompt ajudou o modelo a ser espec\u00edfico em sua sa\u00edda. Para destacar por que \u00e0s vezes ser espec\u00edfico \u00e9 importante, confira este exemplo e identifique o problema:\n\n*Prompt:*\n\n```\nClassifique o texto em neutro, negativo ou positivo.Texto: Acho que as f\u00e9rias est\u00e3o boas.Sentimento:\n```\n\n*Sa\u00edda:*\n\n```\nNeutro\n```\n\nQual \u00e9 o problema aqui?\n\n---\n\n## **Conversa\u00e7\u00e3o**\n\nTalvez uma das coisas mais interessantes que voc\u00ea pode conseguir com a engenharia imediata seja instruir o sistema LLM sobre como se comportar, sua inten\u00e7\u00e3o e sua identidade. Isso \u00e9 particularmente \u00fatil quando voc\u00ea est\u00e1 construindo sistemas de conversa\u00e7\u00e3o, como chatbots de atendimento ao cliente.\n\nPor exemplo, vamos criar um sistema de conversa\u00e7\u00e3o capaz de gerar respostas mais t\u00e9cnicas e cient\u00edficas \u00e0s perguntas. Observe como estamos dizendo explicitamente como se comportar por meio da instru\u00e7\u00e3o. \u00c0s vezes, isso \u00e9 chamado de\u00a0*solicita\u00e7\u00e3o de fun\u00e7\u00e3o*.\n\n*Prompt:*\n\n```\nA seguir, uma conversa com um assistente de pesquisa de IA. O tom assistente \u00e9 t\u00e9cnico e cient\u00edfico.Humano: Ol\u00e1, quem \u00e9 voc\u00ea?AI: Sauda\u00e7\u00f5es! Eu sou um assistente de pesquisa de IA. Como posso te ajudar hoje?Humano: Voc\u00ea pode me falar sobre a cria\u00e7\u00e3o de buracos negros?IA:\n```\n\n*Sa\u00edda:*\n\n```\nClaro! Buracos negros s\u00e3o regi\u00f5es do espa\u00e7o-tempo onde a for\u00e7a gravitacional \u00e9 t\u00e3o forte que nada, nem mesmo a luz, consegue escapar dela. Eles s\u00e3o criados quando uma estrela muito massiva morre e seu n\u00facleo colapsa sobre si mesmo, formando uma singularidade de densidade infinita. A intensa gravidade da singularidade atrai toda a mat\u00e9ria e radia\u00e7\u00e3o ao seu redor, criando o buraco negro.\n```\n\nNosso assistente de pesquisa de IA parece um pouco t\u00e9cnico demais, certo? Ok, vamos mudar esse comportamento e instruir o sistema a dar respostas mais acess\u00edveis.\n\n*Prompt:*\n\n```\nA seguir, uma conversa com um assistente de pesquisa de IA. As respostas do assistente devem ser f\u00e1ceis de entender mesmo por alunos do ensino fundamental.Humano: Ol\u00e1, quem \u00e9 voc\u00ea?AI: Sauda\u00e7\u00f5es! Eu sou um assistente de pesquisa de IA. Como posso te ajudar hoje?Humano: Voc\u00ea pode me falar sobre a cria\u00e7\u00e3o de buracos negros?IA:\n```\n\n*Sa\u00edda:*\n\n```\nClaro! Os buracos negros s\u00e3o criados quando uma estrela muito massiva fica sem combust\u00edvel e colapsa sobre si mesma. A gravidade da estrela \u00e9 t\u00e3o forte que nada, nem mesmo a luz, pode escapar de sua atra\u00e7\u00e3o. Isso cria um ponto no espa\u00e7o-tempo com uma intensa for\u00e7a gravitacional chamada buraco negro.\n```\n\nAcho que fizemos algum progresso. Voc\u00ea pode continuar melhorando. Tenho certeza que se voc\u00ea adicionar mais exemplos voc\u00ea pode obter resultados ainda melhores.\n\n---\n\n## **Gera\u00e7\u00e3o de C\u00f3digo**\n\nUma aplica\u00e7\u00e3o em que os LLMs s\u00e3o bastante eficazes \u00e9 a gera\u00e7\u00e3o de c\u00f3digo. O Copilot \u00e9 um \u00f3timo exemplo disso. H\u00e1 um grande n\u00famero de tarefas de gera\u00e7\u00e3o de c\u00f3digo que voc\u00ea pode executar com prompts inteligentes. Vejamos alguns exemplos abaixo.\n\nPrimeiro, vamos tentar um programa simples que sa\u00fada o usu\u00e1rio.\n\n*Prompt:*\n\n```\n/*Pergunte ao usu\u00e1rio o nome dele e diga \"Ol\u00e1\"*/\n```\n\n*Sa\u00edda:*\n\n```\nlet name = prompt(\"Qual \u00e9 o seu nome?\");console.log(`Ol\u00e1, ${name}!`);\n```\n\nVoc\u00ea pode ver que nem precisamos especificar a linguagem a ser usada.\n\nVamos mudar um pouco os n\u00edveis. Quero mostrar a voc\u00ea como os LLMs podem ser poderosos com um pouco mais de esfor\u00e7o no design dos prompts.\n\n*Prompt:*\n\n```\n\"Tabela departamentos, colunas = [DepartmentId, DepartmentName]Alunos da tabela, colunas = [DepartmentId, StudentId, StudentName]Crie uma consulta MySQL para todos os alunos do Departamento de Ci\u00eancia da Computa\u00e7\u00e3o\"\n```\n\n*Sa\u00edda:*\n\n```\nSELECT AlunoId, AlunoNomeDE alunosWHERE DepartmentId IN (SELECT DepartmentId FROM departamentos WHERE DepartmentName = 'Ci\u00eancia da Computa\u00e7\u00e3o');\n```\n\nIsso \u00e9 muito impressionante. Nesse caso, fornecemos dados sobre o esquema do banco de dados e solicitamos que ele gerasse uma consulta MySQL v\u00e1lida.\n\n---\n\n## **Racioc\u00ednio**\n\nTalvez uma das tarefas mais dif\u00edceis para um LLM hoje seja aquela que requer alguma forma de racioc\u00ednio. O racioc\u00ednio \u00e9 uma das \u00e1reas que mais me entusiasma devido aos tipos de aplicativos complexos que podem surgir dos LLMs.\n\nHouve algumas melhorias em tarefas envolvendo capacidades matem\u00e1ticas. Dito isso, \u00e9 importante observar que os LLMs atuais lutam para executar tarefas de racioc\u00ednio, portanto, isso requer t\u00e9cnicas de engenharia de prompt ainda mais avan\u00e7adas. Abordaremos essas t\u00e9cnicas avan\u00e7adas no pr\u00f3ximo guia. Por enquanto, abordaremos alguns exemplos b\u00e1sicos para mostrar as capacidades aritm\u00e9ticas.\n\n*Prompt:*\n\n```\nQuanto \u00e9 9.000 * 9.000?\n```\n\n*Sa\u00edda:*\n\n```\n81.000.000\n```\n\nVamos tentar algo mais dif\u00edcil.\n\n*Prompt:*\n\n```\nOs n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 15, 32, 5, 13, 82, 7, 1.A:\n```\n\n*Sa\u00edda*\n\n```\nN\u00e3o, os n\u00fameros \u00edmpares neste grupo somam um n\u00famero \u00edmpar: 119.\n```\n\nIsso \u00e9 incorreto! Vamos tentar melhorar isso melhorando o prompt.\n\n*Prompt:*\n\n```\nOs n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 15, 32, 5, 13, 82, 7, 1.Resolva dividindo o problema em etapas. Primeiro, identifique os n\u00fameros \u00edmpares, some-os e indique se o resultado \u00e9 par ou \u00edmpar.\n```\n\n*Sa\u00edda:*\n\n```\nN\u00fameros \u00edmpares: 15, 5, 13, 7, 1Total 4141 \u00e9 um n\u00famero \u00edmpar.\n```\n\nMuito melhor, certo? A prop\u00f3sito, tentei isso algumas vezes e o sistema \u00e0s vezes falha. Se voc\u00ea fornecer instru\u00e7\u00f5es melhores combinadas com exemplos, isso pode ajudar a obter resultados mais precisos.\n\nContinuaremos a incluir mais exemplos de aplicativos comuns nesta se\u00e7\u00e3o do guia.\n\nNa pr\u00f3xima se\u00e7\u00e3o, abordaremos conceitos e t\u00e9cnicas de engenharia de prompt ainda mais avan\u00e7ados para melhorar o desempenho em todas essas e em tarefas mais dif\u00edceis.\n\n# **Zero-Shot Prompting**\n\nOs LLMs hoje treinados em grandes quantidades de dados e sintonizados para seguir instru\u00e7\u00f5es s\u00e3o capazes de executar tarefas de tiro zero. Tentamos alguns exemplos de tiro zero na se\u00e7\u00e3o anterior. Aqui est\u00e1 um dos exemplos que usamos:\n\n*Prompt:*\n\n```\nClassifique o texto em neutro, negativo ou positivo.Texto: Acho que as f\u00e9rias est\u00e3o boas.Sentimento:\n```\n\n*Sa\u00edda:*\n\n```\nNeutro\n```\n\nObserve que no prompt acima n\u00e3o fornecemos nenhum exemplo ao modelo -- esses s\u00e3o os recursos de tiro zero em a\u00e7\u00e3o.\n\nO ajuste de instru\u00e7\u00e3o demonstrou melhorar o aprendizado de tiro zero\u00a0[Wei et al. (2022)](https://arxiv.org/pdf/2109.01652.pdf). O ajuste de instru\u00e7\u00e3o \u00e9 essencialmente o conceito de modelos de ajuste fino em conjuntos de dados descritos por meio de instru\u00e7\u00f5es. Al\u00e9m disso,\u00a0[RLHF](https://arxiv.org/abs/1706.03741)\u00a0(aprendizado por refor\u00e7o a partir de feedback humano) foi adotado para escalar o ajuste de instru\u00e7\u00f5es em que o modelo \u00e9 alinhado para melhor atender \u00e0s prefer\u00eancias humanas. Este desenvolvimento recente alimenta modelos como o ChatGPT. Discutiremos todas essas abordagens e m\u00e9todos nas pr\u00f3ximas se\u00e7\u00f5es.\n\nQuando o tiro zero n\u00e3o funciona, \u00e9 recomend\u00e1vel fornecer demonstra\u00e7\u00f5es ou exemplos no prompt que levam ao prompt de poucos tiros. Na pr\u00f3xima se\u00e7\u00e3o, demonstramos a solicita\u00e7\u00e3o de poucos disparos.\n\n# **Few-Shot Prompting**\n\nEmbora os modelos de linguagem grande demonstrem recursos not\u00e1veis de disparo zero, eles ainda ficam aqu\u00e9m em tarefas mais complexas ao usar a configura\u00e7\u00e3o de disparo zero. O prompt de poucos disparos pode ser usado como uma t\u00e9cnica para permitir o aprendizado no contexto, onde fornecemos demonstra\u00e7\u00f5es no prompt para direcionar o modelo para um melhor desempenho. As demonstra\u00e7\u00f5es servem de condicionamento para exemplos subsequentes onde gostar\u00edamos que o modelo gerasse uma resposta.\n\nDe acordo com\u00a0[Touvron et al. 2023](https://arxiv.org/pdf/2302.13971.pdf)\u00a0poucas propriedades de tiro apareceram pela primeira vez quando os modelos foram dimensionados para um tamanho suficiente\u00a0[(Kaplan et al., 2020)](https://arxiv.org/abs/2001.08361).\n\nVamos demonstrar a solicita\u00e7\u00e3o de poucos disparos por meio de um exemplo apresentado em\u00a0[Brown et al. 2020](https://arxiv.org/abs/2005.14165). No exemplo, a tarefa \u00e9 usar corretamente uma nova palavra em uma frase.\n\n*Prompt:*\n\n```\nUm \"whatpu\" \u00e9 um pequeno animal peludo nativo da Tanz\u00e2nia. Exemplo de frase que usaa palavra whatpu \u00e9:Est\u00e1vamos viajando pela \u00c1frica e vimos esses whatpus muito fofos.\"Farduddlear\" significa pular para cima e para baixo muito r\u00e1pido. Exemplo de frase que usaa palavra farduddlear \u00e9:\n```\n\n*Sa\u00edda:*\n\n```\nQuando ganhamos o jogo, todos farduddleamos em festejo.\n```\n\nPodemos observar que o modelo aprendeu de alguma forma como executar a tarefa fornecendo apenas um exemplo (ou seja, 1-shot). Para tarefas mais dif\u00edceis, podemos experimentar aumentar as demonstra\u00e7\u00f5es (por exemplo, 3 tiros, 5 tiros, 10 tiros, etc.).\n\nSeguindo as descobertas de\u00a0[Min et al. (2022)](https://arxiv.org/abs/2202.12837), aqui est\u00e3o mais algumas dicas sobre demonstra\u00e7\u00f5es/exemplares ao fazer poucos disparos:\n\n- \"o espa\u00e7o do r\u00f3tulo e a distribui\u00e7\u00e3o do texto de entrada especificado pelas demonstra\u00e7\u00f5es s\u00e3o importantes (independentemente de os r\u00f3tulos estarem corretos para entradas individuais)\"\n- o formato que voc\u00ea usa tamb\u00e9m desempenha um papel fundamental no desempenho, mesmo que voc\u00ea use apenas r\u00f3tulos aleat\u00f3rios, isso \u00e9 muito melhor do que nenhum r\u00f3tulo.\n- resultados adicionais mostram que selecionar r\u00f3tulos aleat\u00f3rios de uma distribui\u00e7\u00e3o verdadeira de r\u00f3tulos (em vez de uma distribui\u00e7\u00e3o uniforme) tamb\u00e9m ajuda.\n\nVamos experimentar alguns exemplos. Vamos primeiro tentar um exemplo com r\u00f3tulos aleat\u00f3rios (o que significa que os r\u00f3tulos Negativo e Positivo s\u00e3o atribu\u00eddos aleatoriamente \u00e0s entradas):\n\n*Prompt:*\n\n```\nIsso \u00e9 incr\u00edvel! // NegativoIsto \u00e9 mau! // PositivoUau, esse filme foi rad! // PositivoQue espet\u00e1culo horr\u00edvel! //\n```\n\n*Sa\u00edda:*\n\n```\nNegativo\n```\n\nAinda obtemos a resposta correta, mesmo que os r\u00f3tulos tenham sido randomizados. Observe que tamb\u00e9m mantivemos o formato, o que tamb\u00e9m ajuda. Na verdade, com mais experimenta\u00e7\u00e3o, parece que os modelos GPT mais recentes que estamos experimentando est\u00e3o se tornando mais robustos at\u00e9 mesmo para formatos aleat\u00f3rios. Exemplo:\n\n*Prompt:*\n\n```\nPositivo Isso \u00e9 incr\u00edvel!Isto \u00e9 mau! NegativoUau, esse filme foi rad!PositivoQue espet\u00e1culo horr\u00edvel! --\n```\n\n*Sa\u00edda:*\n\n```\nNegativo\n```\n\nN\u00e3o h\u00e1 consist\u00eancia no formato acima, mas o modelo ainda previu o r\u00f3tulo correto. Temos que realizar uma an\u00e1lise mais completa para confirmar se isso vale para tarefas diferentes e mais complexas, incluindo diferentes varia\u00e7\u00f5es de prompts.\n\n### **Limita\u00e7\u00f5es da solicita\u00e7\u00e3o de poucos disparos**\n\nO prompt padr\u00e3o de poucos disparos funciona bem para muitas tarefas, mas ainda n\u00e3o \u00e9 uma t\u00e9cnica perfeita, especialmente ao lidar com tarefas de racioc\u00ednio mais complexas. Vamos demonstrar por que esse \u00e9 o caso. Voc\u00ea se lembra do exemplo anterior onde fornecemos a seguinte tarefa:\n\n```\nOs n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 15, 32, 5, 13, 82, 7, 1.A:\n```\n\nSe tentarmos isso novamente, o modelo produzir\u00e1 o seguinte:\n\n```\nSim, os n\u00fameros \u00edmpares neste grupo somam 107, que \u00e9 um n\u00famero par.\n```\n\nEsta n\u00e3o \u00e9 a resposta correta, o que n\u00e3o apenas destaca as limita\u00e7\u00f5es desses sistemas, mas tamb\u00e9m a necessidade de uma engenharia imediata mais avan\u00e7ada.\n\nVamos tentar adicionar alguns exemplos para ver se a solicita\u00e7\u00e3o de poucos tiros melhora os resultados.\n\n*Prompt:*\n\n```\nOs n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 4, 8, 9, 15, 12, 2, 1.A: A resposta \u00e9 Falsa.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 17, 10, 19, 4, 8, 12, 24.A: A resposta \u00e9 Verdadeira.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 16, 11, 14, 4, 8, 13, 24.A: A resposta \u00e9 Verdadeira.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 17, 9, 10, 12, 13, 4, 2.A: A resposta \u00e9 Falsa.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 15, 32, 5, 13, 82, 7, 1.A:\n```\n\n*Sa\u00edda:*\n\n```\nA resposta \u00e9 verdadeira.\n```\n\nIsso n\u00e3o funcionou. Parece que a solicita\u00e7\u00e3o de poucos disparos n\u00e3o \u00e9 suficiente para obter respostas confi\u00e1veis para esse tipo de problema de racioc\u00ednio. O exemplo acima fornece informa\u00e7\u00f5es b\u00e1sicas sobre a tarefa. Se voc\u00ea olhar mais de perto, o tipo de tarefa que introduzimos envolve mais algumas etapas de racioc\u00ednio. Em outras palavras, pode ajudar se dividirmos o problema em etapas e demonstrarmos isso ao modelo. Mais recentemente,\u00a0[inser\u00e7\u00e3o de cadeia de pensamento (CoT)](https://arxiv.org/abs/2201.11903)\u00a0foi popularizada para abordar mais aritm\u00e9tica complexa, senso comum e tarefas de racioc\u00ednio simb\u00f3lico.\n\nNo geral, parece que fornecer exemplos \u00e9 \u00fatil para resolver algumas tarefas. Quando a solicita\u00e7\u00e3o de disparo zero e a solicita\u00e7\u00e3o de poucos disparos n\u00e3o s\u00e3o suficientes, isso pode significar que tudo o que foi aprendido pelo modelo n\u00e3o \u00e9 suficiente para se sair bem na tarefa. A partir daqui, \u00e9 recomend\u00e1vel come\u00e7ar a pensar em ajustar seus modelos ou experimentar t\u00e9cnicas de solicita\u00e7\u00e3o mais avan\u00e7adas. A seguir, falaremos sobre uma das t\u00e9cnicas populares de sugest\u00e3o, chamada de sugest\u00e3o em cadeia de pensamento, que ganhou muita popularidade.\n\n# **Cadeia-de-Pensamento Prompt**\n\n## **Cadeia-de-Pensamento (CoT) Prompting**\n\n[https://www.promptingguide.ai/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fcot.1933d9fe.png&w=1920&q=75](https://www.promptingguide.ai/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fcot.1933d9fe.png&w=1920&q=75)\n\nFonte da imagem:\u00a0[Wei et al. (2022)](https://arxiv.org/abs/2201.11903)\n\nIntroduzido em\u00a0[Wei et al. (2022)](https://arxiv.org/abs/2201.11903), a solicita\u00e7\u00e3o de cadeia de pensamento (CoT) permite recursos de racioc\u00ednio complexos por meio de etapas intermedi\u00e1rias de racioc\u00ednio. Voc\u00ea pode combin\u00e1-lo com prompts de poucos tiros para obter melhores resultados em tarefas mais complexas que exigem racioc\u00ednio antes de responder.\n\n*Prompt:*\n\n```\nOs n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 4, 8, 9, 15, 12, 2, 1.R: Somando todos os n\u00fameros \u00edmpares (9, 15, 1) d\u00e1 25. A resposta \u00e9 Falso.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 17, 10, 19, 4, 8, 12, 24.R: Somando todos os n\u00fameros \u00edmpares (17, 19) d\u00e1 36. A resposta \u00e9 Verdadeiro.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 16, 11, 14, 4, 8, 13, 24.R: Somando todos os n\u00fameros \u00edmpares (11, 13) d\u00e1 24. A resposta \u00e9 Verdadeiro.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 17, 9, 10, 12, 13, 4, 2.R: Somando todos os n\u00fameros \u00edmpares (17, 9, 13) d\u00e1 39. A resposta \u00e9 Falso.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 15, 32, 5, 13, 82, 7, 1.A:\n```\n\n*Sa\u00edda:*\n\n```\nSomando todos os n\u00fameros \u00edmpares (15, 5, 13, 7, 1) d\u00e1 41. A resposta \u00e9 Falso.\n```\n\nUau! Podemos ver um resultado perfeito quando fornecemos a etapa de racioc\u00ednio. Na verdade, podemos resolver essa tarefa fornecendo ainda menos exemplos, ou seja, apenas um exemplo parece suficiente:\n\n*Prompt:*\n\n```\nOs n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 4, 8, 9, 15, 12, 2, 1.R: Somando todos os n\u00fameros \u00edmpares (9, 15, 1) d\u00e1 25. A resposta \u00e9 Falso.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 15, 32, 5, 13, 82, 7, 1.A:\n```\n\n*Sa\u00edda:*\n\n```\nSomando todos os n\u00fameros \u00edmpares (15, 5, 13, 7, 1) d\u00e1 41. A resposta \u00e9 Falso.\n```\n\nTenha em mente que os autores afirmam que esta \u00e9 uma habilidade emergente que surge com modelos de linguagem suficientemente grandes.\n\n## **Prompt COT Zero-Shot**\n\n[https://www.promptingguide.ai/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fzero-cot.79793bee.png&w=1920&q=75](https://www.promptingguide.ai/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fzero-cot.79793bee.png&w=1920&q=75)\n\nFonte da imagem:\u00a0[Kojima et al. (2022)](https://arxiv.org/abs/2205.11916)\n\nUma ideia recente que surgiu mais recentemente \u00e9 a ideia de\u00a0[zero-shot CoT](https://arxiv.org/abs/2205.11916)\u00a0(Kojima et al. 2022) que envolve essencialmente adicionar \"Vamos pensar passo a passo\" para a solicita\u00e7\u00e3o original. Vamos tentar um problema simples e ver como o modelo funciona:\n\n*Prompt:*\n\n```\nFui ao mercado e comprei 10 ma\u00e7\u00e3s. Dei 2 ma\u00e7\u00e3s ao vizinho e 2 ao reparador. Ent\u00e3o fui comprar mais 5 ma\u00e7\u00e3s e comi 1. Com quantas ma\u00e7\u00e3s fiquei?\n```\n\n*Sa\u00edda:*\n\n```\n11 ma\u00e7\u00e3s\n```\n\nA resposta est\u00e1 incorreta! Agora vamos tentar com o prompt especial.\n\n*Prompt:*\n\n```\nFui ao mercado e comprei 10 ma\u00e7\u00e3s. Dei 2 ma\u00e7\u00e3s ao vizinho e 2 ao reparador. Ent\u00e3o fui comprar mais 5 ma\u00e7\u00e3s e comi 1. Com quantas ma\u00e7\u00e3s fiquei?Vamos pensar passo a passo.\n```\n\n*Sa\u00edda:*\n\n```\nPrimeiro, voc\u00ea come\u00e7ou com 10 ma\u00e7\u00e3s.Voc\u00ea deu 2 ma\u00e7\u00e3s para o vizinho e 2 para o reparador, ent\u00e3o voc\u00ea tinha 6 ma\u00e7\u00e3s sobrando.Ent\u00e3o voc\u00ea comprou mais 5 ma\u00e7\u00e3s, ent\u00e3o agora voc\u00ea tinha 11 ma\u00e7\u00e3s.Finalmente, voc\u00ea comeu 1 ma\u00e7\u00e3, ent\u00e3o ficaria com 10 ma\u00e7\u00e3s.\n```\n\n\u00c9 impressionante que esse prompt simples seja eficaz nessa tarefa. Isso \u00e9 particularmente \u00fatil onde voc\u00ea n\u00e3o tem muitos exemplos para usar no prompt.\n\"\"\"\n        \n        \n        embedding_model = self.embedding\n\n        # Generate embeddings for the input texts\n        embedding1 = np.array(embedding_model.embed_query(text1))\n        embedding2 = np.array(embedding_model.embed_query(text2))\n\n        # Calculate cosine similarity manually\n        dot_product = np.dot(embedding1, embedding2)\n        norm1 = np.linalg.norm(embedding1)\n        norm2 = np.linalg.norm(embedding2)\n        similarity = dot_product / (norm1 * norm2)\n        \n        result = Data(data={\"cosine_similarity\": similarity})\n\n\n        self.status = result\n        return result\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "proxy": {
+                  "id": "CosineSimilarityComponent-gTpVs",
+                  "field": "code"
+                },
+                "display_name": "Code"
+              },
+              "code_ScoreCalculatorComponent-yUVde": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.inputs import DataInput, MessageTextInput\nfrom axiestudio.template import Output\nfrom axiestudio.schema import Data\n\nclass ScoreCalculatorComponent(Component):\n    display_name = \"Score Calculator Component\"\n    description = \"Calculates a score based on the initial LLM score and the length of the response.\"\n    icon = \"calculator\"\n\n    inputs = [\n        DataInput(\n            name=\"llm_score\",\n            display_name=\"LLM Score\",\n            info=\"Initial LLM score.\",\n        ),\n        MessageTextInput(\n            name=\"resposta\",\n            display_name=\"Resposta\",\n            info=\"Response text for the score calculation.\",\n        ),\n        \n    ]\n\n    outputs = [\n        Output(display_name=\"Final Score\", name=\"final_score\", method=\"calculate_score\"),\n    ]\n\n    def calculate_score(self) -> Data:\n        llm_score = self.llm_score.cosine_similarity\n        resposta = self.resposta\n\n        max_chars = 10000  # Limite m\u00e1ximo de caracteres\n        min_score = 0.0  # Score m\u00ednimo\n        max_score = 1.0  # Score m\u00e1ximo\n\n        tamanho_resposta = len(resposta)\n\n        if tamanho_resposta >= max_chars:\n            score_final = min_score\n        else:\n            fator_reducao = (max_chars - tamanho_resposta) / max_chars\n            score_final = llm_score * fator_reducao\n            score_final = max(min_score, min(max_score, score_final))\n\n        result = Data(data={\"score_final\": score_final, \"tamanho_resumo\": tamanho_resposta, \"similaridade\": llm_score, \"fator_reducao\": fator_reducao})\n        self.status = result\n        return result",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "display_name": "code",
+                "proxy": {
+                  "id": "ScoreCalculatorComponent-FxmjI",
+                  "field": "code"
+                }
+              },
+              "code_CustomComponent-63VyB": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.io import MessageInput, HandleInput\nfrom axiestudio.template import Output\nfrom axiestudio.schema.message import Message\nfrom typing import List\nimport numpy as np\n\n\nclass MessagePassThroughComponent(Component):\n    display_name = \"Message Pass-Through Component\"\n    description = \"Passes a message through without any modifications.\"\n    icon = \"message\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"input_message\",\n            display_name=\"Input Message\",\n            info=\"The message to pass through.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Output Message\", name=\"output_message\", method=\"pass_message\"),\n    ]\n\n    def pass_message(self) -> Message:\n        input_message = self.input_message\n        \n        result = Message(text=input_message)\n\n        self.status = result\n        return result\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "display_name": "code",
+                "proxy": {
+                  "id": "CustomComponent-L1VfC",
+                  "field": "code"
+                }
+              },
+              "input_message_CustomComponent-63VyB": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "blablabla",
+                "name": "input_message",
+                "display_name": "Input Message",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The message to pass through.",
+                "title_case": false,
+                "type": "str",
+                "proxy": {
+                  "id": "CustomComponent-L1VfC",
+                  "field": "input_message"
+                }
+              },
+              "code_ParseData-M2bQq": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.helpers.data import data_to_text\nfrom axiestudio.io import DataInput, MultilineInput, Output, StrInput\nfrom axiestudio.schema.message import Message\n\n\nclass ParseDataComponent(Component):\n    display_name = \"Parse Data\"\n    description = \"Convert Data into plain text following a specified template.\"\n    icon = \"braces\"\n\n    inputs = [\n        DataInput(name=\"data\", display_name=\"Data\", info=\"The data to convert to text.\"),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.\",\n            value=\"{text}\",\n        ),\n        StrInput(name=\"sep\", display_name=\"Separator\", advanced=True, value=\"\\n\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"parse_data\"),\n    ]\n\n    def parse_data(self) -> Message:\n        data = self.data if isinstance(self.data, list) else [self.data]\n        template = self.template\n\n        result_string = data_to_text(template, data, sep=self.sep)\n        self.status = result_string\n        return Message(text=result_string)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "display_name": "code",
+                "proxy": {
+                  "id": "ParseData-Dmlks",
+                  "field": "code"
+                }
+              },
+              "sep_ParseData-M2bQq": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "\n",
+                "name": "sep",
+                "display_name": "Separator",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "proxy": {
+                  "id": "ParseData-Dmlks",
+                  "field": "sep"
+                }
+              },
+              "template_ParseData-M2bQq": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "Score Inicial: {similaridade}\nFator de Redu\u00e7\u00e3o: {fator_reducao} (1.0 = sem redu\u00e7\u00e3o)\nScore Final: {score_final}\n",
+                "name": "template",
+                "display_name": "Template",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.",
+                "title_case": false,
+                "type": "str",
+                "proxy": {
+                  "id": "ParseData-Dmlks",
+                  "field": "template"
+                }
+              }
+            },
+            "flow": {
+              "data": {
+                "nodes": [
+                  {
+                    "id": "OpenAIEmbeddings-FBKdM",
+                    "type": "genericNode",
+                    "position": {
+                      "x": 3930.7495819264814,
+                      "y": 1579.261560325239
+                    },
+                    "data": {
+                      "type": "OpenAIEmbeddings",
+                      "node": {
+                        "template": {
+                          "_type": "Component",
+                          "chunk_size": {
+                            "trace_as_metadata": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": 1000,
+                            "name": "chunk_size",
+                            "display_name": "Chunk Size",
+                            "advanced": true,
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "int"
+                          },
+                          "client": {
+                            "trace_as_input": true,
+                            "trace_as_metadata": true,
+                            "load_from_db": false,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "client",
+                            "display_name": "Client",
+                            "advanced": true,
+                            "input_types": [
+                              "Message"
+                            ],
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "str"
+                          },
+                          "code": {
+                            "type": "code",
+                            "required": true,
+                            "placeholder": "",
+                            "list": false,
+                            "show": true,
+                            "multiline": true,
+                            "value": "from langchain_openai.embeddings.base import OpenAIEmbeddings\n\nfrom axiestudio.base.embeddings.model import LCEmbeddingsModel\nfrom axiestudio.field_typing import Embeddings\nfrom axiestudio.io import BoolInput, DictInput, DropdownInput, FloatInput, IntInput, MessageTextInput, SecretStrInput\n\n\nclass OpenAIEmbeddingsComponent(LCEmbeddingsModel):\n    display_name = \"OpenAI Embeddings\"\n    description = \"Generate embeddings using OpenAI models.\"\n    icon = \"OpenAI\"\n    inputs = [\n        DictInput(\n            name=\"default_headers\",\n            display_name=\"Default Headers\",\n            advanced=True,\n            info=\"Default headers to use for the API request.\",\n        ),\n        DictInput(\n            name=\"default_query\",\n            display_name=\"Default Query\",\n            advanced=True,\n            info=\"Default query parameters to use for the API request.\",\n        ),\n        IntInput(name=\"chunk_size\", display_name=\"Chunk Size\", advanced=True, value=1000),\n        MessageTextInput(name=\"client\", display_name=\"Client\", advanced=True),\n        MessageTextInput(name=\"deployment\", display_name=\"Deployment\", advanced=True),\n        IntInput(name=\"embedding_ctx_length\", display_name=\"Embedding Context Length\", advanced=True, value=1536),\n        IntInput(name=\"max_retries\", display_name=\"Max Retries\", value=3, advanced=True),\n        DropdownInput(\n            name=\"model\",\n            display_name=\"Model\",\n            advanced=False,\n            options=[\n                \"text-embedding-3-small\",\n                \"text-embedding-3-large\",\n                \"text-embedding-ada-002\",\n            ],\n            value=\"text-embedding-3-small\",\n        ),\n        DictInput(name=\"model_kwargs\", display_name=\"Model Kwargs\", advanced=True),\n        SecretStrInput(name=\"openai_api_base\", display_name=\"OpenAI API Base\", advanced=True),\n        SecretStrInput(name=\"openai_api_key\", display_name=\"OpenAI API Key\", value=\"OPENAI_API_KEY\"),\n        SecretStrInput(name=\"openai_api_type\", display_name=\"OpenAI API Type\", advanced=True),\n        MessageTextInput(name=\"openai_api_version\", display_name=\"OpenAI API Version\", advanced=True),\n        MessageTextInput(\n            name=\"openai_organization\",\n            display_name=\"OpenAI Organization\",\n            advanced=True,\n        ),\n        MessageTextInput(name=\"openai_proxy\", display_name=\"OpenAI Proxy\", advanced=True),\n        FloatInput(name=\"request_timeout\", display_name=\"Request Timeout\", advanced=True),\n        BoolInput(name=\"show_progress_bar\", display_name=\"Show Progress Bar\", advanced=True),\n        BoolInput(name=\"skip_empty\", display_name=\"Skip Empty\", advanced=True),\n        MessageTextInput(\n            name=\"tiktoken_model_name\",\n            display_name=\"TikToken Model Name\",\n            advanced=True,\n        ),\n        BoolInput(\n            name=\"tiktoken_enable\",\n            display_name=\"TikToken Enable\",\n            advanced=True,\n            value=True,\n            info=\"If False, you must have transformers installed.\",\n        ),\n    ]\n\n    def build_embeddings(self) -> Embeddings:\n        return OpenAIEmbeddings(\n            tiktoken_enabled=self.tiktoken_enable,\n            default_headers=self.default_headers,\n            default_query=self.default_query,\n            allowed_special=\"all\",\n            disallowed_special=\"all\",\n            chunk_size=self.chunk_size,\n            deployment=self.deployment,\n            embedding_ctx_length=self.embedding_ctx_length,\n            max_retries=self.max_retries,\n            model=self.model,\n            model_kwargs=self.model_kwargs,\n            base_url=self.openai_api_base,\n            api_key=self.openai_api_key,\n            openai_api_type=self.openai_api_type,\n            api_version=self.openai_api_version,\n            organization=self.openai_organization,\n            openai_proxy=self.openai_proxy,\n            timeout=self.request_timeout or None,\n            show_progress_bar=self.show_progress_bar,\n            skip_empty=self.skip_empty,\n            tiktoken_model_name=self.tiktoken_model_name,\n        )\n",
+                            "fileTypes": [],
+                            "file_path": "",
+                            "password": false,
+                            "name": "code",
+                            "advanced": true,
+                            "dynamic": true,
+                            "info": "",
+                            "load_from_db": false,
+                            "title_case": false,
+                            "display_name": "code"
+                          },
+                          "default_headers": {
+                            "trace_as_input": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": {},
+                            "name": "default_headers",
+                            "display_name": "Default Headers",
+                            "advanced": true,
+                            "dynamic": false,
+                            "info": "Default headers to use for the API request.",
+                            "title_case": false,
+                            "type": "dict"
+                          },
+                          "default_query": {
+                            "trace_as_input": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": {},
+                            "name": "default_query",
+                            "display_name": "Default Query",
+                            "advanced": true,
+                            "dynamic": false,
+                            "info": "Default query parameters to use for the API request.",
+                            "title_case": false,
+                            "type": "dict"
+                          },
+                          "deployment": {
+                            "trace_as_input": true,
+                            "trace_as_metadata": true,
+                            "load_from_db": false,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "deployment",
+                            "display_name": "Deployment",
+                            "advanced": true,
+                            "input_types": [
+                              "Message"
+                            ],
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "str"
+                          },
+                          "embedding_ctx_length": {
+                            "trace_as_metadata": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": 1536,
+                            "name": "embedding_ctx_length",
+                            "display_name": "Embedding Context Length",
+                            "advanced": true,
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "int"
+                          },
+                          "max_retries": {
+                            "trace_as_metadata": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": 3,
+                            "name": "max_retries",
+                            "display_name": "Max Retries",
+                            "advanced": true,
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "int"
+                          },
+                          "model": {
+                            "trace_as_metadata": true,
+                            "options": [
+                              "text-embedding-3-small",
+                              "text-embedding-3-large",
+                              "text-embedding-ada-002"
+                            ],
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "text-embedding-3-small",
+                            "name": "model",
+                            "display_name": "Model",
+                            "advanced": false,
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "str"
+                          },
+                          "model_kwargs": {
+                            "trace_as_input": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": {},
+                            "name": "model_kwargs",
+                            "display_name": "Model Kwargs",
+                            "advanced": true,
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "dict"
+                          },
+                          "openai_api_base": {
+                            "load_from_db": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "openai_api_base",
+                            "display_name": "OpenAI API Base",
+                            "advanced": true,
+                            "input_types": [],
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "password": true,
+                            "type": "str"
+                          },
+                          "openai_api_key": {
+                            "load_from_db": true,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "key",
+                            "name": "openai_api_key",
+                            "display_name": "OpenAI API Key",
+                            "advanced": false,
+                            "input_types": [],
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "password": true,
+                            "type": "str"
+                          },
+                          "openai_api_type": {
+                            "load_from_db": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "openai_api_type",
+                            "display_name": "OpenAI API Type",
+                            "advanced": true,
+                            "input_types": [],
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "password": true,
+                            "type": "str"
+                          },
+                          "openai_api_version": {
+                            "trace_as_input": true,
+                            "trace_as_metadata": true,
+                            "load_from_db": false,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "openai_api_version",
+                            "display_name": "OpenAI API Version",
+                            "advanced": true,
+                            "input_types": [
+                              "Message"
+                            ],
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "str"
+                          },
+                          "openai_organization": {
+                            "trace_as_input": true,
+                            "trace_as_metadata": true,
+                            "load_from_db": false,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "openai_organization",
+                            "display_name": "OpenAI Organization",
+                            "advanced": true,
+                            "input_types": [
+                              "Message"
+                            ],
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "str"
+                          },
+                          "openai_proxy": {
+                            "trace_as_input": true,
+                            "trace_as_metadata": true,
+                            "load_from_db": false,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "openai_proxy",
+                            "display_name": "OpenAI Proxy",
+                            "advanced": true,
+                            "input_types": [
+                              "Message"
+                            ],
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "str"
+                          },
+                          "request_timeout": {
+                            "trace_as_metadata": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "request_timeout",
+                            "display_name": "Request Timeout",
+                            "advanced": true,
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "float"
+                          },
+                          "show_progress_bar": {
+                            "trace_as_metadata": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": false,
+                            "name": "show_progress_bar",
+                            "display_name": "Show Progress Bar",
+                            "advanced": true,
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "bool"
+                          },
+                          "skip_empty": {
+                            "trace_as_metadata": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": false,
+                            "name": "skip_empty",
+                            "display_name": "Skip Empty",
+                            "advanced": true,
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "bool"
+                          },
+                          "tiktoken_enable": {
+                            "trace_as_metadata": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": true,
+                            "name": "tiktoken_enable",
+                            "display_name": "TikToken Enable",
+                            "advanced": true,
+                            "dynamic": false,
+                            "info": "If False, you must have transformers installed.",
+                            "title_case": false,
+                            "type": "bool"
+                          },
+                          "tiktoken_model_name": {
+                            "trace_as_input": true,
+                            "trace_as_metadata": true,
+                            "load_from_db": false,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "tiktoken_model_name",
+                            "display_name": "TikToken Model Name",
+                            "advanced": true,
+                            "input_types": [
+                              "Message"
+                            ],
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "str"
+                          }
+                        },
+                        "description": "Generate embeddings using OpenAI models.",
+                        "icon": "OpenAI",
+                        "base_classes": [
+                          "Embeddings"
+                        ],
+                        "display_name": "OpenAI Embeddings",
+                        "documentation": "",
+                        "custom_fields": {},
+                        "output_types": [],
+                        "pinned": false,
+                        "conditional_paths": [],
+                        "frozen": false,
+                        "outputs": [
+                          {
+                            "types": [
+                              "Embeddings"
+                            ],
+                            "selected": "Embeddings",
+                            "name": "embeddings",
+                            "display_name": "Embeddings",
+                            "method": "build_embeddings",
+                            "value": "__UNDEFINED__",
+                            "cache": true,
+                            "hidden": false
+                          }
+                        ],
+                        "field_order": [
+                          "default_headers",
+                          "default_query",
+                          "chunk_size",
+                          "client",
+                          "deployment",
+                          "embedding_ctx_length",
+                          "max_retries",
+                          "model",
+                          "model_kwargs",
+                          "openai_api_base",
+                          "openai_api_key",
+                          "openai_api_type",
+                          "openai_api_version",
+                          "openai_organization",
+                          "openai_proxy",
+                          "request_timeout",
+                          "show_progress_bar",
+                          "skip_empty",
+                          "tiktoken_model_name",
+                          "tiktoken_enable"
+                        ],
+                        "beta": false,
+                        "edited": false
+                      },
+                      "id": "OpenAIEmbeddings-FBKdM"
+                    },
+                    "selected": true,
+                    "width": 384,
+                    "height": 395,
+                    "positionAbsolute": {
+                      "x": 3930.7495819264814,
+                      "y": 1579.261560325239
+                    },
+                    "dragging": false
+                  },
+                  {
+                    "id": "CosineSimilarityComponent-gTpVs",
+                    "type": "genericNode",
+                    "position": {
+                      "x": 4449.337686675583,
+                      "y": 1356.3189405398239
+                    },
+                    "data": {
+                      "type": "CosineSimilarityComponent",
+                      "node": {
+                        "template": {
+                          "_type": "Component",
+                          "embedding": {
+                            "trace_as_metadata": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "embedding",
+                            "display_name": "Embedding Model",
+                            "advanced": false,
+                            "input_types": [
+                              "Embeddings"
+                            ],
+                            "dynamic": false,
+                            "info": "Model to generate embeddings for the texts.",
+                            "title_case": false,
+                            "type": "other"
+                          },
+                          "code": {
+                            "type": "code",
+                            "required": true,
+                            "placeholder": "",
+                            "list": false,
+                            "show": true,
+                            "multiline": true,
+                            "value": "from axiestudio.custom import Component\nfrom axiestudio.inputs import MessageTextInput, HandleInput\nfrom axiestudio.template import Output\nfrom axiestudio.schema import Data\nfrom typing import List\nimport numpy as np\n\nclass CosineSimilarityComponent(Component):\n    display_name = \"Cosine Similarity Component\"\n    description = \"Calculates cosine similarity between two texts.\"\n    icon = \"cosine\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"text1\",\n            display_name=\"Text 1\",\n            info=\"First text input for similarity calculation.\",\n        ),\n        HandleInput(\n            name=\"embedding\",\n            display_name=\"Embedding Model\",\n            input_types=[\"Embeddings\"],\n            info=\"Model to generate embeddings for the texts.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Cosine Similarity\", name=\"cosine_similarity\", method=\"calculate_cosine_similarity\"),\n    ]\n\n    def calculate_cosine_similarity(self) -> Data:\n        text1 = self.text1\n        \n        text2 = \"\"\"# Prompt Engineering Guide\n\n---\n\n# **Introdu\u00e7\u00e3o**\n\nA engenharia de prompts \u00e9 uma disciplina relativamente nova para desenvolver e otimizar prompts para usar eficientemente modelos de linguagem (LMs) para uma ampla variedade de aplicativos e t\u00f3picos de pesquisa. As habilidades imediatas de engenharia ajudam a entender melhor os recursos e as limita\u00e7\u00f5es dos modelos de linguagem grandes (LLMs). Os pesquisadores usam a engenharia de prompt para melhorar a capacidade dos LLMs em uma ampla gama de tarefas comuns e complexas, como resposta a perguntas e racioc\u00ednio aritm\u00e9tico. Os desenvolvedores usam engenharia de prompt para projetar t\u00e9cnicas de prompt robustas e eficazes que fazem interface com LLMs e outras ferramentas.\n\nEste guia aborda os fundamentos dos prompts para fornecer uma ideia aproximada de como utiliza-los para interagir e instruir modelos de linguagem grandes (LLMs).\n\nTodos os exemplos s\u00e3o testados com\u00a0`text-davinci-003`\u00a0(usando o playground do OpenAI), a menos que especificado de outra forma. Ele usa as configura\u00e7\u00f5es padr\u00e3o, ou seja,\u00a0`temperatura=0.7`\u00a0e\u00a0`top-p=1`.\n\n# **Configura\u00e7\u00f5es LLM**\n\nAo trabalhar com prompts, voc\u00ea estar\u00e1 interagindo com o LLM diretamente ou por meio de uma API. Voc\u00ea pode configurar alguns par\u00e2metros para obter resultados diferentes para seus prompts.\n\n**Temperatura**\u00a0- Resumindo, quanto menor a\u00a0`temperatura`, mais determin\u00edsticos s\u00e3o os resultados, no sentido de que o pr\u00f3ximo token prov\u00e1vel mais alto \u00e9 sempre escolhido. O aumento da temperatura pode levar a mais aleatoriedade, incentivando sa\u00eddas mais diversificadas ou criativas. Estamos essencialmente aumentando os pesos dos outros tokens poss\u00edveis. Em termos de aplica\u00e7\u00e3o, podemos querer usar um valor de temperatura mais baixo para tarefas como controle de qualidade baseado em fatos encorajando respostas mais factuais e concisas. Para gera\u00e7\u00e3o de poemas ou outras tarefas criativas, pode ser ben\u00e9fico aumentar o valor da temperatura.\n\n**Top_p**\u00a0- Da mesma forma, com o\u00a0`top_p`, uma t\u00e9cnica de amostragem com temperatura chamada amostragem de n\u00facleo, voc\u00ea pode controlar o grau de determinismo do modelo na gera\u00e7\u00e3o de uma resposta. Se voc\u00ea est\u00e1 procurando respostas exatas e factuais, mantenha isso baixo. Se voc\u00ea estiver procurando respostas mais diversificadas, aumente para um valor mais alto.\n\nA recomenda\u00e7\u00e3o geral \u00e9 alterar um, n\u00e3o ambos.\n\nAntes de come\u00e7ar com alguns exemplos b\u00e1sicos, lembre-se de que seus resultados podem variar dependendo da vers\u00e3o do LLM que voc\u00ea est\u00e1 usando.\n\n# **No\u00e7\u00f5es B\u00e1sicas de Prompt**\n\n## **Prompts B\u00e1sicos**\n\nVoc\u00ea pode conseguir muito com prompts simples, mas a qualidade dos resultados depende da quantidade de informa\u00e7\u00f5es que voc\u00ea fornece e de qu\u00e3o bem elaboradas s\u00e3o. Um prompt pode conter informa\u00e7\u00f5es como\u00a0*instru\u00e7\u00e3o*\u00a0ou\u00a0*pergunta*\u00a0que voc\u00ea est\u00e1 passando para o modelo e incluir outros detalhes como\u00a0*contexto*,\u00a0*entradas*\u00a0ou\u00a0*exemplos*. Voc\u00ea pode usar esses elementos para instruir melhor o modelo e, como resultado, obter melhores resultados.\n\nVamos come\u00e7ar analisando um exemplo b\u00e1sico de um prompt simples:\n\n*Prompt*\n\n```\nO c\u00e9u \u00e9\n```\n\n*Sa\u00edda:*\n\n```\nazulO c\u00e9u \u00e9 azul em um dia claro. Em um dia nublado, o c\u00e9u pode ser cinza ou branco.\n```\n\nComo voc\u00ea pode ver, o modelo de linguagem gera uma continua\u00e7\u00e3o de strings que fazem sentido no contexto\u00a0`\"O c\u00e9u \u00e9\"`. A sa\u00edda pode ser inesperada ou distante da tarefa que queremos realizar.\n\nEste exemplo b\u00e1sico tamb\u00e9m destaca a necessidade de fornecer mais contexto ou instru\u00e7\u00f5es sobre o que especificamente queremos alcan\u00e7ar.\n\nVamos tentar melhorar um pouco:\n\n*Prompt:*\n\n```\nComplete a senten\u00e7a:O c\u00e9u \u00e9\n```\n\n*Sa\u00edda:*\n\n```\nt\u00e3o lindo.\n```\n\nIsto \u00e9 melhor? Bem, dissemos ao modelo para completar a frase para que o resultado fique muito melhor, pois segue exatamente o que dissemos para fazer (\"complete a frase\"). Essa abordagem de projetar prompts ideais para instruir o modelo a executar uma tarefa \u00e9 chamada de\u00a0**engenharia de prompt**.\n\nO exemplo acima \u00e9 uma ilustra\u00e7\u00e3o b\u00e1sica do que \u00e9 poss\u00edvel com LLMs hoje. Os LLMs de hoje s\u00e3o capazes de executar todos os tipos de tarefas avan\u00e7adas que variam de resumo de texto a racioc\u00ednio matem\u00e1tico e gera\u00e7\u00e3o de c\u00f3digo.\n\n## **Formata\u00e7\u00e3o de prompt**\n\nTentamos um prompt muito simples acima. Um prompt padr\u00e3o tem o seguinte formato:\n\n```\n<Pergunta>?\n```\n\nou\n\n```\n<Instru\u00e7\u00e3o>\n```\n\nIsso pode ser formatado em um formato de resposta a perguntas (QA), que \u00e9 padr\u00e3o em muitos conjuntos de dados de QA, como segue:\n\n```\nQ: <Pergunta>?A:\n```\n\nAo solicitar como o acima, tamb\u00e9m chamado de\u00a0*prompt de tiro zero*, ou seja, voc\u00ea est\u00e1 solicitando diretamente ao modelo uma resposta sem nenhum exemplo ou demonstra\u00e7\u00e3o sobre a tarefa que deseja realizar. Alguns modelos de linguagem grandes t\u00eam a capacidade de executar prompts zero-shot, mas isso depende da complexidade e do conhecimento da tarefa em quest\u00e3o.\n\nDado o formato padr\u00e3o acima, uma t\u00e9cnica popular e eficaz para solicita\u00e7\u00e3o \u00e9 chamada de\u00a0*prompt de poucos tiros*, onde fornecemos exemplos (ou seja, demonstra\u00e7\u00f5es). Os prompts de poucos tiros podem ser formatados da seguinte maneira:\n\n```\n<Pergunta>?<Resposta><Pergunta>?<Resposta><Pergunta>?<Resposta><Pergunta>?\n```\n\nA vers\u00e3o do formato QA ficaria assim:\n\n```\nQ: <Pergunta>?A: <Resposta>Q: <Pergunta>?A: <Resposta>Q: <Pergunta>?A: <Resposta>Q: <Pergunta>?A:\n```\n\nLembre-se de que n\u00e3o \u00e9 necess\u00e1rio usar o formato QA. O formato do prompt depende da tarefa em m\u00e3os. Por exemplo, voc\u00ea pode executar uma tarefa de classifica\u00e7\u00e3o simples e fornecer exemplares que demonstrem a tarefa da seguinte forma:\n\n*Prompt:*\n\n```\nIsso \u00e9 incr\u00edvel! // PositivoIsto \u00e9 mau! // NegativoUau, esse filme foi radical! // PositivoQue espet\u00e1culo horr\u00edvel! //\n```\n\n*Sa\u00edda:*\n\n```\nNegativo\n```\n\nOs prompts de poucos tiros permitem o aprendizado no contexto, que \u00e9 a capacidade dos modelos de linguagem de aprender tarefas dadas algumas demonstra\u00e7\u00f5es.\n\n# **Elementos de um prompt**\n\n\u00c0 medida que abordamos mais e mais exemplos e aplicativos poss\u00edveis com a engenharia de prompt, voc\u00ea notar\u00e1 que existem certos elementos que comp\u00f5em um prompt.\n\nUm prompt pode conter qualquer um dos seguintes componentes:\n\n**Instru\u00e7\u00e3o**\u00a0- uma tarefa ou instru\u00e7\u00e3o espec\u00edfica que voc\u00ea deseja que o modelo execute\n\n**Contexto**\u00a0- pode envolver informa\u00e7\u00f5es externas ou contexto adicional que pode direcionar o modelo para melhores respostas\n\n**Dados de entrada**\u00a0- \u00e9 a entrada ou pergunta para a qual estamos interessados em encontrar uma resposta\n\n**Indicador de sa\u00edda**\u00a0- indica o tipo ou formato da sa\u00edda.\n\nNem todos os componentes s\u00e3o necess\u00e1rios para um prompt e o formato depende da tarefa em quest\u00e3o. Abordaremos exemplos mais concretos nos pr\u00f3ximos guias.\n\n# **Dicas gerais para projetar prompts**\n\nAqui est\u00e3o algumas dicas para manter em mente ao projetar seus prompts:\n\n### **Comece Simples**\n\nAo come\u00e7ar a criar prompts, voc\u00ea deve ter em mente que \u00e9 realmente um processo iterativo que requer muita experimenta\u00e7\u00e3o para obter os melhores resultados. Usar um playground simples como OpenAI ou Cohere's \u00e9 um bom ponto de partida.\n\nVoc\u00ea pode come\u00e7ar com prompts simples e continuar adicionando mais elementos e contexto \u00e0 medida que busca melhores resultados. O controle de vers\u00e3o do seu prompt ao longo do caminho \u00e9 vital por esse motivo. Ao ler o guia, voc\u00ea ver\u00e1 muitos exemplos em que a especificidade, a simplicidade e a concis\u00e3o geralmente lhe dar\u00e3o melhores resultados.\n\nQuando voc\u00ea tem uma grande tarefa que envolve muitas subtarefas diferentes, pode tentar dividir a tarefa em subtarefas mais simples e continuar aumentando conforme obt\u00e9m melhores resultados. Isso evita adicionar muita complexidade ao processo de design do prompt no in\u00edcio.\n\n### **A instru\u00e7\u00e3o**\n\nVoc\u00ea pode criar prompts eficazes para v\u00e1rias tarefas simples usando comandos para instruir o modelo sobre o que deseja alcan\u00e7ar, como \"Escrever\", \"Classificar\", \"Resumir\", \"Traduzir\", \"Ordenar\" etc.\n\nTenha em mente que voc\u00ea tamb\u00e9m precisa experimentar muito para ver o que funciona melhor. Experimente instru\u00e7\u00f5es diferentes com palavras-chave, contextos e dados diferentes e veja o que funciona melhor para seu caso de uso e tarefa espec\u00edficos. Normalmente, quanto mais espec\u00edfico e relevante for o contexto para a tarefa que voc\u00ea est\u00e1 tentando executar, melhor. Abordaremos a import\u00e2ncia da amostragem e da adi\u00e7\u00e3o de mais contexto nos pr\u00f3ximos guias.\n\nOutros recomendam que as instru\u00e7\u00f5es sejam colocadas no in\u00edcio do prompt. Tamb\u00e9m \u00e9 recomendado que algum separador claro como \"###\" seja usado para separar a instru\u00e7\u00e3o e o contexto.\n\nPor exemplo:\n\n*Prompt:*\n\n```\n### Instru\u00e7\u00e3o ###Traduza o texto abaixo para o espanhol:Texto: \"ol\u00e1!\"\n```\n\n*Sa\u00edda:*\n\n```\n\u00a1Hola!\n```\n\n### **Especificidade**\n\nSeja muito espec\u00edfico sobre a instru\u00e7\u00e3o e a tarefa que deseja que o modelo execute. Quanto mais descritivo e detalhado for o prompt, melhores ser\u00e3o os resultados. Isso \u00e9 particularmente importante quando voc\u00ea tem um resultado desejado ou estilo de gera\u00e7\u00e3o que est\u00e1 buscando. N\u00e3o h\u00e1 tokens ou palavras-chave espec\u00edficas que levem a melhores resultados. \u00c9 mais importante ter um bom formato e um prompt descritivo. Na verdade, fornecer exemplos no prompt \u00e9 muito eficaz para obter a sa\u00edda desejada em formatos espec\u00edficos.\n\nAo criar prompts, voc\u00ea tamb\u00e9m deve ter em mente o tamanho do prompt, pois h\u00e1 limita\u00e7\u00f5es em rela\u00e7\u00e3o a qu\u00e3o grande ele pode ser. Pensar em qu\u00e3o espec\u00edfico e detalhado voc\u00ea deve ser \u00e9 algo a se considerar. Incluir muitos detalhes desnecess\u00e1rios n\u00e3o \u00e9 necessariamente uma boa abordagem. Os detalhes devem ser relevantes e contribuir para a tarefa em m\u00e3os. Isso \u00e9 algo que voc\u00ea precisar\u00e1 experimentar muito. Incentivamos muita experimenta\u00e7\u00e3o e itera\u00e7\u00e3o para otimizar os prompts de seus aplicativos.\n\nComo exemplo, vamos tentar um prompt simples para extrair informa\u00e7\u00f5es espec\u00edficas de um texto.\n\n*Prompt:*\n\n```\nExtraia o nome dos lugares no texto a seguir.Formato desejado:Local: <lista_de_nomes_de_empresa_separados_por_v\u00edrgula>Input: \"Embora estes desenvolvimentos sejam encorajadores para os investigadores, muito ainda \u00e9 um mist\u00e9rio. \u201cMuitas vezes temos uma caixa preta entre o c\u00e9rebro e o efeito que vemos na periferia\u201d, diz Henrique Veiga-Fernandes, neuroimunologista do Centro Champalimaud para o Desconhecido em Lisboa. \u201cSe queremos utiliz\u00e1-lo no contexto terap\u00eautico, precisamos de facto de perceber o mecanismo.\"\n```\n\n*Sa\u00edda:*\n\n```\nLocal: Centro Champalimaud para o Desconhecido, Lisboa\n```\n\nO texto de entrada \u00e9 obtido\u00a0[neste artigo da Nature](https://www.nature.com/articles/d41586-023-00509-z).\n\n### **Evite Imprecis\u00f5es**\n\nDadas as dicas acima sobre como ser detalhado e melhorar o formato, \u00e9 f\u00e1cil cair na armadilha de querer ser muito inteligente sobre os prompts e potencialmente criar descri\u00e7\u00f5es imprecisas. Geralmente \u00e9 melhor ser espec\u00edfico e direto. A analogia aqui \u00e9 muito semelhante \u00e0 comunica\u00e7\u00e3o eficaz - quanto mais direta, mais eficaz a mensagem \u00e9 transmitida.\n\nPor exemplo, voc\u00ea pode estar interessado em aprender o conceito de engenharia de prompt. Voc\u00ea pode tentar algo como:\n\n```\nExplique o conceito de engenharia de prompt. Mantenha a explica\u00e7\u00e3o curta, apenas algumas frases, e n\u00e3o seja muito descritivo.\n```\n\nN\u00e3o est\u00e1 claro no prompt acima quantas frases usar e qual estilo. Voc\u00ea ainda pode obter uma boa resposta com o prompt acima, mas o melhor prompt seria aquele que \u00e9 muito espec\u00edfico, conciso e direto ao ponto. Algo como:\n\n```\nUse 2 a 3 frases para explicar o conceito de engenharia de prompt a um aluno do ensino m\u00e9dio.\n```\n\n### **Fazer ou n\u00e3o fazer?**\n\nOutra dica comum ao criar prompts \u00e9 evitar dizer o que n\u00e3o fazer, mas dizer o que fazer. Isso incentiva mais especificidade e concentra-se nos detalhes que levam a boas respostas do modelo.\n\nAqui est\u00e1 um exemplo de um chatbot de recomenda\u00e7\u00e3o de filme falhando exatamente no que eu n\u00e3o quero que ele fa\u00e7a por causa de como escrevi a instru\u00e7\u00e3o -- focando no que n\u00e3o fazer.\n\n*Prompt:*\n\n```\nO agente a seguir recomenda filmes para um cliente. N\u00c3O PE\u00c7A INTERESSES. N\u00c3O PE\u00c7A INFORMA\u00c7\u00d5ES PESSOAIS.Cliente: Por favor, recomende um filme baseado nos meus interesses.Agente:\n```\n\n*Sa\u00edda:*\n\n```\nClaro, posso recomendar um filme baseado em seus interesses. Que tipo de filme voc\u00ea gostaria de assistir? Voc\u00ea prefere a\u00e7\u00e3o, com\u00e9dia, romance ou outra coisa?\n```\n\nAqui est\u00e1 um prompt melhor:\n\n*Prompt:*\n\n```\nO agente a seguir recomenda filmes para um cliente. O agente \u00e9 respons\u00e1vel por recomendar um filme dos principais filmes de tend\u00eancias globais. Deve abster-se de perguntar aos usu\u00e1rios sobre suas prefer\u00eancias e evitar pedir informa\u00e7\u00f5es pessoais. Se o agente n\u00e3o tiver um filme para recomendar, ele deve responder \"Desculpe, n\u00e3o foi poss\u00edvel encontrar um filme para recomendar hoje.\".Cliente: Por favor, recomende um filme baseado nos meus interesses.Agente:\n```\n\n*Sa\u00edda:*\n\n```\nDesculpe, n\u00e3o tenho nenhuma informa\u00e7\u00e3o sobre seus interesses. No entanto, aqui est\u00e1 uma lista dos principais filmes de tend\u00eancias globais no momento: [lista de filmes]. Espero que encontre algo que goste!\n```\n\nAlguns dos exemplos acima foram adotados do\u00a0[artigo \"Melhores pr\u00e1ticas para engenharia de prompt com OpenAI API\".](https://help.openai.com/en/articles/6654000-best-practices-for-prompt-engineering-with-openai-api)\n\n# **Exemplos de Prompts**\n\nNa se\u00e7\u00e3o anterior, apresentamos e fornecemos exemplos b\u00e1sicos de como solicitar LLMs.\n\nNesta se\u00e7\u00e3o, forneceremos mais exemplos de como os prompts s\u00e3o usados para realizar diferentes tarefas e introduziremos os principais conceitos ao longo do caminho. Muitas vezes, a melhor maneira de aprender conceitos \u00e9 atrav\u00e9s de exemplos. Abaixo, abordamos alguns exemplos de como prompts bem elaborados podem ser usados para executar diferentes tipos de tarefas.\n\nT\u00f3picos:\n\n- [Resumo de Texto](https://www.promptingguide.ai/pt/introduction/examples#resumo-de-texto)\n- [Extra\u00e7\u00e3o de informa\u00e7\u00f5es](https://www.promptingguide.ai/pt/introduction/examples#extra%C3%A7%C3%A3o-de-informa%C3%A7%C3%B5es)\n- [Resposta \u00e0 pergunta](https://www.promptingguide.ai/pt/introduction/examples#resposta-a-pergunta)\n- [Classifica\u00e7\u00e3o de texto](https://www.promptingguide.ai/pt/introduction/examples#classifica%C3%A7%C3%A3o-de-texto)\n- [Conversa\u00e7\u00e3o](https://www.promptingguide.ai/pt/introduction/examples#conversa%C3%A7%C3%A3o)\n- [Gera\u00e7\u00e3o de c\u00f3digo](https://www.promptingguide.ai/pt/introduction/examples#gera%C3%A7%C3%A3o-de-c%C3%B3digo)\n- [Racioc\u00ednio](https://www.promptingguide.ai/pt/introduction/examples#racioc%C3%ADnio)\n\n---\n\n## **Resumo de texto**\n\nUma das tarefas padr\u00e3o na gera\u00e7\u00e3o de linguagem natural \u00e9 o resumo de texto. A sumariza\u00e7\u00e3o de texto pode incluir prefer\u00eancias e dom\u00ednios diferentes. Na verdade, uma das aplica\u00e7\u00f5es mais promissoras dos modelos de linguagem \u00e9 a capacidade de resumir artigos e conceitos em resumos r\u00e1pidos e f\u00e1ceis de ler. Vamos tentar uma tarefa b\u00e1sica de resumo usando prompts.\n\nDigamos que estou interessado em aprender sobre antibi\u00f3ticos, poderia tentar um prompt como este:\n\n*Prompt:*\n\n```\nExplique os antibi\u00f3ticosA:\n```\n\n*Sa\u00edda:*\n\n```\nOs antibi\u00f3ticos s\u00e3o um tipo de medicamento usado para tratar infec\u00e7\u00f5es bacterianas. Eles funcionam matando as bact\u00e9rias ou impedindo-as de se reproduzir, permitindo que o sistema imunol\u00f3gico do corpo combata a infec\u00e7\u00e3o. Os antibi\u00f3ticos s\u00e3o geralmente tomados por via oral na forma de comprimidos, c\u00e1psulas ou solu\u00e7\u00f5es l\u00edquidas, ou \u00e0s vezes administrados por via intravenosa. Eles n\u00e3o s\u00e3o eficazes contra infec\u00e7\u00f5es virais e us\u00e1-los de forma inadequada pode levar \u00e0 resist\u00eancia aos antibi\u00f3ticos.\n```\n\nO \"A:\" \u00e9 um formato de prompt expl\u00edcito usado para responder perguntas. Eu usei isso aqui para dizer ao modelo que h\u00e1 um futuro esperado. Neste exemplo, n\u00e3o est\u00e1 claro como isso \u00e9 \u00fatil ou n\u00e3o, mas deixaremos isso para exemplos posteriores. Vamos apenas supor que isso \u00e9 muita informa\u00e7\u00e3o e queremos resumi-la ainda mais. Na verdade, podemos instruir o modelo a resumir em uma frase da seguinte forma:\n\n*Prompt:*\n\n```\nOs antibi\u00f3ticos s\u00e3o um tipo de medicamento usado para tratar infec\u00e7\u00f5es bacterianas. Eles funcionam matando as bact\u00e9rias ou impedindo-as de se reproduzir, permitindo que o sistema imunol\u00f3gico do corpo combata a infec\u00e7\u00e3o. Os antibi\u00f3ticos s\u00e3o geralmente tomados por via oral na forma de comprimidos, c\u00e1psulas ou solu\u00e7\u00f5es l\u00edquidas, ou \u00e0s vezes administrados por via intravenosa. Eles n\u00e3o s\u00e3o eficazes contra infec\u00e7\u00f5es virais e us\u00e1-los de forma inadequada pode levar \u00e0 resist\u00eancia aos antibi\u00f3ticos.**Explique o que foi dito acima em uma frase**:\n```\n\n*Sa\u00edda:*\n\n```\nOs antibi\u00f3ticos s\u00e3o medicamentos usados para tratar infec\u00e7\u00f5es bacterianas, matando as bact\u00e9rias ou impedindo-as de se reproduzir, mas n\u00e3o s\u00e3o eficazes contra v\u00edrus e o uso excessivo pode levar \u00e0 resist\u00eancia aos antibi\u00f3ticos.\n```\n\nSem prestar muita aten\u00e7\u00e3o \u00e0 precis\u00e3o da sa\u00edda acima, algo que abordaremos em um guia posterior, o modelo tentou resumir o par\u00e1grafo em uma frase. Voc\u00ea pode ficar esperto com as instru\u00e7\u00f5es, mas deixaremos isso para um cap\u00edtulo posterior. Sinta-se \u00e0 vontade para fazer uma pausa aqui e experimentar para ver se obt\u00e9m melhores resultados.\n\n---\n\n## **Extra\u00e7\u00e3o de Informa\u00e7\u00f5es**\n\nEmbora os modelos de linguagem sejam treinados para executar a gera\u00e7\u00e3o de linguagem natural e tarefas relacionadas, eles tamb\u00e9m s\u00e3o muito capazes de realizar classifica\u00e7\u00e3o e uma s\u00e9rie de outras tarefas de processamento de linguagem natural (NLP).\n\nAqui est\u00e1 um exemplo de um prompt que extrai informa\u00e7\u00f5es de um determinado par\u00e1grafo.\n\n*Prompt:*\n\n```\nAs declara\u00e7\u00f5es de contribui\u00e7\u00e3o do autor e os agradecimentos em trabalhos de pesquisa devem indicar clara e especificamente se, e em que medida, os autores usaram tecnologias de IA, como ChatGPT, na prepara\u00e7\u00e3o de seus manuscritos e an\u00e1lises. Eles tamb\u00e9m devem indicar quais LLMs foram usados. Isso alertar\u00e1 os editores e revisores para examinar os manuscritos com mais cuidado em busca de poss\u00edveis vieses, imprecis\u00f5es e cr\u00e9ditos de origem impr\u00f3prios. Da mesma forma, os peri\u00f3dicos cient\u00edficos devem ser transparentes sobre o uso de LLMs, por exemplo, ao selecionar manuscritos enviados.**Mencione o produto baseado em modelo de linguagem grande mencionado no par\u00e1grafo acima**:\n```\n\n*Sa\u00edda:*\n\n```\nO produto baseado em modelo de linguagem grande mencionado no par\u00e1grafo acima \u00e9 o ChatGPT.\n```\n\nExistem muitas maneiras de melhorar os resultados acima, mas isso j\u00e1 \u00e9 muito \u00fatil.\n\nAt\u00e9 agora deve ser \u00f3bvio que voc\u00ea pode pedir ao modelo para executar diferentes tarefas simplesmente instruindo-o sobre o que fazer. Esse \u00e9 um recurso poderoso que os desenvolvedores de produtos de IA j\u00e1 est\u00e3o usando para criar produtos e experi\u00eancias poderosos.\n\nFonte do par\u00e1grafo:\u00a0[ChatGPT: cinco prioridades para pesquisa](https://www.nature.com/articles/d41586-023-00288-7)\n\n---\n\n## **Resposta a perguntas**\n\nUma das melhores maneiras de fazer com que o modelo responda a respostas espec\u00edficas \u00e9 melhorar o formato do prompt. Conforme abordado anteriormente, um prompt pode combinar instru\u00e7\u00f5es, contexto, entrada e indicadores de sa\u00edda para obter melhores resultados.\n\nEmbora esses componentes n\u00e3o sejam necess\u00e1rios, torna-se uma boa pr\u00e1tica, pois quanto mais espec\u00edfico voc\u00ea for com a instru\u00e7\u00e3o, melhores resultados obter\u00e1. Abaixo est\u00e1 um exemplo de como isso ficaria seguindo um prompt mais estruturado.\n\n*Prompt:*\n\n```\nResponda a pergunta com base no contexto abaixo. Mantenha a resposta curta e concisa. Responda \"N\u00e3o tenho certeza sobre a resposta\" se n\u00e3o tiver certeza da resposta.Contexto: Teplizumab tem suas ra\u00edzes em uma empresa farmac\u00eautica de Nova Jersey chamada Ortho Pharmaceutical. L\u00e1, os cientistas geraram uma vers\u00e3o inicial do anticorpo, apelidada de OKT3. Originalmente proveniente de camundongos, a mol\u00e9cula foi capaz de se ligar \u00e0 superf\u00edcie das c\u00e9lulas T e limitar seu potencial de morte celular. Em 1986, foi aprovado para ajudar a prevenir a rejei\u00e7\u00e3o de \u00f3rg\u00e3os ap\u00f3s transplantes renais, tornando-se o primeiro anticorpo terap\u00eautico permitido para uso humano.Pergunta: De onde veio originalmente o OKT3?Responder:\n```\n\n*Sa\u00edda:*\n\n```\nCamundongos.\n```\n\nContexto obtido da\u00a0[Nature](https://www.nature.com/articles/d41586-023-00400-x).\n\n---\n\n## **Classifica\u00e7\u00e3o de texto**\n\nAt\u00e9 agora, usamos instru\u00e7\u00f5es simples para executar uma tarefa. Como um engenheiro de prompt, voc\u00ea precisar\u00e1 melhorar o fornecimento de melhores instru\u00e7\u00f5es. Mas isso n\u00e3o \u00e9 tudo! Voc\u00ea tamb\u00e9m descobrir\u00e1 que, para casos de uso mais dif\u00edceis, apenas fornecer instru\u00e7\u00f5es n\u00e3o ser\u00e1 suficiente. \u00c9 aqui que voc\u00ea precisa pensar mais sobre o contexto e os diferentes elementos que pode usar em um prompt. Outros elementos que voc\u00ea pode fornecer s\u00e3o\u00a0`input data`\u00a0ou\u00a0`examples`.\n\nVamos tentar demonstrar isso fornecendo um exemplo de classifica\u00e7\u00e3o de texto.\n\n*Prompt:*\n\n```\nClassifique o texto em neutro, negativo ou positivo.Texto: Acho que a comida estava boa.Sentimento:\n```\n\n*Sa\u00edda:*\n\n```\nNeutro\n```\n\nDemos a instru\u00e7\u00e3o para classificar o texto e o modelo respondeu com\u00a0`'Neutro'`\u00a0que est\u00e1 correto. N\u00e3o h\u00e1 nada de errado nisso, mas digamos que o que realmente precisamos \u00e9 que o modelo d\u00ea o r\u00f3tulo no formato exato que queremos. Portanto, em vez de\u00a0`Neutral`, queremos que retorne\u00a0`neutral`. Como alcan\u00e7amos isso? Existem diferentes maneiras de fazer isso. N\u00f3s nos preocupamos com a especificidade aqui, portanto, quanto mais informa\u00e7\u00f5es pudermos fornecer, melhores ser\u00e3o os resultados. Podemos tentar fornecer exemplos para especificar o comportamento correto. Vamos tentar de novo:\n\n*Prompt:*\n\n```\nClassifique o texto em neutro, negativo ou positivo.Texto: Acho que as f\u00e9rias est\u00e3o boas.Sentimento: neutroTexto: Acho que a comida estava boa.Sentimento:\n```\n\n*Sa\u00edda:*\n\n```\nneutro\n```\n\nPerfeito! Desta vez, o modelo retornou\u00a0`neutro`, que \u00e9 o r\u00f3tulo espec\u00edfico que eu estava procurando. Parece que o exemplo fornecido no prompt ajudou o modelo a ser espec\u00edfico em sua sa\u00edda. Para destacar por que \u00e0s vezes ser espec\u00edfico \u00e9 importante, confira este exemplo e identifique o problema:\n\n*Prompt:*\n\n```\nClassifique o texto em neutro, negativo ou positivo.Texto: Acho que as f\u00e9rias est\u00e3o boas.Sentimento:\n```\n\n*Sa\u00edda:*\n\n```\nNeutro\n```\n\nQual \u00e9 o problema aqui?\n\n---\n\n## **Conversa\u00e7\u00e3o**\n\nTalvez uma das coisas mais interessantes que voc\u00ea pode conseguir com a engenharia imediata seja instruir o sistema LLM sobre como se comportar, sua inten\u00e7\u00e3o e sua identidade. Isso \u00e9 particularmente \u00fatil quando voc\u00ea est\u00e1 construindo sistemas de conversa\u00e7\u00e3o, como chatbots de atendimento ao cliente.\n\nPor exemplo, vamos criar um sistema de conversa\u00e7\u00e3o capaz de gerar respostas mais t\u00e9cnicas e cient\u00edficas \u00e0s perguntas. Observe como estamos dizendo explicitamente como se comportar por meio da instru\u00e7\u00e3o. \u00c0s vezes, isso \u00e9 chamado de\u00a0*solicita\u00e7\u00e3o de fun\u00e7\u00e3o*.\n\n*Prompt:*\n\n```\nA seguir, uma conversa com um assistente de pesquisa de IA. O tom assistente \u00e9 t\u00e9cnico e cient\u00edfico.Humano: Ol\u00e1, quem \u00e9 voc\u00ea?AI: Sauda\u00e7\u00f5es! Eu sou um assistente de pesquisa de IA. Como posso te ajudar hoje?Humano: Voc\u00ea pode me falar sobre a cria\u00e7\u00e3o de buracos negros?IA:\n```\n\n*Sa\u00edda:*\n\n```\nClaro! Buracos negros s\u00e3o regi\u00f5es do espa\u00e7o-tempo onde a for\u00e7a gravitacional \u00e9 t\u00e3o forte que nada, nem mesmo a luz, consegue escapar dela. Eles s\u00e3o criados quando uma estrela muito massiva morre e seu n\u00facleo colapsa sobre si mesmo, formando uma singularidade de densidade infinita. A intensa gravidade da singularidade atrai toda a mat\u00e9ria e radia\u00e7\u00e3o ao seu redor, criando o buraco negro.\n```\n\nNosso assistente de pesquisa de IA parece um pouco t\u00e9cnico demais, certo? Ok, vamos mudar esse comportamento e instruir o sistema a dar respostas mais acess\u00edveis.\n\n*Prompt:*\n\n```\nA seguir, uma conversa com um assistente de pesquisa de IA. As respostas do assistente devem ser f\u00e1ceis de entender mesmo por alunos do ensino fundamental.Humano: Ol\u00e1, quem \u00e9 voc\u00ea?AI: Sauda\u00e7\u00f5es! Eu sou um assistente de pesquisa de IA. Como posso te ajudar hoje?Humano: Voc\u00ea pode me falar sobre a cria\u00e7\u00e3o de buracos negros?IA:\n```\n\n*Sa\u00edda:*\n\n```\nClaro! Os buracos negros s\u00e3o criados quando uma estrela muito massiva fica sem combust\u00edvel e colapsa sobre si mesma. A gravidade da estrela \u00e9 t\u00e3o forte que nada, nem mesmo a luz, pode escapar de sua atra\u00e7\u00e3o. Isso cria um ponto no espa\u00e7o-tempo com uma intensa for\u00e7a gravitacional chamada buraco negro.\n```\n\nAcho que fizemos algum progresso. Voc\u00ea pode continuar melhorando. Tenho certeza que se voc\u00ea adicionar mais exemplos voc\u00ea pode obter resultados ainda melhores.\n\n---\n\n## **Gera\u00e7\u00e3o de C\u00f3digo**\n\nUma aplica\u00e7\u00e3o em que os LLMs s\u00e3o bastante eficazes \u00e9 a gera\u00e7\u00e3o de c\u00f3digo. O Copilot \u00e9 um \u00f3timo exemplo disso. H\u00e1 um grande n\u00famero de tarefas de gera\u00e7\u00e3o de c\u00f3digo que voc\u00ea pode executar com prompts inteligentes. Vejamos alguns exemplos abaixo.\n\nPrimeiro, vamos tentar um programa simples que sa\u00fada o usu\u00e1rio.\n\n*Prompt:*\n\n```\n/*Pergunte ao usu\u00e1rio o nome dele e diga \"Ol\u00e1\"*/\n```\n\n*Sa\u00edda:*\n\n```\nlet name = prompt(\"Qual \u00e9 o seu nome?\");console.log(`Ol\u00e1, ${name}!`);\n```\n\nVoc\u00ea pode ver que nem precisamos especificar a linguagem a ser usada.\n\nVamos mudar um pouco os n\u00edveis. Quero mostrar a voc\u00ea como os LLMs podem ser poderosos com um pouco mais de esfor\u00e7o no design dos prompts.\n\n*Prompt:*\n\n```\n\"Tabela departamentos, colunas = [DepartmentId, DepartmentName]Alunos da tabela, colunas = [DepartmentId, StudentId, StudentName]Crie uma consulta MySQL para todos os alunos do Departamento de Ci\u00eancia da Computa\u00e7\u00e3o\"\n```\n\n*Sa\u00edda:*\n\n```\nSELECT AlunoId, AlunoNomeDE alunosWHERE DepartmentId IN (SELECT DepartmentId FROM departamentos WHERE DepartmentName = 'Ci\u00eancia da Computa\u00e7\u00e3o');\n```\n\nIsso \u00e9 muito impressionante. Nesse caso, fornecemos dados sobre o esquema do banco de dados e solicitamos que ele gerasse uma consulta MySQL v\u00e1lida.\n\n---\n\n## **Racioc\u00ednio**\n\nTalvez uma das tarefas mais dif\u00edceis para um LLM hoje seja aquela que requer alguma forma de racioc\u00ednio. O racioc\u00ednio \u00e9 uma das \u00e1reas que mais me entusiasma devido aos tipos de aplicativos complexos que podem surgir dos LLMs.\n\nHouve algumas melhorias em tarefas envolvendo capacidades matem\u00e1ticas. Dito isso, \u00e9 importante observar que os LLMs atuais lutam para executar tarefas de racioc\u00ednio, portanto, isso requer t\u00e9cnicas de engenharia de prompt ainda mais avan\u00e7adas. Abordaremos essas t\u00e9cnicas avan\u00e7adas no pr\u00f3ximo guia. Por enquanto, abordaremos alguns exemplos b\u00e1sicos para mostrar as capacidades aritm\u00e9ticas.\n\n*Prompt:*\n\n```\nQuanto \u00e9 9.000 * 9.000?\n```\n\n*Sa\u00edda:*\n\n```\n81.000.000\n```\n\nVamos tentar algo mais dif\u00edcil.\n\n*Prompt:*\n\n```\nOs n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 15, 32, 5, 13, 82, 7, 1.A:\n```\n\n*Sa\u00edda*\n\n```\nN\u00e3o, os n\u00fameros \u00edmpares neste grupo somam um n\u00famero \u00edmpar: 119.\n```\n\nIsso \u00e9 incorreto! Vamos tentar melhorar isso melhorando o prompt.\n\n*Prompt:*\n\n```\nOs n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 15, 32, 5, 13, 82, 7, 1.Resolva dividindo o problema em etapas. Primeiro, identifique os n\u00fameros \u00edmpares, some-os e indique se o resultado \u00e9 par ou \u00edmpar.\n```\n\n*Sa\u00edda:*\n\n```\nN\u00fameros \u00edmpares: 15, 5, 13, 7, 1Total 4141 \u00e9 um n\u00famero \u00edmpar.\n```\n\nMuito melhor, certo? A prop\u00f3sito, tentei isso algumas vezes e o sistema \u00e0s vezes falha. Se voc\u00ea fornecer instru\u00e7\u00f5es melhores combinadas com exemplos, isso pode ajudar a obter resultados mais precisos.\n\nContinuaremos a incluir mais exemplos de aplicativos comuns nesta se\u00e7\u00e3o do guia.\n\nNa pr\u00f3xima se\u00e7\u00e3o, abordaremos conceitos e t\u00e9cnicas de engenharia de prompt ainda mais avan\u00e7ados para melhorar o desempenho em todas essas e em tarefas mais dif\u00edceis.\n\n# **Zero-Shot Prompting**\n\nOs LLMs hoje treinados em grandes quantidades de dados e sintonizados para seguir instru\u00e7\u00f5es s\u00e3o capazes de executar tarefas de tiro zero. Tentamos alguns exemplos de tiro zero na se\u00e7\u00e3o anterior. Aqui est\u00e1 um dos exemplos que usamos:\n\n*Prompt:*\n\n```\nClassifique o texto em neutro, negativo ou positivo.Texto: Acho que as f\u00e9rias est\u00e3o boas.Sentimento:\n```\n\n*Sa\u00edda:*\n\n```\nNeutro\n```\n\nObserve que no prompt acima n\u00e3o fornecemos nenhum exemplo ao modelo -- esses s\u00e3o os recursos de tiro zero em a\u00e7\u00e3o.\n\nO ajuste de instru\u00e7\u00e3o demonstrou melhorar o aprendizado de tiro zero\u00a0[Wei et al. (2022)](https://arxiv.org/pdf/2109.01652.pdf). O ajuste de instru\u00e7\u00e3o \u00e9 essencialmente o conceito de modelos de ajuste fino em conjuntos de dados descritos por meio de instru\u00e7\u00f5es. Al\u00e9m disso,\u00a0[RLHF](https://arxiv.org/abs/1706.03741)\u00a0(aprendizado por refor\u00e7o a partir de feedback humano) foi adotado para escalar o ajuste de instru\u00e7\u00f5es em que o modelo \u00e9 alinhado para melhor atender \u00e0s prefer\u00eancias humanas. Este desenvolvimento recente alimenta modelos como o ChatGPT. Discutiremos todas essas abordagens e m\u00e9todos nas pr\u00f3ximas se\u00e7\u00f5es.\n\nQuando o tiro zero n\u00e3o funciona, \u00e9 recomend\u00e1vel fornecer demonstra\u00e7\u00f5es ou exemplos no prompt que levam ao prompt de poucos tiros. Na pr\u00f3xima se\u00e7\u00e3o, demonstramos a solicita\u00e7\u00e3o de poucos disparos.\n\n# **Few-Shot Prompting**\n\nEmbora os modelos de linguagem grande demonstrem recursos not\u00e1veis de disparo zero, eles ainda ficam aqu\u00e9m em tarefas mais complexas ao usar a configura\u00e7\u00e3o de disparo zero. O prompt de poucos disparos pode ser usado como uma t\u00e9cnica para permitir o aprendizado no contexto, onde fornecemos demonstra\u00e7\u00f5es no prompt para direcionar o modelo para um melhor desempenho. As demonstra\u00e7\u00f5es servem de condicionamento para exemplos subsequentes onde gostar\u00edamos que o modelo gerasse uma resposta.\n\nDe acordo com\u00a0[Touvron et al. 2023](https://arxiv.org/pdf/2302.13971.pdf)\u00a0poucas propriedades de tiro apareceram pela primeira vez quando os modelos foram dimensionados para um tamanho suficiente\u00a0[(Kaplan et al., 2020)](https://arxiv.org/abs/2001.08361).\n\nVamos demonstrar a solicita\u00e7\u00e3o de poucos disparos por meio de um exemplo apresentado em\u00a0[Brown et al. 2020](https://arxiv.org/abs/2005.14165). No exemplo, a tarefa \u00e9 usar corretamente uma nova palavra em uma frase.\n\n*Prompt:*\n\n```\nUm \"whatpu\" \u00e9 um pequeno animal peludo nativo da Tanz\u00e2nia. Exemplo de frase que usaa palavra whatpu \u00e9:Est\u00e1vamos viajando pela \u00c1frica e vimos esses whatpus muito fofos.\"Farduddlear\" significa pular para cima e para baixo muito r\u00e1pido. Exemplo de frase que usaa palavra farduddlear \u00e9:\n```\n\n*Sa\u00edda:*\n\n```\nQuando ganhamos o jogo, todos farduddleamos em festejo.\n```\n\nPodemos observar que o modelo aprendeu de alguma forma como executar a tarefa fornecendo apenas um exemplo (ou seja, 1-shot). Para tarefas mais dif\u00edceis, podemos experimentar aumentar as demonstra\u00e7\u00f5es (por exemplo, 3 tiros, 5 tiros, 10 tiros, etc.).\n\nSeguindo as descobertas de\u00a0[Min et al. (2022)](https://arxiv.org/abs/2202.12837), aqui est\u00e3o mais algumas dicas sobre demonstra\u00e7\u00f5es/exemplares ao fazer poucos disparos:\n\n- \"o espa\u00e7o do r\u00f3tulo e a distribui\u00e7\u00e3o do texto de entrada especificado pelas demonstra\u00e7\u00f5es s\u00e3o importantes (independentemente de os r\u00f3tulos estarem corretos para entradas individuais)\"\n- o formato que voc\u00ea usa tamb\u00e9m desempenha um papel fundamental no desempenho, mesmo que voc\u00ea use apenas r\u00f3tulos aleat\u00f3rios, isso \u00e9 muito melhor do que nenhum r\u00f3tulo.\n- resultados adicionais mostram que selecionar r\u00f3tulos aleat\u00f3rios de uma distribui\u00e7\u00e3o verdadeira de r\u00f3tulos (em vez de uma distribui\u00e7\u00e3o uniforme) tamb\u00e9m ajuda.\n\nVamos experimentar alguns exemplos. Vamos primeiro tentar um exemplo com r\u00f3tulos aleat\u00f3rios (o que significa que os r\u00f3tulos Negativo e Positivo s\u00e3o atribu\u00eddos aleatoriamente \u00e0s entradas):\n\n*Prompt:*\n\n```\nIsso \u00e9 incr\u00edvel! // NegativoIsto \u00e9 mau! // PositivoUau, esse filme foi rad! // PositivoQue espet\u00e1culo horr\u00edvel! //\n```\n\n*Sa\u00edda:*\n\n```\nNegativo\n```\n\nAinda obtemos a resposta correta, mesmo que os r\u00f3tulos tenham sido randomizados. Observe que tamb\u00e9m mantivemos o formato, o que tamb\u00e9m ajuda. Na verdade, com mais experimenta\u00e7\u00e3o, parece que os modelos GPT mais recentes que estamos experimentando est\u00e3o se tornando mais robustos at\u00e9 mesmo para formatos aleat\u00f3rios. Exemplo:\n\n*Prompt:*\n\n```\nPositivo Isso \u00e9 incr\u00edvel!Isto \u00e9 mau! NegativoUau, esse filme foi rad!PositivoQue espet\u00e1culo horr\u00edvel! --\n```\n\n*Sa\u00edda:*\n\n```\nNegativo\n```\n\nN\u00e3o h\u00e1 consist\u00eancia no formato acima, mas o modelo ainda previu o r\u00f3tulo correto. Temos que realizar uma an\u00e1lise mais completa para confirmar se isso vale para tarefas diferentes e mais complexas, incluindo diferentes varia\u00e7\u00f5es de prompts.\n\n### **Limita\u00e7\u00f5es da solicita\u00e7\u00e3o de poucos disparos**\n\nO prompt padr\u00e3o de poucos disparos funciona bem para muitas tarefas, mas ainda n\u00e3o \u00e9 uma t\u00e9cnica perfeita, especialmente ao lidar com tarefas de racioc\u00ednio mais complexas. Vamos demonstrar por que esse \u00e9 o caso. Voc\u00ea se lembra do exemplo anterior onde fornecemos a seguinte tarefa:\n\n```\nOs n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 15, 32, 5, 13, 82, 7, 1.A:\n```\n\nSe tentarmos isso novamente, o modelo produzir\u00e1 o seguinte:\n\n```\nSim, os n\u00fameros \u00edmpares neste grupo somam 107, que \u00e9 um n\u00famero par.\n```\n\nEsta n\u00e3o \u00e9 a resposta correta, o que n\u00e3o apenas destaca as limita\u00e7\u00f5es desses sistemas, mas tamb\u00e9m a necessidade de uma engenharia imediata mais avan\u00e7ada.\n\nVamos tentar adicionar alguns exemplos para ver se a solicita\u00e7\u00e3o de poucos tiros melhora os resultados.\n\n*Prompt:*\n\n```\nOs n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 4, 8, 9, 15, 12, 2, 1.A: A resposta \u00e9 Falsa.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 17, 10, 19, 4, 8, 12, 24.A: A resposta \u00e9 Verdadeira.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 16, 11, 14, 4, 8, 13, 24.A: A resposta \u00e9 Verdadeira.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 17, 9, 10, 12, 13, 4, 2.A: A resposta \u00e9 Falsa.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 15, 32, 5, 13, 82, 7, 1.A:\n```\n\n*Sa\u00edda:*\n\n```\nA resposta \u00e9 verdadeira.\n```\n\nIsso n\u00e3o funcionou. Parece que a solicita\u00e7\u00e3o de poucos disparos n\u00e3o \u00e9 suficiente para obter respostas confi\u00e1veis para esse tipo de problema de racioc\u00ednio. O exemplo acima fornece informa\u00e7\u00f5es b\u00e1sicas sobre a tarefa. Se voc\u00ea olhar mais de perto, o tipo de tarefa que introduzimos envolve mais algumas etapas de racioc\u00ednio. Em outras palavras, pode ajudar se dividirmos o problema em etapas e demonstrarmos isso ao modelo. Mais recentemente,\u00a0[inser\u00e7\u00e3o de cadeia de pensamento (CoT)](https://arxiv.org/abs/2201.11903)\u00a0foi popularizada para abordar mais aritm\u00e9tica complexa, senso comum e tarefas de racioc\u00ednio simb\u00f3lico.\n\nNo geral, parece que fornecer exemplos \u00e9 \u00fatil para resolver algumas tarefas. Quando a solicita\u00e7\u00e3o de disparo zero e a solicita\u00e7\u00e3o de poucos disparos n\u00e3o s\u00e3o suficientes, isso pode significar que tudo o que foi aprendido pelo modelo n\u00e3o \u00e9 suficiente para se sair bem na tarefa. A partir daqui, \u00e9 recomend\u00e1vel come\u00e7ar a pensar em ajustar seus modelos ou experimentar t\u00e9cnicas de solicita\u00e7\u00e3o mais avan\u00e7adas. A seguir, falaremos sobre uma das t\u00e9cnicas populares de sugest\u00e3o, chamada de sugest\u00e3o em cadeia de pensamento, que ganhou muita popularidade.\n\n# **Cadeia-de-Pensamento Prompt**\n\n## **Cadeia-de-Pensamento (CoT) Prompting**\n\n[https://www.promptingguide.ai/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fcot.1933d9fe.png&w=1920&q=75](https://www.promptingguide.ai/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fcot.1933d9fe.png&w=1920&q=75)\n\nFonte da imagem:\u00a0[Wei et al. (2022)](https://arxiv.org/abs/2201.11903)\n\nIntroduzido em\u00a0[Wei et al. (2022)](https://arxiv.org/abs/2201.11903), a solicita\u00e7\u00e3o de cadeia de pensamento (CoT) permite recursos de racioc\u00ednio complexos por meio de etapas intermedi\u00e1rias de racioc\u00ednio. Voc\u00ea pode combin\u00e1-lo com prompts de poucos tiros para obter melhores resultados em tarefas mais complexas que exigem racioc\u00ednio antes de responder.\n\n*Prompt:*\n\n```\nOs n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 4, 8, 9, 15, 12, 2, 1.R: Somando todos os n\u00fameros \u00edmpares (9, 15, 1) d\u00e1 25. A resposta \u00e9 Falso.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 17, 10, 19, 4, 8, 12, 24.R: Somando todos os n\u00fameros \u00edmpares (17, 19) d\u00e1 36. A resposta \u00e9 Verdadeiro.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 16, 11, 14, 4, 8, 13, 24.R: Somando todos os n\u00fameros \u00edmpares (11, 13) d\u00e1 24. A resposta \u00e9 Verdadeiro.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 17, 9, 10, 12, 13, 4, 2.R: Somando todos os n\u00fameros \u00edmpares (17, 9, 13) d\u00e1 39. A resposta \u00e9 Falso.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 15, 32, 5, 13, 82, 7, 1.A:\n```\n\n*Sa\u00edda:*\n\n```\nSomando todos os n\u00fameros \u00edmpares (15, 5, 13, 7, 1) d\u00e1 41. A resposta \u00e9 Falso.\n```\n\nUau! Podemos ver um resultado perfeito quando fornecemos a etapa de racioc\u00ednio. Na verdade, podemos resolver essa tarefa fornecendo ainda menos exemplos, ou seja, apenas um exemplo parece suficiente:\n\n*Prompt:*\n\n```\nOs n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 4, 8, 9, 15, 12, 2, 1.R: Somando todos os n\u00fameros \u00edmpares (9, 15, 1) d\u00e1 25. A resposta \u00e9 Falso.Os n\u00fameros \u00edmpares neste grupo somam um n\u00famero par: 15, 32, 5, 13, 82, 7, 1.A:\n```\n\n*Sa\u00edda:*\n\n```\nSomando todos os n\u00fameros \u00edmpares (15, 5, 13, 7, 1) d\u00e1 41. A resposta \u00e9 Falso.\n```\n\nTenha em mente que os autores afirmam que esta \u00e9 uma habilidade emergente que surge com modelos de linguagem suficientemente grandes.\n\n## **Prompt COT Zero-Shot**\n\n[https://www.promptingguide.ai/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fzero-cot.79793bee.png&w=1920&q=75](https://www.promptingguide.ai/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fzero-cot.79793bee.png&w=1920&q=75)\n\nFonte da imagem:\u00a0[Kojima et al. (2022)](https://arxiv.org/abs/2205.11916)\n\nUma ideia recente que surgiu mais recentemente \u00e9 a ideia de\u00a0[zero-shot CoT](https://arxiv.org/abs/2205.11916)\u00a0(Kojima et al. 2022) que envolve essencialmente adicionar \"Vamos pensar passo a passo\" para a solicita\u00e7\u00e3o original. Vamos tentar um problema simples e ver como o modelo funciona:\n\n*Prompt:*\n\n```\nFui ao mercado e comprei 10 ma\u00e7\u00e3s. Dei 2 ma\u00e7\u00e3s ao vizinho e 2 ao reparador. Ent\u00e3o fui comprar mais 5 ma\u00e7\u00e3s e comi 1. Com quantas ma\u00e7\u00e3s fiquei?\n```\n\n*Sa\u00edda:*\n\n```\n11 ma\u00e7\u00e3s\n```\n\nA resposta est\u00e1 incorreta! Agora vamos tentar com o prompt especial.\n\n*Prompt:*\n\n```\nFui ao mercado e comprei 10 ma\u00e7\u00e3s. Dei 2 ma\u00e7\u00e3s ao vizinho e 2 ao reparador. Ent\u00e3o fui comprar mais 5 ma\u00e7\u00e3s e comi 1. Com quantas ma\u00e7\u00e3s fiquei?Vamos pensar passo a passo.\n```\n\n*Sa\u00edda:*\n\n```\nPrimeiro, voc\u00ea come\u00e7ou com 10 ma\u00e7\u00e3s.Voc\u00ea deu 2 ma\u00e7\u00e3s para o vizinho e 2 para o reparador, ent\u00e3o voc\u00ea tinha 6 ma\u00e7\u00e3s sobrando.Ent\u00e3o voc\u00ea comprou mais 5 ma\u00e7\u00e3s, ent\u00e3o agora voc\u00ea tinha 11 ma\u00e7\u00e3s.Finalmente, voc\u00ea comeu 1 ma\u00e7\u00e3, ent\u00e3o ficaria com 10 ma\u00e7\u00e3s.\n```\n\n\u00c9 impressionante que esse prompt simples seja eficaz nessa tarefa. Isso \u00e9 particularmente \u00fatil onde voc\u00ea n\u00e3o tem muitos exemplos para usar no prompt.\n\"\"\"\n        \n        \n        embedding_model = self.embedding\n\n        # Generate embeddings for the input texts\n        embedding1 = np.array(embedding_model.embed_query(text1))\n        embedding2 = np.array(embedding_model.embed_query(text2))\n\n        # Calculate cosine similarity manually\n        dot_product = np.dot(embedding1, embedding2)\n        norm1 = np.linalg.norm(embedding1)\n        norm2 = np.linalg.norm(embedding2)\n        similarity = dot_product / (norm1 * norm2)\n        \n        result = Data(data={\"cosine_similarity\": similarity})\n\n\n        self.status = result\n        return result\n",
+                            "fileTypes": [],
+                            "file_path": "",
+                            "password": false,
+                            "name": "code",
+                            "advanced": true,
+                            "dynamic": true,
+                            "info": "",
+                            "load_from_db": false,
+                            "title_case": false
+                          },
+                          "text1": {
+                            "trace_as_input": true,
+                            "trace_as_metadata": true,
+                            "load_from_db": false,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "text1",
+                            "display_name": "Text 1",
+                            "advanced": false,
+                            "input_types": [
+                              "Message"
+                            ],
+                            "dynamic": false,
+                            "info": "First text input for similarity calculation.",
+                            "title_case": false,
+                            "type": "str"
+                          }
+                        },
+                        "description": "Calculates cosine similarity between two texts.",
+                        "icon": "cosine",
+                        "base_classes": [
+                          "Data"
+                        ],
+                        "display_name": "Cosine Similarity",
+                        "documentation": "",
+                        "custom_fields": {},
+                        "output_types": [],
+                        "pinned": false,
+                        "conditional_paths": [],
+                        "frozen": false,
+                        "outputs": [
+                          {
+                            "types": [
+                              "Data"
+                            ],
+                            "selected": "Data",
+                            "name": "cosine_similarity",
+                            "display_name": "Cosine Similarity",
+                            "method": "calculate_cosine_similarity",
+                            "value": "__UNDEFINED__",
+                            "cache": true,
+                            "hidden": false
+                          }
+                        ],
+                        "field_order": [
+                          "text1",
+                          "embedding"
+                        ],
+                        "beta": false,
+                        "edited": true
+                      },
+                      "id": "CosineSimilarityComponent-gTpVs",
+                      "description": "Calculates cosine similarity between two texts.",
+                      "display_name": "Cosine Similarity"
+                    },
+                    "selected": true,
+                    "width": 384,
+                    "height": 357,
+                    "positionAbsolute": {
+                      "x": 4449.337686675583,
+                      "y": 1356.3189405398239
+                    },
+                    "dragging": false
+                  },
+                  {
+                    "id": "ScoreCalculatorComponent-FxmjI",
+                    "type": "genericNode",
+                    "position": {
+                      "x": 4939.6353751285205,
+                      "y": 934.604278998075
+                    },
+                    "data": {
+                      "type": "ScoreCalculatorComponent",
+                      "node": {
+                        "template": {
+                          "_type": "Component",
+                          "llm_score": {
+                            "trace_as_input": true,
+                            "trace_as_metadata": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "llm_score",
+                            "display_name": "LLM Score",
+                            "advanced": false,
+                            "input_types": [
+                              "Data"
+                            ],
+                            "dynamic": false,
+                            "info": "Initial LLM score.",
+                            "title_case": false,
+                            "type": "other"
+                          },
+                          "code": {
+                            "type": "code",
+                            "required": true,
+                            "placeholder": "",
+                            "list": false,
+                            "show": true,
+                            "multiline": true,
+                            "value": "from axiestudio.custom import Component\nfrom axiestudio.inputs import DataInput, MessageTextInput\nfrom axiestudio.template import Output\nfrom axiestudio.schema import Data\n\nclass ScoreCalculatorComponent(Component):\n    display_name = \"Score Calculator Component\"\n    description = \"Calculates a score based on the initial LLM score and the length of the response.\"\n    icon = \"calculator\"\n\n    inputs = [\n        DataInput(\n            name=\"llm_score\",\n            display_name=\"LLM Score\",\n            info=\"Initial LLM score.\",\n        ),\n        MessageTextInput(\n            name=\"resposta\",\n            display_name=\"Resposta\",\n            info=\"Response text for the score calculation.\",\n        ),\n        \n    ]\n\n    outputs = [\n        Output(display_name=\"Final Score\", name=\"final_score\", method=\"calculate_score\"),\n    ]\n\n    def calculate_score(self) -> Data:\n        llm_score = self.llm_score.cosine_similarity\n        resposta = self.resposta\n\n        max_chars = 10000  # Limite m\u00e1ximo de caracteres\n        min_score = 0.0  # Score m\u00ednimo\n        max_score = 1.0  # Score m\u00e1ximo\n\n        tamanho_resposta = len(resposta)\n\n        if tamanho_resposta >= max_chars:\n            score_final = min_score\n        else:\n            fator_reducao = (max_chars - tamanho_resposta) / max_chars\n            score_final = llm_score * fator_reducao\n            score_final = max(min_score, min(max_score, score_final))\n\n        result = Data(data={\"score_final\": score_final, \"tamanho_resumo\": tamanho_resposta, \"similaridade\": llm_score, \"fator_reducao\": fator_reducao})\n        self.status = result\n        return result",
+                            "fileTypes": [],
+                            "file_path": "",
+                            "password": false,
+                            "name": "code",
+                            "advanced": true,
+                            "dynamic": true,
+                            "info": "",
+                            "load_from_db": false,
+                            "title_case": false,
+                            "display_name": "code"
+                          },
+                          "resposta": {
+                            "trace_as_input": true,
+                            "trace_as_metadata": true,
+                            "load_from_db": false,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "resposta",
+                            "display_name": "Resposta",
+                            "advanced": false,
+                            "input_types": [
+                              "Message"
+                            ],
+                            "dynamic": false,
+                            "info": "Response text for the score calculation.",
+                            "title_case": false,
+                            "type": "str"
+                          }
+                        },
+                        "description": "Calculates a score based on the initial LLM score and the length of the response.",
+                        "icon": "calculator",
+                        "base_classes": [
+                          "Data"
+                        ],
+                        "display_name": "Custom Component",
+                        "documentation": "",
+                        "custom_fields": {},
+                        "output_types": [],
+                        "pinned": false,
+                        "conditional_paths": [],
+                        "frozen": false,
+                        "outputs": [
+                          {
+                            "types": [
+                              "Data"
+                            ],
+                            "selected": "Data",
+                            "name": "final_score",
+                            "display_name": "Final Score",
+                            "method": "calculate_score",
+                            "value": "__UNDEFINED__",
+                            "cache": true,
+                            "hidden": false
+                          }
+                        ],
+                        "field_order": [
+                          "llm_score",
+                          "resposta"
+                        ],
+                        "beta": false,
+                        "edited": true
+                      },
+                      "id": "ScoreCalculatorComponent-FxmjI",
+                      "description": "Calculates a score based on the initial LLM score and the length of the response.",
+                      "display_name": "Custom Component"
+                    },
+                    "selected": true,
+                    "width": 384,
+                    "height": 385,
+                    "positionAbsolute": {
+                      "x": 4939.6353751285205,
+                      "y": 934.604278998075
+                    },
+                    "dragging": false
+                  },
+                  {
+                    "id": "CustomComponent-L1VfC",
+                    "type": "genericNode",
+                    "position": {
+                      "x": 3916.5450704806644,
+                      "y": 991.92079956417
+                    },
+                    "data": {
+                      "type": "CustomComponent",
+                      "node": {
+                        "template": {
+                          "_type": "Component",
+                          "code": {
+                            "type": "code",
+                            "required": true,
+                            "placeholder": "",
+                            "list": false,
+                            "show": true,
+                            "multiline": true,
+                            "value": "from axiestudio.custom import Component\nfrom axiestudio.io import MessageInput, HandleInput\nfrom axiestudio.template import Output\nfrom axiestudio.schema.message import Message\nfrom typing import List\nimport numpy as np\n\n\nclass MessagePassThroughComponent(Component):\n    display_name = \"Message Pass-Through Component\"\n    description = \"Passes a message through without any modifications.\"\n    icon = \"message\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"input_message\",\n            display_name=\"Input Message\",\n            info=\"The message to pass through.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Output Message\", name=\"output_message\", method=\"pass_message\"),\n    ]\n\n    def pass_message(self) -> Message:\n        input_message = self.input_message\n        \n        result = Message(text=input_message)\n\n        self.status = result\n        return result\n",
+                            "fileTypes": [],
+                            "file_path": "",
+                            "password": false,
+                            "name": "code",
+                            "advanced": true,
+                            "dynamic": true,
+                            "info": "",
+                            "load_from_db": false,
+                            "title_case": false,
+                            "display_name": "code"
+                          },
+                          "input_message": {
+                            "trace_as_input": true,
+                            "trace_as_metadata": true,
+                            "load_from_db": false,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "input_message",
+                            "display_name": "Input Message",
+                            "advanced": false,
+                            "input_types": [
+                              "Message"
+                            ],
+                            "dynamic": false,
+                            "info": "The message to pass through.",
+                            "title_case": false,
+                            "type": "str"
+                          }
+                        },
+                        "description": "Passes a message through without any modifications.",
+                        "icon": "message",
+                        "base_classes": [
+                          "Message"
+                        ],
+                        "display_name": "Message",
+                        "documentation": "",
+                        "custom_fields": {},
+                        "output_types": [],
+                        "pinned": false,
+                        "conditional_paths": [],
+                        "frozen": false,
+                        "outputs": [
+                          {
+                            "types": [
+                              "Message"
+                            ],
+                            "selected": "Message",
+                            "name": "output_message",
+                            "display_name": "Output Message",
+                            "method": "pass_message",
+                            "value": "__UNDEFINED__",
+                            "cache": true,
+                            "hidden": false
+                          }
+                        ],
+                        "field_order": [
+                          "input_message"
+                        ],
+                        "beta": false,
+                        "edited": true
+                      },
+                      "id": "CustomComponent-L1VfC",
+                      "description": "Passes a message through without any modifications.",
+                      "display_name": "Message"
+                    },
+                    "selected": true,
+                    "width": 384,
+                    "height": 337,
+                    "dragging": false,
+                    "positionAbsolute": {
+                      "x": 3916.5450704806644,
+                      "y": 991.92079956417
+                    }
+                  },
+                  {
+                    "id": "ParseData-Dmlks",
+                    "type": "genericNode",
+                    "position": {
+                      "x": 5565.351914880647,
+                      "y": 1233.1663723127
+                    },
+                    "data": {
+                      "type": "ParseData",
+                      "node": {
+                        "template": {
+                          "_type": "Component",
+                          "data": {
+                            "trace_as_input": true,
+                            "trace_as_metadata": true,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "",
+                            "name": "data",
+                            "display_name": "Data",
+                            "advanced": false,
+                            "input_types": [
+                              "Data"
+                            ],
+                            "dynamic": false,
+                            "info": "The data to convert to text.",
+                            "title_case": false,
+                            "type": "other"
+                          },
+                          "code": {
+                            "type": "code",
+                            "required": true,
+                            "placeholder": "",
+                            "list": false,
+                            "show": true,
+                            "multiline": true,
+                            "value": "from axiestudio.custom import Component\nfrom axiestudio.helpers.data import data_to_text\nfrom axiestudio.io import DataInput, MultilineInput, Output, StrInput\nfrom axiestudio.schema.message import Message\n\n\nclass ParseDataComponent(Component):\n    display_name = \"Parse Data\"\n    description = \"Convert Data into plain text following a specified template.\"\n    icon = \"braces\"\n\n    inputs = [\n        DataInput(name=\"data\", display_name=\"Data\", info=\"The data to convert to text.\"),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.\",\n            value=\"{text}\",\n        ),\n        StrInput(name=\"sep\", display_name=\"Separator\", advanced=True, value=\"\\n\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"parse_data\"),\n    ]\n\n    def parse_data(self) -> Message:\n        data = self.data if isinstance(self.data, list) else [self.data]\n        template = self.template\n\n        result_string = data_to_text(template, data, sep=self.sep)\n        self.status = result_string\n        return Message(text=result_string)\n",
+                            "fileTypes": [],
+                            "file_path": "",
+                            "password": false,
+                            "name": "code",
+                            "advanced": true,
+                            "dynamic": true,
+                            "info": "",
+                            "load_from_db": false,
+                            "title_case": false,
+                            "display_name": "code"
+                          },
+                          "sep": {
+                            "trace_as_metadata": true,
+                            "load_from_db": false,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "\n",
+                            "name": "sep",
+                            "display_name": "Separator",
+                            "advanced": true,
+                            "dynamic": false,
+                            "info": "",
+                            "title_case": false,
+                            "type": "str"
+                          },
+                          "template": {
+                            "trace_as_input": true,
+                            "multiline": true,
+                            "trace_as_metadata": true,
+                            "load_from_db": false,
+                            "list": false,
+                            "required": false,
+                            "placeholder": "",
+                            "show": true,
+                            "value": "Score Inicial: {similaridade}\nFator de Redu\u00e7\u00e3o: {fator_reducao} (1.0 = sem redu\u00e7\u00e3o)\nScore Final: {score_final}\n",
+                            "name": "template",
+                            "display_name": "Template",
+                            "advanced": false,
+                            "input_types": [
+                              "Message"
+                            ],
+                            "dynamic": false,
+                            "info": "The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.",
+                            "title_case": false,
+                            "type": "str"
+                          }
+                        },
+                        "description": "Convert Data into plain text following a specified template.",
+                        "icon": "braces",
+                        "base_classes": [
+                          "Message"
+                        ],
+                        "display_name": "Parse Data",
+                        "documentation": "",
+                        "custom_fields": {},
+                        "output_types": [],
+                        "pinned": false,
+                        "conditional_paths": [],
+                        "frozen": false,
+                        "outputs": [
+                          {
+                            "types": [
+                              "Message"
+                            ],
+                            "selected": "Message",
+                            "name": "text",
+                            "display_name": "Text",
+                            "method": "parse_data",
+                            "value": "__UNDEFINED__",
+                            "cache": true,
+                            "hidden": false
+                          }
+                        ],
+                        "field_order": [
+                          "data",
+                          "template",
+                          "sep"
+                        ],
+                        "beta": false,
+                        "edited": false
+                      },
+                      "id": "ParseData-Dmlks"
+                    },
+                    "selected": true,
+                    "width": 384,
+                    "height": 385,
+                    "positionAbsolute": {
+                      "x": 5565.351914880647,
+                      "y": 1233.1663723127
+                    },
+                    "dragging": false
+                  }
+                ],
+                "edges": [
+                  {
+                    "source": "OpenAIEmbeddings-FBKdM",
+                    "sourceHandle": "{\u0153dataType\u0153:\u0153OpenAIEmbeddings\u0153,\u0153id\u0153:\u0153OpenAIEmbeddings-FBKdM\u0153,\u0153name\u0153:\u0153embeddings\u0153,\u0153output_types\u0153:[\u0153Embeddings\u0153]}",
+                    "target": "CosineSimilarityComponent-gTpVs",
+                    "targetHandle": "{\u0153fieldName\u0153:\u0153embedding\u0153,\u0153id\u0153:\u0153CosineSimilarityComponent-gTpVs\u0153,\u0153inputTypes\u0153:[\u0153Embeddings\u0153],\u0153type\u0153:\u0153other\u0153}",
+                    "data": {
+                      "targetHandle": {
+                        "fieldName": "embedding",
+                        "id": "CosineSimilarityComponent-gTpVs",
+                        "inputTypes": [
+                          "Embeddings"
+                        ],
+                        "type": "other"
+                      },
+                      "sourceHandle": {
+                        "dataType": "OpenAIEmbeddings",
+                        "id": "OpenAIEmbeddings-FBKdM",
+                        "name": "embeddings",
+                        "output_types": [
+                          "Embeddings"
+                        ]
+                      }
+                    },
+                    "id": "reactflow__edge-OpenAIEmbeddings-FBKdM{\u0153dataType\u0153:\u0153OpenAIEmbeddings\u0153,\u0153id\u0153:\u0153OpenAIEmbeddings-FBKdM\u0153,\u0153name\u0153:\u0153embeddings\u0153,\u0153output_types\u0153:[\u0153Embeddings\u0153]}-CosineSimilarityComponent-gTpVs{\u0153fieldName\u0153:\u0153embedding\u0153,\u0153id\u0153:\u0153CosineSimilarityComponent-gTpVs\u0153,\u0153inputTypes\u0153:[\u0153Embeddings\u0153],\u0153type\u0153:\u0153other\u0153}",
+                    "selected": true
+                  },
+                  {
+                    "source": "CustomComponent-L1VfC",
+                    "sourceHandle": "{\u0153dataType\u0153:\u0153CustomComponent\u0153,\u0153id\u0153:\u0153CustomComponent-L1VfC\u0153,\u0153name\u0153:\u0153output_message\u0153,\u0153output_types\u0153:[\u0153Message\u0153]}",
+                    "target": "CosineSimilarityComponent-gTpVs",
+                    "targetHandle": "{\u0153fieldName\u0153:\u0153text1\u0153,\u0153id\u0153:\u0153CosineSimilarityComponent-gTpVs\u0153,\u0153inputTypes\u0153:[\u0153Message\u0153],\u0153type\u0153:\u0153str\u0153}",
+                    "data": {
+                      "targetHandle": {
+                        "fieldName": "text1",
+                        "id": "CosineSimilarityComponent-gTpVs",
+                        "inputTypes": [
+                          "Message"
+                        ],
+                        "type": "str"
+                      },
+                      "sourceHandle": {
+                        "dataType": "CustomComponent",
+                        "id": "CustomComponent-L1VfC",
+                        "name": "output_message",
+                        "output_types": [
+                          "Message"
+                        ]
+                      }
+                    },
+                    "id": "reactflow__edge-CustomComponent-L1VfC{\u0153dataType\u0153:\u0153CustomComponent\u0153,\u0153id\u0153:\u0153CustomComponent-L1VfC\u0153,\u0153name\u0153:\u0153output_message\u0153,\u0153output_types\u0153:[\u0153Message\u0153]}-CosineSimilarityComponent-gTpVs{\u0153fieldName\u0153:\u0153text1\u0153,\u0153id\u0153:\u0153CosineSimilarityComponent-gTpVs\u0153,\u0153inputTypes\u0153:[\u0153Message\u0153],\u0153type\u0153:\u0153str\u0153}",
+                    "selected": true
+                  },
+                  {
+                    "source": "CustomComponent-L1VfC",
+                    "sourceHandle": "{\u0153dataType\u0153:\u0153CustomComponent\u0153,\u0153id\u0153:\u0153CustomComponent-L1VfC\u0153,\u0153name\u0153:\u0153output_message\u0153,\u0153output_types\u0153:[\u0153Message\u0153]}",
+                    "target": "ScoreCalculatorComponent-FxmjI",
+                    "targetHandle": "{\u0153fieldName\u0153:\u0153resposta\u0153,\u0153id\u0153:\u0153ScoreCalculatorComponent-FxmjI\u0153,\u0153inputTypes\u0153:[\u0153Message\u0153],\u0153type\u0153:\u0153str\u0153}",
+                    "data": {
+                      "targetHandle": {
+                        "fieldName": "resposta",
+                        "id": "ScoreCalculatorComponent-FxmjI",
+                        "inputTypes": [
+                          "Message"
+                        ],
+                        "type": "str"
+                      },
+                      "sourceHandle": {
+                        "dataType": "CustomComponent",
+                        "id": "CustomComponent-L1VfC",
+                        "name": "output_message",
+                        "output_types": [
+                          "Message"
+                        ]
+                      }
+                    },
+                    "id": "reactflow__edge-CustomComponent-L1VfC{\u0153dataType\u0153:\u0153CustomComponent\u0153,\u0153id\u0153:\u0153CustomComponent-L1VfC\u0153,\u0153name\u0153:\u0153output_message\u0153,\u0153output_types\u0153:[\u0153Message\u0153]}-ScoreCalculatorComponent-FxmjI{\u0153fieldName\u0153:\u0153resposta\u0153,\u0153id\u0153:\u0153ScoreCalculatorComponent-FxmjI\u0153,\u0153inputTypes\u0153:[\u0153Message\u0153],\u0153type\u0153:\u0153str\u0153}",
+                    "selected": true
+                  },
+                  {
+                    "source": "ScoreCalculatorComponent-FxmjI",
+                    "sourceHandle": "{\u0153dataType\u0153:\u0153ScoreCalculatorComponent\u0153,\u0153id\u0153:\u0153ScoreCalculatorComponent-FxmjI\u0153,\u0153name\u0153:\u0153final_score\u0153,\u0153output_types\u0153:[\u0153Data\u0153]}",
+                    "target": "ParseData-Dmlks",
+                    "targetHandle": "{\u0153fieldName\u0153:\u0153data\u0153,\u0153id\u0153:\u0153ParseData-Dmlks\u0153,\u0153inputTypes\u0153:[\u0153Data\u0153],\u0153type\u0153:\u0153other\u0153}",
+                    "data": {
+                      "targetHandle": {
+                        "fieldName": "data",
+                        "id": "ParseData-Dmlks",
+                        "inputTypes": [
+                          "Data"
+                        ],
+                        "type": "other"
+                      },
+                      "sourceHandle": {
+                        "dataType": "ScoreCalculatorComponent",
+                        "id": "ScoreCalculatorComponent-FxmjI",
+                        "name": "final_score",
+                        "output_types": [
+                          "Data"
+                        ]
+                      }
+                    },
+                    "id": "reactflow__edge-ScoreCalculatorComponent-FxmjI{\u0153dataType\u0153:\u0153ScoreCalculatorComponent\u0153,\u0153id\u0153:\u0153ScoreCalculatorComponent-FxmjI\u0153,\u0153name\u0153:\u0153final_score\u0153,\u0153output_types\u0153:[\u0153Data\u0153]}-ParseData-Dmlks{\u0153fieldName\u0153:\u0153data\u0153,\u0153id\u0153:\u0153ParseData-Dmlks\u0153,\u0153inputTypes\u0153:[\u0153Data\u0153],\u0153type\u0153:\u0153other\u0153}",
+                    "selected": true
+                  },
+                  {
+                    "source": "CosineSimilarityComponent-gTpVs",
+                    "sourceHandle": "{\u0153dataType\u0153:\u0153CosineSimilarityComponent\u0153,\u0153id\u0153:\u0153CosineSimilarityComponent-gTpVs\u0153,\u0153name\u0153:\u0153cosine_similarity\u0153,\u0153output_types\u0153:[\u0153Data\u0153]}",
+                    "target": "ScoreCalculatorComponent-FxmjI",
+                    "targetHandle": "{\u0153fieldName\u0153:\u0153llm_score\u0153,\u0153id\u0153:\u0153ScoreCalculatorComponent-FxmjI\u0153,\u0153inputTypes\u0153:[\u0153Data\u0153],\u0153type\u0153:\u0153other\u0153}",
+                    "data": {
+                      "targetHandle": {
+                        "fieldName": "llm_score",
+                        "id": "ScoreCalculatorComponent-FxmjI",
+                        "inputTypes": [
+                          "Data"
+                        ],
+                        "type": "other"
+                      },
+                      "sourceHandle": {
+                        "dataType": "CosineSimilarityComponent",
+                        "id": "CosineSimilarityComponent-gTpVs",
+                        "name": "cosine_similarity",
+                        "output_types": [
+                          "Data"
+                        ]
+                      }
+                    },
+                    "id": "reactflow__edge-CosineSimilarityComponent-gTpVs{\u0153dataType\u0153:\u0153CosineSimilarityComponent\u0153,\u0153id\u0153:\u0153CosineSimilarityComponent-gTpVs\u0153,\u0153name\u0153:\u0153cosine_similarity\u0153,\u0153output_types\u0153:[\u0153Data\u0153]}-ScoreCalculatorComponent-FxmjI{\u0153fieldName\u0153:\u0153llm_score\u0153,\u0153id\u0153:\u0153ScoreCalculatorComponent-FxmjI\u0153,\u0153inputTypes\u0153:[\u0153Data\u0153],\u0153type\u0153:\u0153other\u0153}",
+                    "selected": true
+                  }
+                ],
+                "viewport": {
+                  "zoom": 1,
+                  "x": 0,
+                  "y": 0
+                }
+              },
+              "is_component": false,
+              "name": "Loving Euler",
+              "description": "",
+              "id": "L5k23"
+            },
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "ParseData-M2bQq_text",
+                "display_name": "Text",
+                "method": "parse_data",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "hidden": false,
+                "proxy": {
+                  "id": "ParseData-Dmlks",
+                  "name": "text",
+                  "nodeDisplayName": "Parse Data"
+                }
+              }
+            ]
+          }
+        },
+        "selected": false,
+        "width": 384,
+        "height": 674
+      }
+    ],
+    "edges": [],
+    "viewport": {
+      "x": -2108.976185838182,
+      "y": -306.03574766004317,
+      "zoom": 0.716977624007914
+    }
+  },
+  "description": "Building Intelligent Interactions.",
+  "name": "group_test",
+  "last_tested_version": "1.0.8",
+  "endpoint_name": null,
+  "is_component": false
+}
