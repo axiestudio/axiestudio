@@ -22,7 +22,7 @@ DO_NOT_TRACK=1
 
 1. **Go to railway.app** and sign up/login
 2. **Create new project**
-3. **Connect GitHub repository**: `sadfsjg/axiestudio-lang`
+3. **Connect GitHub repository**: `axiestudio/axiestudio`
 4. **Add environment variables** (copy from above)
 5. **Deploy!**
 
