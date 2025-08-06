@@ -31,9 +31,9 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Railway requires service ID in cache mount - using ARG to get it
-ARG RAILWAY_SERVICE_ID
-RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/.cache/uv,target=/root/.cache/uv \
+# Railway cache mount - replace axiestudio-service-id with your actual Railway service ID
+# Get your service ID from Railway dashboard URL or use the no-cache Dockerfile
+RUN --mount=type=cache,id=s/axiestudio-service-id-/root/.cache/uv,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=README.md,target=README.md \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
@@ -47,7 +47,7 @@ COPY ./src /app/src
 
 COPY src/frontend /tmp/src/frontend
 WORKDIR /tmp/src/frontend
-RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/.npm,target=/root/.npm \
+RUN --mount=type=cache,id=s/axiestudio-service-id-/root/.npm,target=/root/.npm \
     npm ci \
     && npm run build \
     && cp -r build /app/src/backend/base/axiestudio/frontend \
@@ -58,7 +58,7 @@ COPY ./pyproject.toml /app/pyproject.toml
 COPY ./uv.lock /app/uv.lock
 COPY ./README.md /app/README.md
 
-RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-/root/.cache/uv-final,target=/root/.cache/uv \
+RUN --mount=type=cache,id=s/axiestudio-service-id-/root/.cache/uv-final,target=/root/.cache/uv \
     uv sync --frozen --no-editable --extra postgresql
 
 
