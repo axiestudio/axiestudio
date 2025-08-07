@@ -171,6 +171,15 @@ docker_compose_up: ## run docker compose
 docker_compose_down: ## stop docker compose
 	docker-compose -f $(DOCKER_COMPOSE) down
 
+docker_test: ## test docker build
+	powershell -ExecutionPolicy Bypass -File scripts/test-docker-build.ps1
+
+docker_deploy: ## deploy to docker hub
+	powershell -ExecutionPolicy Bypass -File scripts/docker-hub-deploy.ps1 -AccessToken $$env:DOCKER_HUB_TOKEN
+
+docker_production: ## run production docker compose
+	docker-compose -f docker-compose.production.yml up
+
 ######################
 # CLEANING
 ######################

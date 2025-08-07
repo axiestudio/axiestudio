@@ -55,7 +55,7 @@ RUN --mount=type=cache,target=/root/.npm \
 WORKDIR /app
 COPY ./pyproject.toml /app/pyproject.toml
 COPY ./uv.lock /app/uv.lock
-# README.md removed for clean deployment
+COPY ./README.md /app/README.md
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-editable --extra postgresql

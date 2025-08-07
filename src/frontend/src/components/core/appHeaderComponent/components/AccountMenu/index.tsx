@@ -1,11 +1,6 @@
-import { FaDiscord, FaGithub } from "react-icons/fa";
-import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import {
   DATASTAX_DOCS_URL,
-  DISCORD_URL,
   DOCS_URL,
-  GITHUB_URL,
-  TWITTER_URL,
 } from "@/constants/constants";
 import { useLogout } from "@/controllers/API/queries/auth";
 import { CustomProfileIcon } from "@/customization/components/custom-profile-icon";
@@ -65,19 +60,20 @@ export const AccountMenu = () => {
                 <span
                   data-testid="menu_version_button"
                   id="menu_version_button"
-                  className="text-sm"
+                  className="text-sm font-medium text-foreground"
                 >
                   Version
                 </span>
-                <div
-                  className={cn(
-                    "float-right text-xs",
-                    isLatestVersion && "text-accent-emerald-foreground",
-                    !isLatestVersion && "text-accent-amber-foreground",
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {version}
+                  </span>
+                  {isLatestVersion && (
+                    <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
                   )}
-                >
-                  {version}{" "}
-                  {isLatestVersion ? "(latest)" : "(update available)"}
+                  {!isLatestVersion && (
+                    <div className="h-2 w-2 rounded-full bg-amber-500"></div>
+                  )}
                 </div>
               </div>
             </div>

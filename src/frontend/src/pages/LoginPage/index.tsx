@@ -1,6 +1,5 @@
 import * as Form from "@radix-ui/react-form";
 import { useContext, useState } from "react";
-import AxieStudioLogo from "@/assets/AxieStudioLogo.svg?react";
 import { useLoginUser } from "@/controllers/API/queries/auth";
 import { CustomLink } from "@/customization/components/custom-link";
 import InputComponent from "../../components/core/parameterRenderComponent/components/inputComponent";
@@ -64,21 +63,32 @@ export default function LoginPage(): JSX.Element {
       }}
       className="h-screen w-full"
     >
-      <div className="flex h-full w-full flex-col items-center justify-center bg-muted">
-        <div className="flex w-72 flex-col items-center justify-center gap-2">
-          <AxieStudioLogo
-            title="Axie Studio logo"
-            className="mb-4 h-10 w-10 scale-[1.5]"
-          />
-          <span className="mb-6 text-2xl font-semibold text-primary">
-            Sign in to Axie Studio
-          </span>
-          <div className="mb-3 w-full">
+      <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-background to-muted/30">
+        <div className="flex w-96 flex-col items-center justify-center gap-6 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-8 shadow-2xl">
+          <div className="flex flex-col items-center gap-4">
+            <img
+              src="/logo.jpg"
+              alt="Axie Studio logo"
+              className="h-12 w-12 rounded-xl object-contain"
+              onError={(e) => {
+                e.currentTarget.src = "/logo.svg";
+              }}
+              style={{ maxWidth: '48px', maxHeight: '48px' }}
+            />
+            <div className="text-center">
+              <h1 className="text-2xl font-light text-foreground tracking-tight">
+                Welcome to Axie Studio
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Sign in to continue to your workspace
+              </p>
+            </div>
+          </div>
+          <div className="w-full space-y-5">
             <Form.Field name="username">
-              <Form.Label className="data-[invalid]:label-invalid">
-                Username <span className="font-medium text-destructive">*</span>
+              <Form.Label className="text-sm font-medium text-foreground data-[invalid]:text-destructive">
+                Username
               </Form.Label>
-
               <Form.Control asChild>
                 <Input
                   type="username"
@@ -86,23 +96,20 @@ export default function LoginPage(): JSX.Element {
                     handleInput({ target: { name: "username", value } });
                   }}
                   value={username}
-                  className="w-full"
+                  className="w-full h-11 mt-2 border-border/60 focus:border-primary/60 focus:ring-1 focus:ring-primary/20"
                   required
-                  placeholder="Username"
+                  placeholder="Enter your username"
                 />
               </Form.Control>
-
-              <Form.Message match="valueMissing" className="field-invalid">
+              <Form.Message match="valueMissing" className="text-xs text-destructive mt-1">
                 Please enter your username
               </Form.Message>
             </Form.Field>
-          </div>
-          <div className="mb-3 w-full">
-            <Form.Field name="password">
-              <Form.Label className="data-[invalid]:label-invalid">
-                Password <span className="font-medium text-destructive">*</span>
-              </Form.Label>
 
+            <Form.Field name="password">
+              <Form.Label className="text-sm font-medium text-foreground data-[invalid]:text-destructive">
+                Password
+              </Form.Label>
               <InputComponent
                 onChange={(value) => {
                   handleInput({ target: { name: "password", value } });
@@ -111,18 +118,16 @@ export default function LoginPage(): JSX.Element {
                 isForm
                 password={true}
                 required
-                placeholder="Password"
-                className="w-full"
+                placeholder="Enter your password"
+                className="w-full h-11 mt-2 border-border/60 focus:border-primary/60 focus:ring-1 focus:ring-primary/20"
               />
-
-              <Form.Message className="field-invalid" match="valueMissing">
+              <Form.Message className="text-xs text-destructive mt-1" match="valueMissing">
                 Please enter your password
               </Form.Message>
             </Form.Field>
-          </div>
-          <div className="w-full">
+
             <Form.Submit asChild>
-              <Button className="mr-3 mt-6 w-full" type="submit">
+              <Button className="w-full h-11 mt-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium" type="submit">
                 Sign in
               </Button>
             </Form.Submit>

@@ -34,18 +34,14 @@ export default function SuccessAlert({
           setShow(false);
           removeAlert(id);
         }}
-        className="success-alert noflow nowheel nopan nodelete nodrag"
+        className="mt-4 w-96 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/20 backdrop-blur-sm border border-emerald-200/50 dark:border-emerald-800/30 p-4 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-200 noflow nowheel nopan nodelete nodrag"
       >
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <IconComponent
-              name="CheckCircle2"
-              className="success-alert-icon"
-              aria-hidden="true"
-            />
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-0.5">
+            <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
           </div>
-          <div className="ml-3">
-            <p className="success-alert-message line-clamp-2">{title}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 line-clamp-2">{title}</p>
           </div>
         </div>
       </div>

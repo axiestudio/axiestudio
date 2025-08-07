@@ -18,36 +18,35 @@ export const EmptyPage = ({ setOpenModal }: EmptyPageProps) => {
       dragMessage={`Drop your flows or components here`}
       onFileDrop={handleFileDrop}
     >
-      <div className="m-0 h-full w-full bg-secondary p-0">
+      <div className="m-0 h-full w-full bg-gradient-to-br from-background via-background to-muted/20 p-0">
         <div className="text-container">
-          <div className="relative z-20 flex w-full flex-col items-center justify-center gap-2">
-            <AxieStudioLogo className="h-7 w-8" />
-            <h3
-              className="pt-5 font-chivo text-2xl font-semibold text-foreground"
-              data-testid="mainpage_title"
-            >
-              {folders?.length > 1 ? "Empty project" : "Start building"}
-            </h3>
-            <p
-              data-testid="empty-project-description"
-              className="pb-5 text-sm text-secondary-foreground"
-            >
-              Begin with a template, or start from scratch.
-            </p>
+          <div className="relative z-20 flex w-full flex-col items-center justify-center gap-8">
+            <div className="flex flex-col items-center gap-6">
+              <div className="rounded-2xl bg-card/60 backdrop-blur-sm border border-border/30 p-4 shadow-lg">
+                <AxieStudioLogo className="h-8 w-8 text-primary" />
+              </div>
+              <div className="text-center space-y-3">
+                <h1
+                  className="text-3xl font-light text-foreground tracking-tight"
+                  data-testid="mainpage_title"
+                >
+                  {folders?.length > 1 ? "Empty Project" : "Welcome to Axie Studio"}
+                </h1>
+                <p
+                  data-testid="empty-project-description"
+                  className="text-base text-muted-foreground max-w-md"
+                >
+                  Create powerful AI workflows with our visual flow builder. Start with a template or build from scratch.
+                </p>
+              </div>
+            </div>
             <Button
-              variant="default"
               onClick={() => setOpenModal(true)}
               id="new-project-btn"
               data-testid="new_project_btn_empty_page"
+              className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-base shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              <ForwardedIconComponent
-                name="Plus"
-                aria-hidden="true"
-                className="h-4 w-4"
-              />
-              <span className="hidden whitespace-nowrap font-semibold md:inline">
-                New Flow
-              </span>
+              Create New Flow
             </Button>
           </div>
         </div>

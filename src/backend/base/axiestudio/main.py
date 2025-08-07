@@ -389,6 +389,13 @@ def create_app():
 
     add_pagination(app)
 
+    # Mount static files for frontend (when not backend_only)
+    settings = get_settings_service().settings
+    if not settings.backend_only:
+        static_files_dir = get_static_files_dir()
+        if static_files_dir and static_files_dir.exists():
+            setup_static_files(app, static_files_dir)
+
     return app
 
 

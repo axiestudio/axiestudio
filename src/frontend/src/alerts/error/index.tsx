@@ -41,59 +41,48 @@ export default function ErrorAlert({
             removeAlert(id);
           }, 500);
         }}
-        className="error-build-message noflow nowheel nopan nodelete nodrag"
+        className="mt-4 w-96 rounded-xl bg-destructive/10 backdrop-blur-sm border border-destructive/20 p-4 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-200 noflow nowheel nopan nodelete nodrag"
       >
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <IconComponent
-              name="XCircle"
-              className="error-build-message-circle"
-              aria-hidden="true"
-            />
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-0.5">
+            <div className="h-2 w-2 rounded-full bg-destructive"></div>
           </div>
-          <div className="ml-3">
-            <h3 className="error-build-foreground line-clamp-2">{title}</h3>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-medium text-destructive line-clamp-2">{title}</h3>
             {list?.length !== 0 &&
             list?.some((item) => item !== null && item !== undefined) ? (
-              <div className="mt-2 text-sm text-error-foreground">
-                <ul className="list-disc space-y-1 pl-5 align-top">
-                  {list.map((item, index) => (
-                    <li key={index} className="word-break-break-word">
-                      <span className="">
-                        <Markdown
-                          linkTarget="_blank"
-                          remarkPlugins={[remarkGfm]}
-                          className="align-text-top"
-                          components={{
-                            a: ({ node, ...props }) => (
-                              <a
-                                href={props.href}
-                                target="_blank"
-                                className="underline"
-                                rel="noopener noreferrer"
-                              >
-                                {props.children}
-                              </a>
-                            ),
-                            p({ node, ...props }) {
-                              return (
-                                <span className="inline-block w-fit max-w-full align-text-top truncate-multiline">
-                                  {props.children}
-                                </span>
-                              );
-                            },
-                          }}
-                        >
-                          {Array.isArray(item) ? item.join("\n") : item}
-                        </Markdown>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+              <div className="mt-3 space-y-2">
+                {list.map((item, index) => (
+                  <div key={index} className="text-xs text-destructive/80 bg-destructive/5 rounded-md p-2 border border-destructive/10">
+                    <Markdown
+                      linkTarget="_blank"
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        a: ({ node, ...props }) => (
+                          <a
+                            href={props.href}
+                            target="_blank"
+                            className="underline hover:text-destructive transition-colors"
+                            rel="noopener noreferrer"
+                          >
+                            {props.children}
+                          </a>
+                        ),
+                        p({ node, ...props }) {
+                          return (
+                            <span className="inline-block w-fit max-w-full">
+                              {props.children}
+                            </span>
+                          );
+                        },
+                      }}
+                    >
+                      {Array.isArray(item) ? item.join("\n") : item}
+                    </Markdown>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <></>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

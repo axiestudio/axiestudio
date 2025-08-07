@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import AlertDropdown from "@/alerts/alertDropDown";
 import DataStaxLogo from "@/assets/DataStaxLogo.svg?react";
-import AxieStudioLogo from "@/assets/AxieStudioLogo.svg?react";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import ShadTooltip from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
@@ -51,7 +50,7 @@ export default function AppHeader(): JSX.Element {
 
   return (
     <div
-      className={`z-10 flex h-[48px] w-full items-center justify-between border-b px-6 dark:bg-background`}
+      className={`z-10 flex h-[56px] w-full items-center justify-between border-b border-border/60 bg-background/80 backdrop-blur-sm px-6`}
       data-testid="app-header"
     >
       {/* Left Section */}
@@ -60,15 +59,23 @@ export default function AppHeader(): JSX.Element {
         data-testid="header_left_section_wrapper"
       >
         <Button
-          unstyled
+          variant="ghost"
           onClick={() => navigate("/")}
-          className="mr-1 flex h-8 w-8 items-center"
+          className="mr-2 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/50 transition-colors duration-200"
           data-testid="icon-ChevronLeft"
         >
           {ENABLE_DATASTAX_AXIESTUDIO ? (
             <DataStaxLogo className="fill-black dark:fill-[white]" />
           ) : (
-            <AxieStudioLogo className="h-6 w-6" />
+            <img
+              src="/logo.jpg"
+              alt="Axie Studio"
+              className="h-6 w-6 rounded object-contain"
+              onError={(e) => {
+                e.currentTarget.src = "/logo.svg";
+              }}
+              style={{ maxWidth: '24px', maxHeight: '24px' }}
+            />
           )}
         </Button>
         {ENABLE_DATASTAX_AXIESTUDIO && (

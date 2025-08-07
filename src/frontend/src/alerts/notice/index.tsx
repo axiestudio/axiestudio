@@ -44,30 +44,24 @@ export default function NoticeAlert({
     >
       <div
         onClick={handleClick}
-        className="noflow nowheel nopan nodelete nodrag mt-6 w-96 rounded-md bg-info-background p-4 shadow-xl"
+        className="noflow nowheel nopan nodelete nodrag mt-4 w-96 rounded-xl bg-blue-50/80 dark:bg-blue-950/20 backdrop-blur-sm border border-blue-200/50 dark:border-blue-800/30 p-4 shadow-lg cursor-pointer hover:shadow-xl transition-all duration-200"
       >
-        <div className="flex">
-          <div className="flex-shrink-0 cursor-help">
-            <IconComponent
-              name="Info"
-              className="h-5 w-5 text-status-blue"
-              aria-hidden="true"
-            />
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-0.5">
+            <div className="h-2 w-2 rounded-full bg-blue-500"></div>
           </div>
-          <div className="ml-3 flex-1 md:flex md:justify-between">
-            <p className="text-sm text-info-foreground word-break-break-word">
+          <div className="flex-1 min-w-0 space-y-2">
+            <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
               {title}
             </p>
-            <p className="mt-3 text-sm md:ml-6 md:mt-0">
-              {link && (
-                <CustomLink
-                  to={link}
-                  className="whitespace-nowrap font-medium text-info-foreground hover:text-accent-foreground"
-                >
-                  Details
-                </CustomLink>
-              )}
-            </p>
+            {link && (
+              <CustomLink
+                to={link}
+                className="inline-flex text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors underline"
+              >
+                View details
+              </CustomLink>
+            )}
           </div>
         </div>
       </div>
