@@ -1,6 +1,16 @@
 name: Docker Build and Push
-run-name: Docker Build and Push @${{ inputs.release_type }} by @${{ github.actor }}
+run-name: Docker Build and Push @${{ inputs.release_type || 'auto' }} by @${{ github.actor }}
 on:
+  # Automatic trigger on push to main
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.github/workflows/docs_*.yml'
+      - '.github/workflows/deploy-docs-*.yml'
+
   workflow_call:
     inputs:
       main_version:
@@ -36,8 +46,9 @@ on:
         type: string
       release_type:
         description: "Type of release. One of 'main', 'main-ep', 'base', 'nightly-main', 'nightly-base', 'main-all', 'nightly-main-all'."
-        required: true
+        required: false
         type: string
+        default: "main"
       pre_release:
         description: "Whether this is a pre-release."
         required: false
@@ -59,12 +70,24 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get-version-input.outputs.version || steps.get-version-base.outputs.version || steps.get-version-main.outputs.version }}
+      release_type: ${{ steps.set-release-type.outputs.release_type }}
     steps:
-      - name: Verify a main version exists
-        if: ${{ inputs.main_version == '' }}
+      - name: Set release type for automatic builds
+        id: set-release-type
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "release_type=main" >> $GITHUB_OUTPUT
+            echo "Automatic build triggered by push to main - using 'main' release type"
+          else
+            echo "release_type=${{ inputs.release_type || 'main' }}" >> $GITHUB_OUTPUT
+            echo "Manual build - using specified release type: ${{ inputs.release_type || 'main' }}"
+          fi
+
+      - name: Verify a main version exists (skip for auto builds)
+        if: ${{ github.event_name != 'push' && inputs.main_version == '' && inputs.release_type != '' }}
         run: |
           # due to our how we split packages, we need to have a main version to check out.
-          echo "Must specify a main version to check out."
+          echo "Must specify a main version to check out for manual builds."
           exit 1
 
       - name: Check out the code at a specific ref
@@ -74,42 +97,57 @@ jobs:
           persist-credentials: true
 
       - name: Get Version to Tag
-        if: ${{ inputs.main_version != '' }}
+        if: ${{ inputs.main_version != '' || github.event_name == 'push' }}
         id: get-version-input
         run: |
           # Produces the versions we will use to tag the docker images with.
 
-          if [[ "${{ inputs.release_type }}" == "base" && "${{ inputs.base_version }}" == '' ]]; then
+          # For automatic builds, extract version from pyproject.toml
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            version=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+            if [ -z "$version" ]; then
+              echo "Failed to extract version from pyproject.toml"
+              exit 1
+            fi
+            echo "Automatic build version: $version"
+            echo version=$version >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Manual build validation
+          release_type="${{ inputs.release_type || steps.set-release-type.outputs.release_type }}"
+
+          if [[ "$release_type" == "base" && "${{ inputs.base_version }}" == '' ]]; then
             echo "Must specify a base version for base release type."
             exit 1
           fi
 
-          if [[ "${{ inputs.release_type }}" == "nightly-base" && "${{ inputs.base_version }}" == '' ]]; then
+          if [[ "$release_type" == "nightly-base" && "${{ inputs.base_version }}" == '' ]]; then
             echo "Must specify a base version for nightly-base release type."
             exit 1
           fi
 
-          if [[ ("${{ inputs.release_type }}" == "main" || "${{ inputs.release_type }}" == "main-all") && "${{ inputs.main_version }}" == '' ]]; then
+          if [[ ("$release_type" == "main" || "$release_type" == "main-all") && "${{ inputs.main_version }}" == '' ]]; then
             echo "Must specify a main version for main release type."
             exit 1
           fi
 
-          if [[ "${{ inputs.release_type }}" == "main-ep" && "${{ inputs.main_version }}" == '' ]]; then
+          if [[ "$release_type" == "main-ep" && "${{ inputs.main_version }}" == '' ]]; then
             echo "Must specify a main version for main-ep release type."
             exit 1
           fi
 
-          if [[ ("${{ inputs.release_type }}" == "nightly-main" || "${{ inputs.release_type }}" == "nightly-main-all") && "${{ inputs.main_version }}" == '' ]]; then
+          if [[ ("$release_type" == "nightly-main" || "$release_type" == "nightly-main-all") && "${{ inputs.main_version }}" == '' ]]; then
             echo "Must specify a main version for nightly-main release type."
             exit 1
           fi
 
-          if [[ "${{ inputs.release_type }}" == "base" || "${{ inputs.release_type }}" == "nightly-base" ]]; then
+          if [[ "$release_type" == "base" || "$release_type" == "nightly-base" ]]; then
             version=${{ inputs.base_version }}
             echo "base version=${{ inputs.base_version }}"
             echo version=$version
             echo version=$version >> $GITHUB_OUTPUT
-          elif [[ "${{ inputs.release_type }}" == "main" || "${{ inputs.release_type }}" == "main-ep"  || "${{ inputs.release_type }}" == "nightly-main" || "${{ inputs.release_type }}" == "nightly-main-all" ]]; then
+          elif [[ "$release_type" == "main" || "$release_type" == "main-ep"  || "$release_type" == "nightly-main" || "$release_type" == "nightly-main-all" ]]; then
             version=${{ inputs.main_version }}
             echo version=$version
             echo version=$version >> $GITHUB_OUTPUT
@@ -146,12 +184,15 @@ jobs:
       - name: Set Dockerfile and Tags
         id: set-vars
         run: |
+          release_type="${{ inputs.release_type || needs.get-version.outputs.release_type }}"
+          echo "Using release type: $release_type"
+
           nightly_suffix=''
-          if [[ "${{ inputs.release_type }}" == "nightly-base" || "${{ inputs.release_type }}" == "nightly-main" || "${{ inputs.release_type }}" == "nightly-main-all" ]]; then
+          if [[ "$release_type" == "nightly-base" || "$release_type" == "nightly-main" || "$release_type" == "nightly-main-all" ]]; then
             nightly_suffix="-nightly"
           fi
 
-          if [[ "${{ inputs.release_type }}" == "base" || "${{ inputs.release_type }}" == "nightly-base" ]]; then
+          if [[ "$release_type" == "base" || "$release_type" == "nightly-base" ]]; then
             # AXIESTUDIO-BASE RELEASE
             echo "docker_tags=axiestudio/axiestudio${nightly_suffix}:base-${{ needs.get-version.outputs.version }},axiestudio/axiestudio${nightly_suffix}:base-latest" >> $GITHUB_OUTPUT
             echo "ghcr_tags=ghcr.io/axiestudio/axiestudio${nightly_suffix}:base-${{ needs.get-version.outputs.version }},ghcr.io/axiestudio/axiestudio${nightly_suffix}:base-latest" >> $GITHUB_OUTPUT
@@ -162,17 +203,17 @@ jobs:
               echo "docker_tags=axiestudio/axiestudio${nightly_suffix}:${{ needs.get-version.outputs.version }}" >> $GITHUB_OUTPUT
               echo "ghcr_tags=ghcr.io/axiestudio/axiestudio${nightly_suffix}:${{ needs.get-version.outputs.version }}" >> $GITHUB_OUTPUT
               echo "file=./docker/build_and_push.Dockerfile" >> $GITHUB_OUTPUT
-            elif [[ "${{ inputs.release_type }}" == "main-ep" ]]; then
+            elif [[ "$release_type" == "main-ep" ]]; then
               # AXIESTUDIO-MAIN (ENTRYPOINT) RELEASE
               echo "docker_tags=axiestudio/axiestudio-ep${nightly_suffix}:${{ needs.get-version.outputs.version }},axiestudio/axiestudio-ep${nightly_suffix}:latest" >> $GITHUB_OUTPUT
               echo "ghcr_tags=ghcr.io/axiestudio/axiestudio-ep${nightly_suffix}:${{ needs.get-version.outputs.version }},ghcr.io/axiestudio/axiestudio-ep${nightly_suffix}:latest" >> $GITHUB_OUTPUT
               echo "file=./docker/build_and_push_ep.Dockerfile" >> $GITHUB_OUTPUT
-            elif [[ "${{ inputs.release_type }}" == "main" || "${{ inputs.release_type }}" == "nightly-main" ]]; then
+            elif [[ "$release_type" == "main" || "$release_type" == "nightly-main" ]]; then
               # AXIESTUDIO-MAIN RELEASE
               echo "docker_tags=axiestudio/axiestudio${nightly_suffix}:${{ needs.get-version.outputs.version }},axiestudio/axiestudio${nightly_suffix}:latest" >> $GITHUB_OUTPUT
               echo "ghcr_tags=ghcr.io/axiestudio/axiestudio${nightly_suffix}:${{ needs.get-version.outputs.version }},ghcr.io/axiestudio/axiestudio${nightly_suffix}:latest" >> $GITHUB_OUTPUT
               echo "file=./docker/build_and_push.Dockerfile" >> $GITHUB_OUTPUT
-            elif [[ "${{ inputs.release_type }}" == "main-all" || "${{ inputs.release_type }}" == "nightly-main-all" ]]; then
+            elif [[ "$release_type" == "main-all" || "$release_type" == "nightly-main-all" ]]; then
               # AXIESTUDIO-MAIN (ALL OPTIONAL DEPS) RELEASE
               echo "docker_tags=axiestudio/axiestudio-all${nightly_suffix}:${{ needs.get-version.outputs.version }},axiestudio/axiestudio-all${nightly_suffix}:latest" >> $GITHUB_OUTPUT
               echo "ghcr_tags=ghcr.io/axiestudio/axiestudio-all${nightly_suffix}:${{ needs.get-version.outputs.version }},ghcr.io/axiestudio/axiestudio-all${nightly_suffix}:latest" >> $GITHUB_OUTPUT
@@ -200,7 +241,8 @@ jobs:
           prune-cache: false
       - name: Install the project
         run: |
-          if [[ "${{ inputs.release_type }}" == "base" || "${{ inputs.release_type }}" == "nightly-base" ]]; then
+          release_type="${{ inputs.release_type || needs.get-version.outputs.release_type }}"
+          if [[ "$release_type" == "base" || "$release_type" == "nightly-base" ]]; then
             uv sync --directory src/backend/base --no-dev --no-sources
           else
             uv sync --no-dev --no-sources
@@ -255,7 +297,7 @@ jobs:
             cache-to: type=gha,mode=max
 
   build_components:
-    if: ${{ inputs.release_type == 'main' }}
+    if: ${{ inputs.release_type == 'main' || needs.get-version.outputs.release_type == 'main' }}
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -330,7 +372,7 @@ jobs:
 
   restart-space:
     name: Restart HuggingFace Spaces
-    if: ${{ inputs.release_type == 'main' }}
+    if: ${{ inputs.release_type == 'main' || needs.get-version.outputs.release_type == 'main' }}
     runs-on: ubuntu-latest
     needs: [build, get-version]
     strategy:
