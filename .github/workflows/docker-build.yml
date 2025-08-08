@@ -178,7 +178,6 @@ jobs:
     needs: get-version
     outputs:
       docker_tags: ${{ steps.set-vars.outputs.docker_tags }}
-      ghcr_tags: ${{ steps.set-vars.outputs.ghcr_tags }}
       file: ${{ steps.set-vars.outputs.file }}
     steps:
       - name: Set Dockerfile and Tags
@@ -195,28 +194,23 @@ jobs:
           if [[ "$release_type" == "base" || "$release_type" == "nightly-base" ]]; then
             # AXIESTUDIO-BASE RELEASE
             echo "docker_tags=axiestudio/axiestudio${nightly_suffix}:base-${{ needs.get-version.outputs.version }},axiestudio/axiestudio${nightly_suffix}:base-latest" >> $GITHUB_OUTPUT
-            echo "ghcr_tags=ghcr.io/axiestudio/axiestudio${nightly_suffix}:base-${{ needs.get-version.outputs.version }},ghcr.io/axiestudio/axiestudio${nightly_suffix}:base-latest" >> $GITHUB_OUTPUT
             echo "file=./docker/build_and_push_base.Dockerfile" >> $GITHUB_OUTPUT
           else
             if [[ "${{ inputs.pre_release }}" == "true" ]]; then
               # AXIESTUDIO-MAIN PRE-RELEASE
               echo "docker_tags=axiestudio/axiestudio${nightly_suffix}:${{ needs.get-version.outputs.version }}" >> $GITHUB_OUTPUT
-              echo "ghcr_tags=ghcr.io/axiestudio/axiestudio${nightly_suffix}:${{ needs.get-version.outputs.version }}" >> $GITHUB_OUTPUT
               echo "file=./docker/build_and_push.Dockerfile" >> $GITHUB_OUTPUT
             elif [[ "$release_type" == "main-ep" ]]; then
               # AXIESTUDIO-MAIN (ENTRYPOINT) RELEASE
               echo "docker_tags=axiestudio/axiestudio-ep${nightly_suffix}:${{ needs.get-version.outputs.version }},axiestudio/axiestudio-ep${nightly_suffix}:latest" >> $GITHUB_OUTPUT
-              echo "ghcr_tags=ghcr.io/axiestudio/axiestudio-ep${nightly_suffix}:${{ needs.get-version.outputs.version }},ghcr.io/axiestudio/axiestudio-ep${nightly_suffix}:latest" >> $GITHUB_OUTPUT
               echo "file=./docker/build_and_push_ep.Dockerfile" >> $GITHUB_OUTPUT
             elif [[ "$release_type" == "main" || "$release_type" == "nightly-main" ]]; then
               # AXIESTUDIO-MAIN RELEASE
               echo "docker_tags=axiestudio/axiestudio${nightly_suffix}:${{ needs.get-version.outputs.version }},axiestudio/axiestudio${nightly_suffix}:latest" >> $GITHUB_OUTPUT
-              echo "ghcr_tags=ghcr.io/axiestudio/axiestudio${nightly_suffix}:${{ needs.get-version.outputs.version }},ghcr.io/axiestudio/axiestudio${nightly_suffix}:latest" >> $GITHUB_OUTPUT
               echo "file=./docker/build_and_push.Dockerfile" >> $GITHUB_OUTPUT
             elif [[ "$release_type" == "main-all" || "$release_type" == "nightly-main-all" ]]; then
               # AXIESTUDIO-MAIN (ALL OPTIONAL DEPS) RELEASE
               echo "docker_tags=axiestudio/axiestudio-all${nightly_suffix}:${{ needs.get-version.outputs.version }},axiestudio/axiestudio-all${nightly_suffix}:latest" >> $GITHUB_OUTPUT
-              echo "ghcr_tags=ghcr.io/axiestudio/axiestudio-all${nightly_suffix}:${{ needs.get-version.outputs.version }},ghcr.io/axiestudio/axiestudio-all${nightly_suffix}:latest" >> $GITHUB_OUTPUT
               echo "file=./docker/build_and_push_with_extras.Dockerfile" >> $GITHUB_OUTPUT
             else
               echo "Invalid release type. Exiting the workflow."
@@ -275,25 +269,7 @@ jobs:
           cache-from: type=registry,ref=axiestudio/axiestudio:buildcache
           cache-to: type=registry,ref=axiestudio/axiestudio:buildcache,mode=max
 
-      - name: Login to Github Container Registry
-        if: ${{ secrets.TEMP_GHCR_TOKEN != '' }}
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.TEMP_GHCR_TOKEN}}
 
-      - name: Build and push to Github Container Registry
-        if: ${{ secrets.TEMP_GHCR_TOKEN != '' }}
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          file: ${{ needs.setup.outputs.file }}
-          tags: ${{ needs.setup.outputs.ghcr_tags }}
-          platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=ghcr.io/axiestudio/axiestudio:buildcache
-          cache-to: type=registry,ref=ghcr.io/axiestudio/axiestudio:buildcache,mode=max
 
   build_components:
     if: ${{ inputs.release_type == 'main' || needs.get-version.outputs.release_type == 'main' }}
@@ -303,7 +279,7 @@ jobs:
     needs: [build, get-version]
     strategy:
       matrix:
-        component: [docker-backend, docker-frontend, ghcr-backend, ghcr-frontend]
+        component: [docker-backend, docker-frontend]
         include:
           - component: docker-backend
             dockerfile: ./docker/build_and_push_backend.Dockerfile
@@ -313,14 +289,6 @@ jobs:
             dockerfile: ./docker/frontend/build_and_push_frontend.Dockerfile
             tags: axiestudio/axiestudio-frontend:${{ needs.get-version.outputs.version }},axiestudio/axiestudio-frontend:latest
             langflow_image: axiestudio/axiestudio:${{ needs.get-version.outputs.version }}
-          - component: ghcr-backend
-            dockerfile: ./docker/build_and_push_backend.Dockerfile
-            tags: ghcr.io/axiestudio/axiestudio-backend:${{ needs.get-version.outputs.version }},ghcr.io/axiestudio/axiestudio-backend:latest
-            langflow_image: ghcr.io/axiestudio/axiestudio:${{ needs.get-version.outputs.version }}
-          - component: ghcr-frontend
-            dockerfile: ./docker/frontend/build_and_push_frontend.Dockerfile
-            tags: ghcr.io/axiestudio/axiestudio-frontend:${{ needs.get-version.outputs.version }},ghcr.io/axiestudio/axiestudio-frontend:latest
-            langflow_image: ghcr.io/axiestudio/axiestudio:${{ needs.get-version.outputs.version }}
     steps:
       - name: Check out the code at a specific ref
         uses: actions/checkout@v4
@@ -339,25 +307,15 @@ jobs:
 
 
       - name: Login to Docker Hub
-        if: ${{ matrix.component == 'docker-backend' }} || ${{ matrix.component == 'docker-frontend' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Login to Github Container Registry
-        if: ${{ (matrix.component == 'ghcr-backend' || matrix.component == 'ghcr-frontend') && secrets.TEMP_GHCR_TOKEN != '' }}
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.TEMP_GHCR_TOKEN}}
-
       - name: Wait for propagation (for backend)
         run: sleep 120
 
       - name: Build and push ${{ matrix.component }}
-        if: ${{ (matrix.component == 'docker-backend' || matrix.component == 'docker-frontend') || (secrets.TEMP_GHCR_TOKEN != '' && (matrix.component == 'ghcr-backend' || matrix.component == 'ghcr-frontend')) }}
         uses: docker/build-push-action@v6
         with:
           context: .
