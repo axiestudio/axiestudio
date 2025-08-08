@@ -276,6 +276,7 @@ jobs:
           cache-to: type=registry,ref=axiestudio/axiestudio:buildcache,mode=max
 
       - name: Login to Github Container Registry
+        if: ${{ secrets.TEMP_GHCR_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -283,6 +284,7 @@ jobs:
           password: ${{ secrets.TEMP_GHCR_TOKEN}}
 
       - name: Build and push to Github Container Registry
+        if: ${{ secrets.TEMP_GHCR_TOKEN != '' }}
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -344,7 +346,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to Github Container Registry
-        if: ${{ matrix.component == 'ghcr-backend' }} || ${{ matrix.component == 'ghcr-frontend' }}
+        if: ${{ (matrix.component == 'ghcr-backend' || matrix.component == 'ghcr-frontend') && secrets.TEMP_GHCR_TOKEN != '' }}
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -355,6 +357,7 @@ jobs:
         run: sleep 120
 
       - name: Build and push ${{ matrix.component }}
+        if: ${{ (matrix.component == 'docker-backend' || matrix.component == 'docker-frontend') || (secrets.TEMP_GHCR_TOKEN != '' && (matrix.component == 'ghcr-backend' || matrix.component == 'ghcr-frontend')) }}
         uses: docker/build-push-action@v6
         with:
           context: .
