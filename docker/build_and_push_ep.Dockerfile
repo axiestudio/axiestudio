@@ -49,7 +49,7 @@ WORKDIR /tmp/src/frontend
 RUN --mount=type=cache,target=/root/.npm \
     npm ci \
     && npm run build \
-    && cp -r build /app/src/backend/langflow/frontend \
+    && cp -r build /app/src/backend/base/axiestudio/frontend \
     && rm -rf /tmp/src/frontend
 
 WORKDIR /app
@@ -83,23 +83,23 @@ RUN apt-get update \
 
 COPY --from=builder --chown=1000 /app/.venv /app/.venv
 
-# curl is required for langflow health checks
+# curl is required for axiestudio health checks
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 
-LABEL org.opencontainers.image.title=langflow
-LABEL org.opencontainers.image.authors=['Langflow']
+LABEL org.opencontainers.image.title=axiestudio
+LABEL org.opencontainers.image.authors=['Axie Studio']
 LABEL org.opencontainers.image.licenses=MIT
-LABEL org.opencontainers.image.url=https://github.com/langflow-ai/langflow
-LABEL org.opencontainers.image.source=https://github.com/langflow-ai/langflow
+LABEL org.opencontainers.image.url=https://github.com/axiestudio/axiestudio
+LABEL org.opencontainers.image.source=https://github.com/axiestudio/axiestudio
 
 WORKDIR /app
 
-ENV LANGFLOW_HOST=0.0.0.0
-ENV LANGFLOW_PORT=7860
-ENV LANGFLOW_EVENT_DELIVERY=polling
+ENV AXIESTUDIO_HOST=0.0.0.0
+ENV AXIESTUDIO_PORT=7860
+ENV AXIESTUDIO_EVENT_DELIVERY=polling
 
 USER 1000
-CMD ["python", "-m", "langflow", "run", "--host", "0.0.0.0", "--backend-only"]
+CMD ["python", "-m", "axiestudio", "run", "--host", "0.0.0.0", "--backend-only"]

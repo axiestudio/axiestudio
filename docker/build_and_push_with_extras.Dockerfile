@@ -49,7 +49,7 @@ WORKDIR /tmp/src/frontend
 RUN --mount=type=cache,target=/root/.npm \
     npm ci \
     && npm run build \
-    && cp -r build /app/src/backend/langflow/frontend \
+    && cp -r build /app/src/backend/base/axiestudio/frontend \
     && rm -rf /tmp/src/frontend
 
 WORKDIR /app
@@ -80,16 +80,16 @@ COPY --from=builder --chown=1000 /app/.venv /app/.venv
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 
-LABEL org.opencontainers.image.title=langflow
-LABEL org.opencontainers.image.authors=['Langflow']
+LABEL org.opencontainers.image.title=axiestudio
+LABEL org.opencontainers.image.authors=['Axie Studio']
 LABEL org.opencontainers.image.licenses=MIT
-LABEL org.opencontainers.image.url=https://github.com/langflow-ai/langflow
-LABEL org.opencontainers.image.source=https://github.com/langflow-ai/langflow
+LABEL org.opencontainers.image.url=https://github.com/axiestudio/axiestudio
+LABEL org.opencontainers.image.source=https://github.com/axiestudio/axiestudio
 
 USER user
 WORKDIR /app
 
-ENV LANGFLOW_HOST=0.0.0.0
-ENV LANGFLOW_PORT=7860
+ENV AXIESTUDIO_HOST=0.0.0.0
+ENV AXIESTUDIO_PORT=7860
 
-CMD ["langflow", "run"]
+CMD ["axiestudio", "run"]

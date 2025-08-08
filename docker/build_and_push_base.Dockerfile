@@ -51,7 +51,7 @@ COPY src/frontend /tmp/src/frontend
 WORKDIR /tmp/src/frontend
 RUN npm install \
     && npm run build \
-    && cp -r build /app/src/backend/base/langflow/frontend \
+    && cp -r build /app/src/backend/base/axiestudio/frontend \
     && rm -rf /tmp/src/frontend
 
 COPY ./src/backend/base /app/src/backend/base
