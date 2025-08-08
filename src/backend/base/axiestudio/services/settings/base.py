@@ -162,10 +162,10 @@ class Settings(BaseSettings):
     sentry_traces_sample_rate: float | None = 1.0
     sentry_profiles_sample_rate: float | None = 1.0
 
-    store: bool | None = True
-    store_url: str | None = "https://api.axiestudio.store"
-    download_webhook_url: str | None = "https://api.axiestudio.store/flows/trigger/ec611a61-8460-4438-b187-a4f65e5559d4"
-    like_webhook_url: str | None = "https://api.axiestudio.store/flows/trigger/64275852-ec00-45c1-984e-3bff814732da"
+    store: bool | None = False
+    store_url: str | None = None
+    download_webhook_url: str | None = None
+    like_webhook_url: str | None = None
 
     storage_type: str = "local"
 
