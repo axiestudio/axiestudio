@@ -1,6 +1,7 @@
 import type { ColDef, ColGroupDef, ValueParserParams } from "ag-grid-community";
 import clsx, { type ClassValue } from "clsx";
 import moment from "moment";
+import { Cookies } from "react-cookie";
 import TableAutoCellRender from "@/components/core/parameterRenderComponent/components/tableComponent/components/tableAutoCellRender";
 import TableDropdownCellEditor from "@/components/core/parameterRenderComponent/components/tableComponent/components/tableDropdownCellEditor";
 import useAlertStore from "@/stores/alertStore";
@@ -1001,4 +1002,20 @@ export const stripReleaseStageFromVersion = (version: string): string => {
     }
   }
   return version;
+};
+
+export const getAuthCookie = (cookies: Cookies, tokenName: string) => {
+  return cookies.get(tokenName);
+};
+
+export const setAuthCookie = (
+  cookies: Cookies,
+  tokenName: string,
+  value: string,
+) => {
+  cookies.set(tokenName, value, {
+    path: "/",
+    secure: true,
+    sameSite: "strict",
+  });
 };

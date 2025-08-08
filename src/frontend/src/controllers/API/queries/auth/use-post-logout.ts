@@ -8,6 +8,7 @@ import useFlowStore from "@/stores/flowStore";
 import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import { useFolderStore } from "@/stores/foldersStore";
 import type { useMutationFunctionType } from "@/types/api";
+import { getAuthCookie } from "@/utils/utils";
 import { api } from "../../api";
 import { getURL } from "../../helpers/constants";
 import { UseRequestProcessor } from "../../services/request-processor";
@@ -23,7 +24,7 @@ export const useLogout: useMutationFunctionType<undefined, void> = (
   async function logoutUser(): Promise<any> {
     const autoLogin =
       useAuthStore.getState().autoLogin ||
-      cookies.get(AXIESTUDIO_AUTO_LOGIN_OPTION) === "auto" ||
+      getAuthCookie(cookies, AXIESTUDIO_AUTO_LOGIN_OPTION) === "auto" ||
       isAutoLoginEnv;
 
     if (autoLogin) {
