@@ -41,7 +41,7 @@ async def test_component_metadata_has_code_hash():
 @pytest.mark.asyncio
 async def test_code_hash_uniqueness():
     """Test that different built-in components have different code hashes."""
-    result = await import_langflow_components()
+    result = await import_axiestudio_components()
     all_hashes = []
     for components in result["components"].values():
         for comp in components.values():
