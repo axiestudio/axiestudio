@@ -59,6 +59,59 @@ Deploy Axie Studio on your preferred cloud platform:
 - [Railway](./RAILWAY_ENV.md)
 - [Docker Hub](https://hub.docker.com/r/axiestudio/axiestudio)
 
+### 🔧 Production Environment Configuration
+
+For production deployments, use these environment variables:
+
+```bash
+# 🗄️ DATABASE CONFIGURATION
+AXIESTUDIO_DATABASE_URL=postgresql://username:password@your-db-host:25060/database?sslmode=require
+
+# 🔐 AUTHENTICATION CONFIGURATION
+AXIESTUDIO_SUPERUSER=admin@yourdomain.com
+AXIESTUDIO_SUPERUSER_PASSWORD=your_secure_password
+AXIESTUDIO_AUTO_LOGIN=false
+AXIESTUDIO_NEW_USER_IS_ACTIVE=false
+
+# 🔒 SECURITY CONFIGURATION
+AXIESTUDIO_SECRET_KEY=your-production-secret-key-here
+AXIESTUDIO_JWT_SECRET=your-jwt-secret-here
+
+# 🌐 SERVER CONFIGURATION
+AXIESTUDIO_HOST=0.0.0.0
+AXIESTUDIO_PORT=7860
+PORT=7860
+
+# 📊 PERFORMANCE & LOGGING
+AXIESTUDIO_LOG_LEVEL=INFO
+AXIESTUDIO_DEBUG=false
+AXIESTUDIO_WORKERS=1
+
+# 💾 CACHE & STORAGE
+AXIESTUDIO_CACHE_TYPE=memory
+AXIESTUDIO_STORE=false
+
+# 🔧 APPLICATION SETTINGS
+AXIESTUDIO_SAVE_DB_IN_CONFIG_DIR=false
+AXIESTUDIO_STORE_ENVIRONMENT_VARIABLES=true
+AXIESTUDIO_FALLBACK_TO_ENV_VAR=true
+AXIESTUDIO_AUTO_SAVING=true
+
+# 📈 MONITORING
+DO_NOT_TRACK=1
+AXIESTUDIO_OPEN_BROWSER=false
+```
+
+### 🔐 Production Features
+
+- ✅ **Enterprise Database Support** (PostgreSQL, SQLite)
+- ✅ **Secure Authentication** (Login required, admin approval)
+- ✅ **Production Security** (JWT tokens, secret keys)
+- ✅ **Store Disabled** (No external dependencies)
+- ✅ **Optimized Performance** (Memory caching, configurable workers)
+
+> **⚠️ Security Note:** Replace placeholder values with your actual production credentials. Keep sensitive data in environment variables, not in repositories.
+
 ## 📚 Documentation
 
 - [Installation Guide](https://docs.axiestudio.org/get-started-installation)
