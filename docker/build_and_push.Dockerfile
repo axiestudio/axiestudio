@@ -20,7 +20,9 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
-RUN apt-get update \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update \
     && apt-get upgrade -y \
     && apt-get install --no-install-recommends -y \
     # deps for building python deps
@@ -30,8 +32,7 @@ RUN apt-get update \
     npm \
     # gcc
     gcc \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean
 
 # Copy necessary files for dependency installation
 COPY ./uv.lock ./pyproject.toml ./README.md ./
