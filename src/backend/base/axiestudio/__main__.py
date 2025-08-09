@@ -36,8 +36,8 @@ from axiestudio.services.utils import initialize_services
 from axiestudio.utils.version import fetch_latest_version, get_version_info
 from axiestudio.utils.version import is_pre_release as axiestudio_is_pre_release
 
-# Initialize console with safe settings for all platforms to prevent encoding issues
-console = Console(legacy_windows=True, emoji=False)
+# Initialize console with Windows-safe settings
+console = Console(legacy_windows=True, emoji=False) if platform.system() == "Windows" else Console()
 
 app = typer.Typer(no_args_is_help=True)
 
