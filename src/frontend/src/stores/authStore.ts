@@ -2,18 +2,20 @@
 
 import { Cookies } from "react-cookie";
 import { create } from "zustand";
-import { AXIESTUDIO_ACCESS_TOKEN } from "@/constants/constants";
+import {
+  AXIESTUDIO_ACCESS_TOKEN,
+  AXIESTUDIO_API_TOKEN,
+} from "@/constants/constants";
 import type { AuthStoreType } from "@/types/zustand/auth";
-import { getAuthCookie } from "@/utils/utils";
 
 const cookies = new Cookies();
 const useAuthStore = create<AuthStoreType>((set, get) => ({
   isAdmin: false,
-  isAuthenticated: !!getAuthCookie(cookies, AXIESTUDIO_ACCESS_TOKEN),
-  accessToken: getAuthCookie(cookies, AXIESTUDIO_ACCESS_TOKEN) ?? null,
+  isAuthenticated: !!cookies.get(AXIESTUDIO_ACCESS_TOKEN),
+  accessToken: cookies.get(AXIESTUDIO_ACCESS_TOKEN) ?? null,
   userData: null,
   autoLogin: null,
-  apiKey: getAuthCookie(cookies, "apikey_tkn_axie"),
+  apiKey: cookies.get(AXIESTUDIO_API_TOKEN),
   authenticationErrorCount: 0,
 
   setIsAdmin: (isAdmin) => set({ isAdmin }),

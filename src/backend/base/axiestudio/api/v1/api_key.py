@@ -73,7 +73,7 @@ async def save_store_api_key(
         await db.commit()
 
         response.set_cookie(
-            "apikey_tkn_lflw",
+            "apikey_tkn_axie",
             encrypted,
             httponly=auth_settings.ACCESS_HTTPONLY,
             samesite=auth_settings.ACCESS_SAME_SITE,
