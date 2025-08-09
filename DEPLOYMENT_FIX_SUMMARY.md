@@ -1,6 +1,6 @@
 # Axie Studio Deployment Fix Summary
 
-## 🚨 Issue Identified and Resolved
+## Issue Identified and Resolved
 
 **Original Error:**
 ```
@@ -107,7 +107,7 @@ The error was caused by **embedded Python code in JSON template files** that sti
 - [ ] Verify starter projects work correctly
 - [ ] Test component building functionality
 
-## 🚨 Critical Success Factors
+## Critical Success Factors
 
 The original error `Module langflow.base.prompts.api_utils not found` should now be resolved because:
 

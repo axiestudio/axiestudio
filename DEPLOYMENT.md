@@ -114,7 +114,7 @@
 - **Tools**: Web search, file operations
 - **Chains**: LLM chains, conversation chains
 
-## 🚨 **Troubleshooting**
+## **Troubleshooting**
 
 ### **Common Issues**
 

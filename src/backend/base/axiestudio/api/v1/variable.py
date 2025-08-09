@@ -44,7 +44,10 @@ async def create_variable(
     except Exception as e:
         if isinstance(e, HTTPException):
             raise
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        # Log the actual error for debugging
+        from loguru import logger
+        logger.error(f"Variable creation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to create variable: {str(e)}") from e
 
 
 @router.get("/", response_model=list[VariableRead], status_code=200)
@@ -61,7 +64,14 @@ async def read_variables(
     try:
         return await variable_service.get_all(user_id=current_user.id, session=session)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        # Log the actual error for debugging
+        from loguru import logger
+        logger.error(f"Variable read error: {str(e)}")
+        # If it's a decryption error, return empty list instead of 500
+        if "decrypt" in str(e).lower() or "fernet" in str(e).lower():
+            logger.warning("Decryption error detected, returning empty variables list")
+            return []
+        raise HTTPException(status_code=500, detail=f"Failed to read variables: {str(e)}") from e
 
 
 @router.patch("/{variable_id}", response_model=VariableRead, status_code=200)

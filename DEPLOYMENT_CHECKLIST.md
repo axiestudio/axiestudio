@@ -96,7 +96,7 @@ git push origin main
 - [ ] Tracing/Telemetry
 - [ ] Custom Components
 
-## 🚨 **Troubleshooting**
+## **Troubleshooting**
 
 ### **Build Issues**
 - Check Node.js memory settings

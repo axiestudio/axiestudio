@@ -91,10 +91,22 @@ class DatabaseVariableService(VariableService, Service):
                 try:
                     value = auth_utils.decrypt_api_key(variable.value, settings_service=self.settings_service)
                 except Exception as e:  # noqa: BLE001
-                    logger.debug(
-                        f"Decryption of {variable.type} failed for variable '{variable.name}': {e}. Assuming plaintext."
+                    logger.warning(
+                        f"Decryption of {variable.type} failed for variable '{variable.name}': {e}. "
+                        f"This may indicate a SECRET_KEY mismatch. Using placeholder value."
                     )
-                    value = variable.value
+                    # Use a placeholder value instead of the encrypted value
+                    value = "[ENCRYPTED - KEY MISMATCH]"
+            else:
+                # For credential types, also handle decryption errors
+                try:
+                    value = auth_utils.decrypt_api_key(variable.value, settings_service=self.settings_service)
+                except Exception as e:  # noqa: BLE001
+                    logger.warning(
+                        f"Decryption of {variable.type} failed for variable '{variable.name}': {e}. "
+                        f"This may indicate a SECRET_KEY mismatch. Using placeholder value."
+                    )
+                    value = "[ENCRYPTED - KEY MISMATCH]"
             variable_read = VariableRead.model_validate(variable, from_attributes=True)
             variable_read.value = value
             variables_read.append(variable_read)

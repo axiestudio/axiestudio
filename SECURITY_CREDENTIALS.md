@@ -6,7 +6,7 @@
 
 This repository contains **PLACEHOLDER VALUES ONLY**. All real credentials must be set via environment variables in your deployment platform.
 
-## 🚨 REQUIRED CREDENTIAL CHANGES
+## REQUIRED CREDENTIAL CHANGES
 
 Before deploying to production, you **MUST** change these values:
 

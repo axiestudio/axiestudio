@@ -443,7 +443,15 @@ def ensure_valid_key(s: str) -> bytes:
         key = bytes(random.getrandbits(8) for _ in range(32))
         key = base64.urlsafe_b64encode(key)
     else:
-        key = add_padding(s).encode()
+        # For longer keys, ensure they are properly base64 encoded
+        try:
+            # Try to decode as base64 first to check if it's already encoded
+            base64.urlsafe_b64decode(s + '===')  # Add padding for test
+            key = s.encode()
+        except Exception:
+            # If not valid base64, encode the string as base64
+            key = base64.urlsafe_b64encode(s.encode())[:32]  # Take first 32 bytes
+            key = base64.urlsafe_b64encode(key)
     return key
 
 

@@ -36,8 +36,8 @@ from axiestudio.services.utils import initialize_services
 from axiestudio.utils.version import fetch_latest_version, get_version_info
 from axiestudio.utils.version import is_pre_release as axiestudio_is_pre_release
 
-# Initialize console with Windows-safe settings
-console = Console(legacy_windows=True, emoji=False) if platform.system() == "Windows" else Console()
+# Initialize console with safe settings for all platforms to prevent encoding issues
+console = Console(legacy_windows=True, emoji=False)
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -48,10 +48,8 @@ class ProcessManager:
     def __init__(self):
         self.webapp_process = None
         self.shutdown_in_progress = False
-        if platform.system() == "Windows":
-            self._farewell_emoji = ":)"  # ASCII smiley
-        else:
-            self._farewell_emoji = "👋"  # Unicode wave
+        # Always use ASCII to prevent encoding issues in deployment
+        self._farewell_emoji = ":)"  # ASCII smiley
 
     # params are required for signal handlers, even if they are not used
     def handle_sigterm(self, _signum: int, _frame) -> None:

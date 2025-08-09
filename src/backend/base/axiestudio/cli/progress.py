@@ -25,17 +25,11 @@ class ProgressIndicator:
         self._stop_animation = False
         self._animation_thread: threading.Thread | None = None
 
-        # Use Windows-safe characters on Windows to prevent encoding issues
-        if platform.system() == "Windows":
-            self._animation_chars = ["-", "\\", "|", "/"]  # ASCII spinner
-            self._success_icon = "+"  # ASCII plus sign
-            self._failure_icon = "x"  # ASCII x
-            self._farewell_emoji = ":)"  # ASCII smiley
-        else:
-            self._animation_chars = ["□", "▢", "▣", "■"]  # Unicode squares
-            self._success_icon = "✓"  # Unicode checkmark
-            self._failure_icon = "✗"  # Unicode cross
-            self._farewell_emoji = "👋"  # Unicode wave
+        # Always use ASCII characters to prevent encoding issues
+        self._animation_chars = ["-", "\\", "|", "/"]  # ASCII spinner
+        self._success_icon = "+"  # ASCII plus sign
+        self._failure_icon = "x"  # ASCII x
+        self._farewell_emoji = ":)"  # ASCII smiley
 
         self._animation_index = 0
 

@@ -50,13 +50,13 @@ def fix_imports_in_file(file_path):
         if content != original_content:
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
-            print(f"✅ Fixed: {file_path}")
+            print(f"[OK] Fixed: {file_path}")
             return True
         else:
             return False
-            
+
     except Exception as e:
-        print(f"❌ Error fixing {file_path}: {e}")
+        print(f"[ERROR] Error fixing {file_path}: {e}")
         return False
 
 def fix_json_files():
@@ -93,7 +93,7 @@ def fix_json_files():
             if content != original_content:
                 with open(json_file, 'w', encoding='utf-8') as f:
                     f.write(content)
-                print(f"✅ Fixed JSON: {json_file}")
+                print(f"[OK] Fixed JSON: {json_file}")
                 fixed_count += 1
 
         except Exception as e:
