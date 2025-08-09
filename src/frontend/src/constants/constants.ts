@@ -1036,9 +1036,7 @@ export const POLLING_MESSAGES = {
 
 export const BUILD_POLLING_INTERVAL = 25;
 
-export const IS_AUTO_LOGIN =
-  process?.env?.AXIESTUDIO_AUTO_LOGIN &&
-  String(process?.env?.AXIESTUDIO_AUTO_LOGIN)?.toLowerCase() === "true";
+export const IS_AUTO_LOGIN = false;
 
 export const AUTO_LOGIN_RETRY_DELAY = 2000;
 export const AUTO_LOGIN_MAX_RETRY_DELAY = 60000;
@@ -1086,7 +1084,7 @@ export const DEFAULT_FILE_PICKER_TIMEOUT = 60000;
 export const DISCORD_URL = "";
 export const GITHUB_URL = "";
 export const TWITTER_URL = "";
-export const DOCS_URL = "https://www.axiestudio.se";
+export const DOCS_URL = "https://docs.axiestudio.se";
 export const DATASTAX_DOCS_URL = "";
 
 export const UUID_PARSING_ERROR = "uuid_parsing";
