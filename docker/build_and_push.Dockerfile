@@ -45,18 +45,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Copy source code after dependencies for better layer caching
 COPY ./src /app/src
 
-# Copy frontend package files first for better caching
-COPY src/frontend/package*.json /tmp/src/frontend/
-WORKDIR /tmp/src/frontend
-
-# Install frontend dependencies in separate layer
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci
-
-# Copy frontend source and build
 COPY src/frontend /tmp/src/frontend
+WORKDIR /tmp/src/frontend
 RUN --mount=type=cache,target=/root/.npm \
-    npm run build \
+    npm ci \
+    && npm run build \
     && cp -r build /app/src/backend/base/axiestudio/frontend \
     && rm -rf /tmp/src/frontend
 
