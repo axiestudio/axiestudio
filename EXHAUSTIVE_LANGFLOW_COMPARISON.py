@@ -305,7 +305,7 @@ def main():
         print("✅ Customizations implemented")
         return 0
     else:
-        print("🚨 ISSUES DETECTED - REVIEW ABOVE")
+        print("ISSUES DETECTED - REVIEW ABOVE")
         return 1
 
 if __name__ == "__main__":

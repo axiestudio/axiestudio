@@ -296,7 +296,7 @@ def main():
         print("\n🚀 DEPLOY WITH 100% CONFIDENCE!")
         return 0
     else:
-        print(f"\n🚨 {total - passed} ISSUES DETECTED")
+        print(f"\n{total - passed} ISSUES DETECTED")
         print("Review the failed tests above before deployment")
         return 1
 

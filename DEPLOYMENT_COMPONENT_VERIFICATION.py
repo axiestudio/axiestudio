@@ -272,10 +272,10 @@ def main():
         print("✅ All import paths are correct")
         print("✅ Docker configuration is proper")
         print("✅ Entry points are configured")
-        print("\n🚀 DEPLOY WITH CONFIDENCE!")
+        print("\nDEPLOY WITH CONFIDENCE!")
         return 0
     else:
-        print(f"\n🚨 {total - passed} DEPLOYMENT ISSUES DETECTED")
+        print(f"\n{total - passed} DEPLOYMENT ISSUES DETECTED")
         print("Fix the failed tests before deployment")
         return 1
 

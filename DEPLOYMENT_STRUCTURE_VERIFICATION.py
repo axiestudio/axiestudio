@@ -187,7 +187,7 @@ def main():
         for issue in failed_checks:
             print(f"   • {issue}")
         print()
-        print("🚨 FIX THESE ISSUES BEFORE DEPLOYMENT!")
+        print("FIX THESE ISSUES BEFORE DEPLOYMENT!")
         return 1
 
 if __name__ == "__main__":

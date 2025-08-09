@@ -147,7 +147,7 @@ def main():
         for module in failed_imports:
             print(f"   • {module}")
         print()
-        print("🚨 DEPLOYMENT WILL FAIL!")
+        print("DEPLOYMENT WILL FAIL!")
         print("🔧 Fix these imports before deploying")
         return 1
 
