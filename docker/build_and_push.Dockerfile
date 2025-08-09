@@ -20,6 +20,10 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
+# Set UTF-8 encoding for build stage
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update \
@@ -32,7 +36,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     npm \
     # gcc
     gcc \
-    && apt-get clean
+    # locale support for UTF-8
+    locales \
+    && apt-get clean \
+    # Generate UTF-8 locale
+    && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
+    && locale-gen
 
 # Copy necessary files for dependency installation
 COPY ./uv.lock ./pyproject.toml ./README.md ./
@@ -87,5 +96,10 @@ WORKDIR /app
 
 ENV AXIESTUDIO_HOST=0.0.0.0
 ENV AXIESTUDIO_PORT=7860
+
+# Set UTF-8 encoding to handle emojis properly in Docker
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PYTHONIOENCODING=utf-8
 
 CMD ["axiestudio", "run"]
