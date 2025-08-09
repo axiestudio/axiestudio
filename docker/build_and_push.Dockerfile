@@ -34,20 +34,29 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     gcc \
     && apt-get clean
 
-# Copy necessary files for dependency installation
+# Copy dependency files first for better caching
 COPY ./uv.lock ./pyproject.toml ./README.md ./
 COPY ./src/backend/base/uv.lock ./src/backend/base/pyproject.toml ./src/backend/base/README.md ./src/backend/base/
 
+# Install dependencies in a separate layer for better caching
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-editable --extra postgresql
 
+# Copy source code after dependencies for better layer caching
 COPY ./src /app/src
 
-COPY src/frontend /tmp/src/frontend
+# Copy frontend package files first for better caching
+COPY src/frontend/package*.json /tmp/src/frontend/
 WORKDIR /tmp/src/frontend
+
+# Install frontend dependencies in separate layer
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci \
-    && npm run build \
+    npm ci
+
+# Copy frontend source and build
+COPY src/frontend /tmp/src/frontend
+RUN --mount=type=cache,target=/root/.npm \
+    npm run build \
     && cp -r build /app/src/backend/base/axiestudio/frontend \
     && rm -rf /tmp/src/frontend
 
