@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import random
 import warnings
 from collections.abc import Coroutine
@@ -449,7 +450,19 @@ def ensure_valid_key(s: str) -> bytes:
         key = bytes(random.getrandbits(8) for _ in range(32))
         key = base64.urlsafe_b64encode(key)
     else:
-        key = add_padding(s).encode()
+        # For longer keys, try to use them as base64 or create a valid key from them
+        try:
+            # First, try to decode as base64 to check if it's already a valid key
+            decoded = base64.urlsafe_b64decode(add_padding(s))
+            if len(decoded) == 32:
+                # It's already a valid 32-byte key
+                key = add_padding(s).encode()
+            else:
+                # Not 32 bytes, so create a valid key from the input
+                key = base64.urlsafe_b64encode(hashlib.sha256(s.encode()).digest())
+        except Exception:
+            # If base64 decoding fails, create a valid key from the input
+            key = base64.urlsafe_b64encode(hashlib.sha256(s.encode()).digest())
     return key
 
 

@@ -315,7 +315,7 @@ def main():
         print("\n🚀 STRINGENT VERIFICATION COMPLETE!")
         return 0
     else:
-        print(f"\n🚨 {total - passed} CRITICAL DIFFERENCES DETECTED")
+        print(f"\n{total - passed} CRITICAL DIFFERENCES DETECTED")
         print("Axie Studio is NOT a perfect replica - review failures above")
         return 1
 

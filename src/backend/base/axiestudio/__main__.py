@@ -574,18 +574,16 @@ def print_banner(host: str, port: int, protocol: str) -> None:
     import platform
 
     if platform.system() == "Windows":
-        github_icon = "*"
-        discord_icon = "#"
+        website_icon = "*"
         arrow = "->"
         status_icon = "[OK]"
     else:
-        github_icon = ":star2:"
-        discord_icon = ":speech_balloon:"
+        website_icon = "🌐"
         arrow = "→"
         status_icon = "🟢"
 
     info_text = (
-        f"🌐 Website: Visit us {arrow} https://www.axiestudio.se"
+        f"{website_icon} Website: Visit us {arrow} https://www.axiestudio.se"
     )
     telemetry_text = (
         (
@@ -611,7 +609,7 @@ def print_banner(host: str, port: int, protocol: str) -> None:
         # Fallback to a simpler banner without emojis for Windows systems with encoding issues
         fallback_message = (
             f"Welcome to {package_name}\n\n"
-            "🌐 Website: https://www.axiestudio.se\n\n"
+            "* Website: https://www.axiestudio.se\n\n"
             f"{telemetry_text}\n\n"
             f"[OK] Open Axie Studio -> {protocol}://{access_host}:{port}"
         )

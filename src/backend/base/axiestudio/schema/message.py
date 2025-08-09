@@ -398,6 +398,19 @@ class ErrorMessage(Message):
         return reason
 
     @staticmethod
+    def _safe_format_traceback() -> str:
+        """Format traceback with safe encoding handling."""
+        try:
+            tb = traceback.format_exc()
+            # Ensure the traceback can be encoded as UTF-8
+            tb.encode('utf-8')
+            return tb
+        except UnicodeEncodeError:
+            # If there are encoding issues, remove non-ASCII characters
+            tb = traceback.format_exc()
+            return tb.encode('ascii', errors='replace').decode('ascii')
+
+    @staticmethod
     def _format_plain_reason(exception: BaseException) -> str:
         """Format the error reason without markdown."""
         if hasattr(exception, "body") and isinstance(exception.body, dict) and "message" in exception.body:
@@ -464,7 +477,7 @@ class ErrorMessage(Message):
                             field=str(exception.field) if hasattr(exception, "field") else None,
                             reason=markdown_reason,
                             solution=str(exception.solution) if hasattr(exception, "solution") else None,
-                            traceback=traceback.format_exc(),
+                            traceback=self._safe_format_traceback(),
                         )
                     ],
                 )
