@@ -34,15 +34,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     gcc \
     && apt-get clean
 
-# Copy dependency files first for better caching
+# Copy necessary files for dependency installation
 COPY ./uv.lock ./pyproject.toml ./README.md ./
 COPY ./src/backend/base/uv.lock ./src/backend/base/pyproject.toml ./src/backend/base/README.md ./src/backend/base/
 
-# Install dependencies in a separate layer for better caching
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-editable --extra postgresql
 
-# Copy source code after dependencies for better layer caching
 COPY ./src /app/src
 
 COPY src/frontend /tmp/src/frontend
