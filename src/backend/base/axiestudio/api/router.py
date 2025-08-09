@@ -14,7 +14,6 @@ from axiestudio.api.v1 import (
     monitor_router,
     projects_router,
     starter_projects_router,
-    store_router,
     users_router,
     validate_router,
     variables_router,
@@ -34,7 +33,6 @@ router_v2 = APIRouter(
 router_v1.include_router(chat_router)
 router_v1.include_router(endpoints_router)
 router_v1.include_router(validate_router)
-router_v1.include_router(store_router)
 router_v1.include_router(flows_router)
 router_v1.include_router(users_router)
 router_v1.include_router(api_key_router)

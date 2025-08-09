@@ -188,14 +188,8 @@ export async function checkHasApiKey() {
 }
 
 export async function checkHasStore() {
-  try {
-    const res = await api.get(`${BASE_URL_API}store/check/`);
-    if (res?.status === 200) {
-      return res.data;
-    }
-  } catch (error) {
-    throw error;
-  }
+  // Store functionality is disabled in Axie Studio
+  return { enabled: false };
 }
 
 /**
