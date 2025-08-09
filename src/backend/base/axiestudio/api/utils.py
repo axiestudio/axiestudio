@@ -20,11 +20,10 @@ from axiestudio.services.database.models.transactions.model import TransactionTa
 from axiestudio.services.database.models.user.model import User
 from axiestudio.services.database.models.vertex_builds.model import VertexBuildTable
 from axiestudio.services.deps import get_session, session_scope
-from axiestudio.services.store.utils import get_lf_version_from_pypi
+from axiestudio.api.store_utils import get_lf_version_from_pypi, StoreComponentCreate
 
 if TYPE_CHECKING:
     from axiestudio.services.chat.service import ChatService
-    from axiestudio.services.store.schema import StoreComponentCreate
 
 
 API_WORDS = ["api", "key", "token"]
@@ -108,6 +107,10 @@ def get_is_component_from_data(data: dict):
 
 
 async def check_axiestudio_version(component: StoreComponentCreate) -> None:
+    """
+    Check Axie Studio version compatibility.
+    Since store functionality is disabled, this is a no-op function.
+    """
     from axiestudio.utils.version import get_version_info
 
     __version__ = get_version_info()["version"]
@@ -115,14 +118,8 @@ async def check_axiestudio_version(component: StoreComponentCreate) -> None:
     if not component.last_tested_version:
         component.last_tested_version = __version__
 
-    axiestudio_version = await get_lf_version_from_pypi()
-    if axiestudio_version is None:
-        raise HTTPException(status_code=500, detail="Unable to verify the latest version of Axie Studio")
-    if axiestudio_version != component.last_tested_version:
-        logger.warning(
-            f"Your version of Axie Studio ({component.last_tested_version}) is outdated. "
-            f"Please update to the latest version ({axiestudio_version}) and try again."
-        )
+    # Store functionality is disabled in Axie Studio, so no version check needed
+    pass
 
 
 def format_elapsed_time(elapsed_time: float) -> str:
