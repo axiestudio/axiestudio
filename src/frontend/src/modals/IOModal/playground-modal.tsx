@@ -118,6 +118,7 @@ function IOModal({children,
   }, [open]);
 
   function handleDeleteSession(session_id: string) {
+  const { t } = useTranslation();
     // Update UI optimistically
     if (visibleSession === session_id) {
       const remainingSessions = sessions.filter((s) => s !== session_id);

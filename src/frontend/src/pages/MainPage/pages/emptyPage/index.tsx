@@ -10,7 +10,8 @@ type EmptyPageProps = {
   setOpenModal: (open: boolean) => void;
 };
 
-export const EmptyPage = ({ setOpenModal }: EmptyPageProps) => { const folders = useFolderStore((state) => state.folders);
+export const EmptyPage = ({ setOpenModal }: EmptyPageProps) => {
+  const { t } = useTranslation(); const folders = useFolderStore((state) => state.folders);
   const handleFileDrop = useFileDrop(undefined);
 
   return (

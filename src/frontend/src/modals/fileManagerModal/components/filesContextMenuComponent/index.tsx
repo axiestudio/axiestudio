@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { type ReactNode, useState } from "react";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -36,6 +37,7 @@ function FilesContextMenuComponent({children,
   });
 
   const handleSelectOptionsChange = (option: string) => {
+  const { t } = useTranslation();
     switch (option) {
       case "rename":
         handleRename(file.id, file.name);

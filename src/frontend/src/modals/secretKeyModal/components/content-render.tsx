@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import IconComponent from "../../../components/common/genericIconComponent";
@@ -15,7 +16,9 @@ export const ContentRenderKey = ({inputLabel,
   handleCopyClick: () => void;
   textCopied: boolean;
   renderKey: boolean;
-}) => { return (
+}) => {
+  const { t } = useTranslation();
+  return (
     <>
       <div className="flex items-center gap-3">
         <div className="w-full">

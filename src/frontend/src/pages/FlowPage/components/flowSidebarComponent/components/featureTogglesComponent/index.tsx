@@ -7,7 +7,8 @@ const FeatureToggles = ({
   setShowBeta,
   showLegacy,
   setShowLegacy,
-}) => { const toggles = [
+}) => {
+  const { t } = useTranslation(); const toggles = [
     {
       label: t("common.beta"),
       checked: showBeta,

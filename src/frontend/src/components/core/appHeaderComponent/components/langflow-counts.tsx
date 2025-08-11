@@ -1,7 +1,9 @@
 import ShadTooltip from "@/components/common/shadTooltipComponent";
 
 import { useTranslation } from "react-i18next";
-export const AxieStudioCounts = () => { return (
+export const AxieStudioCounts = () => {
+  const { t } = useTranslation();
+  return (
     <div className="flex items-center gap-2">
       <ShadTooltip
         content="Axie Studio"

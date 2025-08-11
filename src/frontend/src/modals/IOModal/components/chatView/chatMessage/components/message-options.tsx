@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { type ButtonHTMLAttributes, useState } from "react";
 import { IconComponent } from "@/components/common/genericIconComponent";
 import { ShadTooltip } from "@/components/common/shadTooltipComponent";
@@ -22,6 +23,7 @@ export function EditMessageButton({onEdit,
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = () => {
+  const { t } = useTranslation();
     onCopy();
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);

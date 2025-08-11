@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { IconComponent } from "@/components/common/genericIconComponent";
 import { ShadTooltip } from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ function TableOptions({resetGrid,
   tableOptions?: TableOptionsTypeAPI;
   paginationInfo?: string;
 }): JSX.Element {
+  const { t } = useTranslation();
   return (
     <div className={cn("absolute bottom-3 left-6")}>
       <div className="flex items-center gap-3">

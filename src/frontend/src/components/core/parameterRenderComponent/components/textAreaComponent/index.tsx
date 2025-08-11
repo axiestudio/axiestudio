@@ -71,7 +71,9 @@ function TextAreaComponent({
   placeholder,
   isToolMode = false,
   nodeInformationMetadata,
-}: InputProps<string, TextAreaComponentType>): JSX.Element { const inputRef = useRef<HTMLInputElement>(null);
+}: InputProps<string, TextAreaComponentType>): JSX.Element {
+  const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
 
@@ -154,7 +156,7 @@ function TextAreaComponent({
 
       <IconComponent
         dataTestId={`button_open_text_area_modal_${id}${editNode ? "_advanced" : ""}`}
-        name={getIconName(disabled, "", "", false, isToolMode) || "Scan"}
+        name={getIconName(t, disabled, "", "", false, isToolMode) || "Scan"}
         className={cn(
           "cursor-pointer bg-background",
           externalLinkIconClasses.icon,

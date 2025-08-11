@@ -55,6 +55,7 @@ function InputComponent({
   }, [disabled]);
 
   function onInputLostFocus(event): void {
+  const { t } = useTranslation();
     if (onBlur) onBlur(event);
   }
 
@@ -189,6 +190,7 @@ function InputComponent({
               <ForwardedIconComponent
                 name={
                   getIconName(
+                    t,
                     disabled!,
                     selectedOption!,
                     optionsIcon,

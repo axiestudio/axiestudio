@@ -22,6 +22,7 @@ export const ErrorView = ({ closeChat,
   fitViewNode: (id: string) => void;
   chat: any;
 }) => {
+  const { t } = useTranslation();
   return (
     <>
       <div className="w-5/6 max-w-[768px] py-4 word-break-break-word">

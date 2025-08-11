@@ -4,7 +4,8 @@ import GlobalVariableModal from "@/components/core/GlobalVariableModal/GlobalVar
 import { CommandItem } from "@/components/ui/command";
 import { cn } from "@/utils/utils";
 
-const GeneralGlobalVariableModal = () => { return (
+const GeneralGlobalVariableModal = () => {
+  const { t } = useTranslation(); return (
     <>
       <GlobalVariableModal disabled={false }>
         <CommandItem value="doNotFilter-addNewVariable">

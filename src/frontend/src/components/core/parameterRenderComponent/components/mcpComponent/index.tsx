@@ -76,6 +76,7 @@ function McpComponent({value,
 
   // Handle selection from dialog
   const handleSelection = (item: any) => {
+  const { t } = useTranslation();
     setSelectedItem([{ name: item.name }]);
     handleOnNewValue(
       { value: { name: item.name, config: {} } },

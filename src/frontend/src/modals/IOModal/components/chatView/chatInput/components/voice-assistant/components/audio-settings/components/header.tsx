@@ -1,8 +1,10 @@
+import { useTranslation } from "react-i18next";
 import React from "react";
 import { IconComponent } from "../../../../../../../../../../components/common/genericIconComponent";
 import { ICON_STROKE_WIDTH } from "../../../../../../../../../../constants/constants";
 
 const AudioSettingsHeader = () => {
+  const { t } = useTranslation();
   return (
     <div
       className="grid gap-1 p-4"

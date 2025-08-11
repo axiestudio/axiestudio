@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
 import { cloneDeep } from "lodash";
@@ -39,6 +40,7 @@ function ToolsTable({rows,
   const { setOpen: setSidebarOpen } = useSidebar();
 
   const getRowId = useMemo(() => {
+  const { t } = useTranslation();
     return (params: any) => params.data.display_name ?? params.data.name;
   }, []);
 

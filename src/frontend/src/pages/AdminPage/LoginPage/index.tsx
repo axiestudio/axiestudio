@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useContext, useState } from "react";
 import AxieStudioLogo from "@/assets/AxieStudioLogo.svg?react";
 import { useLoginUser } from "@/controllers/API/queries/auth";
@@ -14,6 +15,7 @@ import type {
 } from "../../../types/components";
 
 function LoginAdminPage() {
+  const { t } = useTranslation();
   const [inputState, setInputState] =
     useState<loginInputStateType>(CONTROL_LOGIN_STATE);
   const { login } = useContext(AuthContext);

@@ -54,6 +54,7 @@ const ToolbarModals = memo(
   }: ToolbarModalsProps) => {
     // Handlers for confirmation modal
     const handleConfirm = () => {
+  const { t } = useTranslation();
       addFlow({
         flow: flowComponent,
         override: true,

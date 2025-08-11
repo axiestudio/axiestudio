@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { cloneDeep } from "lodash";
 import { useContext, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -22,6 +23,7 @@ import PasswordFormComponent from "./components/PasswordForm";
 import ProfilePictureFormComponent from "./components/ProfilePictureForm";
 
 export const GeneralPage = () => {
+  const { t } = useTranslation();
   const { scrollId } = useParams();
 
   const [inputState, setInputState] = useState<patchUserInputStateType>(

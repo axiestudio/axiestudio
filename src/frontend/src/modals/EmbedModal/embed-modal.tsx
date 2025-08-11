@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark, oneLight } from "react-syntax-highlighter/dist/cjs/styles/prism";
@@ -37,6 +38,7 @@ function EmbedModal({open,
   const embedCode = getWidgetCode({ ...widgetProps, copy: false });
   const copyCode = getWidgetCode({ ...widgetProps, copy: true });
   const copyToClipboard = () => {
+  const { t } = useTranslation();
     if (!navigator.clipboard || !navigator.clipboard.writeText) {
       return;
     }

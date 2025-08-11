@@ -1,7 +1,7 @@
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 
-import { useTranslation } from "react-i18next";
 export const CustomStoreSidebar = (
+  t: (key: string) => string,
   hasApiKey: boolean = false,
   hasStore: boolean = false,
 ) => {

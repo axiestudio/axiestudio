@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { AgGridReact } from "ag-grid-react";
 import { type ForwardedRef, forwardRef } from "react";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
@@ -36,6 +37,7 @@ const TableModal = forwardRef<AgGridReact, TableModalProps>(
     ref: ForwardedRef<AgGridReact>,
   ) => {
     const handleSetOpen = (newOpen: boolean) => {
+  const { t } = useTranslation();
       if (!newOpen && onCancel) {
         onCancel();
       }

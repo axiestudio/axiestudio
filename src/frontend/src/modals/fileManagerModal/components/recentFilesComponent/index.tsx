@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import Fuse from "fuse.js";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,7 @@ function RecentFilesComponent({files,
   const { mutate: renameFile } = usePostRenameFileV2();
 
   const searchResults = useMemo(() => {
+  const { t } = useTranslation();
     const filteredFiles = searchQuery
       ? fuse.search(searchQuery).map(({ item }) => item)
       : (filesWithDisabled ?? []);

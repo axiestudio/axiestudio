@@ -1,5 +1,6 @@
 import type { SelectionChangedEvent } from "ag-grid-community";
 import { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { DEL_KEY_ERROR_ALERT, DEL_KEY_ERROR_ALERT_PLURAL, DEL_KEY_SUCCESS_ALERT, DEL_KEY_SUCCESS_ALERT_PLURAL } from "@/constants/alerts_constants";
 import { type IApiKeysDataArray, useDeleteApiKey, useGetApiKeysQuery } from "@/controllers/API/queries/api-keys";
 import TableComponent from "../../../../components/core/parameterRenderComponent/components/tableComponent";
@@ -9,6 +10,7 @@ import ApiKeyHeaderComponent from "./components/ApiKeyHeader";
 import { getColumnDefs } from "./helpers/column-defs";
 
 function ApiKeysPage() {
+  const { t } = useTranslation();
   const [selectedRows, setSelectedRows]= useState<string[]>([]);
   const setSuccessData = useAlertStore((state) => state.setSuccessData);
   const setErrorData = useAlertStore((state) => state.setErrorData);
@@ -70,7 +72,7 @@ function ApiKeysPage() {
     }
   }
 
-  const columnDefs = getColumnDefs();
+  const columnDefs = getColumnDefs(t);
 
   return (
     <div className="flex h-full w-full flex-col justify-between gap-6">

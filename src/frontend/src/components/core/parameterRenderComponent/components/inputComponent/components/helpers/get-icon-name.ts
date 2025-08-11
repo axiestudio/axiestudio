@@ -1,5 +1,5 @@
-import { useTranslation } from "react-i18next";
 export const getIconName = (
+  t: (key: string) => string,
   disabled?: boolean,
   selectedOption?: string,
   optionsIcon?: string,

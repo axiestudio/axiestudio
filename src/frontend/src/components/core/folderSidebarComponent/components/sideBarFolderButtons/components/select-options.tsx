@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next";
 import { IconComponent } from "@/components/common/genericIconComponent";
 import { ShadTooltip } from "@/components/common/shadTooltipComponent";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select-custom";
+import { useTranslation } from "react-i18next";
 import { DEFAULT_FOLDER } from "@/constants/constants";
 import type { FolderType } from "@/pages/MainPage/entities";
 import { cn } from "@/utils/utils";
@@ -21,6 +23,7 @@ export const SelectOptions = ({item,
   handleSelectFolderToRename: (folder: FolderType) => void;
   checkPathName: (folderId: string) => boolean;
 }) => {
+  const { t } = useTranslation();
   return (
     <div>
       <Select

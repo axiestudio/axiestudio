@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import * as Form from "@radix-ui/react-form";
 import { InputComponent } from "../../../../../../components/core/parameterRenderComponent/components/inputComponent";
 import { Button } from "../../../../../../components/ui/button";
@@ -19,6 +20,7 @@ const PasswordFormComponent = ({
   handleInput,
   handlePatchPassword,
 }: PasswordFormComponentProps) => {
+  const { t } = useTranslation();
   return (
     <>
       <Form.Root

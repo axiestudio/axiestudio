@@ -20,7 +20,9 @@ function DeleteConfirmationModal({
   open?: boolean;
   setOpen?: (open: boolean) => void;
   note?: string;
-}) { return (
+}) {
+  const { t } = useTranslation();
+  return (
     <Dialog open={open } onOpenChange={setOpen}>
       <DialogTrigger asChild={!children ? true : asChild} tabIndex={-1}>
         {children ?? <></>}

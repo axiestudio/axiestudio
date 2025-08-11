@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ShadTooltip } from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
@@ -87,6 +88,7 @@ export function VoiceAssistant({flowId,
   const currentFlowId = currentFlow?.id;
 
   const hasOpenAIAPIKey = useMemo(() => {
+  const { t } = useTranslation();
     return (
       variables?.find((variable) => variable === "OPENAI_API_KEY")?.length! > 0
     );

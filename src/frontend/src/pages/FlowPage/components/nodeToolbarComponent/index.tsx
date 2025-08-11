@@ -140,6 +140,7 @@ const NodeToolbarComponent = memo(
     );
 
     const handleNodeClass = (newNodeClass: APIClassType, type: string) => {
+  const { t } = useTranslation();
       handleNodeClassHook(newNodeClass, type);
     };
 

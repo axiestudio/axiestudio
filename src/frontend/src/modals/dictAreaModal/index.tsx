@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import type { JsonEditor as VanillaJsonEditor } from "vanilla-jsoneditor";
 import useAlertStore from "@/stores/alertStore";
@@ -28,6 +29,7 @@ function DictAreaModal({children,
   }, [value, open]);
 
   const handleSubmit = () => {
+  const { t } = useTranslation();
     if (onChange) {
       try {
         const componentValue = jsonEditorRef.current?.get() ?? { json: {} };

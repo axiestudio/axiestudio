@@ -49,6 +49,7 @@ export const NodeDialog: React.FC<NodeDialogProps> = ({
   const dialogTemplate = dialogNodeData?.template || {};
 
   const setNodeClass = (newNode: APIClassType) => {
+  const { t } = useTranslation();
     const targetNode = nodes.find((node) => node.id === nodeId);
     if (!targetNode) return;
 

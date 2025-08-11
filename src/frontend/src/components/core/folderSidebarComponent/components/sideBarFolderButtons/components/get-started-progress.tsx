@@ -7,7 +7,9 @@ import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import type { Users } from "@/types/api";
 
 export const GetStartedProgress: FC<{ userData: Users;
-  handleDismissDialog: () => void; }> = ({ handleDismissDialog }) => { const [newProjectModal, setNewProjectModal] = useState(false);
+  handleDismissDialog: () => void; }> = ({ handleDismissDialog }) => {
+  const { t } = useTranslation();
+  const [newProjectModal, setNewProjectModal] = useState(false);
 
   const flows = useFlowsManagerStore((state) => state.flows);
   const hasFlows = flows && flows?.length > 0;

@@ -17,6 +17,7 @@ import TemplateContentComponent from "./components/TemplateContentComponent";
 function TemplatesModal({open,
   setOpen,
 }: newFlowModalPropsType): JSX.Element {
+  const { t } = useTranslation();
   const [currentTab, setCurrentTab] = useState("get-started");
   const addFlow = useAddFlow();
   const navigate = useCustomNavigate();

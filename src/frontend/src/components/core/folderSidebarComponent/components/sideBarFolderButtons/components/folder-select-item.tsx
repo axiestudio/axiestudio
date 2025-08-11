@@ -1,7 +1,10 @@
+import { useTranslation } from "react-i18next";
 import { IconComponent } from "@/components/common/genericIconComponent";
 import { cn } from "@/utils/utils";
 
-export const FolderSelectItem = ({name, iconName }) => (
+export const FolderSelectItem = ({name, iconName }: {name: string, iconName: string}) => {
+  const { t } = useTranslation();
+  return (
   <div
     className={cn(
       name === t("common.delete") ? "text-destructive" : "",
@@ -11,4 +14,5 @@ export const FolderSelectItem = ({name, iconName }) => (
     <IconComponent name={iconName} className="mr-2 w-4" />
     <span>{name}</span>
   </div>
-);
+  );
+};

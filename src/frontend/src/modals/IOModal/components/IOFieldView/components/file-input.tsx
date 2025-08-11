@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { usePostUploadFile } from "@/controllers/API/queries/files/use-post-upload-file";
 import { createFileUpload } from "@/helpers/create-file-upload";
@@ -10,6 +11,7 @@ import useFlowsManagerStore from "../../../../../stores/flowsManagerStore";
 import type { IOFileInputProps } from "../../../../../types/components";
 
 function IOFileInput({field, updateValue }: IOFileInputProps) {
+  const { t } = useTranslation();
   //component to handle file upload from chatIO
   const currentFlowId = useFlowsManagerStore((state) => state.currentFlowId);
 

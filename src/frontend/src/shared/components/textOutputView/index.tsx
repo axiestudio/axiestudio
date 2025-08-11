@@ -7,7 +7,8 @@ const TextOutputView = ({
 }: {
   left: boolean | undefined;
   value: any;
-}) => { if (typeof value === "object" && Object.keys(value).includes("text")) {
+}) => {
+  const { t } = useTranslation(); if (typeof value === "object" && Object.keys(value).includes("text")) {
     value = value.text;
    }
 

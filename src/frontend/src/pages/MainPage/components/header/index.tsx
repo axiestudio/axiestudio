@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { debounce } from "lodash";
 import { useCallback, useEffect, useState } from "react";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
@@ -69,6 +70,7 @@ const HeaderComponent = ({
   }, [flowType, isMCPEnabled, setFlowType]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { t } = useTranslation();
     setDebouncedSearch(e.target.value);
   };
 

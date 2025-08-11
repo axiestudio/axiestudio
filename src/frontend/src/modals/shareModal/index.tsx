@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { cloneDeep } from "lodash";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useSaveFlow } from "@/hooks/flows/use-save-flow";
@@ -66,6 +67,7 @@ function ShareModal({component,
   }, [internalOpen, hasApiKey, hasStore]);
 
   async function handleGetNames() {
+  const { t } = useTranslation();
     setLoadingNames(true);
     const unavaliableNames: Array<{ id: string; name: string }> = [];
     await getStoreComponents({

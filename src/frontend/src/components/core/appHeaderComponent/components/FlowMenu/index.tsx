@@ -20,7 +20,9 @@ import { useShortcutsStore } from "@/stores/shortcuts";
 import { swatchColors } from "@/utils/styleUtils";
 import { cn, getNumberFromString } from "@/utils/utils";
 
-export const MenuBar = memo((): JSX.Element => { const setSuccessData = useAlertStore((state) => state.setSuccessData);
+export const MenuBar = memo((): JSX.Element => {
+  const { t } = useTranslation();
+  const setSuccessData = useAlertStore((state) => state.setSuccessData);
   const saveLoading = useFlowsManagerStore((state) => state.saveLoading);
   const [openSettings, setOpenSettings] = useState(false);
   const navigate = useCustomNavigate();

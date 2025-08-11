@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ChangeEvent, KeyboardEvent } from "react";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ const InputSearchComponent = ({
   const pagePath = window.location.pathname;
 
   const getSearchPlaceholder = () => {
+  const { t } = useTranslation();
     if (pagePath.includes("flows")) {
       return "Search Flows";
     } else if (pagePath.includes("components")) {

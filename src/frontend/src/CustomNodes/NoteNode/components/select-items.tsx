@@ -6,7 +6,9 @@ import ToolbarSelectItem from "@/pages/FlowPage/components/nodeToolbarComponent/
 import type { NoteDataType } from "@/types/flow";
 
 export const SelectItems = memo(
-  ({ shortcuts, data }: { shortcuts: any[]; data: NoteDataType }) => (
+  ({ shortcuts, data }: { shortcuts: any[]; data: NoteDataType }) => {
+    const { t } = useTranslation();
+    return (
     <SelectContentWithoutPortal>
       <SelectItem value="duplicate">
         <ToolbarSelectItem
@@ -53,7 +55,8 @@ export const SelectItems = memo(
         </div>
       </SelectItem>
     </SelectContentWithoutPortal>
-  ),
+    );
+  },
 );
 
 SelectItems.displayName = "SelectItems";

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { jsonquery } from "@jsonquerylang/jsonquery";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { type Content, createJSONEditor, type MenuItem, type Mode, type JsonEditor as VanillaJsonEditor } from "vanilla-jsoneditor";
@@ -53,6 +54,7 @@ const JsonEditor = ({
   }, [initialFilter, newRef.current]);
 
   const isValidResult = (result: any): boolean => {
+  const { t } = useTranslation();
     // Only allow objects and arrays
     return (
       result !== null &&

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useContext, useState } from "react";
 import { useParams } from "react-router-dom";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
@@ -11,6 +12,7 @@ import useScrollToElement from "../hooks/use-scroll-to-element";
 import StoreApiKeyFormComponent from "./components/StoreApiKeyForm";
 
 const StoreApiKeyPage = () => {
+  const { t } = useTranslation();
   const { scrollId } = useParams();
   const [inputState, setInputState] = useState(CONTROL_PATCH_USER_STATE);
   const { storeApiKey } = useContext(AuthContext);

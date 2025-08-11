@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { memo } from "react";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ export const SearchInput = memo(function SearchInput({searchInputRef,
   handleInputBlur: (event: React.FocusEvent<HTMLInputElement>) => void;
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="relative w-full flex-1">
       <Input

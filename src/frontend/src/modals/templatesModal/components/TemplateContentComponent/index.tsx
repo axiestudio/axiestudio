@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import Fuse from "fuse.js";
 import { SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -55,6 +56,7 @@ function TemplateContentComponent({currentTab,
   }, [searchQuery, currentTab]);
 
   const handleCardClick = (example) => {
+  const { t } = useTranslation();
     updateIds(example.data);
     addFlow({ flow: example }).then((id) => {
       navigate(`/flow/${id}/folder/${folderIdUrl}`);

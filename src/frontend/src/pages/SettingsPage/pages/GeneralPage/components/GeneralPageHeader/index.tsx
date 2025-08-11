@@ -1,7 +1,8 @@
 import ForwardedIconComponent from "../../../../../../components/common/genericIconComponent";
 
 import { useTranslation } from "react-i18next";
-const GeneralPageHeaderComponent = () => { return (
+const GeneralPageHeaderComponent = () => {
+  const { t } = useTranslation(); return (
     <>
       <div className="flex w-full items-center justify-between gap-4 space-y-0.5">
         <div className="flex w-full flex-col">

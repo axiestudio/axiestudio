@@ -68,6 +68,7 @@ function CopyFieldAreaComponent({value,
   const endpointName = currentFlow?.endpoint_name ?? "";
 
   const valueToRender = useMemo(() => {
+  const { t } = useTranslation();
     if (value === BACKEND_URL) {
       return `${URL_WEBHOOK }${endpointName}`;
     } else if (value === MCP_SSE_VALUE) {

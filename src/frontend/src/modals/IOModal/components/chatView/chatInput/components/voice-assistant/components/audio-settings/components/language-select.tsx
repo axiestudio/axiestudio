@@ -12,7 +12,8 @@ interface LanguageSelectProps {
 const LanguageSelect = ({
   language,
   handleSetLanguage,
-}: LanguageSelectProps) => { return (
+}: LanguageSelectProps) => {
+  const { t } = useTranslation(); return (
     <div className="grid w-full items-center gap-2">
       <span className="flex w-full items-center text-sm">{t("common.preferredlanguage") }<ShadTooltip content="Select the language for speech recognition">
           <div>

@@ -7,7 +7,9 @@ import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
 
 export const MCPServerNotice: FC<{
   handleDismissDialog: () => void;
-}> = ({ handleDismissDialog }) => { const navigate = useCustomNavigate();
+}> = ({ handleDismissDialog }) => {
+  const { t } = useTranslation();
+  const navigate = useCustomNavigate();
   return (
     <div className="relative flex flex-col gap-3 rounded-xl border p-4 shadow-md">
       <Button

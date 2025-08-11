@@ -60,6 +60,7 @@ function IOFieldView({
     : { handleOnNewValue: (value: any, options?: any) => {} };
 
   function handleOutputType() {
+  const { t } = useTranslation();
     if (!node) return <>"No node found!"</>;
     switch (type) {
       case InputOutput.INPUT:

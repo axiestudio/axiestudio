@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import * as React from "react";
@@ -61,6 +62,7 @@ const DialogContent = React.forwardRef<
     { className, children, hideTitle = false, closeButtonClassName, ...props },
     ref,
   ) => {
+    const { t } = useTranslation();
     // Check if DialogTitle is included in children
     const hasDialogTitle = React.Children.toArray(children).some(
       (child) => React.isValidElement(child) && child.type === DialogTitle,

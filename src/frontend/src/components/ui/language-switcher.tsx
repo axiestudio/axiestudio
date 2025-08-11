@@ -173,6 +173,7 @@ export function LanguageSwitcher({
 
 // Hook for language detection and initialization
 export function useLanguageInitialization() {
+  const { t } = useTranslation();
   const { i18n } = useTranslation();
   
   React.useEffect(() => {

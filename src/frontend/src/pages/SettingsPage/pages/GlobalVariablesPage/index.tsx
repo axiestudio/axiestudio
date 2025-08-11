@@ -17,7 +17,8 @@ import { Badge } from "../../../../components/ui/badge";
 import { Button } from "../../../../components/ui/button";
 import useAlertStore from "../../../../stores/alertStore";
 
-function GlobalVariablesPage() {const setErrorData = useAlertStore((state) => state.setErrorData);
+function GlobalVariablesPage() {
+  const { t } = useTranslation();const setErrorData = useAlertStore((state) => state.setErrorData);
   const [openModal, setOpenModal] = useState(false);
   const initialData = useRef<GlobalVariable | undefined>(undefined);
   const BadgeRenderer = (props) => {

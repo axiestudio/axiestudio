@@ -134,6 +134,7 @@ function NodeOutputField({
   }, [data.id, data.node?.flow, outputProxy, outputName]);
 
   const flowPoolNode = useMemo(() => {
+  const { t } = useTranslation();
     const pool = flowPool[flowPoolId] ?? [];
     return pool[pool.length - 1];
   }, [flowPool, flowPoolId]);

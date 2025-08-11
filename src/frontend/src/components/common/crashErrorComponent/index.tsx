@@ -28,16 +28,16 @@ function CrashErrorComponent({
             <CardContent className="grid">
               <div>
                 <p>
-                  Please report errors with detailed tracebacks on the{" "}
+                  Please report errors and get support on the{" "}
                   <a
-                    href="https://github.com/axiestudio-ai/axiestudio/issues"
+                    href="https://axiestudio.se"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-medium hover:underline"
                   >
-                    GitHub Issues
+                    Axie Studio website
                   </a>{" "}
-                  page.
+                  or contact our support team.
                   <br></br>
                   Thank you!
                 </p>
@@ -49,12 +49,12 @@ function CrashErrorComponent({
                 <Button onClick={resetErrorBoundary}>Restart Axie Studio</Button>
 
                 <a
-                  href="https://github.com/axiestudio-ai/axiestudio/issues/new"
+                  href="https://axiestudio.se"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   <Button className="ml-3" ignoreTitleCase variant={"outline"}>
-                    Report on GitHub
+                    Visit Axie Studio
                   </Button>
                 </a>
               </div>

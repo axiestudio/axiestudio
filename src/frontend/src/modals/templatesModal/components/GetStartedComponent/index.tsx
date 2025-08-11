@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { BaseModal } from "@/modals/baseModal";
 import { useFlowsManagerStore } from "@/stores/flowsManagerStore";
 import type { CardData  } from "@/types/templates/types";
@@ -11,6 +12,7 @@ import multiAgentHorizontal from "../../../../assets/temp-pat-m-3.png";
 import TemplateGetStartedCardComponent from "../TemplateGetStartedCardComponent";
 
 function GetStartedComponent() {
+  const { t } = useTranslation();
   const examples = useFlowsManagerStore((state) => state.examples);
 
   // Define the card data

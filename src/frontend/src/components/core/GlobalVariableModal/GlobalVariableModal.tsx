@@ -71,6 +71,7 @@ function GlobalVariableModal({children,
   const setSuccessData = useAlertStore((state) => state.setSuccessData);
 
   function handleSaveVariable() {
+  const { t } = useTranslation();
     const data: {
       name: string;
       value: string;

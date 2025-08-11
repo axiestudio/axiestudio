@@ -10,7 +10,9 @@ function OutputModal({nodeId,
   disabled,
   open,
   setOpen,
-}): JSX.Element { const [activeTab, setActiveTab] = useState<"Outputs" | "Logs">("Outputs");
+}): JSX.Element {
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<"Outputs" | "Logs">("Outputs");
   return (
     <BaseModal
       open={open }

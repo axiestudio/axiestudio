@@ -7,7 +7,8 @@ type EmptyFolderProps = {
   setOpenModal: (open: boolean) => void;
 };
 
-export const EmptyFolder = ({ setOpenModal }: EmptyFolderProps) => { const folders = useFolderStore((state) => state.folders);
+export const EmptyFolder = ({ setOpenModal }: EmptyFolderProps) => {
+  const { t } = useTranslation(); const folders = useFolderStore((state) => state.folders);
 
   return (
     <div className="m-0 flex w-full justify-center">

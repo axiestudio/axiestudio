@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { cloneDeep } from "lodash";
 import { useContext, useEffect, useRef, useState } from "react";
 import { PaginatorComponent } from "@/components/common/paginatorComponent";
@@ -19,6 +20,7 @@ import type { Users } from "../../types/api";
 import type { UserInputType } from "../../types/components";
 
 function AdminPage() {
+  const { t } = useTranslation();
   const [inputValue, setInputValue] = useState("");
 
   const [size, setPageSize] = useState(PAGINATION_SIZE);

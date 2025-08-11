@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import * as Form from "@radix-ui/react-form";
 import { Eye, EyeOff } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
@@ -58,6 +59,7 @@ function UserManagementModal({title,
   }, [open]);
 
   function resetForm() {
+  const { t } = useTranslation();
     setPassword("");
     setUserName("");
     setConfirmPassword("");

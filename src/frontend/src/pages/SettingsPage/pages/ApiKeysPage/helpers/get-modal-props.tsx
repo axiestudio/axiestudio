@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-export const getModalPropsApiKey = () => { const modalProps = {
+export const getModalPropsApiKey = () => {
+  const { t } = useTranslation(); const modalProps = {
     title: t("actions.createapikey"),
     description: t("actions.createasecretapi"),
     inputPlaceholder: t("common.myapikey"),

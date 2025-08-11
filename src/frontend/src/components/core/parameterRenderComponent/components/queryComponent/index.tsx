@@ -61,7 +61,9 @@ function QueryComponent({
   display_name,
   info,
   separator,
-}: InputProps<string, QueryComponentType>): JSX.Element { const inputRef = useRef<HTMLInputElement>(null);
+}: InputProps<string, QueryComponentType>): JSX.Element {
+  const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(false);
 
   const getInputClassName = () => {
@@ -104,7 +106,7 @@ function QueryComponent({
 
       <IconComponent
         dataTestId={`button_open_text_area_modal_${id}${editNode ? "_advanced" : ""}`}
-        name={getIconName(disabled, "", "", false, isToolMode) || "Scan"}
+        name={getIconName(t, disabled, "", "", false, isToolMode) || "Scan"}
         className={cn(
           "cursor-pointer bg-background",
           externalLinkIconClasses.icon,

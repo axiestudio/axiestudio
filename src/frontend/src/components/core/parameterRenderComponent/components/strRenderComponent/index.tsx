@@ -87,5 +87,4 @@ export function StrRenderComponent({
 }
 
 
-export default noOptions;
-export { noOptions as StrRenderComponent };
+export default StrRenderComponent;

@@ -8,7 +8,9 @@ function RenderKey({value,
 }: {
   value: string;
   tableRender?: boolean;
-}): JSX.Element { const check = value.toLowerCase().trim();
+}): JSX.Element {
+  const { t } = useTranslation();
+  const check = value.toLowerCase().trim();
   return (
     <div>
       {check === "shift" ? (

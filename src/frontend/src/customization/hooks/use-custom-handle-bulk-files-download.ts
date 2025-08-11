@@ -1,7 +1,8 @@
 import { useGetDownloadFilesV2 } from "@/controllers/API/queries/file-management/use-get-download-files";
 
 import { useTranslation } from "react-i18next";
-export const useCustomHandleBulkFilesDownload = () => { const { mutate: downloadFiles  } = useGetDownloadFilesV2();
+export const useCustomHandleBulkFilesDownload = () => {
+  const { t } = useTranslation(); const { mutate: downloadFiles  } = useGetDownloadFilesV2();
 
   const handleBulkDownload = async (
     selectedFiles: any,

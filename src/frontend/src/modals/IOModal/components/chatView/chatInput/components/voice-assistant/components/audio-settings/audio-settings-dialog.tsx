@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { IconComponent } from "@/components/common/genericIconComponent";
 import { ShadTooltip } from "@/components/common/shadTooltipComponent";
@@ -130,6 +131,7 @@ const SettingsVoiceModal = ({
   }, [isFetched]);
 
   const handleSetVoice = (value: string) => {
+  const { t } = useTranslation();
     setVoice(value);
     const isOpenAiVoice = openaiVoices.some((voice) => voice.value === value);
     if (isOpenAiVoice) {

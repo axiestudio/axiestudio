@@ -24,6 +24,7 @@ function TextModal({children,
   const [internalValue, setInternalValue] = useState(value);
 
   const handleEscapeKeyDown = (event: KeyboardEvent) => {
+  const { t } = useTranslation();
     setOpen(false);
     event.stopPropagation();
    };

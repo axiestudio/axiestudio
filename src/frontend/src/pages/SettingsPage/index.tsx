@@ -8,7 +8,8 @@ import useAuthStore from "@/stores/authStore";
 import { useStoreStore } from "@/stores/storeStore";
 import ForwardedIconComponent from "../../components/common/genericIconComponent";
 import PageLayout from "../../components/common/pageLayout";
-function SettingsPage(): JSX.Element {const autoLogin = useAuthStore((state) => state.autoLogin);
+function SettingsPage(): JSX.Element {
+  const { t } = useTranslation();const autoLogin = useAuthStore((state) => state.autoLogin);
   const hasStore = useStoreStore((state) => state.hasStore);
 
   // Hides the General settings if there is nothing to show

@@ -5,6 +5,7 @@ const NoResultsMessage = ({
   clearSearchText = t("common.clearyoursearch"),
   additionalText = "or filter and try a different query.",
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="flex h-full flex-col items-center justify-center p-3 text-center">
       <p className="text-sm text-secondary-foreground">

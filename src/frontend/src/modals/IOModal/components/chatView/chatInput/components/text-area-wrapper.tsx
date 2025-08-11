@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { useUtilityStore } from "@/stores/utilityStore";
 import { Textarea } from "../../../../../../components/ui/textarea";
@@ -15,6 +16,7 @@ const TextAreaWrapper = ({
   files,
   isDragging,
 }) => {
+  const { t } = useTranslation();
   const getPlaceholderText = (
     isDragging: boolean,
     noInput: boolean,

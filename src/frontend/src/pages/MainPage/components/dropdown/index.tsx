@@ -23,6 +23,7 @@ const DropdownComponent = ({
   const { handleDuplicate  } = useDuplicateFlow({ flow: flowData });
 
   const duplicateFlow = () => {
+  const { t } = useTranslation();
     handleDuplicate().then(() =>
       setSuccessData({
         title: `${flowData.is_component ? "Component" : "Flow"} duplicated successfully`,

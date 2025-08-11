@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark, oneLight } from "react-syntax-highlighter/dist/cjs/styles/prism";
@@ -31,6 +32,7 @@ const operatingSystemTabs = [
 ];
 
 function APITabsComponent() {
+  const { t } = useTranslation();
   const [isCopied, setIsCopied] = useState<Boolean>(false);
   const [copiedStep, setCopiedStep] = useState<string | null>(null);
   const endpointName = useFlowStore(

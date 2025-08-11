@@ -1,7 +1,7 @@
 import TableAutoCellRender from "@/components/core/parameterRenderComponent/components/tableComponent/components/tableAutoCellRender";
 
-import { useTranslation } from "react-i18next";
-export const getColumnDefs = () => { return [
+export const getColumnDefs = (t: (key: string) => string) => {
+  return [
     {
       headerCheckboxSelection: true,
       checkboxSelection: true,
