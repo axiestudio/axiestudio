@@ -1,13 +1,9 @@
 import { create } from "zustand";
 import type { APIDataType } from "../types/api";
 import type { TypesStoreType } from "../types/zustand/types";
-import {
-  extractFieldsFromComponenents,
-  templatesGenerator,
-  typesGenerator,
-} from "../utils/reactflowUtils";
+import { extractFieldsFromComponenents, templatesGenerator, typesGenerator } from "../utils/reactflowUtils";
 
-export const useTypesStore = create<TypesStoreType>((set, get) => ({
+export const useTypesStore= create<TypesStoreType>((set, get) => ({
   ComponentFields: new Set(),
   setComponentFields: (fields) => {
     set({ ComponentFields: fields });
@@ -30,7 +26,7 @@ export const useTypesStore = create<TypesStoreType>((set, get) => ({
     }));
   },
   setTemplates: (newState: {}) => {
-    set({ templates: newState });
+  set({ templates: newState });
   },
   setData: (change: APIDataType | ((old: APIDataType) => APIDataType)) => {
     const newChange =

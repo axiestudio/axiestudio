@@ -1,13 +1,7 @@
-import {
-  ControlButton,
-  Panel,
-  type ReactFlowState,
-  useReactFlow,
-  useStore,
-  useStoreApi,
-} from "@xyflow/react";
+import { ControlButton, Panel, type ReactFlowState, useReactFlow, useStore, useStoreApi } from "@xyflow/react";
 import { cloneDeep } from "lodash";
 import { useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import { shallow } from "zustand/shallow";
 import IconComponent from "@/components/common/genericIconComponent";
@@ -35,10 +29,9 @@ export const CustomControlButton = ({
   backgroundClasses,
   iconClasses,
   testId,
-}: CustomControlButtonProps): JSX.Element => {
-  return (
+}: CustomControlButtonProps): JSX.Element => { return (
     <ControlButton
-      data-testid={testId}
+      data-testid={testId }
       className="group !h-8 !w-8 rounded !p-0"
       onClick={onClick}
       disabled={disabled}
@@ -67,6 +60,7 @@ const selector = (s: ReactFlowState) => ({
 });
 
 const CanvasControls = ({ children }) => {
+  
   const store = useStoreApi();
   const { fitView, zoomIn, zoomOut } = useReactFlow();
   const { isInteractive, minZoomReached, maxZoomReached } = useStore(
@@ -174,3 +168,5 @@ const CanvasControls = ({ children }) => {
 };
 
 export default CanvasControls;
+
+export { CanvasControls };

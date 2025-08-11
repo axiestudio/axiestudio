@@ -20,3 +20,5 @@ const useAutoSaveFlow = () => {
 };
 
 export default useAutoSaveFlow;
+
+export { useAutoSaveFlow };

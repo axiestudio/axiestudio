@@ -29,14 +29,13 @@ export const InputEditFolderName = ({
   handleEditNameFolder: (item: FolderType) => void;
   editFolderName: { name: string; edit: boolean };
   foldersNames: Record<string, string>;
-}) => {
-  return (
+}) => { return (
     <>
       <Input
         className="h-6 flex-1 text-xs focus:border-0"
         onChange={(e) => {
           handleEditFolderName(e, item.name);
-        }}
+         }}
         maxLength={38}
         ref={refInput}
         onKeyDown={(e) => {

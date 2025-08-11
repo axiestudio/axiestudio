@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
@@ -7,14 +8,13 @@ import { cn } from "@/utils/utils";
 import CodeTabsComponent from "../../../../../../components/core/codeTabsComponent";
 import LogoIcon from "./chat-logo-icon";
 
-export const ErrorView = ({
-  closeChat,
+export const ErrorView = ({ closeChat,
   fitViewNode,
   chat,
   showError,
   lastMessage,
   blocks,
-}: {
+ }: {
   blocks: any;
   showError: boolean;
   lastMessage: boolean;
@@ -87,9 +87,7 @@ export const ErrorView = ({
                             )}
                           </div>
                           <div>
-                            <h3 className="pb-3 font-semibold">
-                              Error details:
-                            </h3>
+                            <h3 className="pb-3 font-semibold">{t("errors.errordetails")}</h3>
                             {content.field && (
                               <p className="pb-1">Field: {content.field}</p>
                             )}
@@ -170,13 +168,11 @@ export const ErrorView = ({
                             )}
                             {content.solution && (
                               <div className="mt-4">
-                                <h3 className="pb-3 font-semibold">
-                                  Steps to fix:
-                                </h3>
+                                <h3 className="pb-3 font-semibold">{t("common.stepstofix")}</h3>
                                 <ol className="list-decimal pl-5">
-                                  <li>Check the component settings</li>
-                                  <li>Ensure all required fields are filled</li>
-                                  <li>Re-run your flow</li>
+                                  <li>{t("flows.checkthecomponentsettings")}</li>
+                                  <li>{t("common.ensureallrequiredfields")}</li>
+                                  <li>{t("flows.rerunyourflow")}</li>
                                 </ol>
                               </div>
                             )}

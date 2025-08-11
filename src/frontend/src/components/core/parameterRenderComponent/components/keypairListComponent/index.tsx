@@ -2,11 +2,7 @@ import { cloneDeep } from "lodash";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { ICON_STROKE_WIDTH } from "@/constants/constants";
-import {
-  convertObjToArray,
-  convertValuesToNumbers,
-  hasDuplicateKeys,
-} from "@/utils/reactflowUtils";
+import { convertObjToArray, convertValuesToNumbers, hasDuplicateKeys } from "@/utils/reactflowUtils";
 import { cn } from "@/utils/utils";
 import IconComponent from "../../../../common/genericIconComponent";
 
@@ -161,3 +157,5 @@ const KeypairListComponent = ({
 };
 
 export default KeypairListComponent;
+
+export { KeypairListComponent };

@@ -39,11 +39,7 @@ import { GleanIcon } from "@/icons/Glean";
 import { GoogleIcon } from "@/icons/Google";
 import { GoogleDriveIcon } from "@/icons/GoogleDrive";
 import { GoogleGenerativeAIIcon } from "@/icons/GoogleGenerativeAI";
-import {
-  GradientInfinity,
-  GradientSave,
-  GradientUngroup,
-} from "@/icons/GradientSparkles";
+import { GradientInfinity, GradientSave, GradientUngroup } from "@/icons/GradientSparkles";
 import { GridHorizontalIcon } from "@/icons/GridHorizontal";
 import { GroqIcon } from "@/icons/Groq";
 import { GlobeOkIcon } from "@/icons/globe-ok";

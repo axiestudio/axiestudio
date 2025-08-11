@@ -18,3 +18,5 @@ const SkeletonGroup = ({
 };
 
 export default SkeletonGroup;
+
+export { SkeletonGroup };

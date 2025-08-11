@@ -1,10 +1,7 @@
-import {
-  PDFCheckFlow,
-  PDFLoadErrorTitle,
-} from "../../../../constants/constants";
+import { PDFCheckFlow, PDFLoadErrorTitle } from "../../../../constants/constants";
 import IconComponent from "../../../common/genericIconComponent";
 
-export default function ErrorComponent(): JSX.Element {
+function ErrorComponent(): JSX.Element {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center bg-muted">
       <div className="chat-alert-box">
@@ -20,3 +17,7 @@ export default function ErrorComponent(): JSX.Element {
     </div>
   );
 }
+
+
+export default ErrorComponent;
+export { ErrorComponent };

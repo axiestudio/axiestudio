@@ -1,22 +1,17 @@
 import { useState } from "react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { useTranslation } from "react-i18next";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import type { AccordionComponentType } from "@/types/components";
 import { cn } from "@/utils/utils";
 
-export default function AccordionComponent({
+function AccordionComponent({
   trigger,
   children,
   disabled,
   open = [],
   keyValue,
   sideBar,
-}: AccordionComponentType): JSX.Element {
-  const [value, setValue] = useState(
+}: AccordionComponentType): JSX.Element { const [value, setValue] = useState(
     open.length === 0 ? "" : getOpenAccordion(),
   );
 
@@ -25,7 +20,7 @@ export default function AccordionComponent({
     open.forEach((el) => {
       if (el == keyValue) {
         value = keyValue;
-      }
+       }
     });
     return value;
   }
@@ -65,3 +60,6 @@ export default function AccordionComponent({
     </>
   );
 }
+
+export default AccordionComponent;
+export { AccordionComponent };

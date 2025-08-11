@@ -50,3 +50,5 @@ const SvgCohere = (props) => (
   </svg>
 );
 export default SvgCohere;
+
+export { SvgCohere };

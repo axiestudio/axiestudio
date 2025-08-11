@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  AnimatePresence,
-  type AnimatePresenceProps,
-  motion,
-  type Transition,
-  type Variants,
-} from "framer-motion";
+import { AnimatePresence, type AnimatePresenceProps, motion, type Transition, type Variants } from "framer-motion";
 import { Children, useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/utils/utils";
 

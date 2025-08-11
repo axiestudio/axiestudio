@@ -127,3 +127,5 @@ const RenderInputParameters = ({
 };
 
 export default RenderInputParameters;
+
+export { RenderInputParameters };

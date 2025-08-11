@@ -1,14 +1,7 @@
 import * as Form from "@radix-ui/react-form";
-import InputComponent from "../../../../../../components/core/parameterRenderComponent/components/inputComponent";
+import { InputComponent } from "../../../../../../components/core/parameterRenderComponent/components/inputComponent";
 import { Button } from "../../../../../../components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../../../../../../components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../../../../../components/ui/card";
 
 type PasswordFormComponentProps = {
   password: string;
@@ -52,7 +45,7 @@ const PasswordFormComponent = ({
                   value={password}
                   isForm
                   password={true}
-                  placeholder="Password"
+                  placeholder={t("auth.password")}
                   className="w-full"
                 />
                 <Form.Message match="valueMissing" className="field-invalid">
@@ -91,3 +84,5 @@ const PasswordFormComponent = ({
   );
 };
 export default PasswordFormComponent;
+
+export { PasswordFormComponent };

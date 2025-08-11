@@ -1,16 +1,12 @@
 import { memo, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useShallow } from "zustand/react/shallow";
 import IconComponent from "@/components/common/genericIconComponent";
 import ShadTooltip from "@/components/common/shadTooltipComponent";
 import FlowSettingsComponent from "@/components/core/flowSettingsComponent";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SAVED_HOVER } from "@/constants/constants";
 import { useGetRefreshFlowsQuery } from "@/controllers/API/queries/flows/use-get-refresh-flows-query";
 import { useGetFoldersQuery } from "@/controllers/API/queries/folders/use-get-folders";
@@ -24,8 +20,7 @@ import { useShortcutsStore } from "@/stores/shortcuts";
 import { swatchColors } from "@/utils/styleUtils";
 import { cn, getNumberFromString } from "@/utils/utils";
 
-export const MenuBar = memo((): JSX.Element => {
-  const setSuccessData = useAlertStore((state) => state.setSuccessData);
+export const MenuBar = memo((): JSX.Element => { const setSuccessData = useAlertStore((state) => state.setSuccessData);
   const saveLoading = useFlowsManagerStore((state) => state.saveLoading);
   const [openSettings, setOpenSettings] = useState(false);
   const navigate = useCustomNavigate();
@@ -38,7 +33,7 @@ export const MenuBar = memo((): JSX.Element => {
     currentFlowFolderId,
     currentFlowIcon,
     currentFlowGradient,
-  } = useFlowStore(
+   } = useFlowStore(
     useShallow((state) => ({
       currentFlowName: state.currentFlow?.name,
       currentFlowId: state.currentFlow?.id,
@@ -73,7 +68,7 @@ export const MenuBar = memo((): JSX.Element => {
 
   const handleSave = () => {
     saveFlow().then(() => {
-      setSuccessData({ title: "Saved successfully" });
+      setSuccessData({ title: t("actions.savedsuccessfully") });
     });
   };
 
@@ -180,7 +175,7 @@ export const MenuBar = memo((): JSX.Element => {
                     data-testid="save-flow-button"
                   >
                     <IconComponent
-                      name={saveLoading ? "Loader2" : "Save"}
+                      name={saveLoading ? "Loader2" : t("common.save")}
                       className={cn("h-5 w-5", saveLoading && "animate-spin")}
                     />
                   </Button>

@@ -17,3 +17,5 @@ const SvgCrewAiIcon = (props) => (
   </svg>
 );
 export default SvgCrewAiIcon;
+
+export { SvgCrewAiIcon };

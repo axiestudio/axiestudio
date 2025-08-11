@@ -22,3 +22,5 @@ const SvgCleanlab = (props) => {
 };
 
 export default SvgCleanlab;
+
+export { SvgCleanlab };

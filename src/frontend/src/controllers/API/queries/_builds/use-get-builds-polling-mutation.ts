@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import useAlertStore from "@/stores/alertStore";
-import useFlowStore from "@/stores/flowStore";
+import { useAlertStore } from "@/stores/alertStore";
+import { useFlowStore } from "@/stores/flowStore";
 import { useUtilityStore } from "@/stores/utilityStore";
 import type { useMutationFunctionType } from "@/types/api";
 import type { FlowPoolType } from "@/types/zustand/flow";

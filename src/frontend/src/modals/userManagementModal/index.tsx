@@ -1,7 +1,7 @@
 import * as Form from "@radix-ui/react-form";
 import { Eye, EyeOff } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
-import IconComponent from "@/components/common/genericIconComponent";
+import { IconComponent } from "@/components/common/genericIconComponent";
 import { Button } from "../../components/ui/button";
 import { Checkbox } from "../../components/ui/checkbox";
 import { CONTROL_NEW_USER } from "../../constants/constants";
@@ -13,8 +13,7 @@ import type {
 } from "../../types/components";
 import BaseModal from "../baseModal";
 
-export default function UserManagementModal({
-  title,
+function UserManagementModal({title,
   titleHeader,
   cancelText,
   confirmationText,
@@ -39,7 +38,7 @@ export default function UserManagementModal({
   function handleInput({
     target: { name, value },
   }: inputHandlerEventType): void {
-    setInputState((prev) => ({ ...prev, [name]: value }));
+  setInputState((prev) => ({ ...prev, [name]: value }));
   }
 
   useEffect(() => {
@@ -107,13 +106,13 @@ export default function UserManagementModal({
               <Form.Control asChild>
                 <input
                   onChange={({ target: { value } }) => {
-                    handleInput({ target: { name: "username", value } });
+  handleInput({ target: { name: "username", value } });
                     setUserName(value);
                   }}
                   value={username}
                   className="primary-input"
                   required
-                  placeholder="Username"
+                  placeholder={t("auth.username")}
                 />
               </Form.Control>
               <Form.Message match="valueMissing" className="field-invalid">
@@ -300,3 +299,7 @@ export default function UserManagementModal({
     </BaseModal>
   );
 }
+
+
+export default UserManagementModal;
+export { UserManagementModal };

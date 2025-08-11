@@ -12,7 +12,7 @@ interface IGetFlow {
 }
 
 // add types for error handling and success
-export const useGetFlow: useMutationFunctionType<undefined, IGetFlow> = (
+export const useGetFlow: useMutationFunctionType<undefined, IGetFlow>= (
   options,
 ) => {
   const { mutate } = UseRequestProcessor();

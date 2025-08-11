@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import IconComponent from "@/components/common/genericIconComponent";
+import { IconComponent } from "@/components/common/genericIconComponent";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useUpdateUser } from "@/controllers/API/queries/auth";
 import CustomGetStartedProgress from "@/customization/components/custom-get-started-progress";

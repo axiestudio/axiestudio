@@ -1,18 +1,17 @@
-import React, {
-  forwardRef,
+import React, { forwardRef,
   memo,
   Suspense,
   useCallback,
   useEffect,
   useState,
-} from "react";
+ } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDarkStore } from "../../../stores/darkStore";
 import { IconComponentProps } from "../../../types/components";
 import { getCachedIcon, getNodeIcon } from "../../../utils/styleUtils";
 import { cn } from "../../../utils/utils";
 
-export const ForwardedIconComponent = memo(
+const ForwardedIconComponent = memo(
   forwardRef(
     (
       {
@@ -160,3 +159,5 @@ class ErrorBoundary extends React.Component<{
 }
 
 export default ForwardedIconComponent;
+export { ForwardedIconComponent };
+export { ForwardedIconComponent as IconComponent };

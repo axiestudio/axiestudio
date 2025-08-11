@@ -18,3 +18,5 @@ const AssemblyAISVG = (props) => (
   </svg>
 );
 export default AssemblyAISVG;
+
+export { AssemblyAISVG };

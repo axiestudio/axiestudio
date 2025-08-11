@@ -50,3 +50,5 @@ const SvgFacebookMessengerLogo2020 = (props) => (
   </svg>
 );
 export default SvgFacebookMessengerLogo2020;
+
+export { SvgFacebookMessengerLogo2020 };

@@ -1,13 +1,13 @@
 // ERROR
 export const MISSED_ERROR_ALERT = "Oops! Looks like you missed something";
 export const INCOMPLETE_LOOP_ERROR_ALERT =
-  "The flow has an incomplete loop. Check your connections and try again.";
+  "The flow has an";
 export const INVALID_FILE_ALERT =
-  "Please select a valid file. Only these file types are allowed:";
+  "Please select a valid";
 export const CONSOLE_ERROR_MSG = "Error occurred while uploading file";
 export const CONSOLE_SUCCESS_MSG = "File uploaded successfully";
 export const INFO_MISSING_ALERT =
-  "Oops! Looks like you missed some required information:";
+  "Oops! Looks like you";
 export const FUNC_ERROR_ALERT = "There is an error in your function";
 export const IMPORT_ERROR_ALERT = "There is an error in your imports";
 export const BUG_ALERT = "Something went wrong, please try again";
@@ -62,6 +62,5 @@ export const DEL_KEY_SUCCESS_ALERT = "Success! Key deleted!";
 export const DEL_KEY_SUCCESS_ALERT_PLURAL = "Success! Keys deleted!";
 export const FLOW_BUILD_SUCCESS_ALERT = `Flow built successfully`;
 export const SAVE_SUCCESS_ALERT = "Changes saved successfully!";
-export const INVALID_FILE_SIZE_ALERT = (maxSizeMB) => {
-  return `The file size is too large. Please select a file smaller than ${maxSizeMB}.`;
+export const INVALID_FILE_SIZE_ALERT = (maxSizeMB) => { return `The file size is too large. Please select a file smaller than ${maxSizeMB }.`;
 };

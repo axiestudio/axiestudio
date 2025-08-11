@@ -56,3 +56,5 @@ const SvgMetaIcon = (props) => (
   </svg>
 );
 export default SvgMetaIcon;
+
+export { SvgMetaIcon };

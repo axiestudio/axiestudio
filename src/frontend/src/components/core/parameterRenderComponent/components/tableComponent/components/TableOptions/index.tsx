@@ -1,11 +1,10 @@
-import IconComponent from "@/components/common/genericIconComponent";
-import ShadTooltip from "@/components/common/shadTooltipComponent";
+import { IconComponent } from "@/components/common/genericIconComponent";
+import { ShadTooltip } from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
 import type { TableOptionsTypeAPI } from "@/types/api";
 import { cn } from "@/utils/utils";
 
-export default function TableOptions({
-  resetGrid,
+function TableOptions({resetGrid,
   duplicateRow,
   deleteRow,
   hasSelection,
@@ -56,7 +55,7 @@ export default function TableOptions({
                 disabled={!hasSelection}
               >
                 <IconComponent
-                  name="Copy"
+                  name={t("common.copy")}
                   className={cn(
                     "h-5 w-5 transition-all",
                     hasSelection
@@ -132,3 +131,6 @@ export default function TableOptions({
     </div>
   );
 }
+
+export default TableOptions;
+export { TableOptions };

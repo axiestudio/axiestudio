@@ -2,24 +2,15 @@ import { PopoverAnchor } from "@radix-ui/react-popover";
 import { uniqueId } from "lodash";
 import { X } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import ShadTooltip from "@/components/common/shadTooltipComponent";
 import { Badge } from "@/components/ui/badge";
-import {
-  Command,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverContentWithoutPortal,
-} from "@/components/ui/popover";
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverContentWithoutPortal } from "@/components/ui/popover";
 import { cn } from "@/utils/utils";
 
-const OptionBadge = ({
+const OptionBadge= ({
   option,
   onRemove,
   variant = "emerald",
@@ -187,8 +178,7 @@ const CustomInputPopover = ({
   commandWidth,
   blockAddNewGlobalVariable,
   hasRefreshButton,
-}) => {
-  const [isFocused, setIsFocused] = useState(false);
+}) => { const [isFocused, setIsFocused] = useState(false);
   const memoizedOptions = useMemo(() => new Set<string>(options), [options]);
 
   const PopoverContentInput = editNode
@@ -204,7 +194,7 @@ const CustomInputPopover = ({
       setSelectedOptions(
         selectedOptions.filter((option) => option !== optionToRemove),
       );
-    } else if (setSelectedOption) {
+     } else if (setSelectedOption) {
       setSelectedOption("");
     }
   };
@@ -354,3 +344,5 @@ const CustomInputPopover = ({
 };
 
 export default CustomInputPopover;
+
+export { CustomInputPopover };

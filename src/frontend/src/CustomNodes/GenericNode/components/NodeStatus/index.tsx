@@ -28,7 +28,7 @@ import { normalizeTimeString } from "./utils/format-run-time";
 const POLLING_TIMEOUT = 21000;
 const POLLING_INTERVAL = 3000;
 
-export default function NodeStatus({
+function NodeStatus({
   nodeId,
   display_name,
   selected,
@@ -461,3 +461,7 @@ export default function NodeStatus({
     </div>
   );
 }
+
+
+export default NodeStatus;
+export { NodeStatus };

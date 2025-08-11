@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import ListSelectionComponent from "@/CustomNodes/GenericNode/components/ListSelectionComponent";
+import { ListSelectionComponent } from "@/CustomNodes/GenericNode/components/ListSelectionComponent";
 import { mutateTemplate } from "@/CustomNodes/helpers/mutate-template";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import { Button } from "@/components/ui/button";
@@ -244,4 +244,7 @@ const ConnectionComponent = ({
   );
 };
 
-export default memo(ConnectionComponent);
+export default memo;
+export { memo as ConnectionComponent };(ConnectionComponent);
+
+export { memo };

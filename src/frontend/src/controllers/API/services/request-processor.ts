@@ -1,11 +1,4 @@
-import {
-  type QueryClient,
-  type UseMutationOptions,
-  type UseQueryOptions,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { type QueryClient, type UseMutationOptions, type UseQueryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   MutationFunctionType,
   QueryFunctionType,
@@ -16,7 +9,7 @@ export function UseRequestProcessor(): {
   mutate: MutationFunctionType;
   queryClient: QueryClient;
 } {
-  const queryClient = useQueryClient();
+  const queryClient= useQueryClient();
 
   function query(
     queryKey: UseQueryOptions["queryKey"],

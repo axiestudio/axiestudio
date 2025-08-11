@@ -2,15 +2,14 @@ import FlowSettingsComponent from "@/components/core/flowSettingsComponent";
 import type { FlowSettingsPropsType } from "../../types/components";
 import BaseModal from "../baseModal";
 
-export default function FlowSettingsModal({
+function FlowSettingsModal({
   open,
   setOpen,
   flowData,
-}: FlowSettingsPropsType): JSX.Element {
-  if (!open) return <></>;
+}: FlowSettingsPropsType): JSX.Element { if (!open) return <></>;
   return (
     <BaseModal
-      open={open}
+      open={open }
       setOpen={setOpen}
       size="small-update"
       className="p-4"
@@ -28,3 +27,7 @@ export default function FlowSettingsModal({
     </BaseModal>
   );
 }
+
+
+export default FlowSettingsModal;
+export { FlowSettingsModal };

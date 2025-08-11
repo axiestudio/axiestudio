@@ -15,3 +15,5 @@ const SvgClickhouseIcon = (props) => (
 );
 
 export default SvgClickhouseIcon;
+
+export { SvgClickhouseIcon };

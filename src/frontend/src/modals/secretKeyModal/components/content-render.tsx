@@ -2,8 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import IconComponent from "../../../components/common/genericIconComponent";
 
-export const ContentRenderKey = ({
-  inputLabel,
+export const ContentRenderKey = ({inputLabel,
   inputRef,
   apiKeyValue,
   handleCopyClick,
@@ -16,14 +15,13 @@ export const ContentRenderKey = ({
   handleCopyClick: () => void;
   textCopied: boolean;
   renderKey: boolean;
-}) => {
-  return (
+}) => { return (
     <>
       <div className="flex items-center gap-3">
         <div className="w-full">
           {inputLabel && !renderKey && (
             <div className="relative bottom-1">
-              {inputLabel as React.ReactNode}
+              {inputLabel as React.ReactNode }
             </div>
           )}
 
@@ -44,7 +42,7 @@ export const ContentRenderKey = ({
           unstyled
         >
           {textCopied ? (
-            <IconComponent name="Copy" className="h-4 w-4" />
+            <IconComponent name={t("common.copy")} className="h-4 w-4" />
           ) : (
             <IconComponent name="Check" className="h-4 w-4" />
           )}

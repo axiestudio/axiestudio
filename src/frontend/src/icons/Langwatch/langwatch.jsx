@@ -16,3 +16,5 @@ const SvgLangwatch = (props) => (
   </svg>
 );
 export default SvgLangwatch;
+
+export { SvgLangwatch };

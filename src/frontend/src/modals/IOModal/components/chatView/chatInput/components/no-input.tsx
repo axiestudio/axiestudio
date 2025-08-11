@@ -1,4 +1,5 @@
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Loading from "@/components/ui/loading";
@@ -16,8 +17,7 @@ const NoInputView: React.FC<NoInputViewProps> = ({
   isBuilding,
   sendMessage,
   stopBuilding,
-}) => {
-  return (
+}) => { return (
     <div className="flex h-full w-full flex-col items-center justify-center">
       <div className="flex w-full flex-col items-center justify-center gap-3 rounded-md border border-input bg-muted p-2 py-4">
         {!isBuilding ? (
@@ -27,7 +27,7 @@ const NoInputView: React.FC<NoInputViewProps> = ({
             onClick={async () => {
               await sendMessage({
                 repeat: 1,
-              });
+               });
             }}
           >
             Run Flow
@@ -64,3 +64,5 @@ const NoInputView: React.FC<NoInputViewProps> = ({
 };
 
 export default NoInputView;
+
+export { NoInputView };

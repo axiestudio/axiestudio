@@ -3,8 +3,7 @@ import { ForwardedIconComponent } from "@/components/common/genericIconComponent
 import { Input } from "@/components/ui/input";
 import ShortcutDisplay from "../../../nodeToolbarComponent/shortcutDisplay";
 
-export const SearchInput = memo(function SearchInput({
-  searchInputRef,
+export const SearchInput = memo(function SearchInput({searchInputRef,
   isInputFocused,
   search,
   handleInputFocus,
@@ -23,10 +22,10 @@ export const SearchInput = memo(function SearchInput({
       <Input
         ref={searchInputRef}
         type="search"
-        icon={"Search"}
+        icon={t("common.search")}
         data-testid="sidebar-search-input"
         inputClassName="w-full rounded-lg bg-background text-sm"
-        placeholder="Search"
+        placeholder={t("common.search")}
         onFocus={handleInputFocus}
         onBlur={handleInputBlur}
         onChange={handleInputChange}

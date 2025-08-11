@@ -1,16 +1,6 @@
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import { convertTestName } from "@/components/common/storeCardComponent/utils/convert-test-name";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/utils/utils";
 import { useIsMobile } from "../../../../hooks/use-mobile";
 import type { NavProps } from "../../../../types/templates/types";

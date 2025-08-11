@@ -355,3 +355,5 @@ const SvgWeaviate = (props) => (
   </svg>
 );
 export default SvgWeaviate;
+
+export { SvgWeaviate };

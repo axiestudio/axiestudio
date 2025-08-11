@@ -25,3 +25,5 @@ const SvgAWS = (props) => (
   </svg>
 );
 export default SvgAWS;
+
+export { SvgAWS };

@@ -1,18 +1,13 @@
-import {
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-} from "@chakra-ui/number-input";
+import { NumberDecrementStepper, NumberIncrementStepper, NumberInput, NumberInputField, NumberInputStepper } from "@chakra-ui/number-input";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ICON_STROKE_WIDTH } from "@/constants/constants";
 import { cn } from "@/utils/utils";
 import { handleKeyDown } from "../../../../../utils/reactflowUtils";
 import type { InputProps, IntComponentType } from "../../types";
 
-export default function IntComponent({
+function IntComponent({
   value,
   handleOnNewValue,
   rangeSpec,
@@ -20,12 +15,11 @@ export default function IntComponent({
   editNode = false,
   id = "",
   readonly,
-}: InputProps<number, IntComponentType>): JSX.Element {
-  const min = -Infinity;
+}: InputProps<number, IntComponentType>): JSX.Element { const min = -Infinity;
   // Clear component state
   useEffect(() => {
     if (disabled && value !== 0) {
-      handleOnNewValue({ value: 0 }, { skipSnapshot: true });
+      handleOnNewValue({ value: 0  }, { skipSnapshot: true });
     }
   }, [disabled, handleOnNewValue]);
 
@@ -130,3 +124,7 @@ export default function IntComponent({
     </div>
   );
 }
+
+
+export default IntComponent;
+export { IntComponent };

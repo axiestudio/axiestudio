@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef  } from "react";
 import SvgNovita from "./novita";
 
 export const NovitaIcon = forwardRef<

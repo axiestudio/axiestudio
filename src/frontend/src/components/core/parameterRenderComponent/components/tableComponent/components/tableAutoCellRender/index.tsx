@@ -12,7 +12,7 @@ interface CustomCellRender extends CustomCellRendererProps {
   formatter?: "json" | "text" | "boolean" | "number" | "undefined" | "null";
 }
 
-export default function TableAutoCellRender({
+function TableAutoCellRender({
   value,
   setValue,
   colDef,
@@ -114,3 +114,7 @@ export default function TableAutoCellRender({
     </div>
   );
 }
+
+
+export default TableAutoCellRender;
+export { TableAutoCellRender };

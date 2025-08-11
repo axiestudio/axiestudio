@@ -5,11 +5,10 @@ import IconComponent from "../../components/common/genericIconComponent";
 import JsonEditor from "../../components/core/jsonEditor";
 import BaseModal from "../baseModal";
 
-export default function DictAreaModal({
-  children,
+function DictAreaModal({children,
   onChange,
   value,
-  disabled = false,
+  disabled= false,
 }: {
   children: JSX.Element;
   onChange?: (value: Object) => void;
@@ -130,7 +129,11 @@ export default function DictAreaModal({
       </BaseModal.Trigger>
       {renderHeader()}
       {renderContent()}
-      <BaseModal.Footer submit={onChange ? { label: "Save" } : undefined} />
+      <BaseModal.Footer submit={onChange ? { label: t("common.save") } : undefined} />
     </BaseModal>
   );
 }
+
+
+export default DictAreaModal;
+export { DictAreaModal };

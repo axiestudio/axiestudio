@@ -1,4 +1,4 @@
-export default function sensitiveSort(a: string, b: string): number {
+function sensitiveSort(a: string, b: string): number {
   // Extract the name and number from each string using regular expressions
   const regex = /(.+) \((\w+)\)/;
   const matchA = a.match(regex);
@@ -10,7 +10,7 @@ export default function sensitiveSort(a: string, b: string): number {
     const nameB = matchB[1];
     if (nameA !== nameB) {
       return nameA.localeCompare(nameB);
-    }
+     }
 
     // If the names are the same, compare the numbers numerically
     const numberA = parseInt(matchA[2]);
@@ -22,3 +22,7 @@ export default function sensitiveSort(a: string, b: string): number {
     return a.localeCompare(b);
   }
 }
+
+
+export default sensitiveSort;
+export { sensitiveSort };

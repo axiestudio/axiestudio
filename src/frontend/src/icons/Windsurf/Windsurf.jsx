@@ -14,3 +14,5 @@ const SvgWindsurf = (props) => (
   </svg>
 );
 export default SvgWindsurf;
+
+export { SvgWindsurf };

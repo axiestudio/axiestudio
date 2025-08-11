@@ -18,3 +18,5 @@ const SvgNotionLogo = (props) => (
   </svg>
 );
 export default SvgNotionLogo;
+
+export { SvgNotionLogo };

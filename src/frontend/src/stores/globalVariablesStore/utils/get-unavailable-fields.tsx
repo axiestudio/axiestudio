@@ -1,6 +1,6 @@
 import type { GlobalVariable } from "@/types/global_variables";
 
-export default function getUnavailableFields(variables: GlobalVariable[]): {
+function getUnavailableFields(variables: GlobalVariable[]): {
   [name: string]: string;
 } {
   const unVariables: { [name: string]: string } = {};
@@ -13,3 +13,7 @@ export default function getUnavailableFields(variables: GlobalVariable[]): {
   });
   return unVariables;
 }
+
+
+export default getUnavailableFields;
+export { getUnavailableFields };

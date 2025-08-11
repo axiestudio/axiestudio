@@ -68,3 +68,5 @@ const PlaygroundButton = ({
 };
 
 export default PlaygroundButton;
+
+export { PlaygroundButton };

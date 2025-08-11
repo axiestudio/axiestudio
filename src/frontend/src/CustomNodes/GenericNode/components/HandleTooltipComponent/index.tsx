@@ -2,7 +2,7 @@ import { convertTestName } from "@/components/common/storeCardComponent/utils/co
 import { Badge } from "@/components/ui/badge";
 import { nodeColorsName } from "@/utils/styleUtils";
 
-export default function HandleTooltipComponent({
+function HandleTooltipComponent({
   isInput,
   tooltipTitle,
   isConnecting,
@@ -76,3 +76,7 @@ export default function HandleTooltipComponent({
     </div>
   );
 }
+
+
+export default HandleTooltipComponent;
+export { HandleTooltipComponent };

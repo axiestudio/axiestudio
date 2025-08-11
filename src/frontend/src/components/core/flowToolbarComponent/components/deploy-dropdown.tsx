@@ -3,12 +3,7 @@ import { useHref } from "react-router-dom";
 import IconComponent from "@/components/common/genericIconComponent";
 import ShadTooltipComponent from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { usePatchUpdateFlow } from "@/controllers/API/queries/flows/use-patch-update-flow";
 import { CustomLink } from "@/customization/components/custom-link";
@@ -23,7 +18,7 @@ import useFlowStore from "@/stores/flowStore";
 import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import { cn } from "@/utils/utils";
 
-export default function PublishDropdown() {
+function PublishDropdown() {
   const location = useHref("/");
   const domain = window.location.origin + location;
   const [openEmbedModal, setOpenEmbedModal] = useState(false);
@@ -218,3 +213,7 @@ export default function PublishDropdown() {
     </>
   );
 }
+
+
+export default PublishDropdown;
+export { PublishDropdown };

@@ -1,10 +1,6 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import {
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-} from "@/components/ui/sidebar";
+import { useTranslation } from "react-i18next";
+import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu } from "@/components/ui/sidebar";
 import type { SidebarGroupProps } from "../../types";
 import { BundleItem } from "../bundleItems";
 
@@ -33,9 +29,7 @@ export const MemoizedSidebarGroup = memo(
 
     return (
       <SidebarGroup className="p-3">
-        <SidebarGroupLabel className="cursor-default">
-          Bundles
-        </SidebarGroupLabel>
+        <SidebarGroupLabel className="cursor-default">{t("common.bundles")}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
             {sortedBundles.map((item) => (

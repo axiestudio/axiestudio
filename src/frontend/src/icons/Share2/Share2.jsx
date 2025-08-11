@@ -15,3 +15,5 @@ const SvgShare2 = (props) => (
   </svg>
 );
 export default SvgShare2;
+
+export { SvgShare2 };

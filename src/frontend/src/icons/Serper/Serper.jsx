@@ -24,3 +24,5 @@ const SvgSerper = (props) => (
 );
 
 export default SvgSerper;
+
+export { SvgSerper };

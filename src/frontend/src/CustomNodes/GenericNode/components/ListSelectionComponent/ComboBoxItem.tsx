@@ -62,3 +62,5 @@ const ComboBoxItem = ({ item }: ComboBoxItemProps) => {
   );
 };
 export default ComboBoxItem;
+
+export { ComboBoxItem };

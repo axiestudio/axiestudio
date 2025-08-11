@@ -11,7 +11,7 @@ interface IPostAddFolders {
 export const usePostFolders: useMutationFunctionType<
   undefined,
   IPostAddFolders
-> = (options?) => {
+>= (options?) => {
   const { mutate, queryClient } = UseRequestProcessor();
 
   const addFoldersFn = async (newFolder: IPostAddFolders): Promise<void> => {

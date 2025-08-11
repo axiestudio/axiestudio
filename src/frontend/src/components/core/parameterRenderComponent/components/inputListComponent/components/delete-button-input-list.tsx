@@ -15,10 +15,9 @@ export const DeleteButtonInputList = ({
   disabled: boolean;
   editNode: boolean;
   componentName: string;
-}) => {
-  return (
+}) => { return (
     <button
-      disabled={disabled}
+      disabled={disabled }
       onClick={removeInput}
       data-testid={getTestId("delete", index, editNode, componentName)}
       className={cn(

@@ -6,7 +6,7 @@ import type { GetCodeType } from "@/types/tweaks";
  * @param {string} flow - The current flow.
  * @returns {string} - The widget code
  */
-export default function getWidgetCode({
+function getWidgetCode({
   flowId,
   flowName,
   isAuth,
@@ -35,3 +35,7 @@ build/static/js/bundle.min.js">
     }>
 </axiestudio-chat>`;
 }
+
+
+export default getWidgetCode;
+export { getWidgetCode };

@@ -11,33 +11,15 @@
  * software for all.
  */
 
-import {
-  type Connection,
-  type Edge,
-  getOutgoers,
-  type Node,
-  type OnSelectionChangeParams,
-  type ReactFlowJsonObject,
-  type XYPosition,
-} from "@xyflow/react";
+import { type Connection, type Edge, getOutgoers, type Node, type OnSelectionChangeParams, type ReactFlowJsonObject, type XYPosition } from "@xyflow/react";
 import { cloneDeep } from "lodash";
 import ShortUniqueId from "short-unique-id";
-import {
-  getLeftHandleId,
-  getRightHandleId,
-} from "@/CustomNodes/utils/get-handle-id";
+import { getLeftHandleId, getRightHandleId } from "@/CustomNodes/utils/get-handle-id";
 import { INCOMPLETE_LOOP_ERROR_ALERT } from "@/constants/alerts_constants";
 import { customDownloadFlow } from "@/customization/utils/custom-reactFlowUtils";
 import useFlowStore from "@/stores/flowStore";
 import getFieldTitle from "../CustomNodes/utils/get-field-title";
-import {
-  INPUT_TYPES,
-  IS_MAC,
-  AXIESTUDIO_SUPPORTED_TYPES,
-  OUTPUT_TYPES,
-  SUCCESS_BUILD,
-  specialCharsRegex,
-} from "../constants/constants";
+import { INPUT_TYPES, IS_MAC, AXIESTUDIO_SUPPORTED_TYPES, OUTPUT_TYPES, SUCCESS_BUILD, specialCharsRegex } from "../constants/constants";
 import { DESCRIPTIONS } from "../flow_constants";
 import type {
   APIClassType,
@@ -64,7 +46,7 @@ import type {
 import { getLayoutedNodes } from "./layoutUtils";
 import { createRandomKey, toTitleCase } from "./utils";
 
-const uid = new ShortUniqueId();
+const uid= new ShortUniqueId();
 
 export function checkChatInput(nodes: Node[]) {
   return nodes.some((node) => node.data.type === "ChatInput");
@@ -791,8 +773,7 @@ export function addVersionToDuplicates(flow: FlowType, flows: FlowType[]) {
 
 export function addEscapedHandleIdsToEdges({
   edges,
-}: addEscapedHandleIdsToEdgesType): EdgeType[] {
-  const newEdges = cloneDeep(edges);
+}: addEscapedHandleIdsToEdgesType): EdgeType[] { const newEdges = cloneDeep(edges);
   newEdges.forEach((edge) => {
     let escapedSourceHandle = edge.sourceHandle;
     let escapedTargetHandle = edge.targetHandle;
@@ -801,7 +782,7 @@ export function addEscapedHandleIdsToEdges({
       if (sourceHandle) {
         escapedSourceHandle = getRightHandleId(sourceHandle);
         edge.sourceHandle = escapedSourceHandle;
-      }
+       }
     }
     if (!escapedTargetHandle) {
       const targetHandle = edge.data?.targetHandle;

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-
-const LoadingTextComponent = ({ text }: { text: string }) => {
+const LoadingTextComponent = ({ text  }: { text: string }) => {
   const [dots, setDots] = useState(".");
 
   useEffect(() => {
@@ -21,3 +20,5 @@ const LoadingTextComponent = ({ text }: { text: string }) => {
 };
 
 export default LoadingTextComponent;
+
+export { LoadingTextComponent };

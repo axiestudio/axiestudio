@@ -1,18 +1,14 @@
 import { Outlet, type To } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import SideBarButtonsComponent from "@/components/core/sidebarComponent";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { CustomStoreSidebar } from "@/customization/components/custom-store-sidebar";
-import {
-  ENABLE_DATASTAX_AXIESTUDIO,
-  ENABLE_AXIESTUDIO_STORE,
-  ENABLE_PROFILE_ICONS,
-} from "@/customization/feature-flags";
+import { ENABLE_DATASTAX_AXIESTUDIO, ENABLE_AXIESTUDIO_STORE, ENABLE_PROFILE_ICONS } from "@/customization/feature-flags";
 import useAuthStore from "@/stores/authStore";
 import { useStoreStore } from "@/stores/storeStore";
 import ForwardedIconComponent from "../../components/common/genericIconComponent";
 import PageLayout from "../../components/common/pageLayout";
-export default function SettingsPage(): JSX.Element {
-  const autoLogin = useAuthStore((state) => state.autoLogin);
+function SettingsPage(): JSX.Element {const autoLogin = useAuthStore((state) => state.autoLogin);
   const hasStore = useStoreStore((state) => state.hasStore);
 
   // Hides the General settings if there is nothing to show
@@ -24,8 +20,7 @@ export default function SettingsPage(): JSX.Element {
     icon: React.ReactNode;
   }[] = [];
 
-  if (showGeneralSettings) {
-    sidebarNavItems.push({
+  if (showGeneralSettings) { sidebarNavItems.push({
       title: "General",
       href: "/settings/general",
       icon: (
@@ -34,7 +29,7 @@ export default function SettingsPage(): JSX.Element {
           className="w-4 flex-shrink-0 justify-start stroke-[1.5]"
         />
       ),
-    });
+     });
   }
 
   sidebarNavItems.push(
@@ -90,7 +85,7 @@ export default function SettingsPage(): JSX.Element {
   return (
     <PageLayout
       backTo={-1 as To}
-      title="Settings"
+      title={t("common.settings")}
       description="Manage the general settings for Axie Studio."
     >
       <SidebarProvider width="15rem" defaultOpen={false}>
@@ -104,3 +99,7 @@ export default function SettingsPage(): JSX.Element {
     </PageLayout>
   );
 }
+
+
+export default SettingsPage;
+export { SettingsPage };

@@ -1,25 +1,19 @@
-import {
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-} from "@chakra-ui/number-input";
+import { NumberDecrementStepper, NumberIncrementStepper, NumberInput, NumberInputField, NumberInputStepper } from "@chakra-ui/number-input";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/utils/utils";
 import { handleKeyDown } from "../../../../../utils/reactflowUtils";
 import type { FloatComponentType, InputProps } from "../../types";
 
-export default function FloatComponent({
+function FloatComponent({
   value,
   handleOnNewValue,
   rangeSpec,
   disabled,
   editNode = false,
   id = "",
-}: InputProps<number, FloatComponentType>): JSX.Element {
-  const step = rangeSpec?.step ?? 0.1;
+}: InputProps<number, FloatComponentType>): JSX.Element { const step = rangeSpec?.step ?? 0.1;
   const min = rangeSpec?.min;
   const max = rangeSpec?.max;
 
@@ -29,7 +23,7 @@ export default function FloatComponent({
   // Clear component state
   useEffect(() => {
     if (disabled && value !== 0) {
-      handleOnNewValue({ value: 0 }, { skipSnapshot: true });
+      handleOnNewValue({ value: 0  }, { skipSnapshot: true });
     }
   }, [disabled, handleOnNewValue]);
 
@@ -117,3 +111,7 @@ export default function FloatComponent({
     </div>
   );
 }
+
+
+export default FloatComponent;
+export { FloatComponent };

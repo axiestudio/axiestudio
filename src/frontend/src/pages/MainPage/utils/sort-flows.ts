@@ -1,4 +1,4 @@
-export const sortFlows = (flows, type) => {
+export const sortFlows= (flows, type) => {
   const isComponent = type === "component";
 
   const sortByDateFn = (a, b) => {
@@ -6,7 +6,7 @@ export const sortFlows = (flows, type) => {
     const dateB = b?.updated_at || b?.date_created;
 
     return sortByDate(dateA, dateB);
-  };
+   };
 
   const filteredFlows =
     type === "all"

@@ -1,12 +1,9 @@
 import LinkComponent from "@/components/core/parameterRenderComponent/components/linkComponent";
-import type {
-  InputProps,
-  LinkComponentType,
-} from "@/components/core/parameterRenderComponent/types";
+import type { InputProps, LinkComponentType  } from "@/components/core/parameterRenderComponent/types";
 
 export function CustomLinkComponent({
   value,
-  disabled = false,
+  disabled= false,
   id = "",
   text,
   icon,

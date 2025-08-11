@@ -1,7 +1,7 @@
 import { Switch } from "../../../../ui/switch";
-import type { InputProps, ToggleComponentType } from "../../types";
+import type { InputProps, ToggleComponentType  } from "../../types";
 
-export default function ToggleShadComponent({
+function ToggleShadComponent({
   value,
   editNode,
   handleOnNewValue,
@@ -10,6 +10,7 @@ export default function ToggleShadComponent({
   showToogle,
   id,
 }: InputProps<boolean, ToggleComponentType>): JSX.Element {
+  const { t }= useTranslation();
   let scaleX, scaleY;
   switch (size) {
     case "small":
@@ -56,3 +57,7 @@ export default function ToggleShadComponent({
     </div>
   );
 }
+
+
+export default ToggleShadComponent;
+export { ToggleShadComponent as ToggleShadComponent };

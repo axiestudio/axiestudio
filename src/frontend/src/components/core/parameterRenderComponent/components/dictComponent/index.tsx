@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-
+import { useTranslation } from "react-i18next";
 import { ICON_STROKE_WIDTH } from "@/constants/constants";
 import DictAreaModal from "../../../../../modals/dictAreaModal";
 import { classNames, cn, toTitleCase } from "../../../../../utils/utils";
@@ -7,17 +7,16 @@ import ForwardedIconComponent from "../../../../common/genericIconComponent";
 import { Button } from "../../../../ui/button";
 import type { InputProps } from "../../types";
 
-export default function DictComponent({
+function DictComponent({
   value,
   handleOnNewValue,
   disabled,
   editNode = false,
   id = "",
   name = "",
-}: InputProps<object | object[] | string, { name: string }>): JSX.Element {
-  useEffect(() => {
+}: InputProps<object | object[] | string, { name: string }>): JSX.Element { useEffect(() => {
     if (disabled || value === null) {
-      handleOnNewValue({ value: {} }, { skipSnapshot: true });
+      handleOnNewValue({ value: { } }, { skipSnapshot: true });
     }
   }, [disabled]);
   const placeholderName = `Edit ${toTitleCase(name)}`;
@@ -60,3 +59,7 @@ export default function DictComponent({
     </div>
   );
 }
+
+
+export default DictComponent;
+export { DictComponent };

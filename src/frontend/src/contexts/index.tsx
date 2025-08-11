@@ -7,7 +7,7 @@ import { TooltipProvider } from "../components/ui/tooltip";
 import { ApiInterceptor } from "../controllers/API/api";
 import { AuthProvider } from "./authContext";
 
-export default function ContextWrapper({ children }: { children: ReactNode }) {
+function ContextWrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient();
   //element to wrap all context
   return (
@@ -29,3 +29,7 @@ export default function ContextWrapper({ children }: { children: ReactNode }) {
     </>
   );
 }
+
+
+export default ContextWrapper;
+export { ContextWrapper };

@@ -147,3 +147,5 @@ const OpenSearchSVG = (props) => (
 );
 
 export default OpenSearchSVG;
+
+export { OpenSearchSVG };

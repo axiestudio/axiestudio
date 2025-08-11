@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef  } from "react";
 import XAISVG from "./xAIIcon.jsx";
 
 export const XAIIcon = forwardRef<SVGSVGElement, React.PropsWithChildren<{}>>(

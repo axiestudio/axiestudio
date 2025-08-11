@@ -1,10 +1,10 @@
 import { addPlusSignes, cn, sortShortcuts } from "@/utils/utils";
-import RenderKey from "./components/renderKey";
+import { RenderKey } from "./components/renderKey";
 
-export default function RenderIcons({
+function RenderIcons({
   filteredShortcut = [],
   tableRender = false,
-}: {
+ }: {
   filteredShortcut: string[];
   tableRender?: boolean;
 }): JSX.Element {
@@ -24,3 +24,6 @@ export default function RenderIcons({
     </span>
   );
 }
+
+export default RenderIcons;
+export { RenderIcons };

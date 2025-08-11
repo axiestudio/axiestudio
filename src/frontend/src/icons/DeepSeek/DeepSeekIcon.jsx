@@ -40,3 +40,5 @@ m943 -79 c50 -25 130 -115 166 -186 25 -50 27 -57 13 -71 -9 -8 -36 -18 -61
 );
 
 export default DeepSeekSVG;
+
+export { DeepSeekSVG };

@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import useUploadFlow from "@/hooks/flows/use-upload-flow";
+import { useUploadFlow } from "@/hooks/flows/use-upload-flow";
 import { CONSOLE_ERROR_MSG } from "../../../constants/alerts_constants";
 import useAlertStore from "../../../stores/alertStore";
 
@@ -54,3 +54,5 @@ const useFileDrop = (type?: string) => {
 };
 
 export default useFileDrop;
+
+export { useFileDrop };

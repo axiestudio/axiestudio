@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef  } from "react";
 import SvgMem from "./SvgMem";
 
 export const Mem0 = forwardRef<SVGSVGElement, React.PropsWithChildren<{}>>(

@@ -3,7 +3,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs-button";
 import { testIdCase } from "@/utils/utils";
 import type { InputProps, TabComponentType } from "../../types";
 
-export default function TabComponent({
+function TabComponent({
   id,
   value,
   editNode,
@@ -60,3 +60,7 @@ export default function TabComponent({
     </div>
   );
 }
+
+
+export default TabComponent;
+export { TabComponent as TabComponent };

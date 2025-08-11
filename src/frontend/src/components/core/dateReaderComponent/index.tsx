@@ -1,6 +1,6 @@
-export default function DateReader({
+function DateReader({
   date: dateString,
-}: {
+ }: {
   date: string;
 }): JSX.Element {
   const date = new Date(dateString);
@@ -16,3 +16,7 @@ export default function DateReader({
 
   return <span>{formattedDate}</span>;
 }
+
+
+export default DateReader;
+export { DateReader };

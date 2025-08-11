@@ -1,14 +1,7 @@
 import { useEffect } from "react";
-import IconComponent from "../../../../../../../../../../components/common/genericIconComponent";
-import ShadTooltip from "../../../../../../../../../../components/common/shadTooltipComponent";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../../../../../../../../components/ui/select";
+import { IconComponent } from "../../../../../../../../../../components/common/genericIconComponent";
+import { ShadTooltip } from "../../../../../../../../../../components/common/shadTooltipComponent";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../../../../../../../../../../components/ui/select";
 
 interface MicrophoneSelectProps {
   selectedMicrophone: string;
@@ -113,3 +106,5 @@ const MicrophoneSelect = ({
 };
 
 export default MicrophoneSelect;
+
+export { MicrophoneSelect };

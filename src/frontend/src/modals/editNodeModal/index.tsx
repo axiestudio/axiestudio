@@ -8,7 +8,7 @@ import type { NodeDataType } from "../../types/flow";
 import BaseModal from "../baseModal";
 import { EditNodeComponent } from "./components/editNodeComponent";
 
-const EditNodeModal = ({
+const EditNodeModal= ({
   open,
   setOpen,
   data,
@@ -58,3 +58,4 @@ const EditNodeModal = ({
 };
 
 export default EditNodeModal;
+export { EditNodeModal as EditNodeModal };

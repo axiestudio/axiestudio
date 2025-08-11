@@ -39,3 +39,5 @@ const useIconStatus = (buildStatus: BuildStatus | undefined) => {
 };
 
 export default useIconStatus;
+
+export { useIconStatus };

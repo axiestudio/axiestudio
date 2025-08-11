@@ -1,14 +1,8 @@
 import { ALL_LANGUAGES } from "@/constants/constants";
+import { useTranslation } from "react-i18next";
 import IconComponent from "../../../../../../../../../../components/common/genericIconComponent";
 import ShadTooltip from "../../../../../../../../../../components/common/shadTooltipComponent";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../../../../../../../../components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../../../../../../../../../../components/ui/select";
 
 interface LanguageSelectProps {
   language: string;
@@ -18,12 +12,9 @@ interface LanguageSelectProps {
 const LanguageSelect = ({
   language,
   handleSetLanguage,
-}: LanguageSelectProps) => {
-  return (
+}: LanguageSelectProps) => { return (
     <div className="grid w-full items-center gap-2">
-      <span className="flex w-full items-center text-sm">
-        Preferred Language
-        <ShadTooltip content="Select the language for speech recognition">
+      <span className="flex w-full items-center text-sm">{t("common.preferredlanguage") }<ShadTooltip content="Select the language for speech recognition">
           <div>
             <IconComponent
               name="Info"
@@ -55,3 +46,5 @@ const LanguageSelect = ({
 };
 
 export default LanguageSelect;
+
+export { LanguageSelect };

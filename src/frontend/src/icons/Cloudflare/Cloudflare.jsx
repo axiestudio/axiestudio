@@ -12,3 +12,5 @@ const SvgCloudflareIcon = (props) => (
 );
 
 export default SvgCloudflareIcon;
+
+export { SvgCloudflareIcon };

@@ -30,3 +30,5 @@ const ClaudeSVG = (props) => {
 };
 
 export default ClaudeSVG;
+
+export { ClaudeSVG };

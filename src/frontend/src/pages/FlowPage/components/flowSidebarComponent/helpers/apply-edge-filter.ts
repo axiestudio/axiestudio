@@ -1,10 +1,10 @@
 import type { APIDataType } from "@/types/api";
 
-export const applyEdgeFilter = (filteredData: APIDataType, getFilterEdge) => {
+export const applyEdgeFilter= (filteredData: APIDataType, getFilterEdge) => {
   return Object.fromEntries(
     Object.entries(filteredData).map(([family, familyData]) => {
       const edgeFilter = getFilterEdge.find((x) => x.family === family);
-      if (!edgeFilter) return [family, {}];
+      if (!edgeFilter) return [family, { }];
 
       const filteredTypes = edgeFilter.type
         .split(",")

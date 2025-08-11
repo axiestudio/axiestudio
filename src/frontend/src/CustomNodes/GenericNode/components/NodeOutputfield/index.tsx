@@ -1,39 +1,21 @@
 import { useUpdateNodeInternals } from "@xyflow/react";
 import { cloneDeep } from "lodash";
-import {
-  forwardRef,
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Badge } from "@/components/ui/badge";
 import { ICON_STROKE_WIDTH } from "@/constants/constants";
 import { useShortcutsStore } from "@/stores/shortcuts";
 import type { targetHandleType } from "@/types/flow";
-import ForwardedIconComponent, {
-  default as IconComponent,
-} from "../../../../components/common/genericIconComponent";
+import ForwardedIconComponent, { default as IconComponent,
+ } from "../../../../components/common/genericIconComponent";
 import ShadTooltip from "../../../../components/common/shadTooltipComponent";
 import { Button } from "../../../../components/ui/button";
 import useFlowStore from "../../../../stores/flowStore";
 import { useTypesStore } from "../../../../stores/typesStore";
 import type { NodeOutputFieldComponentType } from "../../../../types/components";
-import {
-  getGroupOutputNodeId,
-  scapedJSONStringfy,
-  scapeJSONParse,
-} from "../../../../utils/reactflowUtils";
-import {
-  cn,
-  logFirstMessage,
-  logHasMessage,
-  logTypeIsError,
-  logTypeIsUnknown,
-} from "../../../../utils/utils";
+import { getGroupOutputNodeId, scapedJSONStringfy, scapeJSONParse } from "../../../../utils/reactflowUtils";
+import { cn, logFirstMessage, logHasMessage, logTypeIsError, logTypeIsUnknown } from "../../../../utils/utils";
 import HandleRenderComponent from "../handleRenderComponent";
 import OutputComponent from "../OutputComponent";
 import OutputModal from "../outputModal";
@@ -125,8 +107,7 @@ function NodeOutputField({
   showHiddenOutputs,
   hidden,
   handleSelectOutput,
-}: NodeOutputFieldComponentType): JSX.Element {
-  const ref = useRef<HTMLDivElement>(null);
+}: NodeOutputFieldComponentType): JSX.Element { const ref = useRef<HTMLDivElement>(null);
   const updateNodeInternals = useUpdateNodeInternals();
 
   const edges = useFlowStore((state) => state.edges);
@@ -135,7 +116,7 @@ function NodeOutputField({
   const flowPool = useFlowStore((state) => state.flowPool);
   const myData = useTypesStore((state) => state.data);
 
-  const { flowPoolId, internalOutputName } = useMemo(() => {
+  const { flowPoolId, internalOutputName  } = useMemo(() => {
     if (data.node?.flow && outputProxy) {
       const realOutput = getGroupOutputNodeId(
         data.node.flow,
@@ -413,9 +394,7 @@ function NodeOutputField({
                 />
               </OutputModal>
               {looping && (
-                <Badge variant="pinkStatic" size="xq" className="px-1">
-                  Looping
-                </Badge>
+                <Badge variant="pinkStatic" size="xq" className="px-1">{t("common.looping")}</Badge>
               )}
             </div>
           </ShadTooltip>

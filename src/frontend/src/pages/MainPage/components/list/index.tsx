@@ -5,11 +5,7 @@ import useDragStart from "@/components/core/cardComponent/hooks/use-on-drag-star
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
 import useDeleteFlow from "@/hooks/flows/use-delete-flow";
 import DeleteConfirmationModal from "@/modals/deleteConfirmationModal";
@@ -234,3 +230,5 @@ const ListComponent = ({
 };
 
 export default ListComponent;
+
+export { ListComponent };

@@ -7,3 +7,5 @@ const SvgReadthedocsioIcon = (props) => (
   </svg>
 );
 export default SvgReadthedocsioIcon;
+
+export { SvgReadthedocsioIcon };

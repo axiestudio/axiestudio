@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { ICON_STROKE_WIDTH } from "@/constants/constants";
 import { useGetFilesV2 } from "@/controllers/API/queries/file-management";
 import { usePostUploadFile } from "@/controllers/API/queries/files/use-post-upload-file";
@@ -8,19 +9,15 @@ import FileManagerModal from "@/modals/fileManagerModal";
 import FilesRendererComponent from "@/modals/fileManagerModal/components/filesRendererComponent";
 import useFileSizeValidator from "@/shared/hooks/use-file-size-validator";
 import { cn } from "@/utils/utils";
-import {
-  CONSOLE_ERROR_MSG,
-  INVALID_FILE_ALERT,
-} from "../../../../../constants/alerts_constants";
+import { CONSOLE_ERROR_MSG, INVALID_FILE_ALERT } from "../../../../../constants/alerts_constants";
 import useAlertStore from "../../../../../stores/alertStore";
 import useFlowsManagerStore from "../../../../../stores/flowsManagerStore";
-import IconComponent, {
-  ForwardedIconComponent,
-} from "../../../../common/genericIconComponent";
+import IconComponent, { ForwardedIconComponent,
+ } from "../../../../common/genericIconComponent";
 import { Button } from "../../../../ui/button";
 import type { FileComponentType, InputProps } from "../../types";
 
-export default function InputFileComponent({
+function InputFileComponent({
   value,
   file_path,
   handleOnNewValue,
@@ -30,10 +27,9 @@ export default function InputFileComponent({
   tempFile = true,
   editNode = false,
   id,
-}: InputProps<string, FileComponentType>): JSX.Element {
-  const currentFlowId = useFlowsManagerStore((state) => state.currentFlowId);
+}: InputProps<string, FileComponentType>): JSX.Element { const currentFlowId = useFlowsManagerStore((state) => state.currentFlowId);
   const setErrorData = useAlertStore((state) => state.setErrorData);
-  const { validateFileSize } = useFileSizeValidator();
+  const { validateFileSize  } = useFileSizeValidator();
 
   // Clear component state
   useEffect(() => {
@@ -326,3 +322,7 @@ export default function InputFileComponent({
     </div>
   );
 }
+
+
+export default InputFileComponent;
+export { InputFileComponent };

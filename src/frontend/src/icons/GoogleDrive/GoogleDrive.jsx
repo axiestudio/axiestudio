@@ -33,3 +33,5 @@ const SvgGoogleDrive = (props) => (
   </svg>
 );
 export default SvgGoogleDrive;
+
+export { SvgGoogleDrive };

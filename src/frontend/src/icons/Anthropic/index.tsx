@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef  } from "react";
 import SvgAnthropicBox from "./Anthropic";
 
 export const AnthropicIcon = forwardRef<

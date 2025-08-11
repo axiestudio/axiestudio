@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 const SvgSpiderIcon = (props) => (
   <svg
     viewBox="0 0 36 34"
@@ -5,7 +6,7 @@ const SvgSpiderIcon = (props) => (
     className="fill-accent-foreground transition-all group-hover:scale-110"
     {...props}
   >
-    <title>Spider v0 Logo</title>
+    <title>{t("common.spiderv0logo")}</title>
     <path
       fillRule="evenodd"
       clipRule="evenodd"
@@ -14,3 +15,5 @@ const SvgSpiderIcon = (props) => (
   </svg>
 );
 export default SvgSpiderIcon;
+
+export { SvgSpiderIcon };

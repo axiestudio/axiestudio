@@ -1,18 +1,17 @@
 import { type ButtonHTMLAttributes, useState } from "react";
-import IconComponent from "@/components/common/genericIconComponent";
-import ShadTooltip from "@/components/common/shadTooltipComponent";
+import { IconComponent } from "@/components/common/genericIconComponent";
+import { ShadTooltip } from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/utils";
 
-export function EditMessageButton({
-  onEdit,
+export function EditMessageButton({onEdit,
   onCopy,
   onEvaluate,
   isBotMessage,
   evaluation,
   isAudioMessage,
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
-  onEdit: () => void;
+  onEdit: ()=> void;
   onCopy: () => void;
   onDelete: () => void;
   onEvaluate?: (value: boolean | null) => void;
@@ -62,7 +61,7 @@ export function EditMessageButton({
             className="h-8 w-8"
           >
             <IconComponent
-              name={isCopied ? "Check" : "Copy"}
+              name={isCopied ? "Check" : t("common.copy")}
               className="h-4 w-4"
             />
           </Button>

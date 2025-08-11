@@ -25,3 +25,5 @@ const SvgApifyLogo = (props) => (
   </svg>
 );
 export default SvgApifyLogo;
+
+export { SvgApifyLogo };

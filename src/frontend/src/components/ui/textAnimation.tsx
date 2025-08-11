@@ -1,11 +1,7 @@
 "use client";
-import {
-  AnimatePresence,
-  motion,
-  type TargetAndTransition,
-  type Variants,
-} from "framer-motion";
+import { AnimatePresence, motion, type TargetAndTransition, type Variants } from "framer-motion";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/utils/utils";
 
 type PresetType = "blur" | "shake" | "scale" | "fade" | "slide";
@@ -104,10 +100,9 @@ const AnimationComponent: React.FC<{
   variants: Variants;
   per: "line" | "word" | "char";
   segmentWrapperClassName?: string;
-}> = React.memo(({ segment, variants, per, segmentWrapperClassName }) => {
-  const content =
+}> = React.memo(({ segment, variants, per, segmentWrapperClassName }) => { const content =
     per === "line" ? (
-      <motion.span variants={variants} className="block">
+      <motion.span variants={variants } className="block">
         {segment}
       </motion.span>
     ) : per === "word" ? (

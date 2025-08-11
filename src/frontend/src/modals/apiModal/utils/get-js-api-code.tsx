@@ -1,13 +1,5 @@
 import { customGetHostProtocol } from "@/customization/utils/custom-get-host-protocol";
-import {
-  getAllChatInputNodeIds,
-  getAllFileNodeIds,
-  getChatInputNodeId,
-  getFileNodeId,
-  getNonFileTypeTweaks,
-  hasChatInputFiles,
-  hasFileTweaks,
-} from "./detect-file-tweaks";
+import { getAllChatInputNodeIds, getAllFileNodeIds, getChatInputNodeId, getFileNodeId, getNonFileTypeTweaks, hasChatInputFiles, hasFileTweaks } from "./detect-file-tweaks";
 
 /** Generates Node.js code for API calls, with multi-step file uploads (v1 for ChatInput, v2 for File/VideoFile) using http module, then flow execution. Handles auth. */
 export function getNewJsApiCode({

@@ -2,10 +2,7 @@ import type { UseMutationResult } from "@tanstack/react-query";
 import type { ColDef, ColGroupDef } from "ag-grid-community";
 import { useEffect, useRef } from "react";
 import { useMessagesStore } from "@/stores/messagesStore";
-import {
-  extractColumnsFromRows,
-  prepareSessionIdForAPI,
-} from "../../../../utils/utils";
+import { extractColumnsFromRows, prepareSessionIdForAPI } from "../../../../utils/utils";
 import { api } from "../../api";
 import { getURL } from "../../helpers/constants";
 import { UseRequestProcessor } from "../../services/request-processor";

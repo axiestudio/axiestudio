@@ -4,27 +4,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import useDeleteFlow from "@/hooks/flows/use-delete-flow";
 import { useAddComponent } from "@/hooks/use-add-component";
-import IconComponent, {
-  ForwardedIconComponent,
-} from "../../../../../../components/common/genericIconComponent";
+import IconComponent, { ForwardedIconComponent,
+ } from "../../../../../../components/common/genericIconComponent";
 import ShadTooltip from "../../../../../../components/common/shadTooltipComponent";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "../../../../../../components/ui/select-custom";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "../../../../../../components/ui/select-custom";
 import { useDarkStore } from "../../../../../../stores/darkStore";
 import useFlowsManagerStore from "../../../../../../stores/flowsManagerStore";
 import type { APIClassType } from "../../../../../../types/api";
-import {
-  createFlowComponent,
-  downloadNode,
-  getNodeId,
-} from "../../../../../../utils/reactflowUtils";
+import { createFlowComponent, downloadNode, getNodeId } from "../../../../../../utils/reactflowUtils";
 import { cn, removeCountFromString } from "../../../../../../utils/utils";
 
-export const SidebarDraggableComponent = forwardRef(
+export const SidebarDraggableComponent= forwardRef(
   (
     {
       sectionName,

@@ -12,7 +12,7 @@ interface IPostUploadFile {
 export const usePostUploadFileV2: useMutationFunctionType<
   undefined,
   IPostUploadFile
-> = (params, options?) => {
+>= (params, options?) => {
   const { mutate, queryClient } = UseRequestProcessor();
 
   const postUploadFileFn = async (payload: IPostUploadFile): Promise<any> => {

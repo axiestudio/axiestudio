@@ -12,7 +12,7 @@ import type { APIClassType } from "@/types/api";
 import { isTargetHandleConnected } from "@/utils/reactflowUtils";
 import { cn } from "@/utils/utils";
 
-export default function TableNodeCellRender({
+function TableNodeCellRender({
   value: { nodeId, parameterId, isTweaks },
 }: CustomCellRendererProps) {
   const edges = useFlowStore((state) => state.edges);
@@ -77,3 +77,6 @@ export default function TableNodeCellRender({
     )
   );
 }
+
+export default TableNodeCellRender;
+export { TableNodeCellRender };

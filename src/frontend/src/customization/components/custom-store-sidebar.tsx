@@ -1,5 +1,6 @@
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 
+import { useTranslation } from "react-i18next";
 export const CustomStoreSidebar = (
   hasApiKey: boolean = false,
   hasStore: boolean = false,
@@ -8,7 +9,7 @@ export const CustomStoreSidebar = (
 
   if (hasApiKey) {
     items.push({
-      title: "Axie Studio API Keys",
+      title: t("common.axiestudioapikeys"),
       href: "/settings/api-keys",
       icon: (
         <ForwardedIconComponent
@@ -21,7 +22,7 @@ export const CustomStoreSidebar = (
 
   if (hasStore) {
     items.push({
-      title: "Axie Studio Store",
+      title: t("navigation.store"),
       href: "/settings/store",
       icon: (
         <ForwardedIconComponent

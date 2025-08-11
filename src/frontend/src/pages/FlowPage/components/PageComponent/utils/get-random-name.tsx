@@ -2,7 +2,7 @@ import { ADJECTIVES, NOUNS } from "../../../../../flow_constants";
 import { getRandomElement } from "../../../../../utils/reactflowUtils";
 import { toTitleCase } from "../../../../../utils/utils";
 
-export default function getRandomName(
+function getRandomName(
   retry: number = 0,
   noSpace: boolean = false,
   maxRetries: number = 3,
@@ -33,3 +33,7 @@ export default function getRandomName(
   // Return title case final name
   return toTitleCase(final_name);
 }
+
+
+export default getRandomName;
+export { getRandomName };

@@ -8,22 +8,14 @@ import "ace-builds/src-noconflict/mode-python";
 import "ace-builds/src-noconflict/theme-github";
 import "ace-builds/src-noconflict/theme-twilight";
 import { useEffect, useRef, useState } from "react";
-import AceEditor from "react-ace";
-import type ReactAce from "react-ace/lib/ace";
-import IconComponent from "../../components/common/genericIconComponent";
+import { useTranslation } from "react-i18next";
+import { AceEditor } from "react-ace";
+import type { ReactAce } from "react-ace/lib/ace";
+import { IconComponent } from "../../components/common/genericIconComponent";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import {
-  BUG_ALERT,
-  CODE_ERROR_ALERT,
-  CODE_SUCCESS_ALERT,
-  FUNC_ERROR_ALERT,
-  IMPORT_ERROR_ALERT,
-} from "../../constants/alerts_constants";
-import {
-  CODE_PROMPT_DIALOG_SUBTITLE,
-  EDIT_CODE_TITLE,
-} from "../../constants/constants";
+import { BUG_ALERT, CODE_ERROR_ALERT, CODE_SUCCESS_ALERT, FUNC_ERROR_ALERT, IMPORT_ERROR_ALERT } from "../../constants/alerts_constants";
+import { CODE_PROMPT_DIALOG_SUBTITLE, EDIT_CODE_TITLE } from "../../constants/constants";
 import useAlertStore from "../../stores/alertStore";
 import { useDarkStore } from "../../stores/darkStore";
 import type { CodeErrorDataTypeAPI } from "../../types/api";
@@ -31,7 +23,7 @@ import type { codeAreaModalPropsType } from "../../types/components";
 import BaseModal from "../baseModal";
 import ConfirmationModal from "../confirmationModal";
 
-export default function CodeAreaModal({
+function CodeAreaModal({
   value,
   setValue,
   nodeClass,
@@ -42,8 +34,7 @@ export default function CodeAreaModal({
   open: myOpen,
   setOpen: mySetOpen,
   componentId,
-}: codeAreaModalPropsType): JSX.Element {
-  const [code, setCode] = useState(value);
+}: codeAreaModalPropsType): JSX.Element { const [code, setCode] = useState(value);
   const [open, setOpen] =
     mySetOpen !== undefined && myOpen !== undefined
       ? [myOpen, mySetOpen]
@@ -54,7 +45,7 @@ export default function CodeAreaModal({
   const setErrorData = useAlertStore((state) => state.setErrorData);
   const [openConfirmation, setOpenConfirmation] = useState(false);
   const codeRef = useRef<ReactAce | null>(null);
-  const { mutate } = usePostValidateCode();
+  const { mutate  } = usePostValidateCode();
   const [error, setError] = useState<{
     detail: CodeErrorDataTypeAPI;
   } | null>(null);
@@ -118,6 +109,7 @@ export default function CodeAreaModal({
       { code, frontend_node: nodeClass! },
       {
         onSuccess: ({ data, type }) => {
+  
           if (data && type) {
             setValue(code);
             clearHandlesFromAdvancedFields(componentId!, data);
@@ -290,3 +282,6 @@ export default function CodeAreaModal({
     </BaseModal>
   );
 }
+
+export default CodeAreaModal;
+export { CodeAreaModal };

@@ -74,3 +74,5 @@ const SvgPowerPoint = (props) => (
   </svg>
 );
 export default SvgPowerPoint;
+
+export { SvgPowerPoint };

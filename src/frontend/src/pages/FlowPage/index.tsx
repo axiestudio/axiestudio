@@ -15,7 +15,7 @@ import useFlowsManagerStore from "../../stores/flowsManagerStore";
 import { FlowSidebarComponent } from "./components/flowSidebarComponent";
 import Page from "./components/PageComponent";
 
-export default function FlowPage({ view }: { view?: boolean }): JSX.Element {
+function FlowPage({ view }: { view?: boolean }): JSX.Element {
   const types = useTypesStore((state) => state.types);
 
   useGetTypes({
@@ -198,3 +198,7 @@ export default function FlowPage({ view }: { view?: boolean }): JSX.Element {
     </>
   );
 }
+
+
+export default FlowPage;
+export { FlowPage };

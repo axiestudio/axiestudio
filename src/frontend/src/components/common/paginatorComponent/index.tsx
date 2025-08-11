@@ -1,21 +1,11 @@
 import { useEffect, useState } from "react";
-import {
-  PAGINATION_PAGE,
-  PAGINATION_ROWS_COUNT,
-  PAGINATION_SIZE,
-} from "@/constants/constants";
+import { PAGINATION_PAGE, PAGINATION_ROWS_COUNT, PAGINATION_SIZE } from "@/constants/constants";
 import type { PaginatorComponentType } from "../../../types/components";
 import IconComponent from "../../common/genericIconComponent";
 import { Button } from "../../ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../ui/select";
 
-export default function PaginatorComponent({
+function PaginatorComponent({
   pageSize = PAGINATION_SIZE,
   pageIndex = PAGINATION_PAGE,
   rowsCount = PAGINATION_ROWS_COUNT,
@@ -108,3 +98,7 @@ export default function PaginatorComponent({
     </div>
   );
 }
+
+
+export default PaginatorComponent;
+export { PaginatorComponent };

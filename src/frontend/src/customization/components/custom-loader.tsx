@@ -14,3 +14,5 @@ const CustomLoader = ({ remSize = 30 }: CustomLoaderProps) => {
 };
 
 export default CustomLoader;
+
+export { CustomLoader };

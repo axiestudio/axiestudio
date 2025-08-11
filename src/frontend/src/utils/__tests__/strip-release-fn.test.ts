@@ -24,7 +24,7 @@ const stripReleaseStageFromVersion = (version: string): string => {
   for (const keyword of releaseStageKeywords) {
     if (version.includes(keyword)) {
       return version.split(keyword)[0].slice(0, -1);
-    }
+     }
   }
   return version;
 };

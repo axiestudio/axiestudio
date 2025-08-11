@@ -1,13 +1,8 @@
 import type React from "react";
-import {
-  ENABLE_IMAGE_ON_PLAYGROUND,
-  ENABLE_VOICE_ASSISTANT,
-} from "@/customization/feature-flags";
+import { useTranslation } from "react-i18next";
+import { ENABLE_IMAGE_ON_PLAYGROUND, ENABLE_VOICE_ASSISTANT } from "@/customization/feature-flags";
 import type { FilePreviewType } from "@/types/components";
-import {
-  CHAT_INPUT_PLACEHOLDER,
-  CHAT_INPUT_PLACEHOLDER_SEND,
-} from "../../../../../../constants/constants";
+import { CHAT_INPUT_PLACEHOLDER, CHAT_INPUT_PLACEHOLDER_SEND } from "../../../../../../constants/constants";
 import FilePreview from "../../fileComponent/components/file-preview";
 import ButtonSendWrapper from "./button-send-wrapper";
 import TextAreaWrapper from "./text-area-wrapper";
@@ -48,8 +43,7 @@ const InputWrapper: React.FC<InputWrapperProps> = ({
   setShowAudioInput,
   currentFlowId,
   playgroundPage,
-}) => {
-  const classNameFilePreview = `flex w-full items-center gap-2 py-2 overflow-auto custom-scroll`;
+}) => { const classNameFilePreview = `flex w-full items-center gap-2 py-2 overflow-auto custom-scroll`;
 
   return (
     <div className="flex w-full flex-col-reverse">
@@ -58,7 +52,7 @@ const InputWrapper: React.FC<InputWrapperProps> = ({
         className="flex w-full flex-col rounded-md border border-input p-4 hover:border-muted-foreground focus:border-[1.75px] has-[:focus]:border-primary"
       >
         <TextAreaWrapper
-          isBuilding={isBuilding}
+          isBuilding={isBuilding }
           checkSendingOk={checkSendingOk}
           send={send}
           noInput={noInput}
@@ -115,3 +109,5 @@ const InputWrapper: React.FC<InputWrapperProps> = ({
 };
 
 export default InputWrapper;
+
+export { InputWrapper };

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 export const getIconName = (
   disabled?: boolean,
   selectedOption?: string,
@@ -5,8 +6,8 @@ export const getIconName = (
   nodeStyle?: boolean,
   isToolMode?: boolean,
 ) => {
-  if (isToolMode) return "Hammer";
+  if (isToolMode) return t("common.hammer");
   if (disabled) return "lock";
-  if (selectedOption && nodeStyle) return "GlobeOkIcon";
+  if (selectedOption && nodeStyle) return t("common.globeokicon");
   return optionsIcon;
 };

@@ -39,3 +39,5 @@ const UpstashIcon = (props) => (
 );
 
 export default UpstashIcon;
+
+export { UpstashIcon };

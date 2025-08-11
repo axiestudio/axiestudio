@@ -87,3 +87,5 @@ const SvgMistralIcon = (props) => (
   </svg>
 );
 export default SvgMistralIcon;
+
+export { SvgMistralIcon };

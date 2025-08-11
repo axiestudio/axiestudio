@@ -25,3 +25,5 @@ const LogCanvasControls = () => {
 };
 
 export default LogCanvasControls;
+
+export { LogCanvasControls };

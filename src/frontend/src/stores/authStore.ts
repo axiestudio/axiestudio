@@ -2,10 +2,7 @@
 
 import { Cookies } from "react-cookie";
 import { create } from "zustand";
-import {
-  AXIESTUDIO_ACCESS_TOKEN,
-  AXIESTUDIO_API_TOKEN,
-} from "@/constants/constants";
+import { AXIESTUDIO_ACCESS_TOKEN, AXIESTUDIO_API_TOKEN } from "@/constants/constants";
 import type { AuthStoreType } from "@/types/zustand/auth";
 
 const cookies = new Cookies();
@@ -43,3 +40,4 @@ const useAuthStore = create<AuthStoreType>((set, get) => ({
 }));
 
 export default useAuthStore;
+export { useAuthStore };

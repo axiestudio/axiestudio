@@ -1,4 +1,4 @@
-export default function formatFileName(
+function formatFileName(
   name: string,
   numberToTruncate: number = 25,
 ): string {
@@ -12,3 +12,6 @@ export default function formatFileName(
   }
   return name;
 }
+
+export default formatFileName;
+export { formatFileName };

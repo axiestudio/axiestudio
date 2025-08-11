@@ -15,3 +15,5 @@ const SvgYCombinatorLogo = (props) => (
   </svg>
 );
 export default SvgYCombinatorLogo;
+
+export { SvgYCombinatorLogo };

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-export default function Checkmark({ initial = true, isVisible, className }) {
+function Checkmark({ initial = true, isVisible, className }) {
   return (
     <AnimatePresence initial={initial}>
       {isVisible && (
@@ -29,3 +29,7 @@ export default function Checkmark({ initial = true, isVisible, className }) {
     </AnimatePresence>
   );
 }
+
+
+export default Checkmark;
+export { Checkmark };

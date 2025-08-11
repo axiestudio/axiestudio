@@ -39,3 +39,5 @@ const usePreloadImages = (
 };
 
 export default usePreloadImages;
+
+export { usePreloadImages };

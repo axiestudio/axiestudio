@@ -13,7 +13,7 @@ import { useFolderStore } from "@/stores/foldersStore";
 import ModalsComponent from "../components/modalsComponent";
 import EmptyPageCommunity from "./empty-page";
 
-export default function CollectionPage(): JSX.Element {
+function CollectionPage(): JSX.Element {
   const [openModal, setOpenModal] = useState(false);
   const [openDeleteFolderModal, setOpenDeleteFolderModal] = useState(false);
   const setFolderToEdit = useFolderStore((state) => state.setFolderToEdit);
@@ -100,3 +100,7 @@ export default function CollectionPage(): JSX.Element {
     </SidebarProvider>
   );
 }
+
+
+export default CollectionPage;
+export { CollectionPage };

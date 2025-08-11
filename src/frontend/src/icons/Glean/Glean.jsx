@@ -4515,3 +4515,5 @@ const SvgGlean = (props) => (
   </svg>
 );
 export default SvgGlean;
+
+export { SvgGlean };

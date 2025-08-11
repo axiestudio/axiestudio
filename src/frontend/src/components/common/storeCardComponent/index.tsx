@@ -5,25 +5,18 @@ import useAlertStore from "../../../stores/alertStore";
 import { useStoreStore } from "../../../stores/storeStore";
 import type { FlowType } from "../../../types/flow";
 import type { storeComponent } from "../../../types/store";
-import cloneFLowWithParent, {
-  getInputsAndOutputs,
-} from "../../../utils/storeUtils";
+import cloneFLowWithParent, { getInputsAndOutputs,
+ } from "../../../utils/storeUtils";
 import { cn } from "../../../utils/utils";
 import { Button } from "../../ui/button";
-import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../../ui/card";
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "../../ui/card";
 import IconComponent from "../genericIconComponent";
 import ShadTooltip from "../shadTooltipComponent";
 import useDataEffect from "./hooks/use-data-effect";
 import useInstallComponent from "./hooks/use-handle-install";
 import { convertTestName } from "./utils/convert-test-name";
 
-export default function StoreCardComponent({
+function StoreCardComponent({
   data,
   authorized = true,
   disabled = false,
@@ -269,3 +262,7 @@ export default function StoreCardComponent({
     </>
   );
 }
+
+
+export default StoreCardComponent;
+export { StoreCardComponent };

@@ -1,4 +1,5 @@
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import useFlowStore from "@/stores/flowStore";
 import type { APIClassType } from "@/types/api";
 import JsonEditor from "../jsonEditor";
@@ -15,8 +16,7 @@ const JsonOutputViewComponent: React.FC<JsonOutputViewComponentProps> = ({
   data,
   nodeId,
   outputName,
-}) => {
-  const jsonData = typeof data === "string" ? JSON.parse(data) : data;
+}) => { const jsonData = typeof data === "string" ? JSON.parse(data) : data;
   const setNode = useFlowStore((state) => state.setNode);
   const node = useFlowStore((state) => state.getNode(nodeId));
   const outputs = (node?.data.node as APIClassType)?.outputs;
@@ -26,7 +26,7 @@ const JsonOutputViewComponent: React.FC<JsonOutputViewComponentProps> = ({
   return (
     <div className="flex h-full flex-1 flex-col">
       <JsonEditor
-        data={{ json: jsonData }}
+        data={{ json: jsonData  }}
         readOnly={true}
         className="flex-1 rounded border border-border"
         setFilter={(filter) => {
@@ -59,3 +59,5 @@ const JsonOutputViewComponent: React.FC<JsonOutputViewComponentProps> = ({
 };
 
 export default JsonOutputViewComponent;
+
+export { JsonOutputViewComponent };

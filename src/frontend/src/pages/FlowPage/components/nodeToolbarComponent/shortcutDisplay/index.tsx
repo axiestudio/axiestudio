@@ -1,7 +1,7 @@
 import RenderIcons from "@/components/common/renderIconComponent";
 import { cn } from "@/utils/utils";
 
-export default function ShortcutDisplay({
+function ShortcutDisplay({
   display_name,
   shortcut,
   sidebar = false,
@@ -38,3 +38,7 @@ export default function ShortcutDisplay({
     </>
   );
 }
+
+
+export default ShortcutDisplay;
+export { ShortcutDisplay };

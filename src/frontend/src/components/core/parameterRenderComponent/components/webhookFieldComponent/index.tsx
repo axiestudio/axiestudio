@@ -1,4 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AuthContext } from "@/contexts/authContext";
 import { useGetBuildsMutation } from "@/controllers/API/queries/_builds/use-get-builds-polling-mutation";
 import SecretKeyModalButton from "@/customization/components/custom-secret-key-modal-button";
@@ -8,15 +9,14 @@ import type { InputProps, TextAreaComponentType } from "../../types";
 import CopyFieldAreaComponent from "../copyFieldAreaComponent";
 import TextAreaComponent from "../textAreaComponent";
 
-export default function WebhookFieldComponent({
+function WebhookFieldComponent({
   value,
   handleOnNewValue,
   editNode = false,
   id = "",
   nodeInformationMetadata,
   ...baseInputProps
-}: InputProps<string, TextAreaComponentType>): JSX.Element {
-  const { userData } = useContext(AuthContext);
+}: InputProps<string, TextAreaComponentType>): JSX.Element { const { userData  } = useContext(AuthContext);
   const [userId, setUserId] = useState("");
   const { mutate: getBuildsMutation } = useGetBuildsMutation();
   const hasInitialized = useRef(false);
@@ -83,3 +83,6 @@ export default function WebhookFieldComponent({
     </div>
   );
 }
+
+export default WebhookFieldComponent;
+export { WebhookFieldComponent };

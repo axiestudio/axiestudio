@@ -3,7 +3,7 @@ import useFlowStore from "@/stores/flowStore";
 import PublishDropdown from "./deploy-dropdown";
 import PlaygroundButton from "./playground-button";
 
-export default function FlowToolbarOptions() {
+function FlowToolbarOptions() {
   const [open, setOpen] = useState<boolean>(false);
   const hasIO = useFlowStore((state) => state.hasIO);
 
@@ -21,3 +21,7 @@ export default function FlowToolbarOptions() {
     </div>
   );
 }
+
+
+export default FlowToolbarOptions;
+export { FlowToolbarOptions };

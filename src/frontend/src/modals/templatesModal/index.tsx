@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import { Button } from "@/components/ui/button";
@@ -13,14 +14,13 @@ import GetStartedComponent from "./components/GetStartedComponent";
 import { Nav } from "./components/navComponent";
 import TemplateContentComponent from "./components/TemplateContentComponent";
 
-export default function TemplatesModal({
-  open,
+function TemplatesModal({open,
   setOpen,
 }: newFlowModalPropsType): JSX.Element {
   const [currentTab, setCurrentTab] = useState("get-started");
   const addFlow = useAddFlow();
   const navigate = useCustomNavigate();
-  const { folderId } = useParams();
+  const { folderId  } = useParams();
 
   // Define categories and their items
   const categories: Category[] = [
@@ -52,7 +52,7 @@ export default function TemplatesModal({
       items: [
         { title: "Prompting", icon: "MessagesSquare", id: "chatbots" },
         { title: "RAG", icon: "Database", id: "rag" },
-        { title: "Agents", icon: "Bot", id: "agents" },
+        { title: t("sidebar.agents"), icon: "Bot", id: "agents" },
       ],
     },
   ];
@@ -112,3 +112,6 @@ export default function TemplatesModal({
     </BaseModal>
   );
 }
+
+export default TemplatesModal;
+export { TemplatesModal };

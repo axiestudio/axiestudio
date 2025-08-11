@@ -13,27 +13,9 @@ import { SkeletonCardComponent } from "../../components/common/skeletonCardCompo
 import { TagsSelector } from "../../components/common/tagsSelectorComponent";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
-import {
-  APIKEY_ERROR_ALERT,
-  COMPONENTS_ERROR_ALERT,
-  INVALID_API_ERROR_ALERT,
-  NOAPI_ERROR_ALERT,
-} from "../../constants/alerts_constants";
-import {
-  STORE_DESC,
-  STORE_PAGINATION_PAGE,
-  STORE_PAGINATION_ROWS_COUNT,
-  STORE_PAGINATION_SIZE,
-  STORE_TITLE,
-} from "../../constants/constants";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { APIKEY_ERROR_ALERT, COMPONENTS_ERROR_ALERT, INVALID_API_ERROR_ALERT, NOAPI_ERROR_ALERT } from "../../constants/alerts_constants";
+import { STORE_DESC, STORE_PAGINATION_PAGE, STORE_PAGINATION_ROWS_COUNT, STORE_PAGINATION_SIZE, STORE_TITLE } from "../../constants/constants";
 import { AuthContext } from "../../contexts/authContext";
 import { getStoreComponents } from "../../controllers/API";
 import useAlertStore from "../../stores/alertStore";
@@ -43,7 +25,7 @@ import type { storeComponent } from "../../types/store";
 import { cn } from "../../utils/utils";
 import InputSearchComponent from "../MainPage/components/inputSearchComponent";
 
-export default function StorePage(): JSX.Element {
+function StorePage(): JSX.Element {
   const hasApiKey = useStoreStore((state) => state.hasApiKey);
   const validApiKey = useStoreStore((state) => state.validApiKey);
   const loadingApiKey = useStoreStore((state) => state.loadingApiKey);
@@ -397,3 +379,7 @@ export default function StorePage(): JSX.Element {
     </PageLayout>
   );
 }
+
+
+export default StorePage;
+export { StorePage };

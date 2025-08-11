@@ -1,11 +1,6 @@
 import { type ReactNode, useState } from "react";
-import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useDeleteFileV2 } from "@/controllers/API/queries/file-management/use-delete-file";
 import { useDuplicateFileV2 } from "@/controllers/API/queries/file-management/use-duplicate-file";
 import { useCustomHandleSingleFileDownload } from "@/customization/hooks/use-custom-handle-single-file-download";
@@ -13,15 +8,14 @@ import ConfirmationModal from "@/modals/confirmationModal";
 import useAlertStore from "@/stores/alertStore";
 import type { FileType } from "@/types/file_management";
 
-export default function FilesContextMenuComponent({
-  children,
+function FilesContextMenuComponent({children,
   file,
   handleRename,
   simplified,
 }: {
   children: ReactNode;
   file: FileType;
-  handleRename: (id: string, name: string) => void;
+  handleRename: (id: string, name: string)=> void;
   simplified?: boolean;
 }) {
   const isLocal = file.provider == null;
@@ -127,7 +121,7 @@ export default function FilesContextMenuComponent({
               aria-hidden="true"
               className="mr-2 h-4 w-4"
             />
-            {isLocal ? "Delete" : "Remove"}
+            {isLocal ? t("common.delete") : "Remove"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -137,9 +131,9 @@ export default function FilesContextMenuComponent({
         onCancel={() => setShowDeleteConfirmation(false)}
         title={isLocal ? "Delete File" : "Remove File"}
         titleHeader={`Are you sure you want to ${isLocal ? "delete" : "remove"} "${file.name}"?`}
-        cancelText="Cancel"
+        cancelText={t("common.cancel")}
         size="x-small"
-        confirmationText={isLocal ? "Delete" : "Remove"}
+        confirmationText={isLocal ? t("common.delete") : "Remove"}
         icon={isLocal ? "Trash2" : "ListX"}
         destructive
         onConfirm={() => {
@@ -161,3 +155,7 @@ export default function FilesContextMenuComponent({
     </>
   );
 }
+
+
+export default FilesContextMenuComponent;
+export { FilesContextMenuComponent };

@@ -10,3 +10,5 @@ const SvgGitbookSvgrepoCom = (props) => (
   </svg>
 );
 export default SvgGitbookSvgrepoCom;
+
+export { SvgGitbookSvgrepoCom };

@@ -50,3 +50,5 @@ const SvgVertexAi = (props) => (
   </svg>
 );
 export default SvgVertexAi;
+
+export { SvgVertexAi };

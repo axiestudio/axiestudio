@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import AlertDropdown from "@/alerts/alertDropDown";
 import DataStaxLogo from "@/assets/DataStaxLogo.svg?react";
-import ForwardedIconComponent from "@/components/common/genericIconComponent";
+import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import ShadTooltip from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -15,7 +15,7 @@ import useTheme from "@/customization/hooks/use-custom-theme";
 import useAlertStore from "@/stores/alertStore";
 import FlowMenu from "./components/FlowMenu";
 
-export default function AppHeader(): JSX.Element {
+function AppHeader(): JSX.Element {
   const notificationCenter = useAlertStore((state) => state.notificationCenter);
   const navigate = useCustomNavigate();
   const [activeState, setActiveState] = useState<"notifications" | null>(null);
@@ -155,3 +155,7 @@ export default function AppHeader(): JSX.Element {
     </div>
   );
 }
+
+
+export default AppHeader;
+export { AppHeader };

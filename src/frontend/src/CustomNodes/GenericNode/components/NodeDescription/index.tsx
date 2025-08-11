@@ -6,7 +6,7 @@ import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import { handleKeyDown } from "@/utils/reactflowUtils";
 import { cn } from "@/utils/utils";
 
-export default function NodeDescription({
+function NodeDescription({
   description,
   selected,
   nodeId,
@@ -199,3 +199,7 @@ export default function NodeDescription({
     </div>
   );
 }
+
+
+export default NodeDescription;
+export { NodeDescription };

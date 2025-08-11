@@ -1,12 +1,12 @@
 import { useState } from "react";
-import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import ShadTooltip from "@/components/common/shadTooltipComponent";
-import useUploadFile from "@/hooks/files/use-upload-file";
-import useAlertStore from "@/stores/alertStore";
+import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
+import { ShadTooltip } from "@/components/common/shadTooltipComponent";
+import { useUploadFile } from "@/hooks/files/use-upload-file";
+import { useAlertStore } from "@/stores/alertStore";
 import { useUtilityStore } from "@/stores/utilityStore";
 import { formatFileSize } from "@/utils/stringManipulation";
 
-export default function DragFilesComponent({
+function DragFilesComponent({
   onUpload,
   types,
   isList,
@@ -150,3 +150,7 @@ export default function DragFilesComponent({
     </div>
   );
 }
+
+
+export default DragFilesComponent;
+export { DragFilesComponent };

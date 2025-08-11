@@ -1,7 +1,7 @@
 import type { NodeDataType } from "@/types/flow";
 import { OutputParameter } from ".";
 
-export default function NodeOutputs({
+function NodeOutputs({
   outputs,
   keyPrefix,
   data,
@@ -118,3 +118,7 @@ export default function NodeOutputs({
     />
   );
 }
+
+
+export default NodeOutputs;
+export { NodeOutputs };

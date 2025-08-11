@@ -1,12 +1,11 @@
 import { convertTestName } from "@/components/common/storeCardComponent/utils/convert-test-name";
 import { swatchColors } from "@/utils/styleUtils";
 import { cn, getNumberFromString } from "@/utils/utils";
-import IconComponent, {
-  ForwardedIconComponent,
-} from "../../../../components/common/genericIconComponent";
+import IconComponent, { ForwardedIconComponent,
+ } from "../../../../components/common/genericIconComponent";
 import type { TemplateCardComponentProps } from "../../../../types/templates/types";
 
-export default function TemplateCardComponent({
+function TemplateCardComponent({
   example,
   onClick,
 }: TemplateCardComponentProps) {
@@ -67,3 +66,8 @@ export default function TemplateCardComponent({
     </div>
   );
 }
+
+
+export default TemplateCardComponent;
+export { TemplateCardComponent };
+export { TemplateCardComponent as TemplateExampleCard };

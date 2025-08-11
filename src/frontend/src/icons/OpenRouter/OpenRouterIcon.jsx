@@ -22,3 +22,5 @@ const SvgOpenRouter = (props) => (
   </svg>
 );
 export default SvgOpenRouter;
+
+export { SvgOpenRouter };

@@ -1,25 +1,16 @@
 import { useEffect, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import useHandleNodeClass from "@/CustomNodes/hooks/use-handle-node-class";
 import type { NodeInfoType } from "@/components/core/parameterRenderComponent/types";
 import { usePostTemplateValue } from "@/controllers/API/queries/nodes/use-post-template-value";
-import {
-  CustomParameterComponent,
-  CustomParameterLabel,
-  getCustomParameterTitle,
-} from "@/customization/components/custom-parameter";
+import { CustomParameterComponent, CustomParameterLabel, getCustomParameterTitle } from "@/customization/components/custom-parameter";
 import { useIsAutoLogin } from "@/hooks/use-is-auto-login";
 import useAuthStore from "@/stores/authStore";
 import { cn } from "@/utils/utils";
 import { default as IconComponent } from "../../../../components/common/genericIconComponent";
 import ShadTooltip from "../../../../components/common/shadTooltipComponent";
-import {
-  DEFAULT_TOOLSET_PLACEHOLDER,
-  FLEX_VIEW_TYPES,
-  ICON_STROKE_WIDTH,
-  IS_AUTO_LOGIN,
-  AXIESTUDIO_SUPPORTED_TYPES,
-} from "../../../../constants/constants";
+import { DEFAULT_TOOLSET_PLACEHOLDER, FLEX_VIEW_TYPES, ICON_STROKE_WIDTH, IS_AUTO_LOGIN, AXIESTUDIO_SUPPORTED_TYPES } from "../../../../constants/constants";
 import useFlowStore from "../../../../stores/flowStore";
 import { useTypesStore } from "../../../../stores/typesStore";
 import type { NodeInputFieldComponentType } from "../../../../types/components";
@@ -28,7 +19,7 @@ import useHandleOnNewValue from "../../../hooks/use-handle-new-value";
 import HandleRenderComponent from "../handleRenderComponent";
 import NodeInputInfo from "../NodeInputInfo";
 
-export default function NodeInputField({
+function NodeInputField({
   id,
   data,
   tooltipTitle,
@@ -44,13 +35,12 @@ export default function NodeInputField({
   showNode,
   colorName,
   isToolMode = false,
-}: NodeInputFieldComponentType): JSX.Element {
-  const ref = useRef<HTMLDivElement>(null);
+}: NodeInputFieldComponentType): JSX.Element { const ref = useRef<HTMLDivElement>(null);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isAutoLogin = useIsAutoLogin();
   const shouldDisplayApiKey = isAuthenticated && !isAutoLogin;
 
-  const { currentFlowId, currentFlowName } = useFlowStore(
+  const { currentFlowId, currentFlowName  } = useFlowStore(
     useShallow((state) => ({
       currentFlowId: state.currentFlow?.id,
       currentFlowName: state.currentFlow?.name,
@@ -231,3 +221,7 @@ export default function NodeInputField({
     </div>
   );
 }
+
+
+export default NodeInputField;
+export { NodeInputField };

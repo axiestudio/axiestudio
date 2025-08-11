@@ -31,3 +31,5 @@ const ListSkeleton = () => {
 };
 
 export default ListSkeleton;
+
+export { ListSkeleton };

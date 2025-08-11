@@ -12,13 +12,12 @@ export const FormKeyRender = ({
   apiKeyName: string;
   inputRef: React.RefObject<HTMLInputElement>;
   setApiKeyName: (value: string) => void;
-}) => {
-  return (
+}) => { return (
     <Form.Field name="apikey">
       {modalProps?.inputLabel && (
         <Form.Label asChild className="mb-2">
           <Label className="relative bottom-1">
-            {modalProps?.inputLabel as React.ReactNode}
+            {modalProps?.inputLabel as React.ReactNode }
           </Label>
         </Form.Label>
       )}

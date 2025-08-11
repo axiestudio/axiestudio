@@ -7,7 +7,7 @@ interface SingleFileDownloadParams {
   type: string;
 }
 
-export const useCustomHandleSingleFileDownload = (file: FileType) => {
+export const useCustomHandleSingleFileDownload= (file: FileType) => {
   const { mutate: downloadFile } = useGetDownloadFileV2({
     id: file.id,
     filename: file.name,

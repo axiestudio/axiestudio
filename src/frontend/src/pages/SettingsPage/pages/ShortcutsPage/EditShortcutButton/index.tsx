@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
-import RenderKey from "@/components/common/renderIconComponent/components/renderKey";
-import ForwardedIconComponent from "../../../../../components/common/genericIconComponent";
+import { useTranslation } from "react-i18next";
+import { RenderKey } from "@/components/common/renderIconComponent/components/renderKey";
+import { ForwardedIconComponent } from "../../../../../components/common/genericIconComponent";
 import { Button } from "../../../../../components/ui/button";
 import BaseModal from "../../../../../modals/baseModal";
 import useAlertStore from "../../../../../stores/alertStore";
 import { useShortcutsStore } from "../../../../../stores/shortcuts";
 import { toCamelCase, toTitleCase } from "../../../../../utils/utils";
 
-export default function EditShortcutButton({
+function EditShortcutButton({
   children,
   shortcut,
   defaultShortcuts,
@@ -41,10 +42,9 @@ export default function EditShortcutButton({
 
   function canEditCombination(newCombination: string): boolean {
     let canSave = true;
-    defaultShortcuts.forEach(({ shortcut }) => {
-      if (shortcut.toLowerCase() === newCombination.toLowerCase()) {
+    defaultShortcuts.forEach(({ shortcut }) => { if (shortcut.toLowerCase() === newCombination.toLowerCase()) {
         canSave = false;
-      }
+       }
     });
     return canSave;
   }
@@ -191,3 +191,7 @@ export default function EditShortcutButton({
     </BaseModal>
   );
 }
+
+
+export default EditShortcutButton;
+export { EditShortcutButton };

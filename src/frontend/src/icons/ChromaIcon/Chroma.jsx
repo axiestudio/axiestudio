@@ -20,3 +20,5 @@ const SvgChroma = (props) => (
   </svg>
 );
 export default SvgChroma;
+
+export { SvgChroma };

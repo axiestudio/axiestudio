@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import useFlowsManagerStore from "@/stores/flowsManagerStore";
+import { useFlowsManagerStore } from "@/stores/flowsManagerStore";
 import { cn } from "../../../utils/utils";
 import IconComponent from "../../common/genericIconComponent";
 
-export default function CardsWrapComponent({
+function CardsWrapComponent({
   onFileDrop,
   children,
   dragMessage,
@@ -89,3 +89,7 @@ export default function CardsWrapComponent({
     </div>
   );
 }
+
+
+export default CardsWrapComponent;
+export { CardsWrapComponent };

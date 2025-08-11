@@ -1,22 +1,12 @@
 import * as Form from "@radix-ui/react-form";
-import type { UseQueryResult } from "@tanstack/react-query";
-import {
-  type ProfilePicturesQueryResponse,
-  useGetProfilePicturesQuery,
-} from "@/controllers/API/queries/files";
+import type { UseQueryResult  } from "@tanstack/react-query";
+import { type ProfilePicturesQueryResponse, useGetProfilePicturesQuery } from "@/controllers/API/queries/files";
 import { Button } from "../../../../../../components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../../../../../../components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../../../../../components/ui/card";
 import { gradients } from "../../../../../../utils/styleUtils";
 import ProfilePictureChooserComponent from "./components/profilePictureChooserComponent";
 
-type ProfilePictureFormComponentProps = {
+type ProfilePictureFormComponentProps= {
   profilePicture: string;
   handleInput: (event: any) => void;
   handlePatchProfilePicture: (gradient: string) => void;
@@ -75,3 +65,5 @@ const ProfilePictureFormComponent = ({
   );
 };
 export default ProfilePictureFormComponent;
+
+export { ProfilePictureFormComponent };

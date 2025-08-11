@@ -1,16 +1,10 @@
 import { DialogClose } from "@radix-ui/react-dialog";
+import { useTranslation } from "react-i18next";
 import { Trash2 } from "lucide-react";
 import { Button } from "../../components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../../components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog";
 
-export default function DeleteConfirmationModal({
+function DeleteConfirmationModal({
   children,
   onConfirm,
   description,
@@ -26,9 +20,8 @@ export default function DeleteConfirmationModal({
   open?: boolean;
   setOpen?: (open: boolean) => void;
   note?: string;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
+}) { return (
+    <Dialog open={open } onOpenChange={setOpen}>
       <DialogTrigger asChild={!children ? true : asChild} tabIndex={-1}>
         {children ?? <></>}
       </DialogTrigger>
@@ -46,8 +39,7 @@ export default function DeleteConfirmationModal({
         </DialogHeader>
         <span className="pb-3 text-sm">
           This will permanently delete the {description ?? "flow"}
-          {note ? " " + note : ""}.<br></br>This can't be undone.
-        </span>
+          {note ? " " + note : ""}.<br></br>{t("greetings.thiscantbeundone")}</span>
         <DialogFooter>
           <DialogClose asChild>
             <Button
@@ -76,3 +68,7 @@ export default function DeleteConfirmationModal({
     </Dialog>
   );
 }
+
+
+export default DeleteConfirmationModal;
+export { DeleteConfirmationModal };

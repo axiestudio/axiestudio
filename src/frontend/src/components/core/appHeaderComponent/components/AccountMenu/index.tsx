@@ -1,7 +1,4 @@
-import {
-  DATASTAX_DOCS_URL,
-  DOCS_URL,
-} from "@/constants/constants";
+import { DATASTAX_DOCS_URL, DOCS_URL } from "@/constants/constants";
 import { useLogout } from "@/controllers/API/queries/auth";
 import { CustomProfileIcon } from "@/customization/components/custom-profile-icon";
 import { ENABLE_DATASTAX_AXIESTUDIO } from "@/customization/feature-flags";
@@ -9,13 +6,7 @@ import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
 import useAuthStore from "@/stores/authStore";
 import { useDarkStore } from "@/stores/darkStore";
 import { cn, stripReleaseStageFromVersion } from "@/utils/utils";
-import {
-  HeaderMenu,
-  HeaderMenuItemButton,
-  HeaderMenuItemLink,
-  HeaderMenuItems,
-  HeaderMenuToggle,
-} from "../HeaderMenu";
+import { HeaderMenu, HeaderMenuItemButton, HeaderMenuItemLink, HeaderMenuItems, HeaderMenuToggle } from "../HeaderMenu";
 import ThemeButtons from "../ThemeButtons";
 
 export const AccountMenu = () => {

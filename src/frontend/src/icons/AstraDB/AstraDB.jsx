@@ -18,3 +18,5 @@ const AstraSVG = (props) => (
   </svg>
 );
 export default AstraSVG;
+
+export { AstraSVG };

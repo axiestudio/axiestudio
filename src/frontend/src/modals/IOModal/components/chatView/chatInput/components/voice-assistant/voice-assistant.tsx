@@ -1,13 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import ShadTooltip from "@/components/common/shadTooltipComponent";
+import { ShadTooltip } from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
 import { ICON_STROKE_WIDTH, SAVE_API_KEY_ALERT } from "@/constants/constants";
 import { useGetMessagesPollingMutation } from "@/controllers/API/queries/messages/use-get-messages-polling";
-import {
-  useGetGlobalVariables,
-  usePatchGlobalVariables,
-  usePostGlobalVariables,
-} from "@/controllers/API/queries/variables";
+import { useGetGlobalVariables, usePatchGlobalVariables, usePostGlobalVariables } from "@/controllers/API/queries/variables";
 import { customUseStartConversation } from "@/customization/hooks/use-custom-start-conversation";
 import { customUseStartRecording } from "@/customization/hooks/use-custom-start-recording";
 import useAlertStore from "@/stores/alertStore";
@@ -34,8 +30,7 @@ export interface VoiceAssistantProps {
   setShowAudioInput: (value: boolean) => void;
 }
 
-export function VoiceAssistant({
-  flowId,
+export function VoiceAssistant({flowId,
   setShowAudioInput,
 }: VoiceAssistantProps) {
   const [recordingTime, setRecordingTime] = useState(0);
@@ -443,7 +438,7 @@ export function VoiceAssistant({
                 <>
                   <Button data-testid="voice-assistant-settings-icon" unstyled>
                     <IconComponent
-                      name="Settings"
+                      name={t("common.settings")}
                       strokeWidth={ICON_STROKE_WIDTH}
                       className={cn(
                         "relative top-[2px] h-4 w-4 text-muted-foreground hover:text-foreground",

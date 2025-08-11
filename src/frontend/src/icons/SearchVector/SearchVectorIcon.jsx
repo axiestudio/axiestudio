@@ -16,3 +16,5 @@ const SvgSearchVectorIcon = (props) => (
   </svg>
 );
 export default SvgSearchVectorIcon;
+
+export { SvgSearchVectorIcon };

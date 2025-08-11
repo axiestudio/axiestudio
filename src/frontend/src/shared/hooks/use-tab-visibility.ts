@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-
-const useTabVisibility = () => {
+const useTabVisibility= () => {
   const [tabChanged, setTabChanged] = useState(true);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
       setTabChanged(document.hidden);
-    };
+     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
@@ -19,3 +18,5 @@ const useTabVisibility = () => {
 };
 
 export default useTabVisibility;
+
+export { useTabVisibility };

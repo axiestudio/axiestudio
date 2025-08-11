@@ -534,3 +534,5 @@ const SvgSerpSearchAPI = (props) => (
   </svg>
 );
 export default SvgSerpSearchAPI;
+
+export { SvgSerpSearchAPI };

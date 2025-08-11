@@ -9,7 +9,7 @@ import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import { convertUTCToLocalTimezone } from "@/utils/utils";
 import BaseModal from "../baseModal";
 
-export default function FlowLogsModal({
+function FlowLogsModal({
   children,
 }: {
   children: React.ReactNode;
@@ -98,3 +98,7 @@ export default function FlowLogsModal({
     </BaseModal>
   );
 }
+
+
+export default FlowLogsModal;
+export { FlowLogsModal };

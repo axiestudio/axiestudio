@@ -11,9 +11,9 @@ import { useUtilityStore } from "@/stores/utilityStore";
 import { type CookieOptions, getCookie, setCookie } from "@/utils/utils";
 import useFlowsManagerStore from "../../stores/flowsManagerStore";
 import { getInputsAndOutputs } from "../../utils/storeUtils";
-export default function PlaygroundPage() {
+function PlaygroundPage() {
   useGetConfig();
-  const setCurrentFlow = useFlowsManagerStore((state) => state.setCurrentFlow);
+  const setCurrentFlow= useFlowsManagerStore((state) => state.setCurrentFlow);
   const currentSavedFlow = useFlowsManagerStore((state) => state.currentFlow);
   const setClientId = useUtilityStore((state) => state.setClientId);
 
@@ -105,3 +105,7 @@ export default function PlaygroundPage() {
     </div>
   );
 }
+
+
+export default PlaygroundPage;
+export { PlaygroundPage };

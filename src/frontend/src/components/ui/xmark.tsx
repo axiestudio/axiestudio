@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-export default function Xmark({ initial = true, isVisible, className }) {
+function Xmark({ initial = true, isVisible, className }) {
   return (
     <AnimatePresence initial={initial}>
       {isVisible && (
@@ -43,3 +43,7 @@ export default function Xmark({ initial = true, isVisible, className }) {
     </AnimatePresence>
   );
 }
+
+
+export default Xmark;
+export { Xmark };

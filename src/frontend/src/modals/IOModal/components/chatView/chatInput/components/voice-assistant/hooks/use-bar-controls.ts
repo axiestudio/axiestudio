@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
-
-export const useBarControls = (
+export const useBarControls= (
   isRecording: boolean,
   setRecordingTime: React.Dispatch<React.SetStateAction<number>>,
   setBarHeights: React.Dispatch<React.SetStateAction<number[]>>,
@@ -23,7 +22,7 @@ export const useBarControls = (
         analyser.fftSize = 256;
         timeDataRef.current = new Uint8Array(analyser.fftSize);
         analyzerInitializedRef.current = true;
-      }
+       }
 
       const interval = setInterval(() => {
         setRecordingTime((prev) => prev + 1);

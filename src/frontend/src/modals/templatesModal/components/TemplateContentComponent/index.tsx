@@ -13,8 +13,7 @@ import type { TemplateContentProps } from "../../../../types/templates/types";
 import { updateIds } from "../../../../utils/reactflowUtils";
 import { TemplateCategoryComponent } from "../TemplateCategoryComponent";
 
-export default function TemplateContentComponent({
-  currentTab,
+function TemplateContentComponent({currentTab,
   categories,
 }: TemplateContentProps) {
   const examples = useFlowsManagerStore((state) => state.examples).filter(
@@ -78,7 +77,7 @@ export default function TemplateContentComponent({
     <div className="flex flex-1 flex-col gap-6 overflow-hidden">
       <div className="relative mx-3 flex-1 grow-0 py-px">
         <ForwardedIconComponent
-          name="Search"
+          name={t("common.search")}
           className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
         />
         <Input
@@ -119,3 +118,7 @@ export default function TemplateContentComponent({
     </div>
   );
 }
+
+
+export default TemplateContentComponent;
+export { TemplateContentComponent };

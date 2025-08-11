@@ -1,13 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useState } from "react";
-import useAlertStore from "@/stores/alertStore";
-import type { FileType } from "@/types/file_management";
+import { useAlertStore } from "@/stores/alertStore";
+import type { FileType  } from "@/types/file_management";
 import { ForwardedIconComponent } from "../../components/common/genericIconComponent";
 import BaseModal from "../baseModal";
 import DragFilesComponent from "./components/dragFilesComponent";
 import RecentFilesComponent from "./components/recentFilesComponent";
 
-export default function FileManagerModal({
+function FileManagerModal({
   children,
   handleSubmit,
   selectedFiles,
@@ -19,7 +19,7 @@ export default function FileManagerModal({
   children?: ReactNode;
   selectedFiles?: string[];
   open?: boolean;
-  handleSubmit: (files: string[]) => void;
+  handleSubmit: (files: string[])=> void;
   setOpen?: (open: boolean) => void;
   disabled?: boolean;
   files: FileType[];
@@ -111,3 +111,7 @@ export default function FileManagerModal({
     </>
   );
 }
+
+
+export default FileManagerModal;
+export { FileManagerModal };

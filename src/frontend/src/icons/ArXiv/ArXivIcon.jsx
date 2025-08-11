@@ -118,3 +118,5 @@ const ArXivIcon = (props) => {
 };
 
 export default ArXivIcon;
+
+export { ArXivIcon };

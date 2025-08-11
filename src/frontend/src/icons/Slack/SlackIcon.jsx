@@ -27,3 +27,5 @@ const SvgSlackIcon = (props) => (
   </svg>
 );
 export default SvgSlackIcon;
+
+export { SvgSlackIcon };

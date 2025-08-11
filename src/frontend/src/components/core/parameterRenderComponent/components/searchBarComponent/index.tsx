@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 
 interface SearchBarComponentProps {
@@ -75,3 +70,4 @@ const SearchBarComponent = ({
 };
 
 export default SearchBarComponent;
+export { SearchBarComponent };

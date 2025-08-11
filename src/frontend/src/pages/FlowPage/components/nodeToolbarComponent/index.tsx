@@ -1,6 +1,7 @@
 import { useUpdateNodeInternals } from "@xyflow/react";
-import _, { cloneDeep } from "lodash";
+import _, { cloneDeep  } from "lodash";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { countHandlesFn } from "@/CustomNodes/helpers/count-handles";
 import { mutateTemplate } from "@/CustomNodes/helpers/mutate-template";
 import useHandleOnNewValue from "@/CustomNodes/hooks/use-handle-new-value";
@@ -14,12 +15,7 @@ import { customOpenNewTab } from "@/customization/utils/custom-open-new-tab";
 import useAddFlow from "@/hooks/flows/use-add-flow";
 import type { APIClassType } from "@/types/api";
 import IconComponent from "../../../../components/common/genericIconComponent";
-import {
-  Select,
-  SelectContentWithoutPortal,
-  SelectItem,
-  SelectTrigger,
-} from "../../../../components/ui/select-custom";
+import { Select, SelectContentWithoutPortal, SelectItem, SelectTrigger } from "../../../../components/ui/select-custom";
 import useAlertStore from "../../../../stores/alertStore";
 import { useDarkStore } from "../../../../stores/darkStore";
 import useFlowStore from "../../../../stores/flowStore";
@@ -28,13 +24,7 @@ import { useShortcutsStore } from "../../../../stores/shortcuts";
 import { useStoreStore } from "../../../../stores/storeStore";
 import type { nodeToolbarPropsType } from "../../../../types/components";
 import type { FlowType } from "../../../../types/flow";
-import {
-  checkHasToolMode,
-  createFlowComponent,
-  downloadNode,
-  expandGroupNode,
-  updateFlowPosition,
-} from "../../../../utils/reactflowUtils";
+import { checkHasToolMode, createFlowComponent, downloadNode, expandGroupNode, updateFlowPosition } from "../../../../utils/reactflowUtils";
 import { cn, getNodeLength } from "../../../../utils/utils";
 import { ToolbarButton } from "./components/toolbar-button";
 import ToolbarModals from "./components/toolbar-modals";
@@ -56,8 +46,7 @@ const NodeToolbarComponent = memo(
     isUserEdited,
     hasBreakingChange,
     setOpenShowMoreOptions,
-  }: nodeToolbarPropsType): JSX.Element => {
-    const version = useDarkStore((state) => state.version);
+  }: nodeToolbarPropsType): JSX.Element => { const version = useDarkStore((state) => state.version);
     const [showModalAdvanced, setShowModalAdvanced] = useState(false);
     const [showconfirmShare, setShowconfirmShare] = useState(false);
     const [showOverrideModal, setShowOverrideModal] = useState(false);
@@ -67,7 +56,7 @@ const NodeToolbarComponent = memo(
     const updateFreezeStatus = useFlowStore(
       (state) => state.updateFreezeStatus,
     );
-    const { hasStore, hasApiKey, validApiKey } = useStoreStore((state) => ({
+    const { hasStore, hasApiKey, validApiKey  } = useStoreStore((state) => ({
       hasStore: state.hasStore,
       hasApiKey: state.hasApiKey,
       validApiKey: state.validApiKey,
@@ -86,6 +75,7 @@ const NodeToolbarComponent = memo(
     const takeSnapshot = useFlowsManagerStore((state) => state.takeSnapshot);
     const { mutate: FreezeAllVertices } = usePostRetrieveVertexOrder({
       onSuccess: ({ vertices_to_run }) => {
+  
         updateFreezeStatus(vertices_to_run, !data.node?.frozen);
         vertices_to_run.forEach((vertex) => {
           updateNodeInternals(vertex);
@@ -572,7 +562,7 @@ const NodeToolbarComponent = memo(
                       shortcuts.find((obj) => obj.name === "Save Component")
                         ?.shortcut!
                     }
-                    value={"Save"}
+                    value={t("common.save")}
                     icon={"SaveAll"}
                     dataTestId="save-button-modal"
                   />
@@ -584,16 +574,16 @@ const NodeToolbarComponent = memo(
                         ?.shortcut!
                     }
                     value={"Duplicate"}
-                    icon={"Copy"}
+                    icon={t("common.copy")}
                     dataTestId="copy-button-modal"
                   />
                 </SelectItem>
                 <SelectItem value={"copy"}>
                   <ToolbarSelectItem
                     shortcut={
-                      shortcuts.find((obj) => obj.name === "Copy")?.shortcut!
+                      shortcuts.find((obj) => obj.name === t("common.copy"))?.shortcut!
                     }
-                    value={"Copy"}
+                    value={t("common.copy")}
                     icon={"Clipboard"}
                     dataTestId="copy-button-modal"
                   />
@@ -711,7 +701,7 @@ const NodeToolbarComponent = memo(
                       className={`absolute right-2 top-2 flex items-center justify-center rounded-sm px-1 py-[0.2]`}
                     >
                       <IconComponent
-                        name="Delete"
+                        name={t("common.delete")}
                         className="h-4 w-4 stroke-2 text-red-400"
                       ></IconComponent>
                     </span>
@@ -749,3 +739,5 @@ const NodeToolbarComponent = memo(
 NodeToolbarComponent.displayName = "NodeToolbarComponent";
 
 export default NodeToolbarComponent;
+
+export { NodeToolbarComponent };

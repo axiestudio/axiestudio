@@ -1,7 +1,8 @@
 import { DialogClose } from "@radix-ui/react-dialog";
-import React, { useEffect, useState } from "react";
-import GenericIconComponent from "@/components/common/genericIconComponent";
-import ShadTooltip from "../../components/common/shadTooltipComponent";
+import React, { useEffect, useState  } from "react";
+import { useTranslation } from "react-i18next";
+import { ForwardedIconComponent as GenericIconComponent } from "@/components/common/genericIconComponent";
+import { ShadTooltip } from "../../components/common/shadTooltipComponent";
 import { Button } from "../../components/ui/button";
 import type {
   ConfirmationModalType,
@@ -10,8 +11,7 @@ import type {
 } from "../../types/components";
 import BaseModal from "../baseModal";
 
-const Content: React.FC<ContentProps> = ({ children }) => {
-  return <div className="h-full w-full">{children}</div>;
+const Content: React.FC<ContentProps> = ({ children }) => { return <div className="h-full w-full">{children }</div>;
 };
 const Trigger: React.FC<TriggerProps> = ({
   children,
@@ -139,3 +139,5 @@ ConfirmationModal.Content = Content;
 ConfirmationModal.Trigger = Trigger;
 
 export default ConfirmationModal;
+
+export { ConfirmationModal };

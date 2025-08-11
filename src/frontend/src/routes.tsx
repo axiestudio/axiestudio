@@ -1,10 +1,5 @@
 import { lazy } from "react";
-import {
-  createBrowserRouter,
-  createRoutesFromElements,
-  Outlet,
-  Route,
-} from "react-router-dom";
+import { createBrowserRouter, createRoutesFromElements, Outlet, Route } from "react-router-dom";
 import { ProtectedAdminRoute } from "./components/authorization/authAdminGuard";
 import { ProtectedRoute } from "./components/authorization/authGuard";
 import { ProtectedLoginRoute } from "./components/authorization/authLoginGuard";
@@ -13,10 +8,7 @@ import ContextWrapper from "./contexts";
 import CustomDashboardWrapperPage from "./customization/components/custom-DashboardWrapperPage";
 import { CustomNavigate } from "./customization/components/custom-navigate";
 import { BASENAME } from "./customization/config-constants";
-import {
-  ENABLE_CUSTOM_PARAM,
-  ENABLE_FILE_MANAGEMENT,
-} from "./customization/feature-flags";
+import { ENABLE_CUSTOM_PARAM, ENABLE_FILE_MANAGEMENT } from "./customization/feature-flags";
 import { CustomRoutesStore } from "./customization/utils/custom-routes-store";
 import { CustomRoutesStorePages } from "./customization/utils/custom-routes-store-pages";
 import { AppAuthenticatedPage } from "./pages/AppAuthenticatedPage";
@@ -187,3 +179,5 @@ const router = createBrowserRouter(
 );
 
 export default router;
+
+export { router };

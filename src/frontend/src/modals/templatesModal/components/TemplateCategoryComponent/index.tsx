@@ -1,10 +1,10 @@
 import type { TemplateCategoryProps } from "../../../../types/templates/types";
-import TemplateExampleCard from "../TemplateCardComponent";
+import { TemplateExampleCard } from "../TemplateCardComponent";
 
 export function TemplateCategoryComponent({
   examples,
   onCardClick,
-}: TemplateCategoryProps) {
+ }: TemplateCategoryProps) {
   return (
     <>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

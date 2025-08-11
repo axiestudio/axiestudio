@@ -3,22 +3,13 @@ import { cloneDeep } from "lodash";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useShallow } from "zustand/react/shallow";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  useSidebar,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, useSidebar } from "@/components/ui/sidebar";
 import SkeletonGroup from "@/components/ui/skeletonGroup";
 import { useAddComponent } from "@/hooks/use-add-component";
 import { useShortcutsStore } from "@/stores/shortcuts";
 import { useStoreStore } from "@/stores/storeStore";
 import { checkChatInput, checkWebhookInput } from "@/utils/reactflowUtils";
-import {
-  nodeColors,
-  SIDEBAR_BUNDLES,
-  SIDEBAR_CATEGORIES,
-} from "@/utils/styleUtils";
+import { nodeColors, SIDEBAR_BUNDLES, SIDEBAR_CATEGORIES } from "@/utils/styleUtils";
 import useAlertStore from "../../../../stores/alertStore";
 import useFlowStore from "../../../../stores/flowStore";
 import { useTypesStore } from "../../../../stores/typesStore";

@@ -15,7 +15,7 @@ interface PostGlobalVariablesParams {
 export const usePostGlobalVariables: useMutationFunctionType<
   undefined,
   PostGlobalVariablesParams
-> = (options?) => {
+>= (options?) => {
   const { mutate, queryClient } = UseRequestProcessor();
 
   const postGlobalVariablesFunction = async ({

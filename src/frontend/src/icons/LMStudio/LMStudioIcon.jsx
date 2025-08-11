@@ -136,3 +136,5 @@ const SvgLMStudio = (props) => (
   </svg>
 );
 export default SvgLMStudio;
+
+export { SvgLMStudio };

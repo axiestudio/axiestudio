@@ -1,8 +1,8 @@
 import Dropdown from "../../../dropdownComponent";
-import type { DropDownComponentType, InputProps } from "../../types";
+import type { DropDownComponentType, InputProps  } from "../../types";
 import ToggleShadComponent from "../toggleShadComponent";
 
-export default function DropdownComponent({
+function DropdownComponent({
   id,
   value,
   editNode,
@@ -23,7 +23,7 @@ export default function DropdownComponent({
   hasRefreshButton,
   ...baseInputProps
 }: InputProps<string, DropDownComponentType>) {
-  const onChange = (value: any, dbValue?: boolean, skipSnapshot?: boolean) => {
+  const onChange= (value: any, dbValue?: boolean, skipSnapshot?: boolean) => {
     handleOnNewValue({ value, load_from_db: dbValue }, { skipSnapshot });
   };
 
@@ -68,3 +68,6 @@ export default function DropdownComponent({
     </div>
   );
 }
+
+export default DropdownComponent;
+export { DropdownComponent };

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import SearchBarComponent from "@/components/core/parameterRenderComponent/components/searchBarComponent";
-import type { InputProps } from "@/components/core/parameterRenderComponent/types";
+import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
+import { SearchBarComponent } from "@/components/core/parameterRenderComponent/components/searchBarComponent";
+import type { InputProps  } from "@/components/core/parameterRenderComponent/types";
 import { Button } from "@/components/ui/button";
 import { DialogFooter, DialogHeader } from "@/components/ui/dialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog-with-no-close";
@@ -266,3 +266,4 @@ const ListSelectionComponent = ({
 };
 
 export default ListSelectionComponent;
+export { ListSelectionComponent as ListSelectionComponent };

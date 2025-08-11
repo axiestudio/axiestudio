@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-
-export default function HorizontalScrollFadeComponent({
+function HorizontalScrollFadeComponent({
   children,
   isFolder = true,
-}: {
+ }: {
   children: JSX.Element | JSX.Element[];
   isFolder?: boolean;
 }) {
@@ -62,3 +61,7 @@ export default function HorizontalScrollFadeComponent({
     </div>
   );
 }
+
+
+export default HorizontalScrollFadeComponent;
+export { HorizontalScrollFadeComponent };

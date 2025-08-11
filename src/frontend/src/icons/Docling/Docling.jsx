@@ -336,3 +336,5 @@ const SvgDocling = (props) => (
 );
 
 export default SvgDocling;
+
+export { SvgDocling };

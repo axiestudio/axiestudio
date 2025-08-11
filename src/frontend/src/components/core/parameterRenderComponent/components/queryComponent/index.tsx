@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { GRADIENT_CLASS } from "@/constants/constants";
 import QueryModal from "@/modals/queryModal";
 import { cn } from "../../../../../utils/utils";
@@ -49,7 +50,7 @@ const externalLinkIconClasses = {
   iconTop: "top-[-1.7rem]",
 };
 
-export default function QueryComponent({
+function QueryComponent({
   value,
   disabled,
   handleOnNewValue,
@@ -60,13 +61,12 @@ export default function QueryComponent({
   display_name,
   info,
   separator,
-}: InputProps<string, QueryComponentType>): JSX.Element {
-  const inputRef = useRef<HTMLInputElement>(null);
+}: InputProps<string, QueryComponentType>): JSX.Element { const inputRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(false);
 
   const getInputClassName = () => {
     return cn(
-      inputClasses.base({ isFocused }),
+      inputClasses.base({ isFocused  }),
       editNode ? inputClasses.editNode : inputClasses.normal({ isFocused }),
       disabled && inputClasses.disabled,
       isFocused && "pr-10",
@@ -149,3 +149,7 @@ export default function QueryComponent({
     </div>
   );
 }
+
+
+export default QueryComponent;
+export { QueryComponent };

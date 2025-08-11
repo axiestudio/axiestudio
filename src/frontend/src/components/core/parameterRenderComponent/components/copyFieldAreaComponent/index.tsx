@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { GRADIENT_CLASS_DISABLED } from "@/constants/constants";
 import { customGetHostProtocol } from "@/customization/utils/custom-get-host-protocol";
 import useAlertStore from "@/stores/alertStore";
@@ -54,13 +55,11 @@ const externalLinkIconClasses = {
   iconTop: "top-[-1.7rem]",
 };
 
-export default function CopyFieldAreaComponent({
-  value,
+function CopyFieldAreaComponent({value,
   handleOnNewValue,
   editNode = false,
   id = "",
-}: InputProps<string, TextAreaComponentType>): JSX.Element {
-  const inputRef = useRef<HTMLInputElement>(null);
+}: InputProps<string, TextAreaComponentType>): JSX.Element { const inputRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -70,7 +69,7 @@ export default function CopyFieldAreaComponent({
 
   const valueToRender = useMemo(() => {
     if (value === BACKEND_URL) {
-      return `${URL_WEBHOOK}${endpointName}`;
+      return `${URL_WEBHOOK }${endpointName}`;
     } else if (value === MCP_SSE_VALUE) {
       return `${URL_MCP_SSE}`;
     }
@@ -124,7 +123,7 @@ export default function CopyFieldAreaComponent({
       <div onClick={handleCopy}>
         <IconComponent
           dataTestId={`btn_copy_${id?.toLowerCase()}${editNode ? "_advanced" : ""}`}
-          name={isCopied ? "Check" : "Copy"}
+          name={isCopied ? "Check" : t("common.copy")}
           className={cn(
             "cursor-pointer bg-muted",
             externalLinkIconClasses.icon,
@@ -157,3 +156,7 @@ export default function CopyFieldAreaComponent({
     </div>
   );
 }
+
+
+export default CopyFieldAreaComponent;
+export { CopyFieldAreaComponent as CopyFieldAreaComponent };

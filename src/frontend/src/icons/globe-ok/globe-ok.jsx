@@ -23,3 +23,5 @@ const SvgGlobeOkIcon = (props) => (
   </svg>
 );
 export default SvgGlobeOkIcon;
+
+export { SvgGlobeOkIcon };

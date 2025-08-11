@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { GRADIENT_CLASS } from "@/constants/constants";
 import { customGetHostProtocol } from "@/customization/utils/custom-get-host-protocol";
 import { getCurlWebhookCode } from "@/modals/apiModal/utils/get-curl-code";
@@ -59,7 +60,7 @@ const externalLinkIconClasses = {
   iconTop: "top-[-1.7rem]",
 };
 
-export default function TextAreaComponent({
+function TextAreaComponent({
   value,
   disabled,
   handleOnNewValue,
@@ -70,8 +71,7 @@ export default function TextAreaComponent({
   placeholder,
   isToolMode = false,
   nodeInformationMetadata,
-}: InputProps<string, TextAreaComponentType>): JSX.Element {
-  const inputRef = useRef<HTMLInputElement>(null);
+}: InputProps<string, TextAreaComponentType>): JSX.Element { const inputRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
 
@@ -92,7 +92,7 @@ export default function TextAreaComponent({
         isAuth: nodeInformationMetadata?.isAuth!,
         flowName: nodeInformationMetadata?.flowName!,
         format: "singleline",
-      });
+       });
       handleOnNewValue({ value: curlWebhookCode });
     } else if (value === MCP_SSE_VALUE) {
       const mcpSSEUrl = `${URL_MCP_SSE}`;
@@ -223,3 +223,6 @@ export default function TextAreaComponent({
     </div>
   );
 }
+
+export default TextAreaComponent;
+export { TextAreaComponent };

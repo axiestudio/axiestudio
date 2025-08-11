@@ -19,3 +19,5 @@ const SvgSearchLexicalIcon = (props) => (
   </svg>
 );
 export default SvgSearchLexicalIcon;
+
+export { SvgSearchLexicalIcon };

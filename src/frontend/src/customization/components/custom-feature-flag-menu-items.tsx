@@ -3,3 +3,5 @@ const CustomFeatureFlagMenuItems = ({ onClick }: { onClick?: () => void }) => {
 };
 
 export default CustomFeatureFlagMenuItems;
+
+export { CustomFeatureFlagMenuItems };

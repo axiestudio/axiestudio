@@ -1,14 +1,14 @@
 import type { FileType } from "@/types/file_management";
-import FileRendererComponent from "./components/fileRendererComponent";
+import { FileRendererComponent } from "./components/fileRendererComponent";
 
-export default function FilesRendererComponent({
+function FilesRendererComponent({
   files,
   handleFileSelect,
   selectedFiles,
   handleRemove,
   handleRename,
   isShiftPressed,
-}: {
+ }: {
   files: FileType[];
   isSearch?: boolean;
   handleFileSelect?: (name: string, index: number) => void;
@@ -32,3 +32,7 @@ export default function FilesRendererComponent({
     />
   ));
 }
+
+
+export default FilesRendererComponent;
+export { FilesRendererComponent };

@@ -2,25 +2,17 @@ import type { ColDef } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
 import { cloneDeep } from "lodash";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { handleOnNewValueType } from "@/CustomNodes/hooks/use-handle-new-value";
+import type { handleOnNewValueType  } from "@/CustomNodes/hooks/use-handle-new-value";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import ShadTooltip from "@/components/common/shadTooltipComponent";
 import TableComponent from "@/components/core/parameterRenderComponent/components/tableComponent";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  useSidebar,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, useSidebar } from "@/components/ui/sidebar";
 import { Textarea } from "@/components/ui/textarea";
 import { parseString, sanitizeMcpName } from "@/utils/stringManipulation";
 
-export default function ToolsTable({
-  rows,
+function ToolsTable({rows,
   data,
   setData,
   isAction,
@@ -30,7 +22,7 @@ export default function ToolsTable({
 }: {
   rows: any[];
   data: any[];
-  setData: (data: any[]) => void;
+  setData: (data: any[])=> void;
   open: boolean;
   handleOnNewValue: handleOnNewValueType;
   isAction: boolean;
@@ -262,7 +254,7 @@ export default function ToolsTable({
       <main className="flex h-full w-full flex-1 flex-col gap-2 overflow-hidden py-4">
         <div className="flex-none px-4">
           <Input
-            icon="Search"
+            icon={t("common.search")}
             placeholder="Search tools..."
             inputClassName="h-8"
             value={searchQuery}
@@ -408,3 +400,7 @@ export default function ToolsTable({
     </>
   );
 }
+
+
+export default ToolsTable;
+export { ToolsTable };

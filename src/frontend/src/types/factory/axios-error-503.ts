@@ -1,9 +1,8 @@
 import { AxiosError, AxiosHeaders } from "axios";
 
-export const createNewError503 = (): AxiosError => {
-  const headers = new AxiosHeaders({
+export const createNewError503 = (): AxiosError => { const headers = new AxiosHeaders({
     "Content-Type": "application/json",
-  });
+   });
 
   const config = {
     url: "/",
@@ -14,7 +13,7 @@ export const createNewError503 = (): AxiosError => {
   const error = new AxiosError("Server Busy", "ECONNABORTED", config, null, {
     status: 503,
     statusText: "Service Unavailable",
-    data: "Server is currently busy, please try again later.",
+    data: "Server is currently busy",
     headers: {},
     config: config,
   });

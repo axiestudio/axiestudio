@@ -1,12 +1,12 @@
 import { useState } from "react";
-import CustomFileCard from "@/customization/components/custom-file-card";
-import ForwardedIconComponent from "../../../../../../components/common/genericIconComponent";
-import formatFileName from "../../fileComponent/utils/format-file-name";
+import { CustomFileCard } from "@/customization/components/custom-file-card";
+import { ForwardedIconComponent } from "../../../../../../components/common/genericIconComponent";
+import { formatFileName } from "../../fileComponent/utils/format-file-name";
 
-export default function FileCardWrapper({
+function FileCardWrapper({
   index,
   path,
-}: {
+ }: {
   index: number;
   path: { path: string; type: string; name: string } | string;
 }) {
@@ -42,3 +42,7 @@ export default function FileCardWrapper({
     </div>
   );
 }
+
+
+export default FileCardWrapper;
+export { FileCardWrapper };

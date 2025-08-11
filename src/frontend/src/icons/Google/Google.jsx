@@ -26,3 +26,5 @@ const SvgGoogle = (props) => (
   </svg>
 );
 export default SvgGoogle;
+
+export { SvgGoogle };

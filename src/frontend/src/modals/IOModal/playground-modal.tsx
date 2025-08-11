@@ -1,13 +1,11 @@
 //import AxieStudioLogoColor from "@/assets/AxieStudioLogocolor.svg?react";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { v5 as uuidv5 } from "uuid";
 import { useShallow } from "zustand/react/shallow";
 import ThemeButtons from "@/components/core/appHeaderComponent/components/ThemeButtons";
-import {
-  useDeleteMessages,
-  useGetMessagesQuery,
-} from "@/controllers/API/queries/messages";
+import { useDeleteMessages, useGetMessagesQuery } from "@/controllers/API/queries/messages";
 import { useDeleteSession } from "@/controllers/API/queries/messages/use-delete-sessions";
 import { useGetSessionsFromFlowQuery } from "@/controllers/API/queries/messages/use-get-sessions-from-flow";
 import { ENABLE_PUBLISH } from "@/customization/feature-flags";
@@ -32,16 +30,14 @@ import { createNewSessionName } from "./components/chatView/chatInput/components
 import { SelectedViewField } from "./components/selected-view-field";
 import { SidebarOpenView } from "./components/sidebar-open-view";
 
-export default function IOModal({
-  children,
+function IOModal({children,
   open,
   setOpen,
   disable,
   isPlayground,
   canvasOpen,
   playgroundPage,
-}: IOModalPropsType): JSX.Element {
-  const setIOModalOpen = useFlowsManagerStore((state) => state.setIOModalOpen);
+}: IOModalPropsType): JSX.Element { const setIOModalOpen = useFlowsManagerStore((state) => state.setIOModalOpen);
   const inputs = useFlowStore((state) => state.inputs);
   const outputs = useFlowStore((state) => state.outputs);
   const nodes = useFlowStore((state) => state.nodes);
@@ -55,7 +51,7 @@ export default function IOModal({
     (state) => state.setNewChatOnPlayground,
   );
 
-  const { flowIcon, flowId, flowGradient, flowName } = useFlowStore(
+  const { flowIcon, flowId, flowGradient, flowName  } = useFlowStore(
     useShallow((state) => ({
       flowIcon: state.currentFlow?.icon,
       flowId: state.currentFlow?.id,
@@ -90,7 +86,7 @@ export default function IOModal({
   const [visibleSession, setvisibleSession] = useState<string | undefined>(
     currentFlowId,
   );
-  const PlaygroundTitle = playgroundPage && flowName ? flowName : "Playground";
+  const PlaygroundTitle = playgroundPage && flowName ? flowName : t("navigation.playground");
 
   const {
     data: sessionsFromDb,
@@ -501,3 +497,7 @@ export default function IOModal({
     </BaseModal>
   );
 }
+
+
+export default IOModal;
+export { IOModal };

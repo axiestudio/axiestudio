@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef  } from "react";
 import HCDSVG from "./HCD";
 
 export const HCDIcon = forwardRef<SVGSVGElement, React.PropsWithChildren<{}>>(

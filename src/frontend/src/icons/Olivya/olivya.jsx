@@ -476,3 +476,5 @@ const OlivyaSVG = (props) => (
   </svg>
 );
 export default OlivyaSVG;
+
+export { OlivyaSVG };

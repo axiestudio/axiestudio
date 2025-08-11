@@ -16,3 +16,5 @@ const OutlookIconSVG = (props) => (
   </svg>
 );
 export default OutlookIconSVG;
+
+export { OutlookIconSVG };

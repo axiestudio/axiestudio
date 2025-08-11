@@ -21,3 +21,5 @@ const SvgBotMessageSquare = (props) => (
   </svg>
 );
 export default SvgBotMessageSquare;
+
+export { SvgBotMessageSquare };

@@ -21,3 +21,5 @@ const Icon = (props) => (
   </svg>
 );
 export default Icon;
+
+export { Icon };

@@ -24,3 +24,4 @@ const SanitizedHTMLWrapper = forwardRef<
 SanitizedHTMLWrapper.displayName = "SanitizedHTMLWrapper";
 
 export default SanitizedHTMLWrapper;
+export { SanitizedHTMLWrapper };

@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef  } from "react";
 import ComposioIconSVG from "./composio";
 
 export const ComposioIcon = forwardRef<

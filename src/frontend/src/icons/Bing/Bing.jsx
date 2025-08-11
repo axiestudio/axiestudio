@@ -92,3 +92,5 @@ const SvgBing = (props) => (
   </svg>
 );
 export default SvgBing;
+
+export { SvgBing };

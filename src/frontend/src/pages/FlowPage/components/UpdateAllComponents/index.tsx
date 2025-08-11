@@ -1,10 +1,9 @@
 import { useUpdateNodeInternals } from "@xyflow/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { processNodeAdvancedFields } from "@/CustomNodes/helpers/process-node-advanced-fields";
-import useUpdateAllNodes, {
-  type UpdateNodesType,
-} from "@/CustomNodes/hooks/use-update-all-nodes";
+import useUpdateAllNodes, { type UpdateNodesType } from "@/CustomNodes/hooks/use-update-all-nodes";
 import { Button } from "@/components/ui/button";
 import { usePostValidateComponentCode } from "@/controllers/API/queries/nodes/use-post-validate-component-code";
 import UpdateComponentModal from "@/modals/updateComponentModal";
@@ -28,7 +27,7 @@ const CONTAINER_VARIANTS = {
   exit: { opacity: 0, y: 20 },
 };
 
-export default function UpdateAllComponents() {
+function UpdateAllComponents() {
   const { componentsToUpdate, nodes, edges, setNodes } = useFlowStore();
   const templates = useTypesStore((state) => state.templates);
   const setErrorData = useAlertStore((state) => state.setErrorData);
@@ -123,8 +122,7 @@ export default function UpdateAllComponents() {
             code: currentCode,
             frontend_node: node.data.node!,
           })
-            .then(({ data: resData, type }) => {
-              if (resData && type) {
+            .then(({ data: resData, type }) => { if (resData && type) {
                 const newNode = processNodeAdvancedFields(
                   resData,
                   edges,
@@ -137,7 +135,7 @@ export default function UpdateAllComponents() {
                   code: currentCode,
                   name: "code",
                   type,
-                });
+                 });
 
                 updatedCount++;
               }
@@ -259,3 +257,7 @@ export default function UpdateAllComponents() {
     </AnimatePresence>
   );
 }
+
+
+export default UpdateAllComponents;
+export { UpdateAllComponents };

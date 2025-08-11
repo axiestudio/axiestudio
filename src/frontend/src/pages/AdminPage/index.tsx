@@ -1,41 +1,16 @@
 import { cloneDeep } from "lodash";
 import { useContext, useEffect, useRef, useState } from "react";
-import PaginatorComponent from "@/components/common/paginatorComponent";
-import {
-  useAddUser,
-  useDeleteUsers,
-  useGetUsers,
-  useUpdateUser,
-} from "@/controllers/API/queries/auth";
+import { PaginatorComponent } from "@/components/common/paginatorComponent";
+import { useAddUser, useDeleteUsers, useGetUsers, useUpdateUser } from "@/controllers/API/queries/auth";
 import CustomLoader from "@/customization/components/custom-loader";
 import IconComponent from "../../components/common/genericIconComponent";
 import ShadTooltip from "../../components/common/shadTooltipComponent";
 import { Button } from "../../components/ui/button";
 import { CheckBoxDiv } from "../../components/ui/checkbox";
 import { Input } from "../../components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table";
-import {
-  USER_ADD_ERROR_ALERT,
-  USER_ADD_SUCCESS_ALERT,
-  USER_DEL_ERROR_ALERT,
-  USER_DEL_SUCCESS_ALERT,
-  USER_EDIT_ERROR_ALERT,
-  USER_EDIT_SUCCESS_ALERT,
-} from "../../constants/alerts_constants";
-import {
-  ADMIN_HEADER_DESCRIPTION,
-  ADMIN_HEADER_TITLE,
-  PAGINATION_PAGE,
-  PAGINATION_ROWS_COUNT,
-  PAGINATION_SIZE,
-} from "../../constants/constants";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
+import { USER_ADD_ERROR_ALERT, USER_ADD_SUCCESS_ALERT, USER_DEL_ERROR_ALERT, USER_DEL_SUCCESS_ALERT, USER_EDIT_ERROR_ALERT, USER_EDIT_SUCCESS_ALERT } from "../../constants/alerts_constants";
+import { ADMIN_HEADER_DESCRIPTION, ADMIN_HEADER_TITLE, PAGINATION_PAGE, PAGINATION_ROWS_COUNT, PAGINATION_SIZE } from "../../constants/constants";
 import { AuthContext } from "../../contexts/authContext";
 import ConfirmationModal from "../../modals/confirmationModal";
 import UserManagementModal from "../../modals/userManagementModal";
@@ -43,7 +18,7 @@ import useAlertStore from "../../stores/alertStore";
 import type { Users } from "../../types/api";
 import type { UserInputType } from "../../types/components";
 
-export default function AdminPage() {
+function AdminPage() {
   const [inputValue, setInputValue] = useState("");
 
   const [size, setPageSize] = useState(PAGINATION_SIZE);
@@ -279,7 +254,7 @@ export default function AdminPage() {
               ) : (
                 <div>
                   <IconComponent
-                    name="Search"
+                    name={t("common.search")}
                     className="w-6 text-foreground"
                   />
                 </div>
@@ -289,8 +264,8 @@ export default function AdminPage() {
               <UserManagementModal
                 title="New User"
                 titleHeader={"Add a new user"}
-                cancelText="Cancel"
-                confirmationText="Save"
+                cancelText={t("common.cancel")}
+                confirmationText={t("common.save")}
                 icon={"UserPlus2"}
                 onConfirm={(index, user) => {
                   handleNewUser(user);
@@ -354,11 +329,11 @@ export default function AdminPage() {
                           <TableCell className="relative left-1 truncate py-2 text-align-last-left">
                             <ConfirmationModal
                               size="x-small"
-                              title="Edit"
+                              title={t("common.edit")}
                               titleHeader={`${user.username}`}
                               modalContentTitle="Attention!"
-                              cancelText="Cancel"
-                              confirmationText="Confirm"
+                              cancelText={t("common.cancel")}
+                              confirmationText={t("common.confirm")}
                               icon={"UserCog2"}
                               data={user}
                               index={index}
@@ -386,11 +361,11 @@ export default function AdminPage() {
                           <TableCell className="relative left-1 truncate py-2 text-align-last-left">
                             <ConfirmationModal
                               size="x-small"
-                              title="Edit"
+                              title={t("common.edit")}
                               titleHeader={`${user.username}`}
                               modalContentTitle="Attention!"
-                              cancelText="Cancel"
-                              confirmationText="Confirm"
+                              cancelText={t("common.cancel")}
+                              confirmationText={t("common.confirm")}
                               icon={"UserCog2"}
                               data={user}
                               index={index}
@@ -432,10 +407,10 @@ export default function AdminPage() {
                           <TableCell className="flex w-[100px] py-2 text-right">
                             <div className="flex">
                               <UserManagementModal
-                                title="Edit"
+                                title={t("common.edit")}
                                 titleHeader={`${user.id}`}
-                                cancelText="Cancel"
-                                confirmationText="Save"
+                                cancelText={t("common.cancel")}
+                                confirmationText={t("common.save")}
                                 icon={"UserPlus2"}
                                 data={user}
                                 index={index}
@@ -443,7 +418,7 @@ export default function AdminPage() {
                                   handleEditUser(user.id, editUser);
                                 }}
                               >
-                                <ShadTooltip content="Edit" side="top">
+                                <ShadTooltip content={t("common.edit")} side="top">
                                   <IconComponent
                                     name="Pencil"
                                     className="h-4 w-4 cursor-pointer"
@@ -453,11 +428,11 @@ export default function AdminPage() {
 
                               <ConfirmationModal
                                 size="x-small"
-                                title="Delete"
+                                title={t("common.delete")}
                                 titleHeader="Delete User"
                                 modalContentTitle="Attention!"
-                                cancelText="Cancel"
-                                confirmationText="Delete"
+                                cancelText={t("common.cancel")}
+                                confirmationText={t("common.delete")}
                                 icon={"UserMinus2"}
                                 data={user}
                                 index={index}
@@ -501,3 +476,7 @@ export default function AdminPage() {
     </>
   );
 }
+
+
+export default AdminPage;
+export { AdminPage };

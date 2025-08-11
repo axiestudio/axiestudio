@@ -23,3 +23,5 @@ const ThumbUpFilled = (props) => (
   </svg>
 );
 export default ThumbUpFilled;
+
+export { ThumbUpFilled };

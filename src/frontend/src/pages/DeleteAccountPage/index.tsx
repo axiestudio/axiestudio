@@ -4,7 +4,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import BaseModal from "../../modals/baseModal";
 
-export default function DeleteAccountPage() {
+function DeleteAccountPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleDeleteAccount = () => {
@@ -60,3 +60,7 @@ export default function DeleteAccountPage() {
     </div>
   );
 }
+
+
+export default DeleteAccountPage;
+export { DeleteAccountPage };

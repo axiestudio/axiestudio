@@ -1,7 +1,7 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import * as React from "react";
-import DialogContentWithouFixed from "@/customization/components/custom-dialog-content-without-fixed";
+import { DialogContentWithouFixed } from "@/customization/components/custom-dialog-content-without-fixed";
 import { dialogClass } from "@/customization/utils/dialog-class";
 import { cn } from "../../utils/utils";
 import ShadTooltip from "../common/shadTooltipComponent";
@@ -85,7 +85,7 @@ const DialogContent = React.forwardRef<
           {children}
           <ShadTooltip
             styleClasses="z-50"
-            content="Close"
+            content={t("common.close")}
             side="bottom"
             avoidCollisions
           >

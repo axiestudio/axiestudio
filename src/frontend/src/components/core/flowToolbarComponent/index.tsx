@@ -63,3 +63,5 @@ const FlowToolbar = memo(function FlowToolbar(): JSX.Element {
 });
 
 export default FlowToolbar;
+
+export { FlowToolbar };

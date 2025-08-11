@@ -66,3 +66,4 @@ const useUploadFile = ({
 };
 
 export default useUploadFile;
+export { useUploadFile };

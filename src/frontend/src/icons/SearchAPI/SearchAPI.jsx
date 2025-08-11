@@ -26,3 +26,5 @@ const SvgSearchApi = (props) => (
   </svg>
 );
 export default SvgSearchApi;
+
+export { SvgSearchApi };

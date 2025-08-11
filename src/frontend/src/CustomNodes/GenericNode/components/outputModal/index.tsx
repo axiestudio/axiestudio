@@ -1,20 +1,19 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BaseModal from "../../../../modals/baseModal";
 import SwitchOutputView from "./components/switchOutputView";
 
-export default function OutputModal({
-  nodeId,
+function OutputModal({nodeId,
   outputName,
   children,
   disabled,
   open,
   setOpen,
-}): JSX.Element {
-  const [activeTab, setActiveTab] = useState<"Outputs" | "Logs">("Outputs");
+}): JSX.Element { const [activeTab, setActiveTab] = useState<"Outputs" | "Logs">("Outputs");
   return (
     <BaseModal
-      open={open}
+      open={open }
       setOpen={setOpen}
       disable={disabled}
       size="large"
@@ -37,8 +36,8 @@ export default function OutputModal({
           }
         >
           <TabsList>
-            <TabsTrigger value="Outputs">Outputs</TabsTrigger>
-            <TabsTrigger value="Logs">Logs</TabsTrigger>
+            <TabsTrigger value="Outputs">{t("common.outputs")}</TabsTrigger>
+            <TabsTrigger value="Logs">{t("common.logs")}</TabsTrigger>
           </TabsList>
         </Tabs>
         <SwitchOutputView
@@ -52,3 +51,7 @@ export default function OutputModal({
     </BaseModal>
   );
 }
+
+
+export default OutputModal;
+export { OutputModal };

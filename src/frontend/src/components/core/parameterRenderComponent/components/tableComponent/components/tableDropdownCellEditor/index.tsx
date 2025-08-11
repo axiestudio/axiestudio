@@ -1,8 +1,7 @@
 import type { CustomCellEditorProps } from "ag-grid-react";
 import InputComponent from "../../../inputComponent";
 
-export default function TableDropdownCellEditor({
-  value,
+function TableDropdownCellEditor({value,
   values,
   onValueChange,
   colDef,
@@ -18,9 +17,13 @@ export default function TableDropdownCellEditor({
         value={value}
         options={values}
         password={false}
-        placeholder={"Select an option"}
+        placeholder={t("common.selectAnOption")}
         id="apply-to-fields"
       />
     </div>
   );
 }
+
+
+export default TableDropdownCellEditor;
+export { TableDropdownCellEditor };

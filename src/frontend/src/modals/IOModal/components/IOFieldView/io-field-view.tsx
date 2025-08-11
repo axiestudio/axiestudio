@@ -1,5 +1,6 @@
 import { cloneDeep } from "lodash";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import useHandleNewValue from "@/CustomNodes/hooks/use-handle-new-value";
 import CustomIOFileInput from "@/customization/components/custom-file-input";
 import type { AllNodeType } from "@/types/flow";
@@ -10,30 +11,22 @@ import InputListComponent from "../../../../components/core/parameterRenderCompo
 import PdfViewer from "../../../../components/core/pdfViewer";
 import { Textarea } from "../../../../components/ui/textarea";
 import { PDFViewConstant } from "../../../../constants/constants";
-import {
-  InputOutput,
-  IOInputTypes,
-  IOOutputTypes,
-} from "../../../../constants/enums";
+import { InputOutput, IOInputTypes, IOOutputTypes } from "../../../../constants/enums";
 import TextOutputView from "../../../../shared/components/textOutputView";
 import useFlowStore from "../../../../stores/flowStore";
 import type { IOFieldViewProps } from "../../../../types/components";
-import {
-  convertValuesToNumbers,
-  hasDuplicateKeys,
-} from "../../../../utils/reactflowUtils";
+import { convertValuesToNumbers, hasDuplicateKeys } from "../../../../utils/reactflowUtils";
 import CsvSelect from "./components/csv-selected";
 import IOFileInput from "./components/file-input";
 import IoJsonInput from "./components/json-input";
 import IOKeyPairInput from "./components/key-pair-input";
 
-export default function IOFieldView({
+function IOFieldView({
   type,
   fieldType,
   fieldId,
   left,
-}: IOFieldViewProps): JSX.Element | undefined {
-  const nodes = useFlowStore((state) => state.nodes);
+}: IOFieldViewProps): JSX.Element | undefined { const nodes = useFlowStore((state) => state.nodes);
   const setNode = useFlowStore((state) => state.setNode);
   const flowPool = useFlowStore((state) => state.flowPool);
   const node: AllNodeType | undefined = nodes.find(
@@ -48,7 +41,7 @@ export default function IOFieldView({
       if (newNode.data.node?.template.separator) {
         newNode.data.node.template.separator.value = e;
         setNode(newNode.id, newNode);
-      }
+       }
     }
   };
 
@@ -196,7 +189,7 @@ export default function IOFieldView({
             );
           case IOOutputTypes.IMAGE:
             return left ? (
-              <div>Expand the view to see the image</div>
+              <div>{t("common.expandtheviewto")}</div>
             ) : (
               <ImageViewer
                 image={
@@ -293,3 +286,7 @@ export default function IOFieldView({
   }
   return handleOutputType();
 }
+
+
+export default IOFieldView;
+export { IOFieldView };

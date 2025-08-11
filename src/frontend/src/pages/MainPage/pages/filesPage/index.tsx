@@ -5,7 +5,8 @@ import type {
 } from "ag-grid-community";
 import type { AgGridReact } from "ag-grid-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import ForwardedIconComponent from "@/components/common/genericIconComponent";
+import { useTranslation } from "react-i18next";
+import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import ShadTooltip from "@/components/common/shadTooltipComponent";
 import CardsWrapComponent from "@/components/core/cardsWrapComponent";
 import TableComponent from "@/components/core/parameterRenderComponent/components/tableComponent";
@@ -29,6 +30,7 @@ import { sortByDate } from "../../utils/sort-flows";
 import DragWrapComponent from "./components/dragWrapComponent";
 
 export const FilesPage = () => {
+  const { t } = useTranslation();
   const tableRef = useRef<AgGridReact<any>>(null);
   const { data: files } = useGetFilesV2();
   const setErrorData = useAlertStore((state) => state.setErrorData);
@@ -338,13 +340,13 @@ export const FilesPage = () => {
                   </SidebarTrigger>
                 </div>
               </div>
-              My Files
+              {t('navigation.myFiles', 'My Files')}
             </div>
             {files && files.length !== 0 ? (
               <div className="flex justify-between">
                 <div className="flex w-full xl:w-5/12">
                   <Input
-                    icon="Search"
+                    icon={t("common.search")}
                     data-testid="search-store-input"
                     type="text"
                     placeholder={`Search files...`}

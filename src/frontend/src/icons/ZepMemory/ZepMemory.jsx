@@ -405,3 +405,5 @@ const SvgZepMemory = (props) => (
   </svg>
 );
 export default SvgZepMemory;
+
+export { SvgZepMemory };

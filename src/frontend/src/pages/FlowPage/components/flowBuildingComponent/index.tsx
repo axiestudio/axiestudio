@@ -10,15 +10,9 @@ import { TextShimmer } from "@/components/ui/TextShimmer";
 import { BuildStatus } from "@/constants/enums";
 import useFlowStore from "@/stores/flowStore";
 import { cn } from "@/utils/utils";
-import {
-  CONTAINER_VARIANTS,
-  DISMISS_BUTTON_VARIANTS,
-  getTimeVariants,
-  RETRY_BUTTON_VARIANTS,
-  STOP_BUTTON_VARIANTS,
-} from "./helpers/visual-variants";
+import { CONTAINER_VARIANTS, DISMISS_BUTTON_VARIANTS, getTimeVariants, RETRY_BUTTON_VARIANTS, STOP_BUTTON_VARIANTS } from "./helpers/visual-variants";
 
-export default function FlowBuildingComponent() {
+function FlowBuildingComponent() {
   const isBuilding = useFlowStore((state) => state.isBuilding);
   const flowBuildStatus = useFlowStore((state) => state.flowBuildStatus);
   const buildInfo = useFlowStore((state) => state.buildInfo);
@@ -283,3 +277,7 @@ export default function FlowBuildingComponent() {
     </AnimatePresence>
   );
 }
+
+
+export default FlowBuildingComponent;
+export { FlowBuildingComponent };

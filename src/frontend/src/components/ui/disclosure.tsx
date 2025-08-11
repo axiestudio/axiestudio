@@ -1,21 +1,8 @@
 "use client";
-import {
-  AnimatePresence,
-  MotionConfig,
-  motion,
-  type Transition,
-  type Variant,
-  type Variants,
-} from "framer-motion";
+import { AnimatePresence, MotionConfig, motion, type Transition, type Variant, type Variants } from "framer-motion";
 import * as React from "react";
-import {
-  createContext,
-  memo,
-  useCallback,
-  useContext,
-  useId,
-  useMemo,
-} from "react";
+import { useTranslation } from "react-i18next";
+import { createContext, memo, useCallback, useContext, useId, useMemo } from "react";
 import { cn } from "../../utils/utils";
 
 type DisclosureContextType = {
@@ -116,11 +103,10 @@ const DisclosureTrigger = memo(function DisclosureTrigger({
   const { toggle, open } = useDisclosure();
 
   const handleKeyDown = useCallback(
-    (e: { key: string; preventDefault: () => void }) => {
-      if (e.key === "Enter" || e.key === " ") {
+    (e: { key: string; preventDefault: () => void }) => { if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         toggle();
-      }
+       }
     },
     [toggle],
   );

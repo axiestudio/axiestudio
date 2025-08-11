@@ -18,3 +18,5 @@ const GitLoaderIcon = (props) => (
 );
 
 export default GitLoaderIcon;
+
+export { GitLoaderIcon };

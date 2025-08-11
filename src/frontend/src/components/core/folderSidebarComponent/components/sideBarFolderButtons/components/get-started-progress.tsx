@@ -1,15 +1,13 @@
 import { type FC, useState } from "react";
+import { useTranslation } from "react-i18next";
 import IconComponent from "@/components/common/genericIconComponent";
 import { Button } from "@/components/ui/button";
 import ModalsComponent from "@/pages/MainPage/components/modalsComponent";
 import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import type { Users } from "@/types/api";
 
-export const GetStartedProgress: FC<{
-  userData: Users;
-  handleDismissDialog: () => void;
-}> = ({ handleDismissDialog }) => {
-  const [newProjectModal, setNewProjectModal] = useState(false);
+export const GetStartedProgress: FC<{ userData: Users;
+  handleDismissDialog: () => void; }> = ({ handleDismissDialog }) => { const [newProjectModal, setNewProjectModal] = useState(false);
 
   const flows = useFlowsManagerStore((state) => state.flows);
   const hasFlows = flows && flows?.length > 0;
@@ -22,7 +20,7 @@ export const GetStartedProgress: FC<{
           className="text-sm font-medium text-foreground"
           data-testid="get_started_progress_title"
         >
-          {percentageGetStarted >= 100 ? "Complete" : "Get started"}
+          {percentageGetStarted >= 100 ? "Complete" : "Get started" }
         </span>
         <button
           onClick={() => handleDismissDialog()}
@@ -55,17 +53,13 @@ export const GetStartedProgress: FC<{
             className="w-full h-10 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/30 transition-all duration-200"
             data-testid="create_flow_btn_get_started"
           >
-            <span className="text-sm font-medium">
-              Create your first flow
-            </span>
+            <span className="text-sm font-medium">{t("actions.createyourfirstflow")}</span>
           </Button>
         )}
         {hasFlows && (
           <div className="flex items-center justify-center gap-2 rounded-lg p-3 bg-muted/30 border border-border/30">
             <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
-            <span className="text-sm text-muted-foreground">
-              Flow created successfully
-            </span>
+            <span className="text-sm text-muted-foreground">{t("actions.flowcreatedsuccessfully")}</span>
           </div>
         )}
       </div>

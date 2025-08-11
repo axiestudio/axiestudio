@@ -1,23 +1,19 @@
 import InputFileComponent from "@/components/core/parameterRenderComponent/components/inputFileComponent";
-import type {
-  FileComponentType,
-  InputProps,
-} from "@/components/core/parameterRenderComponent/types";
+import type { FileComponentType, InputProps  } from "@/components/core/parameterRenderComponent/types";
 
-export default function CustomInputFileComponent({
+function CustomInputFileComponent({
   value,
   file_path,
   handleOnNewValue,
   disabled,
   fileTypes,
   isList,
-  tempFile = true,
+  tempFile= true,
   editNode = false,
   id,
-}: InputProps<string, FileComponentType>): JSX.Element {
-  return (
+}: InputProps<string, FileComponentType>): JSX.Element { return (
     <InputFileComponent
-      value={value}
+      value={value }
       file_path={file_path}
       handleOnNewValue={handleOnNewValue}
       disabled={disabled}
@@ -29,3 +25,7 @@ export default function CustomInputFileComponent({
     />
   );
 }
+
+
+export default CustomInputFileComponent;
+export { CustomInputFileComponent };

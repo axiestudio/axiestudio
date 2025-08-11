@@ -9,7 +9,7 @@ interface DurationDisplayProps {
   chatId: string;
 }
 
-export default function DurationDisplay({
+function DurationDisplay({
   duration,
   chatId,
 }: DurationDisplayProps) {
@@ -68,3 +68,7 @@ export default function DurationDisplay({
     </div>
   );
 }
+
+
+export default DurationDisplay;
+export { DurationDisplay };

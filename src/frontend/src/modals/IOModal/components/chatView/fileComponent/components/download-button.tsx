@@ -1,7 +1,7 @@
 import ForwardedIconComponent from "../../../../../../components/common/genericIconComponent";
 import { Button } from "../../../../../../components/ui/button";
 
-export default function DownloadButton({
+function DownloadButton({
   isHovered,
   handleDownload,
 }: {
@@ -28,3 +28,7 @@ export default function DownloadButton({
   }
   return undefined;
 }
+
+
+export default DownloadButton;
+export { DownloadButton };

@@ -1,10 +1,4 @@
-import {
-  RUN_TIMESTAMP_PREFIX,
-  STATUS_BUILD,
-  STATUS_BUILDING,
-  STATUS_INACTIVE,
-  STATUS_MISSING_FIELDS_ERROR,
-} from "@/constants/constants";
+import { RUN_TIMESTAMP_PREFIX, STATUS_BUILD, STATUS_BUILDING, STATUS_INACTIVE, STATUS_MISSING_FIELDS_ERROR } from "@/constants/constants";
 import { BuildStatus } from "@/constants/enums";
 
 const StatusMessage = ({ children, className = "text-foreground" }) => (
@@ -78,3 +72,5 @@ const BuildStatusDisplay = ({
 };
 
 export default BuildStatusDisplay;
+
+export { BuildStatusDisplay };

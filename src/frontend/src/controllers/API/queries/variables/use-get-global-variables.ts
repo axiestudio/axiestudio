@@ -1,5 +1,5 @@
 import type { UseQueryResult } from "@tanstack/react-query";
-import useAuthStore from "@/stores/authStore";
+import { useAuthStore } from "@/stores/authStore";
 import { useGlobalVariablesStore } from "@/stores/globalVariablesStore/globalVariables";
 import getUnavailableFields from "@/stores/globalVariablesStore/utils/get-unavailable-fields";
 import type { useQueryFunctionType } from "@/types/api";

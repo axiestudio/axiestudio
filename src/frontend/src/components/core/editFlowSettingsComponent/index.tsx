@@ -1,5 +1,6 @@
 import * as Form from "@radix-ui/react-form";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import type { InputProps } from "../../../types/components";
 import { cn } from "../../../utils/utils";
@@ -18,14 +19,13 @@ export const EditFlowSettings: React.FC<
   setName,
   setDescription,
   submitForm,
-}: InputProps & { submitForm?: () => void }): JSX.Element => {
-  const [isMaxLength, setIsMaxLength] = useState(false);
+}: InputProps & { submitForm?: () => void }): JSX.Element => { const [isMaxLength, setIsMaxLength] = useState(false);
   const [isMaxDescriptionLength, setIsMaxDescriptionLength] = useState(false);
   const [isMinLength, setIsMinLength] = useState(false);
   const [isInvalidName, setIsInvalidName] = useState(false);
 
   const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = event.target;
+    const { value  } = event.target;
     if (value.length >= maxLength) {
       setIsMaxLength(true);
     } else {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import ShadTooltip from "@/components/common/shadTooltipComponent";
+import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
+import { ShadTooltip } from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { FILE_ICONS } from "@/utils/styleUtils";
 import { cn } from "@/utils/utils";
 import FilesContextMenuComponent from "../../../filesContextMenuComponent";
 
-export default function FileRendererComponent({
+function FileRendererComponent({
   file,
   handleFileSelect,
   selectedFiles,
@@ -221,3 +221,6 @@ export default function FileRendererComponent({
     </ShadTooltip>
   );
 }
+
+export default FileRendererComponent;
+export { FileRendererComponent };

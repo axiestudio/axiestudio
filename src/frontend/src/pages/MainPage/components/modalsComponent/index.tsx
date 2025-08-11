@@ -37,3 +37,5 @@ const ModalsComponent = ({
 );
 
 export default ModalsComponent;
+
+export { ModalsComponent };

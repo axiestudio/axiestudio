@@ -1,6 +1,4 @@
-import ProfilePictureChooserComponent, {
-  type ProfilePictureChooserComponentProps,
-} from "@/pages/SettingsPage/pages/GeneralPage/components/ProfilePictureForm/components/profilePictureChooserComponent";
+import ProfilePictureChooserComponent, { type ProfilePictureChooserComponentProps } from "@/pages/SettingsPage/pages/GeneralPage/components/ProfilePictureForm/components/profilePictureChooserComponent";
 export function CustomProfilePictureChooserComponent({
   profilePictures,
   loading,

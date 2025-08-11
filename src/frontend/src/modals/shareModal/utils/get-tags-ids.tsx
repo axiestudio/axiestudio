@@ -1,4 +1,4 @@
-export default function getTagsIds(
+function getTagsIds(
   tags: string[],
   tagListId: { name: string; id: string }[],
 ) {
@@ -6,3 +6,7 @@ export default function getTagsIds(
     .map((tag) => tagListId.find((tagObj) => tagObj.name === tag))!
     .map((tag) => tag!.id);
 }
+
+
+export default getTagsIds;
+export { getTagsIds };

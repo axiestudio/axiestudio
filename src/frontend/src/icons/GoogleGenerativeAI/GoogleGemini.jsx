@@ -26,3 +26,5 @@ const SvgGoogleGenerativeAI = (props) => (
   </svg>
 );
 export default SvgGoogleGenerativeAI;
+
+export { SvgGoogleGenerativeAI };

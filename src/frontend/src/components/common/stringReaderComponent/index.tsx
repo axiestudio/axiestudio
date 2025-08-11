@@ -1,6 +1,6 @@
 import TextModal from "../../../modals/textModal";
 
-export default function StringReader({
+function StringReader({
   string,
   setValue,
   editable = false,
@@ -16,3 +16,7 @@ export default function StringReader({
     </TextModal>
   );
 }
+
+
+export default StringReader;
+export { StringReader };

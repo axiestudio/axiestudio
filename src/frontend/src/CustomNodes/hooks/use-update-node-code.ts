@@ -52,3 +52,5 @@ const useUpdateNodeCode = (
 };
 
 export default useUpdateNodeCode;
+
+export { useUpdateNodeCode };

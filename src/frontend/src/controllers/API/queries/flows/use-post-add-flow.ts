@@ -22,7 +22,7 @@ interface IPostAddFlow {
 export const usePostAddFlow: useMutationFunctionType<
   undefined,
   IPostAddFlow
-> = (options?) => {
+>= (options?) => {
   const { mutate, queryClient } = UseRequestProcessor();
   const myCollectionId = useFolderStore((state) => state.myCollectionId);
 

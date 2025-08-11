@@ -7,3 +7,5 @@ const SvgShare = (props) => (
   </svg>
 );
 export default SvgShare;
+
+export { SvgShare };

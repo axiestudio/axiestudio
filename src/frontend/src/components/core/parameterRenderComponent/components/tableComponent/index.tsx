@@ -1,11 +1,6 @@
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  DEFAULT_TABLE_ALERT_MSG,
-  DEFAULT_TABLE_ALERT_TITLE,
-  NO_COLUMN_DEFINITION_ALERT_DESCRIPTION,
-  NO_COLUMN_DEFINITION_ALERT_TITLE,
-} from "@/constants/constants";
+import { DEFAULT_TABLE_ALERT_MSG, DEFAULT_TABLE_ALERT_TITLE, NO_COLUMN_DEFINITION_ALERT_DESCRIPTION, NO_COLUMN_DEFINITION_ALERT_TITLE } from "@/constants/constants";
 import { useDarkStore } from "@/stores/darkStore";
 import "@/style/ag-theme-shadcn.css"; // Custom CSS applied to the grid
 import type { ColDef } from "ag-grid-community";
@@ -16,8 +11,8 @@ import "ag-grid-community/styles/ag-theme-quartz.css"; // Optional Theme applied
 import { AgGridReact, type AgGridReactProps } from "ag-grid-react";
 import cloneDeep from "lodash";
 import { type ElementRef, forwardRef, useRef, useState } from "react";
-import TableOptions from "./components/TableOptions";
-import resetGrid from "./utils/reset-grid-columns";
+import { TableOptions } from "./components/TableOptions";
+import { resetGrid } from "./utils/reset-grid-columns";
 
 export interface TableComponentProps extends AgGridReactProps {
   columnDefs: NonNullable<ColDef<any, any>[]>;
@@ -30,9 +25,9 @@ export interface TableComponentProps extends AgGridReactProps {
     | string[]
     | {
         field: string;
-        onUpdate: (value: any) => void;
+        onUpdate: (value: any)=> void;
         editableCell: boolean;
-      }[];
+       }[];
   pagination?: boolean;
   onDelete?: () => void;
   onDuplicate?: () => void;
@@ -287,3 +282,4 @@ const TableComponent = forwardRef<
 );
 
 export default TableComponent;
+export { TableComponent };

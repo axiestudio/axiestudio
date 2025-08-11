@@ -2,7 +2,7 @@ import BaseModal from "../../../modals/baseModal";
 import type { fetchErrorComponentType } from "../../../types/components";
 import Loading from "../../ui/loading";
 
-export default function TimeoutErrorComponent({
+function TimeoutErrorComponent({
   message,
   description,
   openModal,
@@ -34,3 +34,7 @@ export default function TimeoutErrorComponent({
     </>
   );
 }
+
+
+export default TimeoutErrorComponent;
+export { TimeoutErrorComponent };

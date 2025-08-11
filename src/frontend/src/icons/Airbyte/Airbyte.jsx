@@ -21,3 +21,5 @@ const SvgAirbyte = (props) => (
   </svg>
 );
 export default SvgAirbyte;
+
+export { SvgAirbyte };

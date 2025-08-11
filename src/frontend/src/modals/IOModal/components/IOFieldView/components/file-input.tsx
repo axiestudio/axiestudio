@@ -1,19 +1,15 @@
 import { useEffect, useState } from "react";
-
 import { usePostUploadFile } from "@/controllers/API/queries/files/use-post-upload-file";
 import { createFileUpload } from "@/helpers/create-file-upload";
 import useFileSizeValidator from "@/shared/hooks/use-file-size-validator";
 import useAlertStore from "@/stores/alertStore";
 import IconComponent from "../../../../../components/common/genericIconComponent";
 import { Button } from "../../../../../components/ui/button";
-import {
-  ALLOWED_IMAGE_INPUT_EXTENSIONS,
-  BASE_URL_API,
-} from "../../../../../constants/constants";
+import { ALLOWED_IMAGE_INPUT_EXTENSIONS, BASE_URL_API } from "../../../../../constants/constants";
 import useFlowsManagerStore from "../../../../../stores/flowsManagerStore";
 import type { IOFileInputProps } from "../../../../../types/components";
 
-export default function IOFileInput({ field, updateValue }: IOFileInputProps) {
+function IOFileInput({field, updateValue }: IOFileInputProps) {
   //component to handle file upload from chatIO
   const currentFlowId = useFlowsManagerStore((state) => state.currentFlowId);
 
@@ -112,7 +108,7 @@ export default function IOFileInput({ field, updateValue }: IOFileInputProps) {
               title: "Error uploading file",
               list: [error.response?.data?.detail],
             });
-            console.error("Error occurred while uploading file");
+            console.error(t("fileManagement.fileUploadError"));
           },
         },
       );
@@ -166,3 +162,7 @@ export default function IOFileInput({ field, updateValue }: IOFileInputProps) {
     </>
   );
 }
+
+
+export default IOFileInput;
+export { IOFileInput };

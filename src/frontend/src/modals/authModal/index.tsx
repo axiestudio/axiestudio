@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import ForwardedIconComponent from "@/components/common/genericIconComponent";
+import { useTranslation } from "react-i18next";
+import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import type { AuthSettingsType } from "@/types/mcp";
-import { AUTH_METHODS_ARRAY } from "@/utils/mcpUtils";
+import { getAuthMethodsArray } from "@/utils/mcpUtils";
 import BaseModal from "../baseModal";
 
 interface AuthModalProps {
@@ -16,6 +17,7 @@ interface AuthModalProps {
 }
 
 const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
+  const { t } = useTranslation();
   const [authType, setAuthType] = useState<string>(
     authSettings?.auth_type || "none",
   );
@@ -142,7 +144,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
               Auth type
             </span>
             <RadioGroup value={authType} onValueChange={handleAuthTypeChange}>
-              {AUTH_METHODS_ARRAY.map((option) => (
+              {getAuthMethodsArray(t).map((option) => (
                 <div key={option.id} className="flex items-center space-x-2">
                   <RadioGroupItem value={option.id} id={option.id} />
                   <Label
@@ -471,7 +473,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
       </BaseModal.Content>
       <BaseModal.Footer
         submit={{
-          label: "Save",
+          label: t("common.save"),
           onClick: handleSave,
         }}
         className="p-4 border-t"
@@ -481,3 +483,5 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
 };
 
 export default AuthModal;
+
+export { AuthModal };

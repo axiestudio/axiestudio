@@ -47,3 +47,5 @@ const FreezeAllSvg = ({ className, ...props }) => {
 };
 
 export default FreezeAllSvg;
+
+export { FreezeAllSvg };

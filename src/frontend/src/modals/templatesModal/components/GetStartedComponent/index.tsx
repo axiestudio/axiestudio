@@ -1,6 +1,6 @@
-import BaseModal from "@/modals/baseModal";
-import useFlowsManagerStore from "@/stores/flowsManagerStore";
-import type { CardData } from "@/types/templates/types";
+import { BaseModal } from "@/modals/baseModal";
+import { useFlowsManagerStore } from "@/stores/flowsManagerStore";
+import type { CardData  } from "@/types/templates/types";
 import memoryChatbot from "../../../../assets/temp-pat-1.png";
 import vectorRag from "../../../../assets/temp-pat-2.png";
 import multiAgent from "../../../../assets/temp-pat-3.png";
@@ -10,7 +10,7 @@ import multiAgentHorizontal from "../../../../assets/temp-pat-m-3.png";
 
 import TemplateGetStartedCardComponent from "../TemplateGetStartedCardComponent";
 
-export default function GetStartedComponent() {
+function GetStartedComponent() {
   const examples = useFlowsManagerStore((state) => state.examples);
 
   // Define the card data
@@ -33,7 +33,7 @@ export default function GetStartedComponent() {
       bgImage: multiAgent,
       bgHorizontalImage: multiAgentHorizontal,
       icon: "Bot",
-      category: "Agents",
+      category: t("sidebar.agents"),
       flow: examples.find((example) => example.name === "Simple Agent"),
     },
   ];
@@ -51,3 +51,7 @@ export default function GetStartedComponent() {
     </div>
   );
 }
+
+
+export default GetStartedComponent;
+export { GetStartedComponent };

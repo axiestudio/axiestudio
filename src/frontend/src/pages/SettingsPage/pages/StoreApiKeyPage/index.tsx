@@ -29,7 +29,7 @@ const StoreApiKeyPage = () => {
 
   const { mutate: addApiKey } = usePostAddApiKey({
     onSuccess: () => {
-      setSuccessData({ title: "API key saved successfully" });
+      setSuccessData({ title: t("api.saveApiKeyAlert") });
       setHasApiKey(true);
       setValidApiKey(true);
       setLoadingApiKey(false);
@@ -86,3 +86,5 @@ const StoreApiKeyPage = () => {
 };
 
 export default StoreApiKeyPage;
+
+export { StoreApiKeyPage };

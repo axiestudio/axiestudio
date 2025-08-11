@@ -1,6 +1,6 @@
 import type { APITemplateType } from "../../types/api";
 
-export default function getFieldTitle(
+function getFieldTitle(
   template: APITemplateType,
   templateField: string,
 ): string {
@@ -8,3 +8,7 @@ export default function getFieldTitle(
     ? template[templateField].display_name!
     : (template[templateField].name ?? templateField);
 }
+
+
+export default getFieldTitle;
+export { getFieldTitle };

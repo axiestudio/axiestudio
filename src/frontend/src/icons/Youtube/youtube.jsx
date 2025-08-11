@@ -5942,3 +5942,5 @@ C 637.00 907.00 636.96 908.00 637.00 908.00 Z"
 );
 
 export default YouTubeIcon;
+
+export { YouTubeIcon };

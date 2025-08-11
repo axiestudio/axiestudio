@@ -33,3 +33,5 @@ const SvgAnthropicBox = (props) => {
 };
 
 export default SvgAnthropicBox;
+
+export { SvgAnthropicBox };

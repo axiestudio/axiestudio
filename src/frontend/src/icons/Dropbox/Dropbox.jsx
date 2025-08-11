@@ -14,3 +14,5 @@ const SvgDropbox = (props) => (
   </svg>
 );
 export default SvgDropbox;
+
+export { SvgDropbox };

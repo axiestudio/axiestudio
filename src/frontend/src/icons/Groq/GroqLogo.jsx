@@ -19,3 +19,5 @@ const SvgGroqLogo = ({ ...props }) => (
   </svg>
 );
 export default SvgGroqLogo;
+
+export { SvgGroqLogo };

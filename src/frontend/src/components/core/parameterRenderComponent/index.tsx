@@ -1,8 +1,8 @@
 import type { handleOnNewValueType } from "@/CustomNodes/hooks/use-handle-new-value";
-import CodeAreaComponent from "@/components/core/parameterRenderComponent/components/codeAreaComponent";
-import SliderComponent from "@/components/core/parameterRenderComponent/components/sliderComponent";
-import TableNodeComponent from "@/components/core/parameterRenderComponent/components/TableNodeComponent";
-import TabComponent from "@/components/core/parameterRenderComponent/components/tabComponent";
+import { CodeAreaComponent } from "@/components/core/parameterRenderComponent/components/codeAreaComponent";
+import { SliderComponent } from "@/components/core/parameterRenderComponent/components/sliderComponent";
+import { TableNodeComponent } from "@/components/core/parameterRenderComponent/components/TableNodeComponent";
+import { TabComponent } from "@/components/core/parameterRenderComponent/components/tabComponent";
 import { TEXT_FIELD_TYPES } from "@/constants/constants";
 import CustomConnectionComponent from "@/customization/components/custom-connectionComponent";
 import CustomInputFileComponent from "@/customization/components/custom-input-file";

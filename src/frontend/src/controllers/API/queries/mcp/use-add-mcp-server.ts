@@ -13,7 +13,7 @@ export const useAddMCPServer: useMutationFunctionType<
   undefined,
   MCPServerType,
   AddMCPServerResponse
-> = (options?) => {
+>= (options?) => {
   const { mutate, queryClient } = UseRequestProcessor();
 
   async function addMCPServer(

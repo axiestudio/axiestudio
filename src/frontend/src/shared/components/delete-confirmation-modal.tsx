@@ -1,8 +1,5 @@
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import {
-  useDeleteGlobalVariables,
-  useGetGlobalVariables,
-} from "@/controllers/API/queries/variables";
+import { useDeleteGlobalVariables, useGetGlobalVariables } from "@/controllers/API/queries/variables";
 import DeleteConfirmationModal from "@/modals/deleteConfirmationModal";
 import useAlertStore from "@/stores/alertStore";
 import { cn } from "@/utils/utils";
@@ -77,3 +74,5 @@ const GeneralDeleteConfirmationModal = ({
 };
 
 export default GeneralDeleteConfirmationModal;
+
+export { GeneralDeleteConfirmationModal };

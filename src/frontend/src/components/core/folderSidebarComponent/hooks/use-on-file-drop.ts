@@ -1,9 +1,6 @@
 import { usePostUploadFlowToFolder } from "@/controllers/API/queries/folders/use-post-upload-to-folder";
-import useSaveFlow from "@/hooks/flows/use-save-flow";
-import {
-  UPLOAD_ALERT_LIST,
-  WRONG_FILE_ERROR_ALERT,
-} from "../../../../constants/alerts_constants";
+import { useSaveFlow } from "@/hooks/flows/use-save-flow";
+import { UPLOAD_ALERT_LIST, WRONG_FILE_ERROR_ALERT } from "../../../../constants/alerts_constants";
 import useAlertStore from "../../../../stores/alertStore";
 import useFlowsManagerStore from "../../../../stores/flowsManagerStore";
 import { useFolderStore } from "../../../../stores/foldersStore";
@@ -142,3 +139,5 @@ const useFileDrop = (folderId: string) => {
 };
 
 export default useFileDrop;
+
+export { useFileDrop };

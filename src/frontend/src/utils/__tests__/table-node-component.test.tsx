@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { cloneDeep } from "lodash";
 import React from "react";
-import TableNodeComponent from "../../components/core/parameterRenderComponent/components/TableNodeComponent";
+import { TableNodeComponent } from "../../components/core/parameterRenderComponent/components/TableNodeComponent";
 
 // Mock the modal component since it's a complex component
 jest.mock("@/modals/tableModal", () => {
@@ -15,7 +15,7 @@ jest.mock("@/modals/tableModal", () => {
     tableTitle,
     description,
     rowData,
-  }: any) {
+   }: any) {
     // Clone children and add onClick handler to open modal
     const childrenWithClick = React.cloneElement(children, {
       onClick: () => setOpen(true),

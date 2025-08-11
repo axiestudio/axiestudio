@@ -20,3 +20,5 @@ const SvgMcpIcon = (props) => {
 };
 
 export default SvgMcpIcon;
+
+export { SvgMcpIcon };

@@ -1,9 +1,4 @@
-import {
-  BaseEdge,
-  type EdgeProps,
-  getBezierPath,
-  Position,
-} from "@xyflow/react";
+import { BaseEdge, type EdgeProps, getBezierPath, Position } from "@xyflow/react";
 import useFlowStore from "@/stores/flowStore";
 import { scapeJSONParse } from "@/utils/reactflowUtils";
 

@@ -1,7 +1,7 @@
 import { TextShimmer } from "@/components/ui/TextShimmer";
 import LogoIcon from "./chatView/chatMessage/components/chat-logo-icon";
 
-export default function FlowRunningSqueleton() {
+function FlowRunningSqueleton() {
   return (
     <div className="flex w-full gap-4 rounded-md p-2">
       <LogoIcon />
@@ -15,3 +15,7 @@ export default function FlowRunningSqueleton() {
     </div>
   );
 }
+
+
+export default FlowRunningSqueleton;
+export { FlowRunningSqueleton };

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/utils/utils";
 
 export const BackgroundGradient = ({
@@ -16,11 +17,10 @@ export const BackgroundGradient = ({
   animate?: boolean;
   borderColor?: string;
   borderRadius?: string;
-}) => {
-  const variants = {
+}) => { const variants = {
     initial: {
       backgroundPosition: "0 50%",
-    },
+     },
     animate: {
       backgroundPosition: ["0, 50%", "100% 50%", "0 50%"],
     },

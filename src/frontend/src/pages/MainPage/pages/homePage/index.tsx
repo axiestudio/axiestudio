@@ -6,10 +6,7 @@ import { IS_MAC } from "@/constants/constants";
 import { useGetFolderQuery } from "@/controllers/API/queries/folders/use-get-folder";
 import { CustomBanner } from "@/customization/components/custom-banner";
 import { CustomMcpServerTab } from "@/customization/components/custom-McpServerTab";
-import {
-  ENABLE_DATASTAX_AXIESTUDIO,
-  ENABLE_MCP,
-} from "@/customization/feature-flags";
+import { ENABLE_DATASTAX_AXIESTUDIO, ENABLE_MCP } from "@/customization/feature-flags";
 import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
 import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import { useFolderStore } from "@/stores/foldersStore";
@@ -375,3 +372,5 @@ const HomePage = ({ type }: { type: "flows" | "components" | "mcp" }) => {
 };
 
 export default HomePage;
+
+export { HomePage };

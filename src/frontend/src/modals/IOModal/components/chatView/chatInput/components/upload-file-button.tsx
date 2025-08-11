@@ -40,3 +40,5 @@ const UploadFileButton = ({
 };
 
 export default UploadFileButton;
+
+export { UploadFileButton };

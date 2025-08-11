@@ -27,3 +27,5 @@ const SvgWatsonxAI = (props) => (
   </svg>
 );
 export default SvgWatsonxAI;
+
+export { SvgWatsonxAI };

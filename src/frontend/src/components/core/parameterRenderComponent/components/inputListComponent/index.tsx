@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { useCallback, useEffect, useRef, useState } from "react";
-
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "../../../../../utils/utils";
 import { Input } from "../../../../ui/input";
@@ -9,7 +9,7 @@ import type { InputListComponentType, InputProps } from "../../types";
 import { ButtonInputList } from "./components/button-input-list";
 import { DeleteButtonInputList } from "./components/delete-button-input-list";
 
-export default function InputListComponent({
+function InputListComponent({
   value = [""],
   handleOnNewValue,
   disabled,
@@ -18,14 +18,13 @@ export default function InputListComponent({
   id,
   placeholder,
   listAddLabel,
-}: InputProps<string[], InputListComponentType>): JSX.Element {
-  const [_dropdownOpen, setDropdownOpen] = useState<number | null>(null);
+}: InputProps<string[], InputListComponentType>): JSX.Element { const [_dropdownOpen, setDropdownOpen] = useState<number | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (disabled && value.length > 0 && value[0] !== "") {
-      handleOnNewValue({ value: [""] }, { skipSnapshot: true });
+      handleOnNewValue({ value: [""]  }, { skipSnapshot: true });
     }
   }, [disabled, handleOnNewValue, value]);
 
@@ -152,3 +151,7 @@ export default function InputListComponent({
     </div>
   );
 }
+
+
+export default InputListComponent;
+export { InputListComponent };

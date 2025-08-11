@@ -1,17 +1,9 @@
 import { cloneDeep } from "lodash";
 import { useContext, useState } from "react";
 import { useParams } from "react-router-dom";
-import {
-  EDIT_PASSWORD_ALERT_LIST,
-  EDIT_PASSWORD_ERROR_ALERT,
-  SAVE_ERROR_ALERT,
-  SAVE_SUCCESS_ALERT,
-} from "@/constants/alerts_constants";
+import { EDIT_PASSWORD_ALERT_LIST, EDIT_PASSWORD_ERROR_ALERT, SAVE_ERROR_ALERT, SAVE_SUCCESS_ALERT } from "@/constants/alerts_constants";
 import { usePostAddApiKey } from "@/controllers/API/queries/api-keys";
-import {
-  useResetPassword,
-  useUpdateUser,
-} from "@/controllers/API/queries/auth";
+import { useResetPassword, useUpdateUser } from "@/controllers/API/queries/auth";
 import { useGetProfilePicturesQuery } from "@/controllers/API/queries/files";
 import { CustomTermsLinks } from "@/customization/components/custom-terms-links";
 import { ENABLE_PROFILE_ICONS } from "@/customization/feature-flags";
@@ -107,7 +99,7 @@ export const GeneralPage = () => {
 
   const { mutate } = usePostAddApiKey({
     onSuccess: () => {
-      setSuccessData({ title: "API key saved successfully" });
+      setSuccessData({ title: t("api.saveApiKeyAlert") });
       setHasApiKey(true);
       setValidApiKey(true);
       setLoadingApiKey(false);
@@ -134,7 +126,7 @@ export const GeneralPage = () => {
   function handleInput({
     target: { name, value },
   }: inputHandlerEventType): void {
-    setInputState((prev) => ({ ...prev, [name]: value }));
+  setInputState((prev) => ({ ...prev, [name]: value }));
   }
 
   return (

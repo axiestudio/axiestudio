@@ -1,7 +1,8 @@
+import { useTranslation } from "react-i18next";
 const NoResultsMessage = ({
   onClearSearch,
-  message = "No components found.",
-  clearSearchText = "Clear your search",
+  message = t("flows.nocomponentsfound"),
+  clearSearchText = t("common.clearyoursearch"),
   additionalText = "or filter and try a different query.",
 }) => {
   return (
@@ -21,3 +22,5 @@ const NoResultsMessage = ({
 };
 
 export default NoResultsMessage;
+
+export { NoResultsMessage };

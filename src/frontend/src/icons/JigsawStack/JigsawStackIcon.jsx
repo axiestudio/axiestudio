@@ -43,3 +43,5 @@ const JigsawStackIconSVG = (props) => (
 );
 
 export default JigsawStackIconSVG;
+
+export { JigsawStackIconSVG };

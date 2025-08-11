@@ -9,3 +9,5 @@ const CustomFeatureFlagDialog = ({
 };
 
 export default CustomFeatureFlagDialog;
+
+export { CustomFeatureFlagDialog };

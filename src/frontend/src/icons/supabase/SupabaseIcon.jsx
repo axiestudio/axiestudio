@@ -60,3 +60,5 @@ const SvgSupabaseIcon = (props) => (
   </svg>
 );
 export default SvgSupabaseIcon;
+
+export { SvgSupabaseIcon };

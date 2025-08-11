@@ -51,3 +51,5 @@ const useInstallComponent = (
 };
 
 export default useInstallComponent;
+
+export { useInstallComponent };

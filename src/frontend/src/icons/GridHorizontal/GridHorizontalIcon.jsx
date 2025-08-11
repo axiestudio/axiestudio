@@ -22,3 +22,5 @@ const SVGGridHorizontalIcon = (props) => {
 };
 
 export default SVGGridHorizontalIcon;
+
+export { SVGGridHorizontalIcon };

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAddMCPServer } from "@/controllers/API/queries/mcp/use-add-mcp-server";
 import { useGetMCPServers } from "@/controllers/API/queries/mcp/use-get-mcp-servers";
 import AddMcpServerModal from "@/modals/addMcpServerModal";
@@ -9,14 +10,12 @@ import { default as ForwardedIconComponent } from "../../../../common/genericIco
 import { Button } from "../../../../ui/button";
 import type { InputProps } from "../../types";
 
-export default function McpComponent({
-  value,
+function McpComponent({value,
   disabled,
   handleOnNewValue,
   editNode = false,
   id = "",
-}: InputProps<string, any>): JSX.Element {
-  const { data: mcpServers } = useGetMCPServers();
+}: InputProps<string, any>): JSX.Element { const { data: mcpServers  } = useGetMCPServers();
   const { mutate: addMcpServer } = useAddMCPServer();
   const setErrorData = useAlertStore((state) => state.setErrorData);
   const options = useMemo(
@@ -29,7 +28,7 @@ export default function McpComponent({
               ? server.error.startsWith("Timeout")
                 ? "Timeout"
                 : "Error"
-              : "Loading..."
+              : t("common.loading")
             : !server.toolsCount
               ? "No tools found"
               : `${server.toolsCount} tool${server.toolsCount === 1 ? "" : "s"}`,
@@ -180,7 +179,7 @@ export default function McpComponent({
               data-testid="save-mcp-server-button"
             >
               <ForwardedIconComponent
-                name="Save"
+                name={t("common.save")}
                 className="h-5 w-5 text-muted-foreground"
               />
             </Button>
@@ -220,3 +219,7 @@ export default function McpComponent({
     </div>
   );
 }
+
+
+export default McpComponent;
+export { McpComponent as McpComponent };

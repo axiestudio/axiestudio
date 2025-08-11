@@ -1,21 +1,21 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CustomLink } from "@/customization/components/custom-link";
 import IconComponent from "../../../../components/common/genericIconComponent";
 import type { SingleAlertComponentType } from "../../../../types/alerts";
 
-export default function SingleAlert({
+function SingleAlert({
   dropItem,
   removeAlert,
-}: SingleAlertComponentType): JSX.Element {
-  const [_show, setShow] = useState(true);
+}: SingleAlertComponentType): JSX.Element { const [_show, setShow] = useState(true);
   const type = dropItem.type;
 
   return type === "error" ? (
     <div
       className="mx-2 mb-2 flex rounded-md bg-error-background p-3"
-      key={dropItem.id}
+      key={dropItem.id }
     >
       <div className="flex-shrink-0">
         <IconComponent name="XCircle" className="h-5 w-5 text-status-red" />
@@ -163,3 +163,7 @@ export default function SingleAlert({
     </div>
   );
 }
+
+
+export default SingleAlert;
+export { SingleAlert };

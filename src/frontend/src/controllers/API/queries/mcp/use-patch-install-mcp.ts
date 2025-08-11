@@ -20,7 +20,7 @@ export const usePatchInstallMCP: useMutationFunctionType<
   PatchInstallMCPParams,
   PatchInstallMCPBody,
   PatchInstallMCPResponse
-> = (params, options?) => {
+>= (params, options?) => {
   const { mutate, queryClient } = UseRequestProcessor();
 
   async function patchInstallMCP(

@@ -1,25 +1,15 @@
 import Fuse from "fuse.js";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "../../../../../utils/utils";
 import { default as ForwardedIconComponent } from "../../../../common/genericIconComponent";
 import ShadTooltip from "../../../../common/shadTooltipComponent";
 import { Button } from "../../../../ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "../../../../ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverContentWithoutPortal,
-  PopoverTrigger,
-} from "../../../../ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from "../../../../ui/command";
+import { Popover, PopoverContent, PopoverContentWithoutPortal, PopoverTrigger } from "../../../../ui/popover";
 import type { InputProps, MultiselectComponentType } from "../../types";
 
-export default function MultiselectComponent({
+function MultiselectComponent({
   disabled,
   value,
   options: defaultOptions,
@@ -27,8 +17,7 @@ export default function MultiselectComponent({
   combobox,
   editNode = false,
   id = "",
-}: InputProps<string[], MultiselectComponentType>): JSX.Element {
-  const [open, setOpen] = useState(false);
+}: InputProps<string[], MultiselectComponentType>): JSX.Element { const [open, setOpen] = useState(false);
   const treatedValue = typeof value === "string" ? [value] : value;
 
   const refButton = useRef<HTMLButtonElement>(null);
@@ -44,7 +33,7 @@ export default function MultiselectComponent({
 
   const [options, setOptions] = useState<string[]>(defaultOptions);
 
-  const fuseOptions = new Fuse(options, { keys: ["name", "value"] });
+  const fuseOptions = new Fuse(options, { keys: ["name", "value"]  });
   const fuseValues = new Fuse(treatedValue, { keys: ["name", "value"] });
 
   const searchRoleByTerm = async (v: string) => {
@@ -220,3 +209,7 @@ export default function MultiselectComponent({
     </Popover>
   );
 }
+
+
+export default MultiselectComponent;
+export { MultiselectComponent };

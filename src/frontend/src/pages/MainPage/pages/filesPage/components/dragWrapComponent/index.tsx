@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import useFlowsManagerStore from "@/stores/flowsManagerStore";
+import { useFlowsManagerStore } from "@/stores/flowsManagerStore";
 import { cn } from "@/utils/utils";
 
-export default function DragWrapComponent({
+function DragWrapComponent({
   onFileDrop,
   children,
 }: {
@@ -118,3 +118,7 @@ export default function DragWrapComponent({
     </div>
   );
 }
+
+
+export default DragWrapComponent;
+export { DragWrapComponent };

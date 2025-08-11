@@ -1,20 +1,10 @@
 import { DialogClose } from "@radix-ui/react-dialog";
 import * as Form from "@radix-ui/react-form";
-import React, { type ReactNode, useEffect } from "react";
+import React, { type ReactNode, useEffect  } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "../../components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogContentWithouFixed,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../../components/ui/dialog";
-import {
-  Dialog as Modal,
-  DialogContent as ModalContent,
-} from "../../components/ui/dialog-with-no-close";
+import { Dialog, DialogContent, DialogContentWithouFixed, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog";
+import { Dialog as Modal, DialogContent as ModalContent } from "../../components/ui/dialog-with-no-close";
 import type { modalHeaderType } from "../../types/components";
 import { cn } from "../../utils/utils";
 import { switchCaseModalSize } from "./helpers/switch-case-size";
@@ -37,14 +27,13 @@ const Content: React.FC<ContentProps> = ({
   children,
   overflowHidden,
   className,
-}) => {
-  return (
+}) => { return (
     <div
       className={cn(
         `flex flex-1 flex-col rounded-md transition-all duration-300`,
         overflowHidden ? "overflow-hidden" : "overflow-auto",
         className,
-      )}
+      ) }
     >
       {children}
     </div>
@@ -77,6 +66,7 @@ const Header: React.FC<{
   description,
   clampDescription,
 }: modalHeaderType): JSX.Element => {
+  
   return (
     <DialogHeader>
       <DialogTitle className="line-clamp-1 flex items-center pb-0.5 text-base">
@@ -320,3 +310,5 @@ BaseModal.Header = Header;
 BaseModal.Trigger = Trigger;
 BaseModal.Footer = Footer;
 export default BaseModal;
+
+export { BaseModal };

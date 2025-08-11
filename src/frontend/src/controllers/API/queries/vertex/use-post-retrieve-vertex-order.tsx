@@ -23,7 +23,7 @@ export const usePostRetrieveVertexOrder: useMutationFunctionType<
   undefined,
   retrieveGetVerticesOrder,
   retrieveGetVerticesOrderResponse
-> = (options) => {
+>= (options) => {
   const { mutate } = UseRequestProcessor();
 
   const postRetrieveVertexOrder = async ({
@@ -31,10 +31,9 @@ export const usePostRetrieveVertexOrder: useMutationFunctionType<
     data: flow,
     startNodeId,
     stopNodeId,
-  }: retrieveGetVerticesOrder): Promise<retrieveGetVerticesOrderResponse> => {
-    // nodeId is optional and is a query parameter
+  }: retrieveGetVerticesOrder): Promise<retrieveGetVerticesOrderResponse> => { // nodeId is optional and is a query parameter
     // if nodeId is not provided, the API will return all vertices
-    const config: AxiosRequestConfig<any> = {};
+    const config: AxiosRequestConfig<any> = { };
     if (stopNodeId) {
       config["params"] = { stop_component_id: decodeURIComponent(stopNodeId) };
     } else if (startNodeId) {

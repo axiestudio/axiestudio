@@ -1,8 +1,4 @@
-import axios, {
-  type AxiosError,
-  type AxiosInstance,
-  type AxiosRequestConfig,
-} from "axios";
+import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig } from "axios";
 import * as fetchIntercept from "fetch-intercept";
 import { useEffect } from "react";
 import { Cookies } from "react-cookie";

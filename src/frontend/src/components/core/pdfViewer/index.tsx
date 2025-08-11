@@ -9,7 +9,7 @@ import NoDataPdf from "./noData";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
-export default function PdfViewer({ pdf }: { pdf: string }): JSX.Element {
+function PdfViewer({ pdf }: { pdf: string }): JSX.Element {
   const [numPages, setNumPages] = useState(-1);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1);
@@ -153,3 +153,7 @@ export default function PdfViewer({ pdf }: { pdf: string }): JSX.Element {
     </div>
   );
 }
+
+
+export default PdfViewer;
+export { PdfViewer };

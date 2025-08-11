@@ -1,14 +1,11 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs-button";
 import { useGetTypes } from "@/controllers/API/queries/flows/use-get-types";
-import {
-  useGetGlobalVariables,
-  usePatchGlobalVariables,
-  usePostGlobalVariables,
-} from "@/controllers/API/queries/variables";
+import { useGetGlobalVariables, usePatchGlobalVariables, usePostGlobalVariables } from "@/controllers/API/queries/variables";
 import BaseModal from "@/modals/baseModal";
 import useAlertStore from "@/stores/alertStore";
 import getUnavailableFields from "@/stores/globalVariablesStore/utils/get-unavailable-fields";
@@ -20,8 +17,7 @@ import sortByName from "./utils/sort-by-name";
 
 //TODO IMPLEMENT FORM LOGIC
 
-export default function GlobalVariableModal({
-  children,
+function GlobalVariableModal({children,
   asChild,
   initialData,
   referenceField,
@@ -149,7 +145,7 @@ export default function GlobalVariableModal({
       <BaseModal.Content>
         <div className="flex h-full w-full flex-col gap-4">
           <div className="space-y-2">
-            <Label>Type*</Label>
+            <Label>{t("common.type")}</Label>
             <Tabs
               defaultValue={type}
               onValueChange={setType}
@@ -175,7 +171,7 @@ export default function GlobalVariableModal({
           </div>
 
           <div className="space-y-2" id="global-variable-modal-inputs">
-            <Label>Name*</Label>
+            <Label>{t("labels.name")}</Label>
             <Input
               value={key}
               onChange={(e) => setKey(e.target.value)}
@@ -184,7 +180,7 @@ export default function GlobalVariableModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Value*</Label>
+            <Label>{t("common.value")}</Label>
             {type === "Credential" ? (
               <InputComponent
                 password
@@ -203,7 +199,7 @@ export default function GlobalVariableModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Apply to fields</Label>
+            <Label>{t("common.applytofields")}</Label>
             <InputComponent
               setSelectedOptions={(value) => setFields(value)}
               selectedOptions={fields}
@@ -214,18 +210,20 @@ export default function GlobalVariableModal({
               popoverWidth="29rem"
               optionsPlaceholder="Fields"
             />
-            <div className="text-xs text-muted-foreground">
-              Selected fields will auto-apply the variable as a default value.
-            </div>
+            <div className="text-xs text-muted-foreground">{t("common.selectedfieldswillautoapply")}</div>
           </div>
         </div>
       </BaseModal.Content>
       <BaseModal.Footer
         submit={{
-          label: `${initialData ? "Update" : "Save"} Variable`,
+          label: `${initialData ? "Update" : t("common.save")} Variable`,
           dataTestId: "save-variable-btn",
         }}
       />
     </BaseModal>
   );
 }
+
+
+export default GlobalVariableModal;
+export { GlobalVariableModal };

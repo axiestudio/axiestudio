@@ -1,33 +1,24 @@
 import { cloneDeep } from "lodash";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
-import useSaveFlow from "@/hooks/flows/use-save-flow";
+import { useSaveFlow } from "@/hooks/flows/use-save-flow";
 import { useUtilityStore } from "@/stores/utilityStore";
 import IconComponent from "../../components/common/genericIconComponent";
 import { TagsSelector } from "../../components/common/tagsSelectorComponent";
 import EditFlowSettings from "../../components/core/editFlowSettingsComponent";
 import { Button } from "../../components/ui/button";
 import { Checkbox } from "../../components/ui/checkbox";
-import {
-  getStoreComponents,
-  saveFlowStore,
-  updateFlowStore,
-} from "../../controllers/API";
+import { getStoreComponents, saveFlowStore, updateFlowStore } from "../../controllers/API";
 import useAlertStore from "../../stores/alertStore";
 import { useDarkStore } from "../../stores/darkStore";
 import { useStoreStore } from "../../stores/storeStore";
 import type { FlowType } from "../../types/flow";
-import {
-  downloadNode,
-  removeApiKeys,
-  removeFileNameFromComponents,
-} from "../../utils/reactflowUtils";
+import { downloadNode, removeApiKeys, removeFileNameFromComponents } from "../../utils/reactflowUtils";
 import BaseModal from "../baseModal";
 import ConfirmationModal from "../confirmationModal";
 import ExportModal from "../exportModal";
 import getTagsIds from "./utils/get-tags-ids";
 
-export default function ShareModal({
-  component,
+function ShareModal({component,
   is_component,
   children,
   open,
@@ -38,7 +29,7 @@ export default function ShareModal({
   is_component: boolean;
   component: FlowType;
   open?: boolean;
-  setOpen?: (open: boolean) => void;
+  setOpen?: (open: boolean)=> void;
   disabled?: boolean;
 }): JSX.Element {
   const version = useDarkStore((state) => state.version);
@@ -152,7 +143,7 @@ export default function ShareModal({
         <ConfirmationModal
           open={openConfirmationModal}
           title={`Replace`}
-          cancelText="Cancel"
+          cancelText={t("common.cancel")}
           confirmationText="Replace"
           size={"x-small"}
           icon={"SaveAll"}
@@ -303,3 +294,7 @@ export default function ShareModal({
     </>
   );
 }
+
+
+export default ShareModal;
+export { ShareModal as ShareModal };

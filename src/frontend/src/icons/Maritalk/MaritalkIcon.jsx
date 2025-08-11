@@ -332,3 +332,5 @@ const SvgMaritalkIcon = (props) => (
   </svg>
 );
 export default SvgMaritalkIcon;
+
+export { SvgMaritalkIcon };

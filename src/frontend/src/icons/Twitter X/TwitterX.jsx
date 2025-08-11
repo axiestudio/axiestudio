@@ -42,3 +42,5 @@ const TwitterXSVG = (props) => {
 };
 
 export default TwitterXSVG;
+
+export { TwitterXSVG };

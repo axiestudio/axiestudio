@@ -1,14 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import IconComponent from "@/components/common/genericIconComponent";
-import ShadTooltip from "@/components/common/shadTooltipComponent";
-import InputComponent from "@/components/core/parameterRenderComponent/components/inputComponent";
+import { IconComponent } from "@/components/common/genericIconComponent";
+import { ShadTooltip } from "@/components/common/shadTooltipComponent";
+import { InputComponent } from "@/components/core/parameterRenderComponent/components/inputComponent";
 import { getPlaceholder } from "@/components/core/parameterRenderComponent/helpers/get-placeholder-disabled";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { usePatchGlobalVariables } from "@/controllers/API/queries/variables";
 import { useGetVoiceList } from "@/controllers/API/queries/voice/use-get-voice-list";
@@ -355,7 +351,7 @@ const SettingsVoiceModal = ({
                       size="md"
                       data-testid="voice-assistant-settings-modal-save-button"
                     >
-                      {isEditingOpenAIKey ? "Update" : "Save"}
+                      {isEditingOpenAIKey ? "Update" : t("common.save")}
                     </Button>
                   </div>
                 )}
@@ -441,3 +437,5 @@ const SettingsVoiceModal = ({
 };
 
 export default SettingsVoiceModal;
+
+export { SettingsVoiceModal };

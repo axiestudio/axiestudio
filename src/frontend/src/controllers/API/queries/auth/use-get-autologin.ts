@@ -1,10 +1,6 @@
 import type { AxiosError } from "axios";
 import { useContext, useRef } from "react";
-import {
-  AUTO_LOGIN_MAX_RETRY_DELAY,
-  AUTO_LOGIN_RETRY_DELAY,
-  IS_AUTO_LOGIN,
-} from "@/constants/constants";
+import { AUTO_LOGIN_MAX_RETRY_DELAY, AUTO_LOGIN_RETRY_DELAY, IS_AUTO_LOGIN } from "@/constants/constants";
 import { AuthContext } from "@/contexts/authContext";
 import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
 import useAuthStore from "@/stores/authStore";

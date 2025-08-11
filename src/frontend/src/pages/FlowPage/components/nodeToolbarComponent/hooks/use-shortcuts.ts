@@ -2,7 +2,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { useShortcutsStore } from "@/stores/shortcuts";
 import isWrappedWithClass from "../../PageComponent/utils/is-wrapped-with-class";
 
-export default function useShortcuts({
+function useShortcuts({
   showOverrideModal,
   showModalAdvanced,
   openModal,
@@ -132,3 +132,7 @@ export default function useShortcuts({
     preventDefault: true,
   });
 }
+
+
+export default useShortcuts;
+export { useShortcuts };

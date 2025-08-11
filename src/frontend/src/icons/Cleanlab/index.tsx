@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef  } from "react";
 import SvgCleanlab from "./Cleanlab";
 
 export const CleanlabIcon = forwardRef<

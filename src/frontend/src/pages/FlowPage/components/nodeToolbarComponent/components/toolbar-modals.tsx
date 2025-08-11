@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import CodeAreaModal from "@/modals/codeAreaModal";
 import ConfirmationModal from "@/modals/confirmationModal";
 import EditNodeModal from "@/modals/editNodeModal";
@@ -70,7 +71,7 @@ const ToolbarModals = memo(
         flow: flowComponent,
         override: true,
       });
-      setSuccessData({ title: "New component successfully saved!" });
+      setSuccessData({ title: t("actions.newcomponentsuccessfullysaved") });
       setShowOverrideModal(false);
     };
 
@@ -144,3 +145,5 @@ const ToolbarModals = memo(
 ToolbarModals.displayName = "ToolbarModals";
 
 export default ToolbarModals;
+
+export { ToolbarModals };

@@ -1,11 +1,6 @@
 import { createContext, useEffect, useState } from "react";
 import { Cookies } from "react-cookie";
-import {
-  AXIESTUDIO_ACCESS_TOKEN,
-  AXIESTUDIO_API_TOKEN,
-  AXIESTUDIO_AUTO_LOGIN_OPTION,
-  AXIESTUDIO_REFRESH_TOKEN,
-} from "@/constants/constants";
+import { AXIESTUDIO_ACCESS_TOKEN, AXIESTUDIO_API_TOKEN, AXIESTUDIO_AUTO_LOGIN_OPTION, AXIESTUDIO_REFRESH_TOKEN } from "@/constants/constants";
 import { useGetUserData } from "@/controllers/API/queries/auth";
 import { useGetGlobalVariablesMutation } from "@/controllers/API/queries/variables/use-get-mutation-global-variables";
 import useAuthStore from "@/stores/authStore";

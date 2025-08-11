@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { LocationStoreType } from "../types/zustand/location";
 
-export const useLocationStore = create<LocationStoreType>((set, get) => ({
+export const useLocationStore= create<LocationStoreType>((set, get) => ({
   routeHistory: [],
   setRouteHistory: (location) => {
     const routeHistoryArray = get().routeHistory;

@@ -1,15 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { mutateTemplate } from "@/CustomNodes/helpers/mutate-template";
 import { ParameterRenderComponent } from "@/components/core/parameterRenderComponent";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePostTemplateValue } from "@/controllers/API/queries/nodes/use-post-template-value";
 import { getCustomParameterTitle } from "@/customization/components/custom-parameter";
 import { track } from "@/customization/utils/analytics";
@@ -37,9 +31,8 @@ export const NodeDialog: React.FC<NodeDialogProps> = ({
   nodeId,
   name,
   nodeClass,
-}) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+}) => { const [isLoading, setIsLoading] = useState(false);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({ });
 
   const nodes = useFlowStore((state) => state.nodes);
   const setNode = useFlowStore((state) => state.setNode);
@@ -127,7 +120,7 @@ export const NodeDialog: React.FC<NodeDialogProps> = ({
 
     if (missingRequiredFields.length > 0) {
       handleErrorData({
-        title: "Missing required fields",
+        title: t("common.missingrequiredfields"),
         list: missingRequiredFields,
       });
       return;
@@ -221,9 +214,7 @@ export const NodeDialog: React.FC<NodeDialogProps> = ({
         </div>
 
         <DialogFooter className="px-5 pt-3">
-          <Button variant="secondary" onClick={handleCloseDialog}>
-            Cancel
-          </Button>
+          <Button variant="secondary" onClick={handleCloseDialog}>{t("common.cancel")}</Button>
           <Button
             variant="default"
             onClick={handleSubmitDialog}

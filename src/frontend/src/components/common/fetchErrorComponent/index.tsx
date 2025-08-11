@@ -2,7 +2,7 @@ import BaseModal from "../../../modals/baseModal";
 import type { fetchErrorComponentType } from "../../../types/components";
 import IconComponent from "../genericIconComponent";
 
-export default function FetchErrorComponent({
+function FetchErrorComponent({
   message,
   description,
   openModal,
@@ -44,3 +44,7 @@ export default function FetchErrorComponent({
     </>
   );
 }
+
+
+export default FetchErrorComponent;
+export { FetchErrorComponent };

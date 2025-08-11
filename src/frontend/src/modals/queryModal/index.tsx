@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Textarea } from "../../components/ui/textarea";
-import {
-  EDIT_TEXT_PLACEHOLDER,
-  TEXT_DIALOG_TITLE,
-} from "../../constants/constants";
+import { EDIT_TEXT_PLACEHOLDER, TEXT_DIALOG_TITLE } from "../../constants/constants";
 import type { queryModalPropsType } from "../../types/components";
 import { handleKeyDown } from "../../utils/reactflowUtils";
 import { classNames } from "../../utils/utils";
 import BaseModal from "../baseModal";
 
-export default function QueryModal({
+function QueryModal({
   value,
   setValue,
   title,
@@ -17,14 +15,13 @@ export default function QueryModal({
   placeholder,
   children,
   disabled,
-}: queryModalPropsType): JSX.Element {
-  const [modalOpen, setModalOpen] = useState(false);
+}: queryModalPropsType): JSX.Element { const [modalOpen, setModalOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value);
 
   const textRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (typeof value === "string") setInputValue(value);
-  }, [value, modalOpen]);
+   }, [value, modalOpen]);
 
   return (
     <BaseModal
@@ -77,3 +74,7 @@ export default function QueryModal({
     </BaseModal>
   );
 }
+
+
+export default QueryModal;
+export { QueryModal };

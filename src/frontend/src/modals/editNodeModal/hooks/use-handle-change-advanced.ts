@@ -1,7 +1,7 @@
 import { cloneDeep } from "lodash";
 import type { NodeDataType } from "../../../types/flow";
 
-const useHandleChangeAdvanced = (
+const useHandleChangeAdvanced= (
   data: NodeDataType,
   takeSnapshot: () => void,
   setNode: (id: string, callback: (oldNode: any) => any) => void,
@@ -27,3 +27,5 @@ const useHandleChangeAdvanced = (
 };
 
 export default useHandleChangeAdvanced;
+
+export { useHandleChangeAdvanced };

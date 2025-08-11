@@ -58,3 +58,5 @@ const SvgFirecrawlLogo = (props) => (
   </svg>
 );
 export default SvgFirecrawlLogo;
+
+export { SvgFirecrawlLogo };

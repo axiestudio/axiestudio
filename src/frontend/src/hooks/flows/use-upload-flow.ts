@@ -98,3 +98,5 @@ const useUploadFlow = () => {
 };
 
 export default useUploadFlow;
+
+export { useUploadFlow };

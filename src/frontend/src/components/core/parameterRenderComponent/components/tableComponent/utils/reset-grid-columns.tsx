@@ -1,4 +1,4 @@
-export default function resetGrid(ref, initialColumnDefs) {
+function resetGrid(ref, initialColumnDefs) {
   if (ref?.current && ref?.current.api) {
     ref.current.api.resetColumnState();
     if (initialColumnDefs.current) {
@@ -10,3 +10,6 @@ export default function resetGrid(ref, initialColumnDefs) {
     }
   }
 }
+
+export default resetGrid;
+export { resetGrid };

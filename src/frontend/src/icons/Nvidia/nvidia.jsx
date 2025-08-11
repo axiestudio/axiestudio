@@ -50,3 +50,5 @@ const NvidiaSVG = (props) => (
   </svg>
 );
 export default NvidiaSVG;
+
+export { NvidiaSVG };

@@ -1,7 +1,8 @@
 import * as Form from "@radix-ui/react-form";
 import { type FormEvent, useEffect, useState } from "react";
-import AxieStudioLogo from "@/assets/AxieStudioLogo.svg?react";
-import InputComponent from "@/components/core/parameterRenderComponent/components/inputComponent";
+import { useTranslation } from "react-i18next";
+import { AxieStudioLogo } from "@/assets/AxieStudioLogo.svg?react";
+import { InputComponent } from "@/components/core/parameterRenderComponent/components/inputComponent";
 import { useAddUser } from "@/controllers/API/queries/auth";
 import { CustomLink } from "@/customization/components/custom-link";
 import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
@@ -9,10 +10,7 @@ import { track } from "@/customization/utils/analytics";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { SIGNUP_ERROR_ALERT } from "../../constants/alerts_constants";
-import {
-  CONTROL_INPUT_STATE,
-  SIGN_UP_SUCCESS,
-} from "../../constants/constants";
+import { CONTROL_INPUT_STATE, SIGN_UP_SUCCESS } from "../../constants/constants";
 import useAlertStore from "../../stores/alertStore";
 import type {
   inputHandlerEventType,
@@ -20,7 +18,9 @@ import type {
   UserInputType,
 } from "../../types/components";
 
-export default function SignUp(): JSX.Element {
+function SignUp(): JSX.Element {
+  const { t }= useTranslation();
+
   const [inputState, setInputState] =
     useState<signUpInputStateType>(CONTROL_INPUT_STATE);
 
@@ -36,6 +36,7 @@ export default function SignUp(): JSX.Element {
   function handleInput({
     target: { name, value },
   }: inputHandlerEventType): void {
+  
     setInputState((prev) => ({ ...prev, [name]: value }));
   }
 
@@ -107,12 +108,13 @@ export default function SignUp(): JSX.Element {
                 <Input
                   type="username"
                   onChange={({ target: { value } }) => {
+  
                     handleInput({ target: { name: "username", value } });
                   }}
                   value={username}
                   className="w-full"
                   required
-                  placeholder="Username"
+                  placeholder={t("auth.username")}
                 />
               </Form.Control>
 
@@ -134,7 +136,7 @@ export default function SignUp(): JSX.Element {
                 isForm
                 password={true}
                 required
-                placeholder="Password"
+                placeholder={t("auth.password")}
                 className="w-full"
               />
 
@@ -202,3 +204,7 @@ export default function SignUp(): JSX.Element {
     </Form.Root>
   );
 }
+
+
+export default SignUp;
+export { SignUp };

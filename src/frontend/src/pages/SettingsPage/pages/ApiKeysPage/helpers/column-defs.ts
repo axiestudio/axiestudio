@@ -1,16 +1,16 @@
 import TableAutoCellRender from "@/components/core/parameterRenderComponent/components/tableComponent/components/tableAutoCellRender";
 
-export const getColumnDefs = () => {
-  return [
+import { useTranslation } from "react-i18next";
+export const getColumnDefs = () => { return [
     {
       headerCheckboxSelection: true,
       checkboxSelection: true,
       showDisabledCheckboxes: true,
-      headerName: "Name",
+      headerName: t("labels.name"),
       field: "name",
       cellRenderer: TableAutoCellRender,
       flex: 2,
-    },
+     },
     {
       headerName: "Key",
       field: "api_key",
@@ -18,19 +18,19 @@ export const getColumnDefs = () => {
       flex: 1,
     },
     {
-      headerName: "Created",
+      headerName: t("actions.created"),
       field: "created_at",
       cellRenderer: TableAutoCellRender,
       flex: 1,
     },
     {
-      headerName: "Last Used",
+      headerName: t("common.lastused"),
       field: "last_used_at",
       cellRenderer: TableAutoCellRender,
       flex: 1,
     },
     {
-      headerName: "Total Uses",
+      headerName: t("common.totaluses"),
       field: "total_uses",
       cellRenderer: TableAutoCellRender,
       flex: 1,

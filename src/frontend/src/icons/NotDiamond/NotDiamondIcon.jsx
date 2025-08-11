@@ -27,3 +27,5 @@ const SvgNotDiamondIcon = (props) => (
   </svg>
 );
 export default SvgNotDiamondIcon;
+
+export { SvgNotDiamondIcon };

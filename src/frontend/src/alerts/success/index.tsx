@@ -1,21 +1,21 @@
 import { Transition } from "@headlessui/react";
 import { useEffect, useState } from "react";
-import IconComponent from "../../components/common/genericIconComponent";
-import type { SuccessAlertType } from "../../types/alerts";
+import { useTranslation } from "react-i18next";
+import { IconComponent } from "../../components/common/genericIconComponent";
+import type { SuccessAlertType  } from "../../types/alerts";
 
-export default function SuccessAlert({
+function SuccessAlert({
   title,
   id,
   removeAlert,
-}: SuccessAlertType): JSX.Element {
-  const [show, setShow] = useState(true);
+}: SuccessAlertType): JSX.Element { const [show, setShow] = useState(true);
   useEffect(() => {
     if (show) {
       setTimeout(() => {
         setShow(false);
         setTimeout(() => {
           removeAlert(id);
-        }, 500);
+         }, 500);
       }, 5000);
     }
   }, [id, removeAlert, show]);
@@ -48,3 +48,6 @@ export default function SuccessAlert({
     </Transition>
   );
 }
+
+export default SuccessAlert;
+export { SuccessAlert };

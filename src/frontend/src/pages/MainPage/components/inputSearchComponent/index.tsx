@@ -1,5 +1,5 @@
 import type { ChangeEvent, KeyboardEvent } from "react";
-import ForwardedIconComponent from "@/components/common/genericIconComponent";
+import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import { Input } from "@/components/ui/input";
 
 type InputSearchComponentProps = {
@@ -50,7 +50,7 @@ const InputSearchComponent = ({
           data-testid="search-store-button"
         >
           <ForwardedIconComponent
-            name={loading ? "Loader2" : "Search"}
+            name={loading ? "Loader2" : t("common.search")}
             className={loading ? "animate-spin cursor-not-allowed" : ""}
           />
         </button>
@@ -59,3 +59,5 @@ const InputSearchComponent = ({
   );
 };
 export default InputSearchComponent;
+
+export { InputSearchComponent };

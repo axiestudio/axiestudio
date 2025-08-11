@@ -50,3 +50,5 @@ const ScrapeGraphAI = (props) => {
 };
 
 export default ScrapeGraphAI;
+
+export { ScrapeGraphAI };

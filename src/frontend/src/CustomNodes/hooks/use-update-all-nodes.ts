@@ -4,7 +4,7 @@ import type { AllNodeType } from "@/types/flow";
 import { type APIClassType, OutputFieldType } from "../../types/api";
 import { updateHiddenOutputs } from "../helpers/update-hidden-outputs";
 
-export type UpdateNodesType = {
+export type UpdateNodesType= {
   nodeId: string;
   newNode: APIClassType;
   code: string;
@@ -24,7 +24,7 @@ const useUpdateAllNodes = (
         const newNodes = cloneDeep(oldNodes);
 
         updates.forEach(({ nodeId, newNode, code, name, type }) => {
-          const nodeIndex = newNodes.findIndex((n) => n.id === nodeId);
+  const nodeIndex = newNodes.findIndex((n) => n.id === nodeId);
           if (nodeIndex === -1) return;
 
           const updatedNode = newNodes[nodeIndex];
@@ -67,3 +67,5 @@ const useUpdateAllNodes = (
 };
 
 export default useUpdateAllNodes;
+
+export { useUpdateAllNodes };

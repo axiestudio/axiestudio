@@ -84,3 +84,5 @@ const ButtonSendWrapper = ({
 };
 
 export default ButtonSendWrapper;
+
+export { ButtonSendWrapper };

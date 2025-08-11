@@ -135,3 +135,5 @@ const SvgPineconeLogo = (props) => {
   );
 };
 export default SvgPineconeLogo;
+
+export { SvgPineconeLogo };

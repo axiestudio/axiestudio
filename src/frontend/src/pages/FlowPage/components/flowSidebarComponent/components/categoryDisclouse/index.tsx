@@ -1,10 +1,6 @@
 import { memo, useCallback } from "react";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
-import {
-  Disclosure,
-  DisclosureContent,
-  DisclosureTrigger,
-} from "@/components/ui/disclosure";
+import { Disclosure, DisclosureContent, DisclosureTrigger } from "@/components/ui/disclosure";
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import type { APIClassType } from "@/types/api";
 import SidebarItemsList from "../sidebarItemsList";

@@ -1,11 +1,7 @@
 import { cloneDeep } from "lodash";
 import { memo, useCallback, useMemo } from "react";
-import ShadTooltip from "@/components/common/shadTooltipComponent";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { ShadTooltip } from "@/components/common/shadTooltipComponent";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectTrigger } from "@/components/ui/select-custom";
 import { COLOR_OPTIONS } from "@/constants/constants";
 import { customOpenNewTab } from "@/customization/utils/custom-open-new-tab";
@@ -164,3 +160,5 @@ const NoteToolbarComponent = memo(function NoteToolbarComponent({
 NoteToolbarComponent.displayName = "NoteToolbarComponent";
 
 export default NoteToolbarComponent;
+
+export { NoteToolbarComponent };

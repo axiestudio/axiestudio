@@ -63,3 +63,5 @@ const SidebarMenuButtons = ({
 };
 
 export default SidebarMenuButtons;
+
+export { SidebarMenuButtons };

@@ -18,3 +18,5 @@ const useFileSizeValidator = () => {
 };
 
 export default useFileSizeValidator;
+
+export { useFileSizeValidator };

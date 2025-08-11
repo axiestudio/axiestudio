@@ -1,15 +1,8 @@
 import { useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { CustomLink } from "@/customization/components/custom-link";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "../../ui/sidebar";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "../../ui/sidebar";
 
 type SideBarButtonsComponentProps = {
   items: {
@@ -20,14 +13,13 @@ type SideBarButtonsComponentProps = {
   handleOpenNewFolderModal?: () => void;
 };
 
-const SideBarButtonsComponent = ({ items }: SideBarButtonsComponentProps) => {
-  const location = useLocation();
+const SideBarButtonsComponent = ({ items }: SideBarButtonsComponentProps) => { const location = useLocation();
   const pathname = location.pathname;
 
   const isMobile = useIsMobile();
 
   return (
-    <Sidebar collapsible={isMobile ? "icon" : "none"} className="border-none">
+    <Sidebar collapsible={isMobile ? "icon" : "none" } className="border-none">
       <SidebarContent className="pr-6">
         <SidebarGroup>
           <SidebarGroupContent>
@@ -60,3 +52,5 @@ const SideBarButtonsComponent = ({ items }: SideBarButtonsComponentProps) => {
 };
 
 export default SideBarButtonsComponent;
+
+export { SideBarButtonsComponent };

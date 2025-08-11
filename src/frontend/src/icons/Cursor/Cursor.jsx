@@ -653,3 +653,5 @@ const CursorSVG = (props) => {
 };
 
 export default CursorSVG;
+
+export { CursorSVG };

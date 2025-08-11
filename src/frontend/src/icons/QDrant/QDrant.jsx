@@ -61,3 +61,5 @@ const SvgQDrant = (props) => (
   </svg>
 );
 export default SvgQDrant;
+
+export { SvgQDrant };

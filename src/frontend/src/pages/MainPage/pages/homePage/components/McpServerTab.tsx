@@ -1,4 +1,5 @@
 import { memo, type ReactNode, useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
@@ -8,10 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs-button";
 import { MAX_MCP_SERVER_NAME_LENGTH } from "@/constants/constants";
 import { createApiKey } from "@/controllers/API";
-import {
-  useGetFlowsMCP,
-  usePatchFlowsMCP,
-} from "@/controllers/API/queries/mcp";
+import { useGetFlowsMCP, usePatchFlowsMCP } from "@/controllers/API/queries/mcp";
 import { useGetInstalledMCP } from "@/controllers/API/queries/mcp/use-get-installed-mcp";
 import { usePatchInstallMCP } from "@/controllers/API/queries/mcp/use-patch-install-mcp";
 import { ENABLE_MCP_COMPOSER } from "@/customization/feature-flags";
@@ -23,7 +21,7 @@ import useAlertStore from "@/stores/alertStore";
 import useAuthStore from "@/stores/authStore";
 import { useFolderStore } from "@/stores/foldersStore";
 import type { AuthSettingsType, MCPSettingsType } from "@/types/mcp";
-import { AUTH_METHODS } from "@/utils/mcpUtils";
+import { getAuthMethods } from "@/utils/mcpUtils";
 import { parseString } from "@/utils/stringManipulation";
 import { cn, getOS } from "@/utils/utils";
 
@@ -127,8 +125,9 @@ const operatingSystemTabs = [
 ];
 
 const McpServerTab = ({ folderName }: { folderName: string }) => {
+  const { t } = useTranslation();
   const isDarkMode = useTheme().dark;
-  const { folderId } = useParams();
+  const { folderId  } = useParams();
   const myCollectionId = useFolderStore((state) => state.myCollectionId);
   const projectId = folderId ?? myCollectionId ?? "";
   const [isCopied, setIsCopied] = useState(false);
@@ -438,8 +437,8 @@ const McpServerTab = ({ folderName }: { folderName: string }) => {
                       name="Check"
                       className="h-4 w-4 shrink-0"
                     />
-                    {AUTH_METHODS[
-                      currentAuthSettings.auth_type as keyof typeof AUTH_METHODS
+                    {getAuthMethods(t)[
+                      currentAuthSettings.auth_type as keyof ReturnType<typeof getAuthMethods>
                     ]?.label || currentAuthSettings.auth_type}
                   </span>
                 )}
@@ -633,3 +632,5 @@ const McpServerTab = ({ folderName }: { folderName: string }) => {
 };
 
 export default McpServerTab;
+
+export { McpServerTab };

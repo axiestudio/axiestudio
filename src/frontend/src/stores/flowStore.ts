@@ -1,22 +1,11 @@
-import {
-  addEdge,
-  applyEdgeChanges,
-  applyNodeChanges,
-  type EdgeChange,
-  type Node,
-  type NodeChange,
-} from "@xyflow/react";
+import { addEdge, applyEdgeChanges, applyNodeChanges, type EdgeChange, type Node, type NodeChange } from "@xyflow/react";
 import { cloneDeep, zip } from "lodash";
 import { create } from "zustand";
 import { checkCodeValidity } from "@/CustomNodes/helpers/check-code-validity";
 import { MISSED_ERROR_ALERT } from "@/constants/alerts_constants";
 import { BROKEN_EDGES_WARNING } from "@/constants/constants";
 import { ENABLE_DATASTAX_AXIESTUDIO } from "@/customization/feature-flags";
-import {
-  track,
-  trackDataLoaded,
-  trackFlowBuild,
-} from "@/customization/utils/analytics";
+import { track, trackDataLoaded, trackFlowBuild } from "@/customization/utils/analytics";
 import { brokenEdgeMessage } from "@/utils/utils";
 import { BuildStatus, EventDeliveryType } from "../constants/enums";
 import type { LogsLogType, VertexBuildTypeAPI } from "../types/api";
@@ -34,21 +23,7 @@ import type {
   VertexLayerElementType,
 } from "../types/zustand/flow";
 import { buildFlowVerticesWithFallback } from "../utils/buildUtils";
-import {
-  buildPositionDictionary,
-  checkChatInput,
-  cleanEdges,
-  detectBrokenEdgesEdges,
-  getConnectedSubgraph,
-  getHandleId,
-  getNodeId,
-  scapedJSONStringfy,
-  scapeJSONParse,
-  unselectAllNodesEdges,
-  updateGroupRecursion,
-  validateEdge,
-  validateNodes,
-} from "../utils/reactflowUtils";
+import { buildPositionDictionary, checkChatInput, cleanEdges, detectBrokenEdgesEdges, getConnectedSubgraph, getHandleId, getNodeId, scapedJSONStringfy, scapeJSONParse, unselectAllNodesEdges, updateGroupRecursion, validateEdge, validateNodes } from "../utils/reactflowUtils";
 import { getInputsAndOutputs } from "../utils/storeUtils";
 import useAlertStore from "./alertStore";
 import { useDarkStore } from "./darkStore";
@@ -67,13 +42,12 @@ const useFlowStore = create<FlowStoreType>((set, get) => ({
   setPositionDictionary: (positionDictionary) => {
     set({ positionDictionary });
   },
-  isPositionAvailable: (position: { x: number; y: number }) => {
-    if (
+  isPositionAvailable: (position: { x: number; y: number }) => { if (
       get().positionDictionary[position.x] &&
       get().positionDictionary[position.x] === position.y
     ) {
       return false;
-    }
+     }
     return true;
   },
   fitViewNode: (nodeId) => {
@@ -1079,3 +1053,4 @@ const useFlowStore = create<FlowStoreType>((set, get) => ({
 }));
 
 export default useFlowStore;
+export { useFlowStore };

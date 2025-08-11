@@ -45,7 +45,7 @@ const useAlertStore = create<AlertStoreType>((set, get) => ({
     }
   },
   setErrorData: (newState: { title: string; list?: Array<string> }) => {
-    if (newState.title && newState.title !== "") {
+  if (newState.title && newState.title !== "") {
       set({ errorData: newState });
       const notification: Omit<AlertItemType, "id"> = {
         type: "error",
@@ -105,3 +105,4 @@ const useAlertStore = create<AlertStoreType>((set, get) => ({
 }));
 
 export default useAlertStore;
+export { useAlertStore };

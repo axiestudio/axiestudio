@@ -65,3 +65,5 @@ const useTheme = () => {
 };
 
 export default useTheme;
+
+export { useTheme };

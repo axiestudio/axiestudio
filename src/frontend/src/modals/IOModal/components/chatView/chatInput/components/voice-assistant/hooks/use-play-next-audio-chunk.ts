@@ -1,6 +1,5 @@
 import type { MutableRefObject } from "react";
-
-export const usePlayNextAudioChunk = (
+export const usePlayNextAudioChunk= (
   audioQueueRef: MutableRefObject<AudioBuffer[]>,
   isPlayingRef: MutableRefObject<boolean>,
   processorRef: MutableRefObject<AudioWorkletNode | null>,
@@ -8,7 +7,7 @@ export const usePlayNextAudioChunk = (
   if (audioQueueRef.current.length === 0) {
     isPlayingRef.current = false;
     return;
-  }
+   }
 
   isPlayingRef.current = true;
   const audioBuffer = audioQueueRef.current.shift();

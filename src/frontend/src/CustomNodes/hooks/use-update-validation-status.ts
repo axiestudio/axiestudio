@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import type { VertexBuildTypeAPI } from "@/types/api";
 import type { FlowPoolType } from "../../types/zustand/flow";
 
-const useUpdateValidationStatus = (
+const useUpdateValidationStatus= (
   dataId: string,
   flowPool: FlowPoolType,
   setValidationStatus: (value: any) => void,
@@ -24,3 +24,5 @@ const useUpdateValidationStatus = (
 };
 
 export default useUpdateValidationStatus;
+
+export { useUpdateValidationStatus };

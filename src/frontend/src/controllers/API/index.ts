@@ -1,9 +1,6 @@
 import type { Edge, Node, ReactFlowJsonObject } from "@xyflow/react";
-import type { AxiosRequestConfig, AxiosResponse } from "axios";
-import {
-  customGetAppVersions,
-  customGetLatestVersion,
-} from "@/customization/utils/custom-get-app-latest-version";
+import type { AxiosRequestConfig, AxiosResponse  } from "axios";
+import { customGetAppVersions, customGetLatestVersion } from "@/customization/utils/custom-get-app-latest-version";
 import { BASE_URL_API } from "../../constants/constants";
 import { api } from "../../controllers/API/api";
 import type {
@@ -25,7 +22,7 @@ export async function getDiscordCount() {
   return 0;
 }
 
-export const getAppVersions = customGetAppVersions;
+export const getAppVersions= customGetAppVersions;
 export const getLatestVersion = customGetLatestVersion;
 
 export async function createApiKey(name: string) {

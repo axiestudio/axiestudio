@@ -3,7 +3,7 @@ import { cloneDeep, uniqueId } from "lodash";
 import type { FlowType, NodeDataType } from "../types/flow";
 import { isInputNode, isOutputNode } from "./reactflowUtils";
 
-export default function cloneFLowWithParent(
+function cloneFLowWithParent(
   flow: FlowType,
   parent: string,
   is_component: boolean,
@@ -50,3 +50,7 @@ export function getInputsAndOutputs(nodes: Node[]) {
   });
   return { inputs, outputs };
 }
+
+
+export default cloneFLowWithParent;
+export { cloneFLowWithParent };

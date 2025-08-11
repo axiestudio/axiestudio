@@ -45,7 +45,7 @@ export const useShortcutsStore = create<shortcutsStoreType>((set, get) => ({
       const savedShortcuts = localStorage.getItem("axiestudio-shortcuts");
       const savedArr = JSON.parse(savedShortcuts!);
       savedArr.forEach(({ name, shortcut }) => {
-        const shortcutName = toCamelCase(name);
+  const shortcutName = toCamelCase(name);
         set({
           [shortcutName]: shortcut,
         });

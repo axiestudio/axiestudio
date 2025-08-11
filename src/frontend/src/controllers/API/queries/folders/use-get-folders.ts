@@ -10,7 +10,7 @@ import { UseRequestProcessor } from "../../services/request-processor";
 export const useGetFoldersQuery: useQueryFunctionType<
   undefined,
   FolderType[]
-> = (options) => {
+>= (options) => {
   const { query } = UseRequestProcessor();
 
   const setMyCollectionId = useFolderStore((state) => state.setMyCollectionId);

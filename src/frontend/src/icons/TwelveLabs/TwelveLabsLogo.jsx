@@ -245,3 +245,5 @@ const SvgTwelveLogo = (props) => (
 );
 
 export default SvgTwelveLogo;
+
+export { SvgTwelveLogo };

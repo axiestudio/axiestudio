@@ -1,6 +1,5 @@
 import type { MutableRefObject } from "react";
-
-export const useStartRecording = async (
+export const useStartRecording= async (
   audioContextRef: MutableRefObject<AudioContext | null>,
   microphoneRef: MutableRefObject<MediaStreamAudioSourceNode | null>,
   analyserRef: MutableRefObject<AnalyserNode | null>,
@@ -25,7 +24,7 @@ export const useStartRecording = async (
         autoGainControl: true,
         sampleRate: 48000,
         deviceId: selectedMicrophone
-          ? { exact: selectedMicrophone }
+          ? { exact: selectedMicrophone  }
           : undefined,
       },
     });

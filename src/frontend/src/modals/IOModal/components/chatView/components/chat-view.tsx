@@ -1,8 +1,8 @@
-import useDetectScroll, {
-  Axis,
+import useDetectScroll, { Axis,
   Direction,
-} from "@smakss/react-scroll-direction";
+ } from "@smakss/react-scroll-direction";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { v5 as uuidv5 } from "uuid";
 import AxieStudioLogo from "@/assets/AxieStudioLogo.svg?react";
 import { TextEffectPerChar } from "@/components/ui/textAnimation";
@@ -37,19 +37,18 @@ const MemoizedChatMessage = memo(ChatMessage, (prevProps, nextProps) => {
   );
 });
 
-export default function ChatView({
+function ChatView({
   sendMessage,
   visibleSession,
   focusChat,
   closeChat,
   playgroundPage,
   sidebarOpen,
-}: chatViewProps): JSX.Element {
-  const inputs = useFlowStore((state) => state.inputs);
+}: chatViewProps): JSX.Element { const inputs = useFlowStore((state) => state.inputs);
   const clientId = useUtilityStore((state) => state.clientId);
   const realFlowId = useFlowsManagerStore((state) => state.currentFlowId);
   const currentFlowId = playgroundPage
-    ? uuidv5(`${clientId}_${realFlowId}`, uuidv5.DNS)
+    ? uuidv5(`${clientId }_${realFlowId}`, uuidv5.DNS)
     : realFlowId;
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatMessageType[] | undefined>(
@@ -330,6 +329,7 @@ export default function ChatView({
           playgroundPage={!!playgroundPage}
           noInput={!inputTypes.includes("ChatInput")}
           sendMessage={async ({ repeat, files }) => {
+  
             await sendMessage({ repeat, files });
             track("Playground Message Sent");
           }}
@@ -342,3 +342,7 @@ export default function ChatView({
     </div>
   );
 }
+
+
+export default ChatView;
+export { ChatView };

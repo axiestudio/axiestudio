@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 /**
  * enum for the different types of nodes
  * @enum
@@ -21,22 +22,22 @@ export enum InputOutput {
 }
 
 export enum IOInputTypes {
-  TEXT = "TextInput",
-  FILE_LOADER = "FileLoader",
-  KEYPAIR = "KeyPairInput",
-  JSON = "JsonInput",
-  STRING_LIST = "StringListInput",
+  TEXT = "Text Input",
+  FILE_LOADER = "File Loader",
+  KEYPAIR = "Key Pair Input",
+  JSON = "JSON Input",
+  STRING_LIST = "String List Input",
 }
 
 export enum IOOutputTypes {
-  TEXT = "TextOutput",
-  PDF = "PDFOutput",
-  CSV = "CSVOutput",
-  IMAGE = "ImageOutput",
-  JSON = "JsonOutput",
-  KEY_PAIR = "KeyPairOutput",
-  STRING_LIST = "StringListOutput",
-  DATA = "DataOutput",
+  TEXT = "Text Output",
+  PDF = "PDF Output",
+  CSV = "CSV Output",
+  IMAGE = "Image Output",
+  JSON = "JSON Output",
+  KEY_PAIR = "Key Pair Output",
+  STRING_LIST = "String List Output",
+  DATA = "Data Output",
 }
 
 export enum EventDeliveryType {

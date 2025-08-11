@@ -7,10 +7,9 @@ const ConnectionLineComponent = ({
   toX,
   toY,
   connectionLineStyle = {},
-}: ConnectionLineComponentProps): JSX.Element => {
-  const handleDragging = useFlowStore((state) => state.handleDragging);
+}: ConnectionLineComponentProps): JSX.Element => { const handleDragging = useFlowStore((state) => state.handleDragging);
   const color = handleDragging?.color;
-  const accentColor = `hsl(var(--datatype-${color}))`;
+  const accentColor = `hsl(var(--datatype-${color }))`;
 
   return (
     <g>
@@ -39,3 +38,5 @@ const ConnectionLineComponent = ({
 };
 
 export default ConnectionLineComponent;
+
+export { ConnectionLineComponent };

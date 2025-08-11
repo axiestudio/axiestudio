@@ -1,19 +1,13 @@
 import { jsonquery } from "@jsonquerylang/jsonquery";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
-import {
-  type Content,
-  createJSONEditor,
-  type MenuItem,
-  type Mode,
-  type JsonEditor as VanillaJsonEditor,
-} from "vanilla-jsoneditor";
+import { type Content, createJSONEditor, type MenuItem, type Mode, type JsonEditor as VanillaJsonEditor } from "vanilla-jsoneditor";
 import useAlertStore from "../../../stores/alertStore";
 import { cn } from "../../../utils/utils";
 import { useMenuCustomization } from "./useMenuCustomization";
 
 interface JsonEditorProps {
   data?: Content;
-  onChange?: (data: Content) => void;
+  onChange?: (data: Content)=> void;
   readOnly?: boolean;
   options?: any;
   jsonRef?: React.MutableRefObject<VanillaJsonEditor | null>;
@@ -402,7 +396,7 @@ const JsonEditor = ({
             ) : isFiltered ? (
               "Apply"
             ) : (
-              "Filter"
+              t("common.filter")
             )}
           </Button>
           <Button
@@ -423,3 +417,5 @@ const JsonEditor = ({
 };
 
 export default JsonEditor;
+
+export { JsonEditor };

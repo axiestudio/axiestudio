@@ -29,3 +29,5 @@ const useDuplicateFlow = ({ flow }: UseDuplicateFlowsParams) => {
 };
 
 export default useDuplicateFlow;
+
+export { useDuplicateFlow };

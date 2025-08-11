@@ -1,5 +1,6 @@
 import Convert from "ansi-to-html";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ContentBlockDisplay } from "@/components/core/chatComponents/ContentBlockDisplay";
 import { useUpdateMessage } from "@/controllers/API/queries/messages";
 import { CustomMarkdownField } from "@/customization/components/custom-markdown-field";
@@ -8,9 +9,8 @@ import { ENABLE_DATASTAX_AXIESTUDIO } from "@/customization/feature-flags";
 import useFlowStore from "@/stores/flowStore";
 import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import Robot from "../../../../../assets/robot.png";
-import IconComponent, {
-  ForwardedIconComponent,
-} from "../../../../../components/common/genericIconComponent";
+import IconComponent, { ForwardedIconComponent,
+ } from "../../../../../components/common/genericIconComponent";
 import SanitizedHTMLWrapper from "../../../../../components/common/sanitizedHTMLWrapper";
 import { EMPTY_INPUT_SEND_MESSAGE } from "../../../../../constants/constants";
 import useAlertStore from "../../../../../stores/alertStore";
@@ -22,14 +22,13 @@ import FileCardWrapper from "./components/file-card-wrapper";
 import { EditMessageButton } from "./components/message-options";
 import { convertFiles } from "./helpers/convert-files";
 
-export default function ChatMessage({
+function ChatMessage({
   chat,
   lastMessage,
   updateChat,
   closeChat,
   playgroundPage,
-}: chatMessagePropsType): JSX.Element {
-  const convert = new Convert({ newline: true });
+}: chatMessagePropsType): JSX.Element { const convert = new Convert({ newline: true  });
   const [hidden, setHidden] = useState(true);
   const [streamUrl, setStreamUrl] = useState(chat.stream_url);
   const flow_id = useFlowsManagerStore((state) => state.currentFlowId);
@@ -435,3 +434,7 @@ export default function ChatMessage({
     </>
   );
 }
+
+
+export default ChatMessage;
+export { ChatMessage };

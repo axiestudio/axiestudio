@@ -7,7 +7,7 @@ interface DurationState {
   incrementDuration: (chatId: string) => void;
   clearInterval: (chatId: string) => void;
   setInterval: (chatId: string, intervalId: NodeJS.Timeout) => void;
-}
+ }
 
 export const useDurationStore = create<DurationState>((set) => ({
   durations: {},

@@ -8,14 +8,7 @@ import { useFolderStore } from "@/stores/foldersStore";
 import { useGlobalVariablesStore } from "@/stores/globalVariablesStore/globalVariables";
 import { useTypesStore } from "@/stores/typesStore";
 import type { FlowType } from "@/types/flow";
-import {
-  addVersionToDuplicates,
-  createNewFlow,
-  extractFieldsFromComponenents,
-  processDataFromFlow,
-  processFlows,
-  updateGroupRecursion,
-} from "@/utils/reactflowUtils";
+import { addVersionToDuplicates, createNewFlow, extractFieldsFromComponenents, processDataFromFlow, processFlows, updateGroupRecursion } from "@/utils/reactflowUtils";
 import useDeleteFlow from "./use-delete-flow";
 
 const FLOW_CREATION_ERROR = "Flow creation error";
@@ -46,7 +39,7 @@ const useAddFlow = () => {
     override?: boolean;
     new_blank?: boolean;
   }) => {
-    return new Promise(async (resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
       const flow = cloneDeep(params?.flow) ?? undefined;
       const flowData = flow
         ? await processDataFromFlow(flow)
@@ -127,3 +120,5 @@ const useAddFlow = () => {
 };
 
 export default useAddFlow;
+
+export { useAddFlow };

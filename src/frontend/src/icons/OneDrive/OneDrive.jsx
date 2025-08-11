@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 const SvgOneDrive = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -6,7 +7,7 @@ const SvgOneDrive = (props) => (
     height="1em"
     {...props}
   >
-    <title>OfficeCore10_32x_24x_20x_16x_01-22-2019</title>
+    <title>{t("common.officecore1032x24x20x16x012220")}</title>
     <g id="STYLE_COLOR">
       <path
         d="M12.20245,11.19292l.00031-.0011,6.71765,4.02379,4.00293-1.68451.00018.00068A6.4768,6.4768,0,0,1,25.5,13c.14764,0,.29358.0067.43878.01639a10.00075,10.00075,0,0,0-18.041-3.01381C7.932,10.00215,7.9657,10,8,10A7.96073,7.96073,0,0,1,12.20245,11.19292Z"
@@ -28,3 +29,5 @@ const SvgOneDrive = (props) => (
   </svg>
 );
 export default SvgOneDrive;
+
+export { SvgOneDrive };

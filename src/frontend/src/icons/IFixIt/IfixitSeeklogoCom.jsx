@@ -13,3 +13,5 @@ const SvgIfixitSeeklogocom = (props) => (
   </svg>
 );
 export default SvgIfixitSeeklogocom;
+
+export { SvgIfixitSeeklogocom };

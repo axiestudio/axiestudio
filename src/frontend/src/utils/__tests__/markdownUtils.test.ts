@@ -1,8 +1,4 @@
-import {
-  cleanupTableEmptyCells,
-  isMarkdownTable,
-  preprocessChatMessage,
-} from "../markdownUtils";
+import { cleanupTableEmptyCells, isMarkdownTable, preprocessChatMessage } from "../markdownUtils";
 
 describe("markdownUtils", () => {
   describe("isMarkdownTable", () => {

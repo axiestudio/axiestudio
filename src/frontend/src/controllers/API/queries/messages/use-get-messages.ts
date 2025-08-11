@@ -3,10 +3,7 @@ import type { ColDef, ColGroupDef } from "ag-grid-community";
 import useFlowStore from "@/stores/flowStore";
 import { useMessagesStore } from "@/stores/messagesStore";
 import type { useQueryFunctionType } from "../../../../types/api";
-import {
-  extractColumnsFromRows,
-  prepareSessionIdForAPI,
-} from "../../../../utils/utils";
+import { extractColumnsFromRows, prepareSessionIdForAPI } from "../../../../utils/utils";
 import { api } from "../../api";
 import { getURL } from "../../helpers/constants";
 import { UseRequestProcessor } from "../../services/request-processor";
@@ -30,7 +27,7 @@ export const useGetMessagesQuery: useQueryFunctionType<
   const { query } = UseRequestProcessor();
 
   const getMessagesFn = async (id?: string, params = {}) => {
-    const isPlaygroundPage = useFlowStore.getState().playgroundPage;
+  const isPlaygroundPage = useFlowStore.getState().playgroundPage;
     const config = {};
     if (id) {
       config["params"] = { flow_id: id };

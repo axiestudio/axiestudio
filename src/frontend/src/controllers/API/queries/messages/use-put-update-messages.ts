@@ -1,7 +1,7 @@
 import type { UseMutationResult } from "@tanstack/react-query";
-import useFlowStore from "@/stores/flowStore";
-import useFlowsManagerStore from "@/stores/flowsManagerStore";
-import type { useMutationFunctionType } from "@/types/api";
+import { useFlowStore } from "@/stores/flowStore";
+import { useFlowsManagerStore } from "@/stores/flowsManagerStore";
+import type { useMutationFunctionType  } from "@/types/api";
 import type { Message } from "@/types/messages";
 import { api } from "../../api";
 import { getURL } from "../../helpers/constants";

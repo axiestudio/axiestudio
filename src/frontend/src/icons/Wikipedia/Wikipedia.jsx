@@ -896,3 +896,5 @@ const SvgWikipedia = (props) => (
   </svg>
 );
 export default SvgWikipedia;
+
+export { SvgWikipedia };

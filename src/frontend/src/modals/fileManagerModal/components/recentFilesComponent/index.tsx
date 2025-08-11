@@ -8,8 +8,7 @@ import { sortByBoolean, sortByDate } from "@/pages/MainPage/utils/sort-flows";
 import type { FileType } from "@/types/file_management";
 import FilesRendererComponent from "../filesRendererComponent";
 
-export default function RecentFilesComponent({
-  files,
+function RecentFilesComponent({files,
   selectedFiles,
   setSelectedFiles,
   types,
@@ -147,7 +146,7 @@ export default function RecentFilesComponent({
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <Input
-            icon="Search"
+            icon={t("common.search")}
             placeholder="Search files..."
             inputClassName="h-8"
             data-testid="search-files-input"
@@ -190,3 +189,7 @@ export default function RecentFilesComponent({
     </div>
   );
 }
+
+
+export default RecentFilesComponent;
+export { RecentFilesComponent };

@@ -1,23 +1,14 @@
 import { useRef } from "react";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContentWithoutPortal,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContentWithoutPortal, PopoverTrigger } from "@/components/ui/popover";
 import useFlowStore from "@/stores/flowStore";
 import ShadTooltip from "../../../../components/common/shadTooltipComponent";
 import type { outputComponentType } from "../../../../types/components";
 import { cn } from "../../../../utils/utils";
 
-export default function OutputComponent({
+function OutputComponent({
   selected,
   types,
   frozen = false,
@@ -125,3 +116,7 @@ export default function OutputComponent({
     </div>
   );
 }
+
+
+export default OutputComponent;
+export { OutputComponent };

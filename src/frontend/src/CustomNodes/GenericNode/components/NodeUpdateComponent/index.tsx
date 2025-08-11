@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ICON_STROKE_WIDTH } from "@/constants/constants";
 import { cn } from "@/utils/utils";
 
-export default function NodeUpdateComponent({
+function NodeUpdateComponent({
   hasBreakingChange,
   showNode,
   handleUpdateCode,
@@ -60,3 +60,7 @@ export default function NodeUpdateComponent({
     </div>
   );
 }
+
+
+export default NodeUpdateComponent;
+export { NodeUpdateComponent };

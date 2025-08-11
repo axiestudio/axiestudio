@@ -96,3 +96,4 @@ const ShadTooltip = memo(
 // Add display name for dev tools
 ShadTooltip.displayName = "ShadTooltip";
 export default ShadTooltip;
+export { ShadTooltip };

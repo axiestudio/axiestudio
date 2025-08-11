@@ -5,14 +5,11 @@ import { useDarkStore } from "@/stores/darkStore";
 import useFlowStore from "@/stores/flowStore";
 import { nodeColorsName } from "@/utils/styleUtils";
 import ShadTooltip from "../../../../components/common/shadTooltipComponent";
-import {
-  isValidConnection,
-  scapedJSONStringfy,
-} from "../../../../utils/reactflowUtils";
+import { isValidConnection, scapedJSONStringfy } from "../../../../utils/reactflowUtils";
 import { cn, groupByFamily } from "../../../../utils/utils";
 import HandleTooltipComponent from "../HandleTooltipComponent";
 
-const BASE_HANDLE_STYLES = {
+const BASE_HANDLE_STYLES= {
   width: "32px",
   height: "32px",
   top: "50%",
@@ -453,3 +450,5 @@ const HandleRenderComponent = memo(function HandleRenderComponent({
 });
 
 export default HandleRenderComponent;
+
+export { HandleRenderComponent };

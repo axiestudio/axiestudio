@@ -1,11 +1,7 @@
 import { useState } from "react";
-import ShortUniqueId from "short-unique-id";
+import { ShortUniqueId } from "short-unique-id";
 import { INVALID_FILE_SIZE_ALERT } from "@/constants/alerts_constants";
-import {
-  ALLOWED_IMAGE_INPUT_EXTENSIONS,
-  FS_ERROR_TEXT,
-  SN_ERROR_TEXT,
-} from "@/constants/constants";
+import { ALLOWED_IMAGE_INPUT_EXTENSIONS, FS_ERROR_TEXT, SN_ERROR_TEXT } from "@/constants/constants";
 import { usePostUploadFile } from "@/controllers/API/queries/files/use-post-upload-file";
 import useAlertStore from "@/stores/alertStore";
 import { useUtilityStore } from "@/stores/utilityStore";

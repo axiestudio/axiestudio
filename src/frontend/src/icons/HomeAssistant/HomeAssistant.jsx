@@ -18,3 +18,5 @@ const SvgHomeAssistant = (props) => (
   </svg>
 );
 export default SvgHomeAssistant;
+
+export { SvgHomeAssistant };

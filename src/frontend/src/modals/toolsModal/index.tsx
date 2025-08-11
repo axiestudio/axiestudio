@@ -1,7 +1,7 @@
 import type { AgGridReact } from "ag-grid-react";
 import { cloneDeep } from "lodash";
 import { type ForwardedRef, forwardRef, useEffect, useState } from "react";
-import type { handleOnNewValueType } from "@/CustomNodes/hooks/use-handle-new-value";
+import type { handleOnNewValueType  } from "@/CustomNodes/hooks/use-handle-new-value";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import BaseModal from "../baseModal";
@@ -9,7 +9,7 @@ import ToolsTable from "./components/toolsTable";
 
 interface ToolsModalProps {
   open: boolean;
-  setOpen: (open: boolean) => void;
+  setOpen: (open: boolean)=> void;
   description: string;
   rows: {
     name: string;
@@ -95,3 +95,4 @@ const ToolsModal = forwardRef<AgGridReact, ToolsModalProps>(
 );
 
 export default ToolsModal;
+export { ToolsModal as ToolsModal };

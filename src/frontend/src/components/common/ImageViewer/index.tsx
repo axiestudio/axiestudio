@@ -1,15 +1,12 @@
 import { saveAs } from "file-saver";
 import OpenSeadragon from "openseadragon";
 import { useEffect, useRef, useState } from "react";
-import {
-  IMGViewErrorMSG,
-  IMGViewErrorTitle,
-} from "../../../constants/constants";
+import { IMGViewErrorMSG, IMGViewErrorTitle } from "../../../constants/constants";
 import useAlertStore from "../../../stores/alertStore";
 import { Separator } from "../../ui/separator";
 import ForwardedIconComponent from "../genericIconComponent";
 
-export default function ImageViewer({ image }: { image: string }) {
+function ImageViewer({ image }: { image: string }) {
   const viewerRef = useRef(null);
   const [_errorDownloading, _setErrordownloading] = useState(false);
   const setErrorList = useAlertStore((state) => state.setErrorData);
@@ -163,3 +160,7 @@ export default function ImageViewer({ image }: { image: string }) {
     </>
   );
 }
+
+
+export default ImageViewer;
+export { ImageViewer };

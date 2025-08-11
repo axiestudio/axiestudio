@@ -40,3 +40,5 @@ const SvgIcosa = (props) => (
   </svg>
 );
 export default SvgIcosa;
+
+export { SvgIcosa };

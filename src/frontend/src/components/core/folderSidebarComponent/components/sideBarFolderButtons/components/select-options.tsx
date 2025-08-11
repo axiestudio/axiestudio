@@ -1,19 +1,13 @@
-import IconComponent from "@/components/common/genericIconComponent";
-import ShadTooltip from "@/components/common/shadTooltipComponent";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select-custom";
+import { IconComponent } from "@/components/common/genericIconComponent";
+import { ShadTooltip } from "@/components/common/shadTooltipComponent";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select-custom";
 import { DEFAULT_FOLDER } from "@/constants/constants";
 import type { FolderType } from "@/pages/MainPage/entities";
 import { cn } from "@/utils/utils";
 import { handleSelectChange } from "../helpers/handle-select-change";
 import { FolderSelectItem } from "./folder-select-item";
 
-export const SelectOptions = ({
-  item,
+export const SelectOptions = ({item,
   index,
   handleDeleteFolder,
   handleDownloadFolder,
@@ -80,7 +74,7 @@ export const SelectOptions = ({
               data-testid="btn-delete-project"
               className="text-xs"
             >
-              <FolderSelectItem name="Delete" iconName="Trash2" />
+              <FolderSelectItem name={t("common.delete")} iconName="Trash2" />
             </SelectItem>
           )}
         </SelectContent>

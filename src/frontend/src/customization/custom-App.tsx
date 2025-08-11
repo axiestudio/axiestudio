@@ -1,5 +1,9 @@
 import App from "../App";
 
-export default function CustomApp() {
+function CustomApp() {
   return <App />;
 }
+
+
+export default CustomApp;
+export { CustomApp };

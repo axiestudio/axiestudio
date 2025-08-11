@@ -27,7 +27,7 @@ interface SecretKeyModalProps {
   modalProps?: ModalConfigProps;
 }
 
-export default function SecretKeyModal({
+function SecretKeyModal({
   children,
   data,
   onCloseModal,
@@ -161,3 +161,7 @@ export default function SecretKeyModal({
     </BaseModal>
   );
 }
+
+
+export default SecretKeyModal;
+export { SecretKeyModal };

@@ -1,5 +1,6 @@
 import * as Form from "@radix-ui/react-form";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import { Input } from "@/components/ui/input";
 import { ICON_STROKE_WIDTH } from "@/constants/constants";
@@ -10,7 +11,7 @@ import { getIconName } from "./components/helpers/get-icon-name";
 import CustomInputPopover from "./components/popover";
 import CustomInputPopoverObject from "./components/popoverObject";
 
-export default function InputComponent({
+function InputComponent({
   autoFocus = false,
   onBlur,
   value = "",
@@ -20,7 +21,7 @@ export default function InputComponent({
   isForm = false,
   password,
   editNode = false,
-  placeholder = "Type something...",
+  placeholder = t("common.defaultPlaceholder"),
   className,
   id = "",
   blurOnEnter = false,
@@ -43,15 +44,14 @@ export default function InputComponent({
   commandWidth,
   blockAddNewGlobalVariable = false,
   hasRefreshButton = false,
-}: InputComponentType): JSX.Element {
-  const [pwdVisible, setPwdVisible] = useState(false);
+}: InputComponentType): JSX.Element { const [pwdVisible, setPwdVisible] = useState(false);
   const refInput = useRef<HTMLInputElement>(null);
   const [showOptions, setShowOptions] = useState<boolean>(false);
 
   useEffect(() => {
     if (disabled && value && onChange && value !== "") {
       onChange("", true);
-    }
+     }
   }, [disabled]);
 
   function onInputLostFocus(event): void {
@@ -238,3 +238,6 @@ export default function InputComponent({
     </div>
   );
 }
+
+export default InputComponent;
+export { InputComponent };

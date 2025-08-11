@@ -2,32 +2,13 @@ import { useIsFetching, useIsMutating } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { DEFAULT_FOLDER } from "@/constants/constants";
 import { useUpdateUser } from "@/controllers/API/queries/auth";
-import {
-  usePatchFolders,
-  usePostFolders,
-  usePostUploadFolders,
-} from "@/controllers/API/queries/folders";
+import { usePatchFolders, usePostFolders, usePostUploadFolders } from "@/controllers/API/queries/folders";
 import { useGetDownloadFolders } from "@/controllers/API/queries/folders/use-get-download-folders";
 import { CustomStoreButton } from "@/customization/components/custom-store-button";
-import {
-  ENABLE_CUSTOM_PARAM,
-  ENABLE_DATASTAX_AXIESTUDIO,
-  ENABLE_FILE_MANAGEMENT,
-  ENABLE_MCP_NOTICE,
-} from "@/customization/feature-flags";
+import { ENABLE_CUSTOM_PARAM, ENABLE_DATASTAX_AXIESTUDIO, ENABLE_FILE_MANAGEMENT, ENABLE_MCP_NOTICE } from "@/customization/feature-flags";
 import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
 import { track } from "@/customization/utils/analytics";
 import { customGetDownloadFolderBlob } from "@/customization/utils/custom-get-download-folders";
@@ -486,3 +467,5 @@ const SideBarFoldersButtonsComponent = ({
   );
 };
 export default SideBarFoldersButtonsComponent;
+
+export { SideBarFoldersButtonsComponent };

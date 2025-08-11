@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { MessagesStoreType } from "../types/zustand/messages";
 
-export const useMessagesStore = create<MessagesStoreType>((set, get) => ({
+export const useMessagesStore= create<MessagesStoreType>((set, get) => ({
   displayLoadingMessage: false,
   deleteSession: (id) => {
     set((state) => {

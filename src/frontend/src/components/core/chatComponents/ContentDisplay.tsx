@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import rehypeMathjax from "rehype-mathjax";
 import remarkGfm from "remark-gfm";
-import type { ContentType } from "@/types/chat";
+import type { ContentType  } from "@/types/chat";
 import ForwardedIconComponent from "../../common/genericIconComponent";
 import SimplifiedCodeTabComponent from "../codeTabsComponent";
 import DurationDisplay from "./DurationDisplay";
 
-export default function ContentDisplay({
+function ContentDisplay({
   content,
   chatId,
   playgroundPage,
@@ -69,15 +70,14 @@ export default function ContentDisplay({
               pre({ node, ...props }) {
                 return <>{props.children}</>;
               },
-              code: ({ node, inline, className, children, ...props }) => {
-                let content = children as string;
+              code: ({ node, inline, className, children, ...props }) => { let content = children as string;
                 if (
                   Array.isArray(children) &&
                   children.length === 1 &&
                   typeof children[0] === "string"
                 ) {
                   content = children[0] as string;
-                }
+                 }
                 if (typeof content === "string") {
                   if (content.length) {
                     if (content[0] === "▍") {
@@ -267,3 +267,7 @@ export default function ContentDisplay({
     </div>
   );
 }
+
+
+export default ContentDisplay;
+export { ContentDisplay as ContentDisplay };

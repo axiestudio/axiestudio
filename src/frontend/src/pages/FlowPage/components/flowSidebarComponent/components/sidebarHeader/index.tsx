@@ -1,13 +1,8 @@
 import { memo } from "react";
-
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import ShadTooltip from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
-import {
-  Disclosure,
-  DisclosureContent,
-  DisclosureTrigger,
-} from "@/components/ui/disclosure";
+import { Disclosure, DisclosureContent, DisclosureTrigger } from "@/components/ui/disclosure";
 import { SidebarHeader, SidebarTrigger } from "@/components/ui/sidebar";
 import type { SidebarHeaderComponentProps } from "../../types";
 import FeatureToggles from "../featureTogglesComponent";

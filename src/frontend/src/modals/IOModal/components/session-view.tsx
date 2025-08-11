@@ -2,17 +2,14 @@ import { useIsFetching } from "@tanstack/react-query";
 import type { NewValueParams, SelectionChangedEvent } from "ag-grid-community";
 import cloneDeep from "lodash/cloneDeep";
 import { useMemo, useState } from "react";
-import Loading from "@/components/ui/loading";
-import {
-  useDeleteMessages,
-  useUpdateMessage,
-} from "@/controllers/API/queries/messages";
+import { Loading } from "@/components/ui/loading";
+import { useDeleteMessages, useUpdateMessage } from "@/controllers/API/queries/messages";
 import TableComponent from "../../../components/core/parameterRenderComponent/components/tableComponent";
 import useAlertStore from "../../../stores/alertStore";
 import { useMessagesStore } from "../../../stores/messagesStore";
 import { extractColumnsFromRows, messagesSorter } from "../../../utils/utils";
 
-export default function SessionView({
+function SessionView({
   session,
   id,
 }: {
@@ -115,3 +112,7 @@ export default function SessionView({
     />
   );
 }
+
+
+export default SessionView;
+export { SessionView };

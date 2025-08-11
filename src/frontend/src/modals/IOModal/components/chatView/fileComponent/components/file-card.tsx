@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useGetDownloadFileMutation } from "@/controllers/API/queries/files";
 import { ForwardedIconComponent } from "../../../../../../components/common/genericIconComponent";
 import { BASE_URL_API } from "../../../../../../constants/constants";
@@ -9,14 +10,13 @@ import DownloadButton from "./download-button";
 
 const imgTypes = new Set(["png", "jpg", "jpeg", "gif", "webp", "image"]);
 
-export default function FileCard({
+function FileCard({
   fileName,
   path,
   fileType,
   showFile = true,
-}: fileCardPropsType): JSX.Element | undefined {
-  const [isHovered, setIsHovered] = useState(false);
-  const { mutate } = useGetDownloadFileMutation({
+}: fileCardPropsType): JSX.Element | undefined { const [isHovered, setIsHovered] = useState(false);
+  const { mutate  } = useGetDownloadFileMutation({
     filename: fileName,
     path: path,
   });
@@ -78,3 +78,7 @@ export default function FileCard({
   }
   return undefined;
 }
+
+
+export default FileCard;
+export { FileCard };

@@ -36,6 +36,7 @@ from axiestudio.interface.components import get_and_cache_all_types_dict
 from axiestudio.interface.utils import setup_llm_caching
 from axiestudio.logging.logger import configure
 from axiestudio.middleware import ContentSizeLimitMiddleware
+# from axiestudio.translations.middleware import TranslationMiddleware
 from axiestudio.services.deps import (
     get_queue_service,
     get_settings_service,
@@ -299,6 +300,9 @@ def create_app():
         allow_headers=["*"],
     )
     app.add_middleware(JavaScriptMIMETypeMiddleware)
+
+    # Add translation middleware for internationalization
+    # app.add_middleware(TranslationMiddleware, default_language="en")
 
     @app.middleware("http")
     async def check_boundary(request: Request, call_next):

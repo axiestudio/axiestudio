@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function EditMessageField({
+function EditMessageField({
   message: initialMessage,
   onEdit,
   onCancel,
@@ -76,3 +76,7 @@ export default function EditMessageField({
     </div>
   );
 }
+
+
+export default EditMessageField;
+export { EditMessageField };

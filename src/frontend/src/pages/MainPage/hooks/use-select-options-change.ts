@@ -1,8 +1,7 @@
 import { useCallback } from "react";
-
-const useSelectOptionsChange = (
+const useSelectOptionsChange= (
   selectedFlowsComponentsCards: string[] | undefined,
-  setErrorData: (data: { title: string; list: string[] }) => void,
+  setErrorData: (data: { title: string; list: string[]  }) => void,
   setOpenDelete: (value: boolean) => void,
   handleExport: () => void,
   handleDuplicate: () => void,
@@ -42,3 +41,5 @@ const useSelectOptionsChange = (
 };
 
 export default useSelectOptionsChange;
+
+export { useSelectOptionsChange };

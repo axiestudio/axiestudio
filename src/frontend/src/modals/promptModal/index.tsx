@@ -1,4 +1,5 @@
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { useEffect, useRef, useState } from "react";
 import { usePostValidatePrompt } from "@/controllers/API/queries/nodes/use-post-validate-prompt";
 import IconComponent from "../../components/common/genericIconComponent";
@@ -7,18 +8,8 @@ import ShadTooltip from "../../components/common/shadTooltipComponent";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Textarea } from "../../components/ui/textarea";
-import {
-  BUG_ALERT,
-  PROMPT_ERROR_ALERT,
-  PROMPT_SUCCESS_ALERT,
-  TEMP_NOTICE_ALERT,
-} from "../../constants/alerts_constants";
-import {
-  EDIT_TEXT_PLACEHOLDER,
-  INVALID_CHARACTERS,
-  MAX_WORDS_HIGHLIGHT,
-  regexHighlight,
-} from "../../constants/constants";
+import { BUG_ALERT, PROMPT_ERROR_ALERT, PROMPT_SUCCESS_ALERT, TEMP_NOTICE_ALERT } from "../../constants/alerts_constants";
+import { EDIT_TEXT_PLACEHOLDER, INVALID_CHARACTERS, MAX_WORDS_HIGHLIGHT, regexHighlight } from "../../constants/constants";
 import useAlertStore from "../../stores/alertStore";
 import type { PromptModalType } from "../../types/components";
 import { handleKeyDown } from "../../utils/reactflowUtils";
@@ -26,7 +17,7 @@ import { classNames } from "../../utils/utils";
 import BaseModal from "../baseModal";
 import varHighlightHTML from "./utils/var-highlight-html";
 
-export default function PromptModal({
+function PromptModal({
   field_name = "",
   value,
   setValue,
@@ -36,8 +27,7 @@ export default function PromptModal({
   disabled,
   id = "",
   readonly = false,
-}: PromptModalType): JSX.Element {
-  const [modalOpen, setModalOpen] = useState(false);
+}: PromptModalType): JSX.Element { const [modalOpen, setModalOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value);
   const [isEdit, setIsEdit] = useState(true);
   const [wordsHighlight, setWordsHighlight] = useState<Set<string>>(new Set());
@@ -46,7 +36,7 @@ export default function PromptModal({
   const setNoticeData = useAlertStore((state) => state.setNoticeData);
   const divRef = useRef(null);
   const _divRefPrompt = useRef(null);
-  const { mutate: postValidatePrompt } = usePostValidatePrompt();
+  const { mutate: postValidatePrompt  } = usePostValidatePrompt();
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   const [scrollPosition, setScrollPosition] = useState(0);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -341,3 +331,7 @@ export default function PromptModal({
     </BaseModal>
   );
 }
+
+
+export default PromptModal;
+export { PromptModal };

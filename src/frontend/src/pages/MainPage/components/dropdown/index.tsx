@@ -1,4 +1,5 @@
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
+import { useTranslation } from "react-i18next";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import useAlertStore from "@/stores/alertStore";
 import type { FlowType } from "@/types/flow";
@@ -17,10 +18,9 @@ const DropdownComponent = ({
   setOpenDelete,
   handleExport,
   handleEdit,
-}: DropdownComponentProps) => {
-  const setSuccessData = useAlertStore((state) => state.setSuccessData);
+}: DropdownComponentProps) => { const setSuccessData = useAlertStore((state) => state.setSuccessData);
   const setErrorData = useAlertStore((state) => state.setErrorData);
-  const { handleDuplicate } = useDuplicateFlow({ flow: flowData });
+  const { handleDuplicate  } = useDuplicateFlow({ flow: flowData });
 
   const duplicateFlow = () => {
     handleDuplicate().then(() =>
@@ -53,9 +53,7 @@ const DropdownComponent = ({
           name="SquarePen"
           aria-hidden="true"
           className="mr-2 h-4 w-4"
-        />
-        Edit details
-      </DropdownMenuItem>
+        />{t("actions.editdetails")}</DropdownMenuItem>
       <DropdownMenuItem
         onClick={(e) => {
           e.stopPropagation();
@@ -68,9 +66,7 @@ const DropdownComponent = ({
           name="Download"
           aria-hidden="true"
           className="mr-2 h-4 w-4"
-        />
-        Export
-      </DropdownMenuItem>
+        />{t("common.export")}</DropdownMenuItem>
       <DropdownMenuItem
         onClick={(e) => {
           e.stopPropagation();
@@ -106,3 +102,5 @@ const DropdownComponent = ({
 };
 
 export default DropdownComponent;
+
+export { DropdownComponent };

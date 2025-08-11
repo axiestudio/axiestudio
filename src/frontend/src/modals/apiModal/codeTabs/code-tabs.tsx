@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import {
-  oneDark,
-  oneLight,
-} from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { useShallow } from "zustand/react/shallow";
 import IconComponent from "@/components/common/genericIconComponent";
 import { Button } from "@/components/ui/button";
@@ -33,7 +30,7 @@ const operatingSystemTabs = [
   },
 ];
 
-export default function APITabsComponent() {
+function APITabsComponent() {
   const [isCopied, setIsCopied] = useState<Boolean>(false);
   const [copiedStep, setCopiedStep] = useState<string | null>(null);
   const endpointName = useFlowStore(
@@ -247,7 +244,7 @@ export default function APITabsComponent() {
                             />
                           ) : (
                             <IconComponent
-                              name="Copy"
+                              name={t("common.copy")}
                               className="!h-5 !w-5 text-muted-foreground"
                             />
                           )}
@@ -286,7 +283,7 @@ export default function APITabsComponent() {
                         />
                       ) : (
                         <IconComponent
-                          name="Copy"
+                          name={t("common.copy")}
                           className="!h-5 !w-5 text-muted-foreground"
                         />
                       )}
@@ -309,3 +306,7 @@ export default function APITabsComponent() {
     </div>
   );
 }
+
+
+export default APITabsComponent;
+export { APITabsComponent };

@@ -20,3 +20,5 @@ const SvgOpenAi = (props) => (
   </svg>
 );
 export default SvgOpenAi;
+
+export { SvgOpenAi };

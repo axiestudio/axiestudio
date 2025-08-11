@@ -22,3 +22,5 @@ const HeaderMessagesComponent = () => {
   );
 };
 export default HeaderMessagesComponent;
+
+export { HeaderMessagesComponent };

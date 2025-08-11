@@ -1,11 +1,7 @@
 import { Cross2Icon } from "@radix-ui/react-icons";
 import { forwardRef, useEffect, useState } from "react";
 import IconComponent from "../../components/common/genericIconComponent";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../../components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../../components/ui/popover";
 import { ZERO_NOTIFICATIONS } from "../../constants/constants";
 import useAlertStore from "../../stores/alertStore";
 import type { AlertDropdownType } from "../../types/alerts";
@@ -93,3 +89,4 @@ const AlertDropdown = forwardRef<HTMLDivElement, AlertDropdownType>(
 );
 
 export default AlertDropdown;
+export { AlertDropdown };

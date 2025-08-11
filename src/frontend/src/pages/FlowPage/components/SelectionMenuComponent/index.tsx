@@ -6,7 +6,7 @@ import { Button } from "../../../../components/ui/button";
 import { GradientGroup } from "../../../../icons/GradientSparkles";
 import useFlowStore from "../../../../stores/flowStore";
 import { validateSelection } from "../../../../utils/reactflowUtils";
-export default function SelectionMenu({
+function SelectionMenu({
   onClick,
   nodes,
   isVisible,
@@ -117,3 +117,7 @@ export default function SelectionMenu({
     </NodeToolbar>
   );
 }
+
+
+export default SelectionMenu;
+export { SelectionMenu };

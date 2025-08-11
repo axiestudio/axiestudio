@@ -5,23 +5,19 @@ import type {
 } from "ag-grid-community";
 import { useRef, useState } from "react";
 
+import { useTranslation } from "react-i18next";
 import Dropdown from "@/components/core/dropdownComponent";
 import GlobalVariableModal from "@/components/core/GlobalVariableModal/GlobalVariableModal";
 import TableComponent from "@/components/core/parameterRenderComponent/components/tableComponent";
-import {
-  useDeleteGlobalVariables,
-  useGetGlobalVariables,
-} from "@/controllers/API/queries/variables";
+import { useDeleteGlobalVariables, useGetGlobalVariables } from "@/controllers/API/queries/variables";
 import type { GlobalVariable } from "@/types/global_variables";
-import IconComponent, {
-  ForwardedIconComponent,
-} from "../../../../components/common/genericIconComponent";
+import IconComponent, { ForwardedIconComponent,
+ } from "../../../../components/common/genericIconComponent";
 import { Badge } from "../../../../components/ui/badge";
 import { Button } from "../../../../components/ui/button";
 import useAlertStore from "../../../../stores/alertStore";
 
-export default function GlobalVariablesPage() {
-  const setErrorData = useAlertStore((state) => state.setErrorData);
+function GlobalVariablesPage() {const setErrorData = useAlertStore((state) => state.setErrorData);
   const [openModal, setOpenModal] = useState(false);
   const initialData = useRef<GlobalVariable | undefined>(undefined);
   const BadgeRenderer = (props) => {
@@ -36,9 +32,8 @@ export default function GlobalVariablesPage() {
     );
   };
 
-  const DropdownEditor = ({ options, value, onValueChange }) => {
-    return (
-      <Dropdown options={options} value={value} onSelect={onValueChange}>
+  const DropdownEditor = ({ options, value, onValueChange }) => { return (
+      <Dropdown options={options } value={value} onSelect={onValueChange}>
         <div className="-mt-1.5 w-full"></div>
       </Dropdown>
     );
@@ -46,7 +41,7 @@ export default function GlobalVariablesPage() {
   // Column Definitions: Defines the columns to be displayed.
   const colDefs: ColDef[] = [
     {
-      headerName: "Variable Name",
+      headerName: t("labels.variablename"),
       field: "name",
       flex: 2,
     }, //This column will be twice as wide as the others
@@ -64,7 +59,7 @@ export default function GlobalVariablesPage() {
       field: "value",
     },
     {
-      headerName: "Apply To Fields",
+      headerName: t("common.applytofields"),
       field: "default_fields",
       valueFormatter: (params) => {
         return params.value?.join(", ") ?? "";
@@ -105,23 +100,17 @@ export default function GlobalVariablesPage() {
     <div className="flex h-full w-full flex-col justify-between gap-6">
       <div className="flex w-full items-start justify-between gap-6">
         <div className="flex w-full flex-col">
-          <h2 className="flex items-center text-lg font-semibold tracking-tight">
-            Global Variables
-            <ForwardedIconComponent
+          <h2 className="flex items-center text-lg font-semibold tracking-tight">{t("common.globalvariables")}<ForwardedIconComponent
               name="Globe"
               className="ml-2 h-5 w-5 text-primary"
             />
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Manage global variables and assign them to fields.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("common.manageglobalvariablesand")}</p>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
           <GlobalVariableModal asChild>
             <Button data-testid="api-key-button-store" variant="primary">
-              <IconComponent name="Plus" className="w-4" />
-              Add New
-            </Button>
+              <IconComponent name="Plus" className="w-4" />{t("actions.addnew")}</Button>
           </GlobalVariableModal>
         </div>
       </div>
@@ -153,3 +142,7 @@ export default function GlobalVariablesPage() {
     </div>
   );
 }
+
+
+export default GlobalVariablesPage;
+export { GlobalVariablesPage };

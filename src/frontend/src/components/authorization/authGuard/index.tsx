@@ -1,9 +1,5 @@
 import { useEffect } from "react";
-import {
-  IS_AUTO_LOGIN,
-  AXIESTUDIO_ACCESS_TOKEN_EXPIRE_SECONDS,
-  AXIESTUDIO_ACCESS_TOKEN_EXPIRE_SECONDS_ENV,
-} from "@/constants/constants";
+import { IS_AUTO_LOGIN, AXIESTUDIO_ACCESS_TOKEN_EXPIRE_SECONDS, AXIESTUDIO_ACCESS_TOKEN_EXPIRE_SECONDS_ENV } from "@/constants/constants";
 import { useRefreshAccessToken } from "@/controllers/API/queries/auth";
 import { CustomNavigate } from "@/customization/components/custom-navigate";
 import useAuthStore from "@/stores/authStore";

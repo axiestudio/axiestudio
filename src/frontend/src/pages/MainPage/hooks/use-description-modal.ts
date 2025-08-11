@@ -33,3 +33,5 @@ const useDescriptionModal = (
 };
 
 export default useDescriptionModal;
+
+export { useDescriptionModal };

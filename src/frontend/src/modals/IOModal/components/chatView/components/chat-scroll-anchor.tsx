@@ -11,7 +11,7 @@ export function ChatScrollAnchor({
   trackVisibility,
   canScroll,
 }: ChatScrollAnchorProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef= useRef<HTMLDivElement>(null);
 
   const playgroundScrollBehaves = useUtilityStore(
     (state) => state.playgroundScrollBehaves,

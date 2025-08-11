@@ -27,7 +27,7 @@ type FlowType = {
   tags?: string[];
   folder_id?: string;
   mcp_enabled?: boolean;
-};
+ };
 
 // Mock the getRandomDescription function
 const mockGetRandomDescription = jest.fn(() => "Random Description");

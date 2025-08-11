@@ -33,3 +33,5 @@ const TextEditorArea = ({
 };
 
 export default TextEditorArea;
+
+export { TextEditorArea };

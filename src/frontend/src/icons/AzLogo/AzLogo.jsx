@@ -15,3 +15,5 @@ const SvgAzLogo = (props) => (
   </svg>
 );
 export default SvgAzLogo;
+
+export { SvgAzLogo };

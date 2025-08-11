@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import type { VertexBuildTypeAPI } from "../../types/api";
 import { isErrorLog } from "../../types/utils/typeCheckingUtils";
 
-const useValidationStatusString = (
+const useValidationStatusString= (
   validationStatus: VertexBuildTypeAPI | null,
   setValidationString: (value: any) => void,
 ) => {
@@ -21,3 +21,5 @@ const useValidationStatusString = (
 };
 
 export default useValidationStatusString;
+
+export { useValidationStatusString };

@@ -19,3 +19,5 @@ const SvgPerplexity = (props) => (
 );
 
 export default SvgPerplexity;
+
+export { SvgPerplexity };

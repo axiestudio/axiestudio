@@ -1,6 +1,6 @@
 import _ from "lodash";
 import { useCallback, useEffect, useState } from "react";
-import IconComponent from "../../../../../components/common/genericIconComponent";
+import { IconComponent } from "../../../../../components/common/genericIconComponent";
 import { Input } from "../../../../../components/ui/input";
 import { classNames } from "../../../../../utils/utils";
 
@@ -137,3 +137,5 @@ const IOKeyPairInput = ({
 };
 
 export default IOKeyPairInput;
+
+export { IOKeyPairInput };

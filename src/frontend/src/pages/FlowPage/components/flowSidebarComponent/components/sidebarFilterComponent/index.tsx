@@ -1,5 +1,5 @@
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import ShadTooltip from "@/components/common/shadTooltipComponent";
+import { ShadTooltip } from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
 
 export function SidebarFilterComponent({

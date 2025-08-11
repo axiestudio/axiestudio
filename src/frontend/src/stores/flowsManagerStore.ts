@@ -142,3 +142,4 @@ const useFlowsManagerStore = create<FlowsManagerStoreType>((set, get) => ({
 }));
 
 export default useFlowsManagerStore;
+export { useFlowsManagerStore };

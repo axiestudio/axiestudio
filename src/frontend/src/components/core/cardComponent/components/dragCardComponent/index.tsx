@@ -3,7 +3,7 @@ import { cn } from "../../../../../utils/utils";
 import ForwardedIconComponent from "../../../../common/genericIconComponent";
 import { Card, CardHeader, CardTitle } from "../../../../ui/card";
 
-export default function DragCardComponent({ data }: { data: FlowType }) {
+function DragCardComponent({ data }: { data: FlowType }) {
   return (
     <>
       <Card
@@ -36,3 +36,7 @@ export default function DragCardComponent({ data }: { data: FlowType }) {
     </>
   );
 }
+
+
+export default DragCardComponent;
+export { DragCardComponent };

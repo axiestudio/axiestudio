@@ -1,14 +1,11 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import JsonOutputViewComponent from "@/components/core/jsonOutputComponent/json-output-view";
 import { MAX_TEXT_LENGTH } from "@/constants/constants";
 import type { LogsLogType, OutputLogType } from "@/types/api";
 import ForwardedIconComponent from "../../../../../../components/common/genericIconComponent";
 import DataOutputComponent from "../../../../../../components/core/dataOutputComponent";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "../../../../../../components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "../../../../../../components/ui/alert";
 import { Case } from "../../../../../../shared/components/caseComponent";
 import TextOutputView from "../../../../../../shared/components/textOutputView";
 import useFlowStore from "../../../../../../stores/flowStore";
@@ -18,15 +15,14 @@ import ErrorOutput from "./components";
 interface SwitchOutputViewProps {
   nodeId: string;
   outputName: string;
-  type: "Outputs" | "Logs";
+  type: string;
 }
 
 const SwitchOutputView: React.FC<SwitchOutputViewProps> = ({
   nodeId,
   outputName,
   type,
-}) => {
-  const flowPool = useFlowStore((state) => state.flowPool);
+}) => { const flowPool = useFlowStore((state) => state.flowPool);
 
   const flowPoolNode = (flowPool[nodeId] ?? [])[
     (flowPool[nodeId]?.length ?? 1) - 1
@@ -35,7 +31,7 @@ const SwitchOutputView: React.FC<SwitchOutputViewProps> = ({
   const results: OutputLogType | LogsLogType =
     (type === "Outputs"
       ? flowPoolNode?.data?.outputs?.[outputName]
-      : flowPoolNode?.data?.logs?.[outputName]) ?? {};
+      : flowPoolNode?.data?.logs?.[outputName]) ?? { };
   const resultType = results?.type;
   let resultMessage = results?.message ?? {};
   const RECORD_TYPES = ["array", "message"];
@@ -150,3 +146,5 @@ const SwitchOutputView: React.FC<SwitchOutputViewProps> = ({
 };
 
 export default SwitchOutputView;
+
+export { SwitchOutputView };

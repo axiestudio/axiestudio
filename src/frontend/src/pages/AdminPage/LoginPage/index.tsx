@@ -13,7 +13,7 @@ import type {
   loginInputStateType,
 } from "../../../types/components";
 
-export default function LoginAdminPage() {
+function LoginAdminPage() {
   const [inputState, setInputState] =
     useState<loginInputStateType>(CONTROL_LOGIN_STATE);
   const { login } = useContext(AuthContext);
@@ -23,7 +23,7 @@ export default function LoginAdminPage() {
   function handleInput({
     target: { name, value },
   }: inputHandlerEventType): void {
-    setInputState((prev) => ({ ...prev, [name]: value }));
+  setInputState((prev) => ({ ...prev, [name]: value }));
   }
 
   const { mutate } = useLoginUser();
@@ -54,10 +54,10 @@ export default function LoginAdminPage() {
         <span className="mb-6 text-2xl font-semibold text-primary">Admin</span>
         <Input
           onChange={({ target: { value } }) => {
-            handleInput({ target: { name: "username", value } });
+  handleInput({ target: { name: "username", value } });
           }}
           className="bg-background"
-          placeholder="Username"
+          placeholder={t("auth.username")}
         />
         <Input
           type="password"
@@ -65,7 +65,7 @@ export default function LoginAdminPage() {
             handleInput({ target: { name: "password", value } });
           }}
           className="bg-background"
-          placeholder="Password"
+          placeholder={t("auth.password")}
         />
         <Button
           onClick={() => {
@@ -80,3 +80,7 @@ export default function LoginAdminPage() {
     </div>
   );
 }
+
+
+export default LoginAdminPage;
+export { LoginAdminPage };

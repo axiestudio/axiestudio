@@ -20,3 +20,5 @@ const buildQueryStringUrl = (baseUrl: string, params: QueryParams): string => {
 };
 
 export default buildQueryStringUrl;
+
+export { buildQueryStringUrl };

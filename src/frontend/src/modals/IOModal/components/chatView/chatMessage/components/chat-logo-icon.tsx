@@ -1,4 +1,4 @@
-export default function LogoIcon() {
+function LogoIcon() {
   return (
     <div className="relative flex h-8 w-8 items-center justify-center rounded-md bg-muted">
       <div className="flex h-8 w-8 items-center justify-center">
@@ -15,3 +15,7 @@ export default function LogoIcon() {
     </div>
   );
 }
+
+
+export default LogoIcon;
+export { LogoIcon };

@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef  } from "react";
 import SvgOllama from "./Ollama";
 
 export const OllamaIcon = forwardRef<

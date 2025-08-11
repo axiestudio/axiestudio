@@ -4,9 +4,14 @@ import { RouterProvider } from "react-router-dom";
 import { LoadingPage } from "./pages/LoadingPage";
 import router from "./routes";
 import { useDarkStore } from "./stores/darkStore";
+import { useLanguageInitialization } from "./components/ui/language-switcher";
 
-export default function App() {
+function App() {
   const dark = useDarkStore((state) => state.dark);
+
+  // Initialize language detection and switching
+  useLanguageInitialization();
+
   useEffect(() => {
     if (!dark) {
       document.getElementById("body")!.classList.remove("dark");
@@ -20,3 +25,7 @@ export default function App() {
     </Suspense>
   );
 }
+
+
+export default App;
+export { App };

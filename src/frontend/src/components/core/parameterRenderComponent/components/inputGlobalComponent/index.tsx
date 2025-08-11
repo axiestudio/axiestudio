@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useGetGlobalVariables } from "@/controllers/API/queries/variables";
 import GeneralDeleteConfirmationModal from "@/shared/components/delete-confirmation-modal";
 import { useGlobalVariablesStore } from "@/stores/globalVariablesStore/globalVariables";
@@ -11,7 +12,7 @@ import { getPlaceholder } from "../../helpers/get-placeholder-disabled";
 import type { InputGlobalComponentType, InputProps } from "../../types";
 import InputComponent from "../inputComponent";
 
-export default function InputGlobalComponent({
+function InputGlobalComponent({
   display_name,
   disabled,
   handleOnNewValue,
@@ -23,8 +24,7 @@ export default function InputGlobalComponent({
   placeholder,
   isToolMode = false,
   hasRefreshButton = false,
-}: InputProps<string, InputGlobalComponentType>): JSX.Element {
-  const { data: globalVariables } = useGetGlobalVariables();
+}: InputProps<string, InputGlobalComponentType>): JSX.Element { const { data: globalVariables  } = useGetGlobalVariables();
   const unavailableFields = useGlobalVariablesStore(
     (state) => state.unavailableFields,
   );
@@ -139,3 +139,6 @@ export default function InputGlobalComponent({
     />
   );
 }
+
+export default InputGlobalComponent;
+export { InputGlobalComponent };

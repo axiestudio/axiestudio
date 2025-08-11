@@ -1,6 +1,6 @@
 import DictAreaModal from "../../../modals/dictAreaModal";
 
-export default function ObjectRender({
+function ObjectRender({
   object,
   setValue,
 }: {
@@ -27,3 +27,7 @@ export default function ObjectRender({
     </DictAreaModal>
   );
 }
+
+
+export default ObjectRender;
+export { ObjectRender };

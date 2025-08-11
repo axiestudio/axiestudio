@@ -7,14 +7,14 @@ import { useDarkStore } from "../../../../../../../../stores/darkStore";
 import { cn } from "../../../../../../../../utils/utils";
 import usePreloadImages from "./hooks/use-preload-images";
 
-export type ProfilePictureChooserComponentProps = {
+export type ProfilePictureChooserComponentProps= {
   profilePictures?: ProfilePicturesQueryResponse;
   loading: boolean;
   value: string;
   onChange: (value: string) => void;
 };
 
-export default function ProfilePictureChooserComponent({
+function ProfilePictureChooserComponent({
   profilePictures,
   loading,
   value,
@@ -75,3 +75,7 @@ export default function ProfilePictureChooserComponent({
     </div>
   );
 }
+
+
+export default ProfilePictureChooserComponent;
+export { ProfilePictureChooserComponent };

@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef  } from "react";
 import SvgWatsonxAI from "./WatsonxAI";
 
 export const WatsonxAiIcon = forwardRef<

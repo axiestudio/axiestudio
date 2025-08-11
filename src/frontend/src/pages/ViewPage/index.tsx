@@ -4,7 +4,7 @@ import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
 import useFlowsManagerStore from "../../stores/flowsManagerStore";
 import Page from "../FlowPage/components/PageComponent";
 
-export default function ViewPage() {
+function ViewPage() {
   const setCurrentFlow = useFlowsManagerStore((state) => state.setCurrentFlow);
 
   const { id } = useParams();
@@ -36,3 +36,7 @@ export default function ViewPage() {
     </div>
   );
 }
+
+
+export default ViewPage;
+export { ViewPage };

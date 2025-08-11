@@ -6,10 +6,7 @@ import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import { useTypesStore } from "@/stores/typesStore";
 import type { useQueryFunctionType } from "@/types/api";
 import type { FlowType, PaginatedFlowsType } from "@/types/flow";
-import {
-  extractFieldsFromComponenents,
-  processFlows,
-} from "@/utils/reactflowUtils";
+import { extractFieldsFromComponenents, processFlows } from "@/utils/reactflowUtils";
 import { api } from "../../api";
 import { getURL } from "../../helpers/constants";
 import { UseRequestProcessor } from "../../services/request-processor";

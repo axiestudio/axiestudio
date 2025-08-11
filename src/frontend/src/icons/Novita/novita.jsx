@@ -14,3 +14,5 @@ const SvgNovita = (props) => (
   </svg>
 );
 export default SvgNovita;
+
+export { SvgNovita };

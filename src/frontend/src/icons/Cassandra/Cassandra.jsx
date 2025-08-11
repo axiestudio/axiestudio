@@ -71,3 +71,5 @@ const CassandraSVG = (props) => (
   </svg>
 );
 export default CassandraSVG;
+
+export { CassandraSVG };

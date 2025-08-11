@@ -11,3 +11,5 @@ const SvgEvernoteIcon = (props) => (
   </svg>
 );
 export default SvgEvernoteIcon;
+
+export { SvgEvernoteIcon };

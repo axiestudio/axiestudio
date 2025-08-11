@@ -1,8 +1,8 @@
 import ForwardedIconComponent from "../../../../../components/common/genericIconComponent";
-import RenderIcons from "../../../../../components/common/renderIconComponent";
-import type { toolbarSelectItemProps } from "../../../../../types/components";
+import { RenderIcons } from "../../../../../components/common/renderIconComponent";
+import type { toolbarSelectItemProps  } from "../../../../../types/components";
 
-export default function ToolbarSelectItem({
+function ToolbarSelectItem({
   value,
   icon,
   style,
@@ -26,3 +26,7 @@ export default function ToolbarSelectItem({
     </div>
   );
 }
+
+
+export default ToolbarSelectItem;
+export { ToolbarSelectItem };

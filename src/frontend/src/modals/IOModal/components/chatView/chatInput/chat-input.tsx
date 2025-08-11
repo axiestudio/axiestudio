@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import ShortUniqueId from "short-unique-id";
+import { useTranslation } from "react-i18next";
+import { ShortUniqueId } from "short-unique-id";
 import { usePostUploadFile } from "@/controllers/API/queries/files/use-post-upload-file";
 import { ENABLE_IMAGE_ON_PLAYGROUND } from "@/customization/feature-flags";
 import useFileSizeValidator from "@/shared/hooks/use-file-size-validator";
@@ -8,11 +9,7 @@ import useAlertStore from "@/stores/alertStore";
 import useFlowStore from "@/stores/flowStore";
 import { useUtilityStore } from "@/stores/utilityStore";
 import { useVoiceStore } from "@/stores/voiceStore";
-import {
-  ALLOWED_IMAGE_INPUT_EXTENSIONS,
-  FS_ERROR_TEXT,
-  SN_ERROR_TEXT,
-} from "../../../../../constants/constants";
+import { ALLOWED_IMAGE_INPUT_EXTENSIONS, FS_ERROR_TEXT, SN_ERROR_TEXT } from "../../../../../constants/constants";
 import useFlowsManagerStore from "../../../../../stores/flowsManagerStore";
 import type {
   ChatInputType,
@@ -24,7 +21,7 @@ import { VoiceAssistant } from "./components/voice-assistant/voice-assistant";
 import useAutoResizeTextArea from "./hooks/use-auto-resize-text-area";
 import useFocusOnUnlock from "./hooks/use-focus-unlock";
 
-export default function ChatInput({
+function ChatInput({
   sendMessage,
   inputRef,
   noInput,
@@ -32,11 +29,10 @@ export default function ChatInput({
   setFiles,
   isDragging,
   playgroundPage,
-}: ChatInputType): JSX.Element {
-  const currentFlowId = useFlowsManagerStore((state) => state.currentFlowId);
+}: ChatInputType): JSX.Element { const currentFlowId = useFlowsManagerStore((state) => state.currentFlowId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const setErrorData = useAlertStore((state) => state.setErrorData);
-  const { validateFileSize } = useFileSizeValidator();
+  const { validateFileSize  } = useFileSizeValidator();
   const stopBuilding = useFlowStore((state) => state.stopBuilding);
   const isBuilding = useFlowStore((state) => state.isBuilding);
   const chatValue = useUtilityStore((state) => state.chatValueStore);
@@ -255,3 +251,7 @@ export default function ChatInput({
     </AnimatePresence>
   );
 }
+
+
+export default ChatInput;
+export { ChatInput };

@@ -38,3 +38,5 @@ const VoiceButton = ({ toggleRecording }: VoiceButtonProps) => {
 };
 
 export default VoiceButton;
+
+export { VoiceButton };

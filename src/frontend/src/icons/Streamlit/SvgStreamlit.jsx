@@ -1,4 +1,4 @@
-export default function SvgStreamlit(props) {
+function SvgStreamlit(props) {
   return (
     <svg
       viewBox="0 0 301 165"
@@ -21,3 +21,7 @@ export default function SvgStreamlit(props) {
     </svg>
   );
 }
+
+
+export default SvgStreamlit;
+export { SvgStreamlit };

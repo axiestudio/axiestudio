@@ -23,3 +23,5 @@ const SvgSambaNovaLogo = ({ ...props }) => (
   </svg>
 );
 export default SvgSambaNovaLogo;
+
+export { SvgSambaNovaLogo };

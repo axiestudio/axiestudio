@@ -58,3 +58,5 @@ function DataOutputComponent({
 }
 
 export default DataOutputComponent;
+
+export { DataOutputComponent };

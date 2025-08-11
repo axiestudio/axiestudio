@@ -1,4 +1,4 @@
-export const useStopRecording = (
+export const useStopRecording= (
   microphoneRef,
   processorRef: React.MutableRefObject<AudioWorkletNode | null>,
   analyserRef: React.MutableRefObject<AnalyserNode | null>,
@@ -8,7 +8,7 @@ export const useStopRecording = (
   if (microphoneRef.current) {
     microphoneRef.current.disconnect();
     microphoneRef.current = null;
-  }
+   }
   if (processorRef.current) {
     processorRef.current.disconnect();
     processorRef.current = null;

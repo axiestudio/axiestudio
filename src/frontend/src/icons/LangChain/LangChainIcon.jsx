@@ -20,3 +20,5 @@ const SvgLangChainIcon = (props) => (
   </svg>
 );
 export default SvgLangChainIcon;
+
+export { SvgLangChainIcon };

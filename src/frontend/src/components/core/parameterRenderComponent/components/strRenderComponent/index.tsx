@@ -1,9 +1,9 @@
 import type { InputProps, StrRenderComponentType } from "../../types";
-import CopyFieldAreaComponent from "../copyFieldAreaComponent";
-import DropdownComponent from "../dropdownComponent";
-import InputGlobalComponent from "../inputGlobalComponent";
-import TextAreaComponent from "../textAreaComponent";
-import WebhookFieldComponent from "../webhookFieldComponent";
+import { CopyFieldAreaComponent } from "../copyFieldAreaComponent";
+import { DropdownComponent } from "../dropdownComponent";
+import { InputGlobalComponent } from "../inputGlobalComponent";
+import { TextAreaComponent } from "../textAreaComponent";
+import { WebhookFieldComponent } from "../webhookFieldComponent";
 
 export function StrRenderComponent({
   templateData,
@@ -14,7 +14,7 @@ export function StrRenderComponent({
   nodeClass,
   handleNodeClass,
   ...baseInputProps
-}: InputProps<string, StrRenderComponentType>) {
+ }: InputProps<string, StrRenderComponentType>) {
   const { handleOnNewValue, id, isToolMode, nodeInformationMetadata } =
     baseInputProps;
 
@@ -85,3 +85,7 @@ export function StrRenderComponent({
     );
   }
 }
+
+
+export default noOptions;
+export { noOptions as StrRenderComponent };

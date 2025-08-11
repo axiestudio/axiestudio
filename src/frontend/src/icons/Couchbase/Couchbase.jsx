@@ -15,3 +15,5 @@ const SvgCouchbaseIcon = (props) => (
 );
 
 export default SvgCouchbaseIcon;
+
+export { SvgCouchbaseIcon };

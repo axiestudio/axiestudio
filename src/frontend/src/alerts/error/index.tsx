@@ -1,24 +1,24 @@
 import { Transition } from "@headlessui/react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import IconComponent from "../../components/common/genericIconComponent";
-import type { ErrorAlertType } from "../../types/alerts";
+import { IconComponent } from "../../components/common/genericIconComponent";
+import type { ErrorAlertType  } from "../../types/alerts";
 
-export default function ErrorAlert({
+function ErrorAlert({
   title,
   list = [],
   id,
   removeAlert,
-}: ErrorAlertType): JSX.Element {
-  const [show, setShow] = useState(true);
+}: ErrorAlertType): JSX.Element { const [show, setShow] = useState(true);
   useEffect(() => {
     if (show) {
       setTimeout(() => {
         setShow(false);
         setTimeout(() => {
           removeAlert(id);
-        }, 500);
+         }, 500);
       }, 5000);
     }
   }, [id, removeAlert, show]);
@@ -89,3 +89,6 @@ export default function ErrorAlert({
     </Transition>
   );
 }
+
+export default ErrorAlert;
+export { ErrorAlert };

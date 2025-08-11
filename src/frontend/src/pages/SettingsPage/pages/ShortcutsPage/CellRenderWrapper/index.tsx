@@ -1,8 +1,12 @@
 import type { CustomCellRendererProps } from "ag-grid-react";
-import RenderIcons from "@/components/common/renderIconComponent";
+import { RenderIcons } from "@/components/common/renderIconComponent";
 
-export default function CellRenderShortcuts(params: CustomCellRendererProps) {
+function CellRenderShortcuts(params: CustomCellRendererProps) {
   const shortcut = params.value;
   const splitShortcut = shortcut?.split("+");
-  return <RenderIcons filteredShortcut={splitShortcut} tableRender />;
+  return <RenderIcons filteredShortcut={splitShortcut } tableRender />;
 }
+
+
+export default CellRenderShortcuts;
+export { CellRenderShortcuts };

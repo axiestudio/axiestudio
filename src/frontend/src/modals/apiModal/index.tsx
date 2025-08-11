@@ -22,10 +22,10 @@ import { useTweaksStore } from "../../stores/tweaksStore";
 import BaseModal from "../baseModal";
 import APITabsComponent from "./codeTabs/code-tabs";
 
-const MAX_LENGTH = 20;
+const MAX_LENGTH= 20;
 const MIN_LENGTH = 1;
 
-export default function ApiModal({
+function ApiModal({
   children,
   open: myOpen,
   setOpen: mySetOpen,
@@ -212,3 +212,7 @@ export default function ApiModal({
     </>
   );
 }
+
+
+export default ApiModal;
+export { ApiModal as ApiModal };

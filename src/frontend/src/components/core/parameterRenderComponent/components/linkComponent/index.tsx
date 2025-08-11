@@ -6,16 +6,15 @@ import type { InputProps, LinkComponentType } from "../../types";
 
 const DEFAULT_ICON = "ExternalLink";
 
-export default function LinkComponent({
+function LinkComponent({
   value,
   disabled = false,
   id = "",
   text,
   icon,
-}: InputProps<string, LinkComponentType>): JSX.Element {
-  function handleOpenLink() {
+}: InputProps<string, LinkComponentType>): JSX.Element { function handleOpenLink() {
     if (value) {
-      const url = !/^https?:\/\//i.test(value) ? `https://${value}` : value;
+      const url = !/^https?:\/\//i.test(value) ? `https://${value }` : value;
       customOpenNewTab(url);
     }
   }
@@ -26,6 +25,7 @@ export default function LinkComponent({
   );
 
   const ButtonContent = ({ icon, text }: { icon: string; text: string }) => {
+  
     return (
       <div className="flex items-center gap-2">
         <IconComponent
@@ -54,3 +54,7 @@ export default function LinkComponent({
     </div>
   );
 }
+
+
+export default LinkComponent;
+export { LinkComponent };

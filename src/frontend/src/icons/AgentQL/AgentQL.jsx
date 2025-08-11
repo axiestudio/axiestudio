@@ -46,3 +46,5 @@ const SvgAgentQL = (props) => (
   </svg>
 );
 export default SvgAgentQL;
+
+export { SvgAgentQL };

@@ -1,9 +1,6 @@
 import { keepPreviousData } from "@tanstack/react-query";
-import type { AxiosError } from "axios";
-import {
-  REFETCH_SERVER_HEALTH_INTERVAL,
-  SERVER_HEALTH_INTERVAL,
-} from "@/constants/constants";
+import type { AxiosError  } from "axios";
+import { REFETCH_SERVER_HEALTH_INTERVAL, SERVER_HEALTH_INTERVAL } from "@/constants/constants";
 import { HEALTH_CHECK_URL } from "@/customization/config-constants";
 import { useUtilityStore } from "@/stores/utilityStore";
 import { createNewError503 } from "@/types/factory/axios-error-503";
@@ -26,7 +23,7 @@ interface getHealthParams {
 export const useGetHealthQuery: useQueryFunctionType<
   getHealthParams,
   getHealthResponse
-> = (params, options) => {
+>= (params, options) => {
   const { query } = UseRequestProcessor();
   const setHealthCheckTimeout = useUtilityStore(
     (state) => state.setHealthCheckTimeout,

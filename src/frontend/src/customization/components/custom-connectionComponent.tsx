@@ -1,6 +1,4 @@
-import ConnectionComponent, {
-  type ConnectionComponentProps,
-} from "@/components/core/parameterRenderComponent/components/connectionComponent";
+import ConnectionComponent, { type ConnectionComponentProps } from "@/components/core/parameterRenderComponent/components/connectionComponent";
 import type { InputProps } from "@/components/core/parameterRenderComponent/types";
 
 const CustomConnectionComponent = ({
@@ -28,3 +26,5 @@ const CustomConnectionComponent = ({
 };
 
 export default CustomConnectionComponent;
+
+export { CustomConnectionComponent };

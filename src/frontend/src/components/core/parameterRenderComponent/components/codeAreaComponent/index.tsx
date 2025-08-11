@@ -1,5 +1,5 @@
 import { GRADIENT_CLASS } from "@/constants/constants";
-import CodeAreaModal from "@/modals/codeAreaModal";
+import { CodeAreaModal } from "@/modals/codeAreaModal";
 import { cn } from "../../../../../utils/utils";
 import IconComponent from "../../../../common/genericIconComponent";
 import { Button } from "../../../../ui/button";
@@ -43,7 +43,7 @@ const externalLinkIconClasses = {
   normalTop: "top-2.5",
 };
 
-export default function CodeAreaComponent({
+function CodeAreaComponent({
   value,
   handleOnNewValue,
   disabled,
@@ -124,3 +124,7 @@ export default function CodeAreaComponent({
     </div>
   );
 }
+
+
+export default CodeAreaComponent;
+export { CodeAreaComponent as CodeAreaComponent };

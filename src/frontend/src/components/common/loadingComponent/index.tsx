@@ -1,13 +1,12 @@
 import type { LoadingComponentProps } from "../../../types/components";
 
-export default function LoadingComponent({
+function LoadingComponent({
   remSize,
-}: LoadingComponentProps): JSX.Element {
-  return (
+ }: LoadingComponentProps): JSX.Element { return (
     <div role="status" className="flex flex-col items-center justify-center">
       <svg
         aria-hidden="true"
-        className={`w-${remSize} h-${remSize} animate-spin fill-primary text-muted`}
+        className={`w-${remSize } h-${remSize} animate-spin fill-primary text-muted`}
         viewBox="0 0 100 101"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
@@ -26,3 +25,7 @@ export default function LoadingComponent({
     </div>
   );
 }
+
+
+export default LoadingComponent;
+export { LoadingComponent };

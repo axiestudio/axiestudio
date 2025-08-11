@@ -1,9 +1,7 @@
 import type { AgGridReact } from "ag-grid-react";
 import { type ForwardedRef, forwardRef } from "react";
-import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import TableComponent, {
-  type TableComponentProps,
-} from "@/components/core/parameterRenderComponent/components/tableComponent";
+import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
+import TableComponent, { type TableComponentProps } from "@/components/core/parameterRenderComponent/components/tableComponent";
 import type { TableOptionsTypeAPI } from "@/types/api";
 import BaseModal from "../baseModal";
 
@@ -16,7 +14,7 @@ interface TableModalProps extends TableComponentProps {
   hideColumns?: boolean | string[];
   tableIcon?: string;
   open?: boolean;
-  setOpen?: (open: boolean) => void;
+  setOpen?: (open: boolean)=> void;
   onSave?: () => void;
   onCancel?: () => void;
 }
@@ -85,7 +83,7 @@ const TableModal = forwardRef<AgGridReact, TableModalProps>(
           ></TableComponent>
         </BaseModal.Content>
         <BaseModal.Footer
-          submit={onSave ? { label: "Save", onClick: onSave } : undefined}
+          submit={onSave ? { label: t("common.save"), onClick: onSave } : undefined}
         ></BaseModal.Footer>
       </BaseModal>
     );
@@ -93,3 +91,4 @@ const TableModal = forwardRef<AgGridReact, TableModalProps>(
 );
 
 export default TableModal;
+export { TableModal };

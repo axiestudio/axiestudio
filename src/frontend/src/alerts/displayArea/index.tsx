@@ -1,9 +1,9 @@
 import useAlertStore from "../../stores/alertStore";
-import ErrorAlert from "../error";
-import NoticeAlert from "../notice";
-import SuccessAlert from "../success";
+import { ErrorAlert } from "../error";
+import { NoticeAlert } from "../notice";
+import { SuccessAlert } from "../success";
 
-export default function AlertDisplayArea() {
+function AlertDisplayArea() {
   const removeFromTempNotificationList = useAlertStore(
     (state) => state.removeFromTempNotificationList,
   );
@@ -12,7 +12,7 @@ export default function AlertDisplayArea() {
   );
   const removeAlert = (id: string) => {
     removeFromTempNotificationList(id);
-  };
+   };
 
   return (
     <div className="flex flex-col-reverse" style={{ zIndex: 999 }}>
@@ -49,3 +49,7 @@ export default function AlertDisplayArea() {
     </div>
   );
 }
+
+
+export default AlertDisplayArea;
+export { AlertDisplayArea };

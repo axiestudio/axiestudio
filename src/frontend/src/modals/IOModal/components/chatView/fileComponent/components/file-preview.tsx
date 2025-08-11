@@ -1,12 +1,11 @@
-import IconComponent, {
-  ForwardedIconComponent,
-} from "../../../../../../components/common/genericIconComponent";
+import IconComponent, { ForwardedIconComponent,
+ } from "../../../../../../components/common/genericIconComponent";
 import { Skeleton } from "../../../../../../components/ui/skeleton";
 import formatFileName from "../utils/format-file-name";
 
 const supImgFiles = ["png", "jpg", "jpeg", "gif", "bmp", "webp", "image"];
 
-export default function FilePreview({
+function FilePreview({
   error,
   file,
   loading,
@@ -98,3 +97,7 @@ export default function FilePreview({
     </div>
   );
 }
+
+
+export default FilePreview;
+export { FilePreview };

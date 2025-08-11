@@ -1,20 +1,8 @@
 import * as Form from "@radix-ui/react-form";
 import InputComponent from "../../../../../components/core/parameterRenderComponent/components/inputComponent";
 import { Button } from "../../../../../components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../../../../../components/ui/card";
-import {
-  CREATE_API_KEY,
-  INSERT_API_KEY,
-  INVALID_API_KEY,
-  NO_API_KEY,
-} from "../../../../../constants/constants";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../../../../../components/ui/card";
+import { CREATE_API_KEY, INSERT_API_KEY, INVALID_API_KEY, NO_API_KEY } from "../../../../../constants/constants";
 
 type StoreApiKeyFormComponentProps = {
   apikey: string;
@@ -101,3 +89,5 @@ const StoreApiKeyFormComponent = ({
   );
 };
 export default StoreApiKeyFormComponent;
+
+export { StoreApiKeyFormComponent };

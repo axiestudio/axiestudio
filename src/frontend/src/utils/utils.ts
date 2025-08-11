@@ -1,5 +1,5 @@
 import type { ColDef, ColGroupDef, ValueParserParams } from "ag-grid-community";
-import clsx, { type ClassValue } from "clsx";
+import { clsx, type ClassValue } from "clsx";
 import moment from "moment";
 import { Cookies } from "react-cookie";
 import TableAutoCellRender from "@/components/core/parameterRenderComponent/components/tableComponent/components/tableAutoCellRender";
@@ -8,12 +8,7 @@ import useAlertStore from "@/stores/alertStore";
 import { type ColumnField, FormatterType } from "@/types/utils/functions";
 import "moment-timezone";
 import { twMerge } from "tailwind-merge";
-import {
-  DRAG_EVENTS_CUSTOM_TYPESS,
-  MESSAGES_TABLE_ORDER,
-  MODAL_CLASSES,
-  SHORTCUT_KEYS,
-} from "../constants/constants";
+import { DRAG_EVENTS_CUSTOM_TYPESS, MESSAGES_TABLE_ORDER, MODAL_CLASSES, SHORTCUT_KEYS } from "../constants/constants";
 import type {
   APIDataType,
   InputFieldType,
@@ -41,7 +36,7 @@ export function cn(...inputs: ClassValue[]): string {
 export function toCamelCase(str: string): string {
   return str
     .split(" ")
-    .map((s, index) => (index !== 0 ? toNormalCase(s) : s.toLowerCase()))
+    .map((s, index)=> (index !== 0 ? toNormalCase(s) : s.toLowerCase()))
     .join("");
 }
 

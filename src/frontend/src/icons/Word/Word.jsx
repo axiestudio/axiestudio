@@ -75,3 +75,5 @@ const SvgWord = (props) => (
   </svg>
 );
 export default SvgWord;
+
+export { SvgWord };

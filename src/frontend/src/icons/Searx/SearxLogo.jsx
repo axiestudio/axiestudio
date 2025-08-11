@@ -149,3 +149,5 @@ const SvgSearxLogo = (props) => (
   </svg>
 );
 export default SvgSearxLogo;
+
+export { SvgSearxLogo };

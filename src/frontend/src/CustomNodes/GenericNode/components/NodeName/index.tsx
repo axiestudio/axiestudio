@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import ShadTooltip from "@/components/common/shadTooltipComponent";
+import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
+import { ShadTooltip } from "@/components/common/shadTooltipComponent";
 import { Input } from "@/components/ui/input";
 import useFlowStore from "@/stores/flowStore";
 import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import { cn } from "@/utils/utils";
 
-export default function NodeName({
+function NodeName({
   display_name,
   selected,
   nodeId,
@@ -115,3 +115,7 @@ export default function NodeName({
     </div>
   );
 }
+
+
+export default NodeName;
+export { NodeName };

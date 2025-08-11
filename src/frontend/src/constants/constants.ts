@@ -7,7 +7,7 @@ import type { languageMap } from "../types/components";
  * invalid characters for flow name
  * @constant
  */
-export const INVALID_CHARACTERS = [
+export const INVALID_CHARACTERS= [
   " ",
   ",",
   ".",

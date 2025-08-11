@@ -5,7 +5,7 @@ import { Button } from "../../ui/button";
 import { Separator } from "../../ui/separator";
 import ForwardedIconComponent from "../genericIconComponent";
 
-export default function PageLayout({
+function PageLayout({
   title,
   description,
   children,
@@ -65,3 +65,7 @@ export default function PageLayout({
     </div>
   );
 }
+
+
+export default PageLayout;
+export { PageLayout };

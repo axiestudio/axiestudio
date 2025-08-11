@@ -1,0 +1,188 @@
+name: Automated Translation with Lingo.dev
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/frontend/**/*.tsx'
+      - 'src/frontend/**/*.ts'
+      - 'src/frontend/**/*.jsx'
+      - 'src/frontend/**/*.js'
+      - 'src/backend/translations/en.json'
+      - 'src/frontend/src/i18n/locales/en.json'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/frontend/**/*.tsx'
+      - 'src/frontend/**/*.ts'
+      - 'src/backend/translations/en.json'
+
+env:
+  LINGO_API_KEY: ${{ secrets.LINGO_API_KEY }}
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'src/frontend/package-lock.json'
+    
+    - name: Install frontend dependencies
+      working-directory: src/frontend
+      run: npm ci
+    
+    - name: Install Lingo.dev CLI
+      working-directory: src/frontend
+      run: npm install -g @lingo.dev/cli
+    
+    - name: Verify Lingo.dev installation
+      working-directory: src/frontend
+      run: lingo.dev --version
+    
+    - name: Extract and translate frontend strings
+      working-directory: src/frontend
+      run: |
+        echo "Running Lingo.dev compiler for frontend string extraction..."
+        lingo.dev compiler --config i18n.json --verbose
+        
+        echo "Checking for extracted strings..."
+        if [ -d "src/localized" ]; then
+          echo "✅ Frontend strings extracted successfully"
+          ls -la src/localized/
+        else
+          echo "⚠️ No localized directory found"
+        fi
+    
+    - name: Translate backend JSON files
+      working-directory: src/frontend
+      run: |
+        echo "Running Lingo.dev i18n for backend translations..."
+        lingo.dev i18n --config i18n.json --verbose
+        
+        echo "Checking backend translations..."
+        if [ -f "../backend/translations/sv.json" ]; then
+          echo "✅ Backend translations updated"
+          cat ../backend/translations/sv.json | jq '.' | head -20
+        else
+          echo "⚠️ Backend Swedish translations not found"
+        fi
+    
+    - name: Validate translation files
+      run: |
+        echo "Validating translation files..."
+        
+        # Check if Swedish frontend translations exist
+        if [ -f "src/frontend/src/i18n/locales/sv.json" ]; then
+          echo "✅ Frontend Swedish translations found"
+          node -e "
+            const fs = require('fs');
+            const sv = JSON.parse(fs.readFileSync('src/frontend/src/i18n/locales/sv.json', 'utf8'));
+            const en = JSON.parse(fs.readFileSync('src/frontend/src/i18n/locales/en.json', 'utf8'));
+            console.log('Swedish keys:', Object.keys(sv).length);
+            console.log('English keys:', Object.keys(en).length);
+          "
+        fi
+        
+        # Check if Swedish backend translations exist
+        if [ -f "src/backend/translations/sv.json" ]; then
+          echo "✅ Backend Swedish translations found"
+          node -e "
+            const fs = require('fs');
+            const sv = JSON.parse(fs.readFileSync('src/backend/translations/sv.json', 'utf8'));
+            const en = JSON.parse(fs.readFileSync('src/backend/translations/en.json', 'utf8'));
+            console.log('Swedish backend keys:', Object.keys(sv).length);
+            console.log('English backend keys:', Object.keys(en).length);
+          "
+        fi
+    
+    - name: Build frontend with translations
+      working-directory: src/frontend
+      run: |
+        echo "Building frontend with Swedish translations..."
+        npm run build
+        
+        if [ -d "build" ]; then
+          echo "✅ Frontend built successfully with translations"
+          ls -la build/
+        else
+          echo "❌ Frontend build failed"
+          exit 1
+        fi
+    
+    - name: Check for translation changes
+      id: changes
+      run: |
+        git add .
+        if git diff --staged --quiet; then
+          echo "No translation changes detected"
+          echo "has_changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "Translation changes detected"
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          git status --porcelain
+        fi
+    
+    - name: Commit translation updates
+      if: steps.changes.outputs.has_changes == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "Translation Bot"
+        
+        git add .
+        git commit -m "🌍 Auto-update Swedish translations
+        
+        - Updated frontend translations via Lingo.dev compiler
+        - Updated backend translations via Lingo.dev i18n
+        - Automated translation propagation
+        
+        [skip ci]"
+    
+    - name: Push translation updates
+      if: steps.changes.outputs.has_changes == 'true'
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
+    
+    - name: Create translation summary
+      if: always()
+      run: |
+        echo "## 🌍 Translation Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "src/frontend/src/i18n/locales/sv.json" ]; then
+          FRONTEND_KEYS=$(node -e "console.log(Object.keys(JSON.parse(require('fs').readFileSync('src/frontend/src/i18n/locales/sv.json', 'utf8'))).length)")
+          echo "- ✅ Frontend: $FRONTEND_KEYS Swedish translation keys" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ Frontend: No Swedish translations found" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -f "src/backend/translations/sv.json" ]; then
+          BACKEND_KEYS=$(node -e "console.log(Object.keys(JSON.parse(require('fs').readFileSync('src/backend/translations/sv.json', 'utf8'))).length)")
+          echo "- ✅ Backend: $BACKEND_KEYS Swedish translation keys" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ Backend: No Swedish translations found" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ -d "src/frontend/build" ]; then
+          echo "- ✅ Frontend build successful with translations" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ Frontend build failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "1. Test the application with Swedish language" >> $GITHUB_STEP_SUMMARY
+        echo "2. Verify all UI elements are translated" >> $GITHUB_STEP_SUMMARY
+        echo "3. Check API responses in Swedish" >> $GITHUB_STEP_SUMMARY

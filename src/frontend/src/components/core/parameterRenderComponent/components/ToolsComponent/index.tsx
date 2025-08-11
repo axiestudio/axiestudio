@@ -1,5 +1,6 @@
 import { useState } from "react";
-import ShadTooltip from "@/components/common/shadTooltipComponent";
+import { useTranslation } from "react-i18next";
+import { ShadTooltip } from "@/components/common/shadTooltipComponent";
 import { ICON_STROKE_WIDTH } from "@/constants/constants";
 import { ENABLE_MCP_COMPOSER } from "@/customization/feature-flags";
 import ToolsModal from "@/modals/toolsModal";
@@ -10,7 +11,7 @@ import { Button } from "../../../../ui/button";
 import { Skeleton } from "../../../../ui/skeleton";
 import type { InputProps, ToolsComponentType } from "../../types";
 
-export default function ToolsComponent({
+function ToolsComponent({
   description,
   value,
   editNode = false,
@@ -23,8 +24,7 @@ export default function ToolsComponent({
   icon,
   disabled = false,
   template,
-}: InputProps<any[] | undefined, ToolsComponentType>): JSX.Element {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+}: InputProps<any[] | undefined, ToolsComponentType>): JSX.Element { const [isModalOpen, setIsModalOpen] = useState(false);
   const actions = value
     ?.filter((action) => action.status === true)
     .map((action) => {
@@ -32,7 +32,7 @@ export default function ToolsComponent({
         name: action.name,
         tags: action.tags,
         description: action.description,
-      };
+       };
     });
 
   const visibleActionsQt = isAction ? 20 : 4;
@@ -154,3 +154,7 @@ export default function ToolsComponent({
     </div>
   );
 }
+
+
+export default ToolsComponent;
+export { ToolsComponent };

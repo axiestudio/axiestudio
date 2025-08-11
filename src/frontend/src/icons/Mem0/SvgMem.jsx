@@ -1,4 +1,4 @@
-export default function SvgMem0(props) {
+function SvgMem0(props) {
   return (
     <svg
       viewBox="0 0 126 127"
@@ -32,3 +32,7 @@ export default function SvgMem0(props) {
     </svg>
   );
 }
+
+
+export default SvgMem0;
+export { SvgMem0 };

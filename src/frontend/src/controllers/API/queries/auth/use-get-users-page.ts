@@ -1,5 +1,5 @@
 import type { UseMutationResult } from "@tanstack/react-query";
-import type { Users, useMutationFunctionType } from "../../../../types/api";
+import type { Users, useMutationFunctionType  } from "../../../../types/api";
 import { api } from "../../api";
 import { getURL } from "../../helpers/constants";
 import { UseRequestProcessor } from "../../services/request-processor";
@@ -9,7 +9,7 @@ interface getUsersQueryParams {
   limit: number;
 }
 
-export const useGetUsers: useMutationFunctionType<any, getUsersQueryParams> = (
+export const useGetUsers: useMutationFunctionType<any, getUsersQueryParams>= (
   options?,
 ) => {
   const { mutate } = UseRequestProcessor();
@@ -18,7 +18,7 @@ export const useGetUsers: useMutationFunctionType<any, getUsersQueryParams> = (
     skip,
     limit,
   }: getUsersQueryParams): Promise<Array<Users>> {
-    const res = await api.get(
+  const res = await api.get(
       `${getURL("USERS")}/?skip=${skip}&limit=${limit}`,
     );
     if (res.status === 200) {

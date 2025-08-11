@@ -1,5 +1,5 @@
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import SanitizedHTMLWrapper from "@/components/common/sanitizedHTMLWrapper";
+import { SanitizedHTMLWrapper } from "@/components/common/sanitizedHTMLWrapper";
 import { regexHighlight } from "@/constants/constants";
 import PromptModal from "@/modals/promptModal";
 import { cn } from "../../../../../utils/utils";
@@ -14,7 +14,7 @@ const promptContentClasses = {
   disabled: "disabled-state",
 };
 
-export default function PromptAreaComponent({
+function PromptAreaComponent({
   field_name,
   nodeClass,
   handleOnNewValue,
@@ -24,8 +24,7 @@ export default function PromptAreaComponent({
   editNode = false,
   id = "",
   readonly = false,
-}: InputProps<string, PromptAreaComponentType>): JSX.Element {
-  const coloredContent = (typeof value === "string" ? value : "")
+}: InputProps<string, PromptAreaComponentType>): JSX.Element { const coloredContent = (typeof value === "string" ? value : "")
     // escape HTML first
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -44,7 +43,7 @@ export default function PromptAreaComponent({
       // 3) Number of literal braces outside the span
       const outerCount = Math.floor(lenOpen / 2);
       const outerLeft = "{".repeat(outerCount);
-      const outerRight = "}".repeat(outerCount);
+      const outerRight = " }".repeat(outerCount);
 
       return (
         `${outerLeft}` +
@@ -117,3 +116,7 @@ export default function PromptAreaComponent({
     </div>
   );
 }
+
+
+export default PromptAreaComponent;
+export { PromptAreaComponent as PromptComponent };

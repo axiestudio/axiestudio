@@ -1,7 +1,4 @@
-import {
-  DEFAULT_PLACEHOLDER,
-  RECEIVING_INPUT_VALUE,
-} from "@/constants/constants";
+import { DEFAULT_PLACEHOLDER, RECEIVING_INPUT_VALUE } from "@/constants/constants";
 
 export const getPlaceholder = (
   disabled: boolean,

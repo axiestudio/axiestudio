@@ -9,19 +9,19 @@ export enum AuthMethodId {
   OAUTH = "oauth",
 }
 
-export const AUTH_METHODS = {
-  [AuthMethodId.NONE]: { id: AuthMethodId.NONE, label: "None" },
-  [AuthMethodId.API_KEY]: { id: AuthMethodId.API_KEY, label: "API Key" },
+export const getAuthMethods = (t: (key: string) => string) => ({
+  [AuthMethodId.NONE]: { id: AuthMethodId.NONE, label: t("common.none") },
+  [AuthMethodId.API_KEY]: { id: AuthMethodId.API_KEY, label: t("common.apikey") },
   [AuthMethodId.BASIC]: {
     id: AuthMethodId.BASIC,
-    label: "Basic",
+    label: t("common.basic"),
   },
-  [AuthMethodId.BEARER]: { id: AuthMethodId.BEARER, label: "Bearer Token" },
+  [AuthMethodId.BEARER]: { id: AuthMethodId.BEARER, label: t("common.bearertoken") },
   [AuthMethodId.IAM]: { id: AuthMethodId.IAM, label: "IAM" },
-  [AuthMethodId.OAUTH]: { id: AuthMethodId.OAUTH, label: "OAuth" },
-} as const;
+  [AuthMethodId.OAUTH]: { id: AuthMethodId.OAUTH, label: t("auth.oauth") },
+});
 
-export const AUTH_METHODS_ARRAY = Object.values(AUTH_METHODS);
+export const getAuthMethodsArray = (t: (key: string) => string) => Object.values(getAuthMethods(t));
 
 /**
  * Extracts all MCP servers from a JSON string or object.

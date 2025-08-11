@@ -3,19 +3,19 @@ import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import CardsWrapComponent from "@/components/core/cardsWrapComponent";
 import { Button } from "@/components/ui/button";
 import { useFolderStore } from "@/stores/foldersStore";
+import { useTranslation } from "react-i18next";
 import useFileDrop from "../../hooks/use-on-file-drop";
 
 type EmptyPageProps = {
   setOpenModal: (open: boolean) => void;
 };
 
-export const EmptyPage = ({ setOpenModal }: EmptyPageProps) => {
-  const folders = useFolderStore((state) => state.folders);
+export const EmptyPage = ({ setOpenModal }: EmptyPageProps) => { const folders = useFolderStore((state) => state.folders);
   const handleFileDrop = useFileDrop(undefined);
 
   return (
     <CardsWrapComponent
-      dragMessage={`Drop your flows or components here`}
+      dragMessage={t("mainPage.dropFlowsHere") }
       onFileDrop={handleFileDrop}
     >
       <div className="m-0 h-full w-full bg-gradient-to-br from-background via-background to-muted/20 p-0">
@@ -30,13 +30,13 @@ export const EmptyPage = ({ setOpenModal }: EmptyPageProps) => {
                   className="text-3xl font-light text-foreground tracking-tight"
                   data-testid="mainpage_title"
                 >
-                  {folders?.length > 1 ? "Empty Project" : "Welcome to Axie Studio"}
+                  {folders?.length > 1 ? t("mainPage.emptyProject") : t("auth.welcome")}
                 </h1>
                 <p
                   data-testid="empty-project-description"
                   className="text-base text-muted-foreground max-w-md"
                 >
-                  Create powerful AI workflows with our visual flow builder. Start with a template or build from scratch.
+                  {t("mainPage.emptyPageDescription")}
                 </p>
               </div>
             </div>
@@ -46,7 +46,7 @@ export const EmptyPage = ({ setOpenModal }: EmptyPageProps) => {
               data-testid="new_project_btn_empty_page"
               className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-base shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              Create New Flow
+              {t("mainPage.createNewFlow")}
             </Button>
           </div>
         </div>

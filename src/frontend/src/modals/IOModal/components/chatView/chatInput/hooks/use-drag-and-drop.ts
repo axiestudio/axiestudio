@@ -1,6 +1,6 @@
 import { ENABLE_IMAGE_ON_PLAYGROUND } from "@/customization/feature-flags";
 
-const useDragAndDrop = (
+const useDragAndDrop= (
   setIsDragging: (value: boolean) => void,
   playgroundPage: boolean,
 ) => {
@@ -9,7 +9,7 @@ const useDragAndDrop = (
     e.preventDefault();
     if (e.dataTransfer.types.some((type) => type === "Files")) {
       setIsDragging(true);
-    }
+     }
   };
 
   const dragEnter = (e) => {
@@ -34,3 +34,5 @@ const useDragAndDrop = (
 };
 
 export default useDragAndDrop;
+
+export { useDragAndDrop };

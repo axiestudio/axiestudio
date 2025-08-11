@@ -1,12 +1,4 @@
-import {
-  getAllChatInputNodeIds,
-  getAllFileNodeIds,
-  getChatInputNodeId,
-  getFileNodeId,
-  getNonFileTypeTweaks,
-  hasChatInputFiles,
-  hasFileTweaks,
-} from "../detect-file-tweaks";
+import { getAllChatInputNodeIds, getAllFileNodeIds, getChatInputNodeId, getFileNodeId, getNonFileTypeTweaks, hasChatInputFiles, hasFileTweaks } from "../detect-file-tweaks";
 import { getNewCurlCode } from "../get-curl-code";
 import { getNewJsApiCode } from "../get-js-api-code";
 import { getNewPythonApiCode } from "../get-python-api-code";

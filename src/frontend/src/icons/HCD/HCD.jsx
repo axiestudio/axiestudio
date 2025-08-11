@@ -24,3 +24,5 @@ const HCDSVG = (props) => (
   </svg>
 );
 export default HCDSVG;
+
+export { HCDSVG };

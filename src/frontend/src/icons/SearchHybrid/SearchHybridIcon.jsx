@@ -20,3 +20,5 @@ const SvgSearchHybridIcon = (props) => (
   </svg>
 );
 export default SvgSearchHybridIcon;
+
+export { SvgSearchHybridIcon };

@@ -18,3 +18,5 @@ const SvgArize = (props) => (
 );
 
 export default SvgArize;
+
+export { SvgArize };

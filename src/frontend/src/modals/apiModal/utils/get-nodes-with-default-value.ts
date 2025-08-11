@@ -2,7 +2,7 @@ import { cloneDeep } from "lodash";
 import type { AllNodeType } from "@/types/flow";
 import { AXIESTUDIO_SUPPORTED_TYPES } from "../../../constants/constants";
 
-export const getNodesWithDefaultValue = (
+export const getNodesWithDefaultValue= (
   nodes: AllNodeType[],
   oldTweaks: {
     [key: string]: {

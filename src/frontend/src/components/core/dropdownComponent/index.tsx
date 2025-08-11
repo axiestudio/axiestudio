@@ -2,42 +2,24 @@ import { PopoverAnchor } from "@radix-ui/react-popover";
 import Fuse from "fuse.js";
 import { cloneDeep } from "lodash";
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import NodeDialog from "@/CustomNodes/GenericNode/components/NodeDialogComponent";
+import { useTranslation } from "react-i18next";
+import { NodeDialog } from "@/CustomNodes/GenericNode/components/NodeDialogComponent";
 import { mutateTemplate } from "@/CustomNodes/helpers/mutate-template";
 import LoadingTextComponent from "@/components/common/loadingTextComponent";
 import { RECEIVING_INPUT_VALUE, SELECT_AN_OPTION } from "@/constants/constants";
 import { usePostTemplateValue } from "@/controllers/API/queries/nodes/use-post-template-value";
 import useAlertStore from "@/stores/alertStore";
-import {
-  convertStringToHTML,
-  getStatusColor,
-} from "@/utils/stringManipulation";
+import { convertStringToHTML, getStatusColor } from "@/utils/stringManipulation";
 import type { DropDownComponent } from "../../../types/components";
-import {
-  cn,
-  filterNullOptions,
-  formatName,
-  formatPlaceholderName,
-} from "../../../utils/utils";
+import { cn, filterNullOptions, formatName, formatPlaceholderName } from "../../../utils/utils";
 import { default as ForwardedIconComponent } from "../../common/genericIconComponent";
 import ShadTooltip from "../../common/shadTooltipComponent";
 import { Button } from "../../ui/button";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "../../ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverContentWithoutPortal,
-  PopoverTrigger,
-} from "../../ui/popover";
+import { Command, CommandGroup, CommandItem, CommandList, CommandSeparator } from "../../ui/command";
+import { Popover, PopoverContent, PopoverContentWithoutPortal, PopoverTrigger } from "../../ui/popover";
 import type { BaseInputProps } from "../parameterRenderComponent/types";
 
-export default function Dropdown({
+function Dropdown({
   disabled,
   isLoading,
   value,
@@ -46,7 +28,7 @@ export default function Dropdown({
   combobox,
   onSelect,
   placeholder,
-  editNode = false,
+  editNode= false,
   id = "",
   children,
   nodeId,
@@ -57,8 +39,7 @@ export default function Dropdown({
   handleOnNewValue,
   toggle,
   ...baseInputProps
-}: BaseInputProps & DropDownComponent): JSX.Element {
-  const validOptions = useMemo(
+}: BaseInputProps & DropDownComponent): JSX.Element { const validOptions = useMemo(
     () => filterNullOptions(options),
     [options, value],
   );
@@ -71,7 +52,7 @@ export default function Dropdown({
     // Include the current value in filteredOptions if it's a custom value not in validOptions
     if (value && !validOptions.includes(value) && combobox) {
       return [...validOptions, value];
-    }
+     }
     return validOptions;
   });
   const [filteredMetadata, setFilteredMetadata] = useState(optionsMetaData);
@@ -614,3 +595,7 @@ export default function Dropdown({
     </Popover>
   );
 }
+
+
+export default Dropdown;
+export { Dropdown };

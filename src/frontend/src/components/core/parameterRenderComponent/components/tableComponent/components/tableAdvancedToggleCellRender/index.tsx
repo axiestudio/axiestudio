@@ -7,7 +7,7 @@ import type { APIClassType } from "@/types/api";
 import { isTargetHandleConnected } from "@/utils/reactflowUtils";
 import ToggleShadComponent from "../../../toggleShadComponent";
 
-export default function TableAdvancedToggleCellRender({
+function TableAdvancedToggleCellRender({
   value: { nodeId, parameterId, isTweaks },
 }: CustomCellRendererProps) {
   const edges = useFlowStore((state) => state.edges);
@@ -60,3 +60,6 @@ export default function TableAdvancedToggleCellRender({
     )
   );
 }
+
+export default TableAdvancedToggleCellRender;
+export { TableAdvancedToggleCellRender };

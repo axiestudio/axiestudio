@@ -34,3 +34,5 @@ const HelperTextComponent = ({
 };
 
 export default HelperTextComponent;
+
+export { HelperTextComponent };

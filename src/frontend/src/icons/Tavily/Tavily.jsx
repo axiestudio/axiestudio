@@ -67,3 +67,5 @@ const Tavily = (props) => (
   </svg>
 );
 export default Tavily;
+
+export { Tavily };

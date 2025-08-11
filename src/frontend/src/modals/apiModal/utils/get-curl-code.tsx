@@ -1,12 +1,7 @@
 import { ENABLE_DATASTAX_AXIESTUDIO } from "@/customization/feature-flags";
 import { customGetHostProtocol } from "@/customization/utils/custom-get-host-protocol";
 import { GetCodeType } from "@/types/tweaks";
-import {
-  getAllChatInputNodeIds,
-  getAllFileNodeIds,
-  getNonFileTypeTweaks,
-  hasFileTweaks,
-} from "./detect-file-tweaks";
+import { getAllChatInputNodeIds, getAllFileNodeIds, getNonFileTypeTweaks, hasFileTweaks } from "./detect-file-tweaks";
 
 /**
  * Generates a cURL command for making a POST request to a webhook endpoint.

@@ -1,13 +1,9 @@
 import { useState } from "react";
-import ForwardedIconComponent from "@/components/common/genericIconComponent";
+import { useTranslation } from "react-i18next";
+import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import ShadTooltip from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Loading from "@/components/ui/loading";
 import { useDeleteMCPServer } from "@/controllers/API/queries/mcp/use-delete-mcp-server";
 import { useGetMCPServer } from "@/controllers/API/queries/mcp/use-get-mcp-server";
@@ -18,7 +14,8 @@ import useAlertStore from "@/stores/alertStore";
 import type { MCPServerInfoType } from "@/types/mcp";
 import { cn } from "@/utils/utils";
 
-export default function MCPServersPage() {
+function MCPServersPage() {
+  const { t } = useTranslation();
   const { data: servers } = useGetMCPServers();
   const { mutate: deleteServer } = useDeleteMCPServer();
   const setErrorData = useAlertStore((state) => state.setErrorData);
@@ -115,7 +112,7 @@ export default function MCPServersPage() {
                             ? server.error.startsWith("Timeout")
                               ? "Timeout"
                               : "Error"
-                            : "Loading..."
+                            : t("common.loading")
                           : !server.toolsCount
                             ? "No tools found"
                             : `${server.toolsCount} tool${server.toolsCount === 1 ? "" : "s"}`}
@@ -186,3 +183,7 @@ export default function MCPServersPage() {
     </div>
   );
 }
+
+
+export default MCPServersPage;
+export { MCPServersPage };

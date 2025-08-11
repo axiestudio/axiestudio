@@ -35,3 +35,5 @@ const useHandleNodeClass = (
 };
 
 export default useHandleNodeClass;
+
+export { useHandleNodeClass };

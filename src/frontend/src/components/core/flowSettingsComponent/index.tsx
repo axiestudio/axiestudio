@@ -9,7 +9,7 @@ import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import type { FlowType } from "@/types/flow";
 import EditFlowSettings from "../editFlowSettingsComponent";
 
-export default function FlowSettingsComponent({
+function FlowSettingsComponent({
   flowData,
   close,
   open,
@@ -128,3 +128,7 @@ export default function FlowSettingsComponent({
     </Form.Root>
   );
 }
+
+
+export default FlowSettingsComponent;
+export { FlowSettingsComponent };

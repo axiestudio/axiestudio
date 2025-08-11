@@ -1,13 +1,5 @@
 import { customGetHostProtocol } from "@/customization/utils/custom-get-host-protocol";
-import {
-  getAllChatInputNodeIds,
-  getAllFileNodeIds,
-  getChatInputNodeId,
-  getFileNodeId,
-  getNonFileTypeTweaks,
-  hasChatInputFiles,
-  hasFileTweaks,
-} from "./detect-file-tweaks";
+import { getAllChatInputNodeIds, getAllFileNodeIds, getChatInputNodeId, getFileNodeId, getNonFileTypeTweaks, hasChatInputFiles, hasFileTweaks } from "./detect-file-tweaks";
 
 /** Generates Python code using requests for API calls, handling multi-step file uploads (v1 for ChatInput, v2 for others) before flow execution. Supports auth. */
 export function getNewPythonApiCode({

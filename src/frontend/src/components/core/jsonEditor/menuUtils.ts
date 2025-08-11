@@ -1,7 +1,7 @@
 import { faCopy } from "@fortawesome/free-solid-svg-icons";
 import { type MenuItem, Mode } from "vanilla-jsoneditor";
 
-export const filterTextModeItems = (items: MenuItem[]): MenuItem[] => {
+export const filterTextModeItems= (items: MenuItem[]): MenuItem[] => {
   return items.filter((item) => {
     if (item.type === "button" && item.title) {
       const title = item.title.toLowerCase();

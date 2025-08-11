@@ -1,14 +1,8 @@
-import {
-  type NavigateFunction,
-  type NavigateOptions,
-  type To,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
+import { type NavigateFunction, type NavigateOptions, type To, useNavigate, useParams } from "react-router-dom";
 import { ENABLE_CUSTOM_PARAM } from "../feature-flags";
 
 export function useCustomNavigate(): NavigateFunction {
-  const domNavigate = useNavigate();
+  const domNavigate= useNavigate();
 
   const { customParam } = useParams();
 

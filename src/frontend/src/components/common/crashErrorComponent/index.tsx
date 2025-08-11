@@ -1,12 +1,14 @@
 import { XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { crashComponentPropsType } from "../../../types/components";
 import { Button } from "../../ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "../../ui/card";
 
-export default function CrashErrorComponent({
+function CrashErrorComponent({
   error,
   resetErrorBoundary,
 }: crashComponentPropsType): JSX.Element {
+  const { t }= useTranslation();
   return (
     <div className="z-50 flex h-screen w-screen items-center justify-center bg-foreground bg-opacity-50">
       <div className="flex h-screen w-screen flex-col bg-background text-start shadow-lg">
@@ -63,3 +65,7 @@ export default function CrashErrorComponent({
     </div>
   );
 }
+
+
+export default CrashErrorComponent;
+export { CrashErrorComponent };

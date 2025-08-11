@@ -1,6 +1,6 @@
 import { priorityFields } from "../../constants/constants";
 
-export default function sortFields(a, b, fieldOrder) {
+function sortFields(a, b, fieldOrder) {
   // Early return for empty fields
   if (!a && !b) return 0;
   if (!a) return 1;
@@ -38,3 +38,6 @@ export default function sortFields(a, b, fieldOrder) {
   // You might want to sort them alphabetically or in another specific manner
   return a.localeCompare(b);
 }
+
+export default sortFields;
+export { sortFields };

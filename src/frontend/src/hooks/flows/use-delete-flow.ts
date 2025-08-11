@@ -1,10 +1,7 @@
 import { useDeleteDeleteFlows } from "@/controllers/API/queries/flows/use-delete-delete-flows";
 import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import { useTypesStore } from "@/stores/typesStore";
-import {
-  extractFieldsFromComponenents,
-  processFlows,
-} from "@/utils/reactflowUtils";
+import { extractFieldsFromComponenents, processFlows } from "@/utils/reactflowUtils";
 
 const useDeleteFlow = () => {
   const setFlows = useFlowsManagerStore((state) => state.setFlows);
@@ -49,3 +46,5 @@ const useDeleteFlow = () => {
 };
 
 export default useDeleteFlow;
+
+export { useDeleteFlow };

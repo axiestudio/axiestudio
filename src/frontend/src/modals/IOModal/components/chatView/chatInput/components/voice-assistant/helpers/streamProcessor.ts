@@ -1,4 +1,4 @@
-export const workletCode = `
+export const workletCode= `
   class StreamProcessor extends AudioWorkletProcessor {
     constructor() {
       super();
@@ -13,7 +13,7 @@ export const workletCode = `
         if (event.data.type === 'playback') {
           this.outputBuffers.push(event.data.audio);
           this.isPlaying = true;
-        }
+         }
         else if (event.data.type === 'stop_playback') {
          // Immediately stop playback and clear any queued audio
          this.outputBuffers = [];

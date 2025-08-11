@@ -1,9 +1,8 @@
 import { Background, Panel } from "@xyflow/react";
 import { memo } from "react";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import CanvasControls, {
-  CustomControlButton,
-} from "@/components/core/canvasControlsComponent";
+import CanvasControls, { CustomControlButton,
+ } from "@/components/core/canvasControlsComponent";
 import LogCanvasControls from "@/components/core/logCanvasControlsComponent";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/utils/utils";

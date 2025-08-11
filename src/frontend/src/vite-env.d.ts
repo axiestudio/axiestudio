@@ -14,3 +14,5 @@ declare const process: {
     AXIESTUDIO_FEATURE_MCP_COMPOSER?: string;
   };
 };
+
+export { content };

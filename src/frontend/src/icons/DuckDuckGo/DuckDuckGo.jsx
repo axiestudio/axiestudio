@@ -55,3 +55,5 @@ const SvgDuckDuckGo = ({ ...props }) => (
   </svg>
 );
 export default SvgDuckDuckGo;
+
+export { SvgDuckDuckGo };

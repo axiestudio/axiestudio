@@ -8,7 +8,7 @@ function toSnakeCase(str: string): string {
 
 function toCamelCase(str: string): string {
   return str
-    .replace(/[-_\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ""))
+    .replace(/[-_\s]+(.)?/g, (_, c)=> (c ? c.toUpperCase() : ""))
     .replace(/^[A-Z]/, (c) => c.toLowerCase());
 }
 

@@ -21,3 +21,5 @@ const SvgWolfram = (props) => (
   </svg>
 );
 export default SvgWolfram;
+
+export { SvgWolfram };

@@ -1,6 +1,7 @@
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import clsx from "clsx";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getMinOrMaxValue } from "@/components/core/parameterRenderComponent/components/sliderComponent/helpers/get-min-max-value";
 import type { InputProps } from "@/components/core/parameterRenderComponent/types";
 import { Case } from "@/shared/components/caseComponent";
@@ -37,7 +38,7 @@ const DEFAULT_ACCENT_INDIGO_FOREGROUND_COLOR = "243 75% 59%";
 
 type ColorType = "background" | "text";
 
-export default function SliderComponent({
+function SliderComponent({
   value,
   disabled,
   rangeSpec,
@@ -49,8 +50,7 @@ export default function SliderComponent({
   sliderButtons = false,
   sliderButtonsOptions = DEFAULT_SLIDER_BUTTONS_OPTIONS,
   handleOnNewValue,
-}: InputProps<string[] | number[], SliderComponentType>): JSX.Element {
-  const min = rangeSpec?.min ?? -2;
+}: InputProps<string[] | number[], SliderComponentType>): JSX.Element { const min = rangeSpec?.min ?? -2;
   const max = rangeSpec?.max ?? 2;
 
   sliderButtonsOptions =
@@ -68,7 +68,7 @@ export default function SliderComponent({
 
   useEffect(() => {
     if (disabled && value !== "") {
-      handleOnNewValue({ value: "" }, { skipSnapshot: true });
+      handleOnNewValue({ value: ""  }, { skipSnapshot: true });
     }
   }, [disabled]);
 
@@ -319,3 +319,7 @@ export default function SliderComponent({
     </div>
   );
 }
+
+
+export default SliderComponent;
+export { SliderComponent as SliderComponent };

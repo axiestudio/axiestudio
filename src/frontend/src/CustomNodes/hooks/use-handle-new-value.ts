@@ -166,3 +166,5 @@ const useHandleOnNewValue = ({
 };
 
 export default useHandleOnNewValue;
+
+export { useHandleOnNewValue };

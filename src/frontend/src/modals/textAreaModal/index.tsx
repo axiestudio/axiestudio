@@ -1,17 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import IconComponent from "../../components/common/genericIconComponent";
+import { useTranslation } from "react-i18next";
+import { IconComponent } from "../../components/common/genericIconComponent";
 import { Button } from "../../components/ui/button";
 import { Textarea } from "../../components/ui/textarea";
-import {
-  EDIT_TEXT_PLACEHOLDER,
-  TEXT_DIALOG_TITLE,
-} from "../../constants/constants";
+import { EDIT_TEXT_PLACEHOLDER, TEXT_DIALOG_TITLE } from "../../constants/constants";
 import type { textModalPropsType } from "../../types/components";
 import { handleKeyDown } from "../../utils/reactflowUtils";
 import { classNames } from "../../utils/utils";
 import BaseModal from "../baseModal";
 
-export default function ComponentTextModal({
+function ComponentTextModal({
   value,
   setValue,
   children,
@@ -20,14 +18,13 @@ export default function ComponentTextModal({
   password,
   changeVisibility,
   onCloseModal,
-}: textModalPropsType): JSX.Element {
-  const [modalOpen, setModalOpen] = useState(false);
+}: textModalPropsType): JSX.Element { const [modalOpen, setModalOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value);
 
   const textRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (typeof value === "string") setInputValue(value);
-  }, [value, modalOpen]);
+   }, [value, modalOpen]);
 
   useEffect(() => {
     if (!modalOpen) {
@@ -112,3 +109,7 @@ export default function ComponentTextModal({
     </BaseModal>
   );
 }
+
+
+export default ComponentTextModal;
+export { ComponentTextModal };

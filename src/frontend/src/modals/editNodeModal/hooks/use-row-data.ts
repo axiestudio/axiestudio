@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import sortFields from "@/CustomNodes/utils/sort-fields";
-import type { APIClassType } from "../../../types/api";
+import { sortFields } from "@/CustomNodes/utils/sort-fields";
+import type { APIClassType  } from "../../../types/api";
 
 const useRowData = (nodeClass: APIClassType, open: boolean) => {
   const rowData = useMemo(() => {
@@ -31,3 +31,5 @@ const useRowData = (nodeClass: APIClassType, open: boolean) => {
 };
 
 export default useRowData;
+
+export { useRowData };

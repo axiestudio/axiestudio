@@ -33,3 +33,5 @@ const SettingsVoiceButton = ({
 };
 
 export default SettingsVoiceButton;
+
+export { SettingsVoiceButton };

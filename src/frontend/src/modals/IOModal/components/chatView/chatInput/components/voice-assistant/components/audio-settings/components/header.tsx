@@ -1,5 +1,5 @@
 import React from "react";
-import IconComponent from "../../../../../../../../../../components/common/genericIconComponent";
+import { IconComponent } from "../../../../../../../../../../components/common/genericIconComponent";
 import { ICON_STROKE_WIDTH } from "../../../../../../../../../../constants/constants";
 
 const AudioSettingsHeader = () => {
@@ -10,7 +10,7 @@ const AudioSettingsHeader = () => {
     >
       <p className="flex items-center gap-2 text-sm text-primary">
         <IconComponent
-          name="Settings"
+          name={t("common.settings")}
           strokeWidth={ICON_STROKE_WIDTH}
           className="h-4 w-4 text-muted-foreground hover:text-foreground"
         />
@@ -25,3 +25,5 @@ const AudioSettingsHeader = () => {
 };
 
 export default AudioSettingsHeader;
+
+export { AudioSettingsHeader };

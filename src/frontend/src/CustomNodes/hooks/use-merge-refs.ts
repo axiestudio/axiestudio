@@ -1,12 +1,10 @@
 import { type MutableRefObject, useEffect, useRef } from "react";
-
-type Ref<T> = MutableRefObject<T | null> | ((instance: T | null) => void);
+type Ref<T>= MutableRefObject<T | null> | ((instance: T | null) => void);
 
 export function isRefCallback<T>(
   ref: Ref<T>,
 ): ref is (instance: T | null) => void {
   return typeof ref === "function";
-}
 
 export function isRefObject<T>(ref: Ref<T>): ref is MutableRefObject<T> {
   return !isRefCallback(ref);
@@ -33,3 +31,5 @@ function useMergeRefs<T>(
 }
 
 export default useMergeRefs;
+}
+export { useMergeRefs };

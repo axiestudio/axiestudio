@@ -6,11 +6,7 @@ import IconComponent from "../../components/common/genericIconComponent";
 import EditFlowSettings from "../../components/core/editFlowSettingsComponent";
 import { Checkbox } from "../../components/ui/checkbox";
 import { API_WARNING_NOTICE_ALERT } from "../../constants/alerts_constants";
-import {
-  ALERT_SAVE_WITH_API,
-  EXPORT_DIALOG_SUBTITLE,
-  SAVE_WITH_API_CHECKBOX,
-} from "../../constants/constants";
+import { ALERT_SAVE_WITH_API, EXPORT_DIALOG_SUBTITLE, SAVE_WITH_API_CHECKBOX } from "../../constants/constants";
 import useAlertStore from "../../stores/alertStore";
 import { useDarkStore } from "../../stores/darkStore";
 import { downloadFlow, removeApiKeys } from "../../utils/reactflowUtils";
@@ -148,3 +144,4 @@ const ExportModal = forwardRef(
   },
 );
 export default ExportModal;
+export { ExportModal };

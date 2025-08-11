@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { storeComponent } from "../../../../types/store";
 
-const useDataEffect = (
+const useDataEffect= (
   data: storeComponent,
   setLikedByUser: (value: any) => void,
   setLikesCount: (value: any) => void,
@@ -17,3 +17,5 @@ const useDataEffect = (
 };
 
 export default useDataEffect;
+
+export { useDataEffect };

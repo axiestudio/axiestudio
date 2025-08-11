@@ -23,3 +23,5 @@ const ConfluenceIcon = (props) => (
 );
 
 export default ConfluenceIcon;
+
+export { ConfluenceIcon };

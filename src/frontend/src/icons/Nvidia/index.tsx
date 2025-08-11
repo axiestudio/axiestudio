@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef  } from "react";
 import NvidiaSVG from "./nvidia";
 
 export const NvidiaIcon = forwardRef<

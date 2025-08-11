@@ -21,3 +21,5 @@ const SvgMongodbIcon = (props) => (
   </svg>
 );
 export default SvgMongodbIcon;
+
+export { SvgMongodbIcon };

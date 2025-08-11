@@ -9,7 +9,7 @@ import { useShortcutsStore } from "../../../../stores/shortcuts";
 import CellRenderShortcuts from "./CellRenderWrapper";
 import EditShortcutButton from "./EditShortcutButton";
 
-export default function ShortcutsPage() {
+function ShortcutsPage() {
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const shortcuts = useShortcutsStore((state) => state.shortcuts);
   const setShortcuts = useShortcutsStore((state) => state.setShortcuts);
@@ -49,7 +49,7 @@ export default function ShortcutsPage() {
   function handleRestore() {
     setShortcuts(defaultShortcuts);
     defaultShortcuts.forEach(({ name, shortcut }) => {
-      const fixedName = toCamelCase(name);
+  const fixedName = toCamelCase(name);
       updateUniqueShortcut(fixedName, shortcut);
     });
     localStorage.removeItem("axiestudio-shortcuts");
@@ -117,3 +117,7 @@ export default function ShortcutsPage() {
     </div>
   );
 }
+
+
+export default ShortcutsPage;
+export { ShortcutsPage };

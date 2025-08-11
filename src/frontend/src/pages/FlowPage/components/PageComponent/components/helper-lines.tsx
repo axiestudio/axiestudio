@@ -5,7 +5,7 @@ interface HelperLinesProps {
   helperLines: HelperLinesState;
 }
 
-export default function HelperLines({ helperLines }: HelperLinesProps) {
+function HelperLines({ helperLines }: HelperLinesProps) {
   const { x: viewportX, y: viewportY, zoom } = useViewport();
 
   if (!helperLines.horizontal && !helperLines.vertical) {
@@ -35,3 +35,7 @@ export default function HelperLines({ helperLines }: HelperLinesProps) {
     </svg>
   );
 }
+
+
+export default HelperLines;
+export { HelperLines };

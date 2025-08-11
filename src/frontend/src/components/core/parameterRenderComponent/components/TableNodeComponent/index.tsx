@@ -5,15 +5,16 @@ import type {
 import type { AgGridReact } from "ag-grid-react";
 import { cloneDeep } from "lodash";
 import { useEffect, useMemo, useRef, useState } from "react";
-import ShadTooltip from "@/components/common/shadTooltipComponent";
-import TableModal from "@/modals/tableModal";
+import { useTranslation } from "react-i18next";
+import { ShadTooltip } from "@/components/common/shadTooltipComponent";
+import { TableModal } from "@/modals/tableModal";
 import { isMarkdownTable } from "@/utils/markdownUtils";
 import { FormatColumns, generateBackendColumnsFromValue } from "@/utils/utils";
 import { ForwardedIconComponent } from "../../../../common/genericIconComponent";
 import { Button } from "../../../../ui/button";
 import type { InputProps, TableComponentType } from "../../types";
 
-export default function TableNodeComponent({
+function TableNodeComponent({
   tableTitle,
   description,
   value,
@@ -26,10 +27,9 @@ export default function TableNodeComponent({
   trigger_icon = "Table",
   trigger_text = "Open Table",
   table_icon,
-}: InputProps<any[], TableComponentType>): JSX.Element {
-  const dataTypeDefinitions: {
+}: InputProps<any[], TableComponentType>): JSX.Element { const dataTypeDefinitions: {
     [cellDataType: string]: DataTypeDefinition<any>;
-  } = useMemo(() => {
+   } = useMemo(() => {
     return {
       // override `date` to handle custom date format `dd/mm/yyyy`
       date: {
@@ -310,3 +310,7 @@ export default function TableNodeComponent({
     </div>
   );
 }
+
+
+export default TableNodeComponent;
+export { TableNodeComponent as TableNodeComponent };

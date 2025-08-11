@@ -1,10 +1,5 @@
 import TimeoutErrorComponent from "@/components/common/timeoutErrorComponent";
-import {
-  FETCH_ERROR_DESCRIPION,
-  FETCH_ERROR_MESSAGE,
-  TIMEOUT_ERROR_DESCRIPION,
-  TIMEOUT_ERROR_MESSAGE,
-} from "@/constants/constants";
+import { FETCH_ERROR_DESCRIPION, FETCH_ERROR_MESSAGE, TIMEOUT_ERROR_DESCRIPION, TIMEOUT_ERROR_MESSAGE } from "@/constants/constants";
 import CustomFetchErrorComponent from "@/customization/components/custom-fetch-error-component";
 
 export function GenericErrorComponent({ healthCheckTimeout, fetching, retry }) {

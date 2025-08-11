@@ -22,3 +22,5 @@ const SvgJSIcon = (props) => (
   </svg>
 );
 export default SvgJSIcon;
+
+export { SvgJSIcon };

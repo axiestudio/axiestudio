@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import {
-  oneDark,
-  oneLight,
-} from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/cjs/styles/prism";
 import { useDarkStore } from "@/stores/darkStore";
 import IconComponent from "../../components/common/genericIconComponent";
 import { Button } from "../../components/ui/button";
@@ -20,8 +17,7 @@ interface EmbedModalProps {
   activeTweaks: boolean;
 }
 
-export default function EmbedModal({
-  open,
+function EmbedModal({open,
   setOpen,
   flowId,
   flowName,
@@ -78,7 +74,7 @@ export default function EmbedModal({
               />
             ) : (
               <IconComponent
-                name="Copy"
+                name={t("common.copy")}
                 className="!h-5 !w-5 text-muted-foreground"
               />
             )}
@@ -97,3 +93,7 @@ export default function EmbedModal({
     </BaseModal>
   );
 }
+
+
+export default EmbedModal;
+export { EmbedModal };

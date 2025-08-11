@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef  } from "react";
 import SvgMcpIcon from "./McpIcon";
 
 export const McpIcon = forwardRef<SVGSVGElement, React.PropsWithChildren<{}>>(

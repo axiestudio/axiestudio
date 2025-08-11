@@ -9,8 +9,7 @@ type SimplifiedCodeTabProps = {
   language: string;
 };
 
-export default function SimplifiedCodeTabComponent({
-  code,
+function SimplifiedCodeTabComponent({code,
   language,
 }: SimplifiedCodeTabProps) {
   const [isCopied, setIsCopied] = useState<boolean>(false);
@@ -46,7 +45,7 @@ export default function SimplifiedCodeTabComponent({
           {isCopied ? (
             <IconComponent name="Check" className="h-4 w-4" />
           ) : (
-            <IconComponent name="Copy" className="h-4 w-4" />
+            <IconComponent name={t("common.copy")} className="h-4 w-4" />
           )}
         </Button>
       </div>
@@ -60,3 +59,7 @@ export default function SimplifiedCodeTabComponent({
     </div>
   );
 }
+
+
+export default SimplifiedCodeTabComponent;
+export { SimplifiedCodeTabComponent };

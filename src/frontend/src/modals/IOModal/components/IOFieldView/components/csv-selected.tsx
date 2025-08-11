@@ -1,13 +1,6 @@
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../../../components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../../../../../components/ui/select";
 
-export default function CsvSelect({ node, handleChangeSelect }): JSX.Element {
+function CsvSelect({ node, handleChangeSelect }): JSX.Element {
   return (
     <>
       <div className="flex justify-between">
@@ -38,3 +31,7 @@ export default function CsvSelect({ node, handleChangeSelect }): JSX.Element {
     </>
   );
 }
+
+
+export default CsvSelect;
+export { CsvSelect };

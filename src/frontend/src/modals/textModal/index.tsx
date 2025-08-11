@@ -5,13 +5,13 @@ import "ace-builds/src-noconflict/theme-github";
 import "ace-builds/src-noconflict/theme-twilight";
 // import "ace-builds/webpack-resolver";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import IconComponent from "../../components/common/genericIconComponent";
 import { Button } from "../../components/ui/button";
 import BaseModal from "../baseModal";
 import TextEditorArea from "./components/textEditorArea";
 
-export default function TextModal({
-  children,
+function TextModal({children,
   value,
   setValue,
   editable = false,
@@ -20,14 +20,13 @@ export default function TextModal({
   value: string;
   setValue: (value: string) => void;
   editable?: boolean;
-}): JSX.Element {
-  const [open, setOpen] = useState(false);
+}): JSX.Element { const [open, setOpen] = useState(false);
   const [internalValue, setInternalValue] = useState(value);
 
   const handleEscapeKeyDown = (event: KeyboardEvent) => {
     setOpen(false);
     event.stopPropagation();
-  };
+   };
 
   return (
     <BaseModal
@@ -67,12 +66,14 @@ export default function TextModal({
                 setValue(internalValue);
                 setOpen(false);
               }}
-            >
-              Save
-            </Button>
+            >{t("actions.save")}</Button>
           )}
         </div>
       </BaseModal.Footer>
     </BaseModal>
   );
 }
+
+
+export default TextModal;
+export { TextModal };

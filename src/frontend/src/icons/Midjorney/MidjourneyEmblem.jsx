@@ -11,3 +11,5 @@ const SvgMidjourneyEmblem = (props) => (
   </svg>
 );
 export default SvgMidjourneyEmblem;
+
+export { SvgMidjourneyEmblem };

@@ -40,3 +40,5 @@ const SvgHfLogo = (props) => (
   </svg>
 );
 export default SvgHfLogo;
+
+export { SvgHfLogo };
