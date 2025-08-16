@@ -354,12 +354,33 @@ class Settings(BaseSettings):
             msg = f"Invalid database_url provided: '{value}'"
             raise ValueError(msg)
 
-        logger.debug("No database_url provided, trying AXIESTUDIO_DATABASE_URL env variable")
-        if axiestudio_database_url := os.getenv("AXIESTUDIO_DATABASE_URL"):
-            value = axiestudio_database_url
-            logger.debug("Using AXIESTUDIO_DATABASE_URL env variable.")
-        else:
-            logger.debug("No database_url env variable, using sqlite database")
+        logger.debug("No database_url provided, trying environment variables")
+
+        # Try multiple database URL sources with priority
+        database_candidates = [
+            ("AXIESTUDIO_DATABASE_URL", os.getenv("AXIESTUDIO_DATABASE_URL")),
+            ("DATABASE_URL", os.getenv("DATABASE_URL")),
+            ("SUPABASE_DATABASE_URL", os.getenv("SUPABASE_DATABASE_URL")),
+        ]
+
+        for env_name, env_value in database_candidates:
+            if env_value:
+                # Validate the database URL format
+                if is_valid_database_url(env_value):
+                    value = env_value
+                    logger.info(f"Using {env_name} for database connection")
+
+                    # Add connection pool parameters for PostgreSQL
+                    if env_value.startswith(("postgresql://", "postgres://")):
+                        if "?" not in env_value:
+                            value = f"{env_value}?pool_size=10&max_overflow=20&pool_timeout=30"
+                            logger.debug("Added connection pool parameters to PostgreSQL URL")
+                    break
+                else:
+                    logger.warning(f"Invalid database URL in {env_name}: {env_value[:20]}...")
+
+        if not value:
+            logger.debug("No valid database_url env variable found, using sqlite database")
             # Originally, we used sqlite:///./axiestudio.db
             # so we need to migrate to the new format
             # if there is a database in that location
