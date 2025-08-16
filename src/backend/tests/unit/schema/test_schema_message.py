@@ -13,9 +13,9 @@ from platformdirs import user_cache_dir
 
 
 @pytest.fixture
-def langflow_cache_dir(tmp_path):
-    """Create a temporary langflow cache directory."""
-    cache_dir = tmp_path / "langflow"
+def axiestudio_cache_dir(tmp_path):
+    """Create a temporary axiestudio cache directory."""
+    cache_dir = tmp_path / "axiestudio"
     cache_dir.mkdir(parents=True)
     return cache_dir
 

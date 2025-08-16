@@ -1,6 +1,6 @@
 import type { Page } from "playwright/test";
 
-export const addFlowToTestOnEmptyAxie Studio = async (page: Page) => {
+export const addFlowToTestOnEmptyAxieStudio = async (page: Page) => {
   await page.getByTestId("new_project_btn_empty_page").click();
   await page.getByTestId("side_nav_options_all-templates").click();
   await page.getByRole("heading", { name: "Basic Prompting" }).click();

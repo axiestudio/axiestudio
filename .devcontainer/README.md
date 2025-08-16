@@ -17,12 +17,12 @@ To setup the demo in Codespace:
 After the codespace is opened, there will be two phases to the process. It will take ≈5-10 minutes to complete.
 
 * **Phase 1**: Building Container; you can click on the "Building Codespace" link to watch the logs
-* **Phase 2**: Building Langflow; the terminal will now show `Running postCreateCommand...`, similar to:
+* **Phase 2**: Building Axie Studio; the terminal will now show `Running postCreateCommand...`, similar to:
 
 ```
 ✔ Finishing up...
 ⠸ Running postCreateCommand...
-  › sudo chown -R langflow .venv .mypy_cache src/frontend/node_modules src/frontend/build src/backend/base/langflow/frontend && make install_frontend && mak…
+  › sudo chown -R axiestudio .venv .mypy_cache src/frontend/node_modules src/frontend/build src/backend/base/axiestudio/frontend && make install_frontend && mak…
 ```
 
 Once completed, this terminal window will close.
