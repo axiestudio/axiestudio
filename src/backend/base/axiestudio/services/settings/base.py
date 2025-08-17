@@ -347,46 +347,33 @@ class Settings(BaseSettings):
 
         return str(value)
 
-    @field_validator("database_url", mode="before")
+    @field_validator("database_url", mode="after")
     @classmethod
     def set_database_url(cls, value, info):
         if value and not is_valid_database_url(value):
             msg = f"Invalid database_url provided: '{value}'"
             raise ValueError(msg)
 
-        logger.debug("No database_url provided, trying environment variables")
-
-        # Try multiple database URL sources with priority
-        database_candidates = [
-            ("AXIESTUDIO_DATABASE_URL", os.getenv("AXIESTUDIO_DATABASE_URL")),
-            ("DATABASE_URL", os.getenv("DATABASE_URL")),
-            ("SUPABASE_DATABASE_URL", os.getenv("SUPABASE_DATABASE_URL")),
-        ]
-
-        for env_name, env_value in database_candidates:
-            if env_value:
-                # Validate the database URL format
-                if is_valid_database_url(env_value):
-                    value = env_value
-                    logger.info(f"Using {env_name} for database connection")
-
-                    # Add connection pool parameters for PostgreSQL
-                    if env_value.startswith(("postgresql://", "postgres://")):
-                        if "?" not in env_value:
-                            value = f"{env_value}?pool_size=10&max_overflow=20&pool_timeout=30"
-                            logger.debug("Added connection pool parameters to PostgreSQL URL")
-                    break
-                else:
-                    logger.warning(f"Invalid database URL in {env_name}: {env_value[:20]}...")
-
-        if not value:
-            logger.debug("No valid database_url env variable found, using sqlite database")
+        logger.debug("No database_url provided, trying AXIESTUDIO_DATABASE_URL env variable")
+        if axiestudio_database_url := os.getenv("AXIESTUDIO_DATABASE_URL"):
+            value = axiestudio_database_url
+            logger.debug("Using AXIESTUDIO_DATABASE_URL env variable.")
+        else:
+            logger.debug("No database_url env variable, using sqlite database")
             # Originally, we used sqlite:///./axiestudio.db
             # so we need to migrate to the new format
             # if there is a database in that location
-            if not info.data["config_dir"]:
-                msg = "config_dir not set, please set it or provide a database_url"
-                raise ValueError(msg)
+            config_dir = info.data.get("config_dir")
+            if not config_dir:
+                # Fallback: create config_dir if not set
+                from platformdirs import user_cache_dir
+                app_name = "axiestudio"
+                app_author = "axiestudio"
+                cache_dir = user_cache_dir(app_name, app_author)
+                config_dir = Path(cache_dir)
+                config_dir.mkdir(parents=True, exist_ok=True)
+                config_dir = str(config_dir)
+                logger.debug(f"Created fallback config_dir: {config_dir}")
 
             from axiestudio.utils.version import get_version_info
             from axiestudio.utils.version import is_pre_release as axiestudio_is_pre_release
@@ -394,8 +381,8 @@ class Settings(BaseSettings):
             version = get_version_info()["version"]
             is_pre_release = axiestudio_is_pre_release(version)
 
-            if info.data["save_db_in_config_dir"]:
-                database_dir = info.data["config_dir"]
+            if info.data.get("save_db_in_config_dir", False):
+                database_dir = config_dir
                 logger.debug(f"Saving database to config_dir: {database_dir}")
             else:
                 database_dir = Path(__file__).parent.parent.parent.resolve()
@@ -409,12 +396,12 @@ class Settings(BaseSettings):
             if is_pre_release:
                 if Path(new_pre_path).exists():
                     final_path = new_pre_path
-                elif Path(new_path).exists() and info.data["save_db_in_config_dir"]:
+                elif Path(new_path).exists() and info.data.get("save_db_in_config_dir", False):
                     # We need to copy the current db to the new location
                     logger.debug("Copying existing database to new location")
                     copy2(new_path, new_pre_path)
                     logger.debug(f"Copied existing database to {new_pre_path}")
-                elif Path(f"./{db_file_name}").exists() and info.data["save_db_in_config_dir"]:
+                elif Path(f"./{db_file_name}").exists() and info.data.get("save_db_in_config_dir", False):
                     logger.debug("Copying existing database to new location")
                     copy2(f"./{db_file_name}", new_pre_path)
                     logger.debug(f"Copied existing database to {new_pre_path}")

@@ -12,24 +12,24 @@ Your Supabase PostgreSQL database is **fully compatible** with Axie Studio:
 
 ### **1. Environment Variables**
 
-Your Supabase connection string format:
+Your Supabase connection string:
 ```bash
-postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_ID.supabase.co:5432/postgres
+postgresql://postgres:STEfanjohn!12@db.ompjkiiabyuegytncbwq.supabase.co:5432/postgres
 ```
 
 **Key Components:**
-- **Host:** `db.YOUR_PROJECT_ID.supabase.co`
+- **Host:** `db.ompjkiiabyuegytncbwq.supabase.co`
 - **Port:** `5432` (standard PostgreSQL)
 - **Database:** `postgres`
 - **Username:** `postgres`
-- **Password:** `YOUR_PASSWORD`
-- **Project ID:** `YOUR_PROJECT_ID`
+- **Password:** `STEfanjohn!12`
+- **Project ID:** `ompjkiiabyuegytncbwq`
 
 ### **2. Local Development (.env)**
 
 Use the `.env` file created for local development:
 ```bash
-AXIESTUDIO_DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_ID.supabase.co:5432/postgres"
+AXIESTUDIO_DATABASE_URL="postgresql://postgres:STEfanjohn!12@db.ompjkiiabyuegytncbwq.supabase.co:5432/postgres"
 AXIESTUDIO_AUTO_LOGIN=false
 ```
 
