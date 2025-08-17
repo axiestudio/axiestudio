@@ -771,7 +771,9 @@ export const AUTHORIZED_DUPLICATE_REQUESTS = [
   "/logout",
   "/refresh",
   "/login",
-  "/auto_login",
+  "/subscriptions/status",
+  "/users/whoami",
+  "/files",
 ];
 
 export const BROKEN_EDGES_WARNING =

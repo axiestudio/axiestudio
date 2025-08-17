@@ -59,7 +59,8 @@ export default function SignUp(): JSX.Element {
         setSuccessData({
           title: SIGN_UP_SUCCESS,
         });
-        navigate("/pricing");
+        // Redirect to login page after successful signup
+        navigate("/login?message=signup-success");
       },
       onError: (error) => {
         const {

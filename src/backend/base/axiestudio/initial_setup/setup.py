@@ -1004,13 +1004,13 @@ async def create_or_update_starter_projects(all_types_dict: dict) -> None:
 
 async def initialize_super_user_if_needed() -> None:
     settings_service = get_settings_service()
-    if not settings_service.auth_settings.AUTO_LOGIN:
-        return
     username = settings_service.auth_settings.SUPERUSER
     password = settings_service.auth_settings.SUPERUSER_PASSWORD
+
+    # Always create superuser if credentials are provided, regardless of AUTO_LOGIN setting
     if not username or not password:
-        msg = "SUPERUSER and SUPERUSER_PASSWORD must be set in the settings if AUTO_LOGIN is true."
-        raise ValueError(msg)
+        logger.debug("SUPERUSER and SUPERUSER_PASSWORD not set - skipping superuser creation")
+        return
 
     async with session_scope() as async_session:
         super_user = await create_super_user(db=async_session, username=username, password=password)

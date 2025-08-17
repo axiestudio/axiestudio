@@ -39,7 +39,15 @@ export default function PricingPage(): JSX.Element {
   };
 
   const handleContinueToApp = () => {
-    navigate("/");
+    // Smart redirect: Check if user came from signup, redirect to flows
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromSignup = urlParams.get('from') === 'signup';
+
+    if (fromSignup) {
+      navigate("/flows");
+    } else {
+      navigate("/");
+    }
   };
 
   const isOnTrial = subscriptionStatus?.subscription_status === "trial";
@@ -101,16 +109,24 @@ export default function PricingPage(): JSX.Element {
             </CardContent>
             <CardFooter>
               {isOnTrial && !trialExpired ? (
-                <Button 
-                  onClick={handleContinueToApp} 
+                <Button
+                  onClick={handleContinueToApp}
                   className="w-full"
                   variant="outline"
                 >
                   Continue to App
                 </Button>
+              ) : !subscriptionStatus ? (
+                <Button
+                  onClick={handleContinueToApp}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Start Free Trial
+                </Button>
               ) : (
-                <Button 
-                  disabled 
+                <Button
+                  disabled
                   className="w-full"
                   variant="outline"
                 >

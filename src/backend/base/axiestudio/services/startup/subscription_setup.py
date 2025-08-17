@@ -21,37 +21,33 @@ async def setup_subscription_schema():
     try:
         db_service = get_db_service()
         
+        # Check if we're using SQLite or PostgreSQL for appropriate syntax
+        db_url = str(db_service.database_url).lower()
+        is_sqlite = "sqlite" in db_url
+
         # SQL commands to add subscription fields if they don't exist
-        migration_commands = [
-            """
-            ALTER TABLE user 
-            ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255) NULL;
-            """,
-            """
-            ALTER TABLE user 
-            ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(50) DEFAULT 'trial';
-            """,
-            """
-            ALTER TABLE user 
-            ADD COLUMN IF NOT EXISTS subscription_id VARCHAR(255) NULL;
-            """,
-            """
-            ALTER TABLE user 
-            ADD COLUMN IF NOT EXISTS trial_start TIMESTAMP NULL;
-            """,
-            """
-            ALTER TABLE user 
-            ADD COLUMN IF NOT EXISTS trial_end TIMESTAMP NULL;
-            """,
-            """
-            ALTER TABLE user 
-            ADD COLUMN IF NOT EXISTS subscription_start TIMESTAMP NULL;
-            """,
-            """
-            ALTER TABLE user 
-            ADD COLUMN IF NOT EXISTS subscription_end TIMESTAMP NULL;
-            """
-        ]
+        if is_sqlite:
+            # SQLite syntax (newer versions support IF NOT EXISTS)
+            migration_commands = [
+                "ALTER TABLE user ADD COLUMN stripe_customer_id VARCHAR(255) NULL;",
+                "ALTER TABLE user ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'trial';",
+                "ALTER TABLE user ADD COLUMN subscription_id VARCHAR(255) NULL;",
+                "ALTER TABLE user ADD COLUMN trial_start TIMESTAMP NULL;",
+                "ALTER TABLE user ADD COLUMN trial_end TIMESTAMP NULL;",
+                "ALTER TABLE user ADD COLUMN subscription_start TIMESTAMP NULL;",
+                "ALTER TABLE user ADD COLUMN subscription_end TIMESTAMP NULL;"
+            ]
+        else:
+            # PostgreSQL syntax
+            migration_commands = [
+                "ALTER TABLE user ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255) NULL;",
+                "ALTER TABLE user ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(50) DEFAULT 'trial';",
+                "ALTER TABLE user ADD COLUMN IF NOT EXISTS subscription_id VARCHAR(255) NULL;",
+                "ALTER TABLE user ADD COLUMN IF NOT EXISTS trial_start TIMESTAMP NULL;",
+                "ALTER TABLE user ADD COLUMN IF NOT EXISTS trial_end TIMESTAMP NULL;",
+                "ALTER TABLE user ADD COLUMN IF NOT EXISTS subscription_start TIMESTAMP NULL;",
+                "ALTER TABLE user ADD COLUMN IF NOT EXISTS subscription_end TIMESTAMP NULL;"
+            ]
         
         async with db_service.with_session() as session:
             logger.info("Setting up subscription database schema...")
@@ -93,13 +89,13 @@ async def setup_subscription_schema():
 def run_subscription_setup():
     """Synchronous wrapper for subscription setup."""
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # If we're already in an async context, create a task
-            asyncio.create_task(setup_subscription_schema())
-        else:
-            # If not in async context, run directly
-            asyncio.run(setup_subscription_schema())
+        # Create a new event loop for this thread
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(setup_subscription_schema())
+        finally:
+            loop.close()
     except Exception as e:
         logger.error(f"Error running subscription setup: {e}")
 
