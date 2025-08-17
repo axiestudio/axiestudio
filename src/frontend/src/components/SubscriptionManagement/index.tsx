@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar, CreditCard, Crown, ExternalLink, AlertTriangle } from "lucide-react";
 import { useGetSubscriptionStatus, useCreateCustomerPortal, useCancelSubscription } from "@/controllers/API/queries/subscriptions";
 import useAlertStore from "@/stores/alertStore";
@@ -211,27 +211,27 @@ export default function SubscriptionManagement(): JSX.Element {
           )}
 
           {isSubscribed && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
+            <Dialog>
+              <DialogTrigger asChild>
                 <Button variant="destructive" size="sm">
                   Cancel Subscription
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
-                  <AlertDialogDescription>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Cancel Subscription</DialogTitle>
+                  <DialogDescription>
                     Are you sure you want to cancel your subscription? You'll lose access to Pro features at the end of your current billing period.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleCancelSubscription}>
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline">Keep Subscription</Button>
+                  <Button variant="destructive" onClick={handleCancelSubscription}>
                     Cancel Subscription
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       </CardContent>
