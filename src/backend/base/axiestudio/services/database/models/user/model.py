@@ -32,6 +32,15 @@ class User(SQLModel, table=True):  # type: ignore[call-arg]
     create_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login_at: datetime | None = Field(default=None, nullable=True)
+
+    # Subscription fields
+    stripe_customer_id: str | None = Field(default=None, nullable=True)
+    subscription_status: str | None = Field(default="trial", nullable=True)  # trial, active, canceled, past_due
+    subscription_id: str | None = Field(default=None, nullable=True)
+    trial_start: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=True)
+    trial_end: datetime | None = Field(default=None, nullable=True)
+    subscription_start: datetime | None = Field(default=None, nullable=True)
+    subscription_end: datetime | None = Field(default=None, nullable=True)
     api_keys: list["ApiKey"] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={"cascade": "delete"},
@@ -57,6 +66,7 @@ class UserCreate(SQLModel):
     optins: dict[str, Any] | None = Field(
         default={"github_starred": False, "dialog_dismissed": False, "discord_clicked": False}
     )
+    trial_start: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=True)
 
 
 class UserRead(SQLModel):
@@ -71,6 +81,15 @@ class UserRead(SQLModel):
     last_login_at: datetime | None = Field(nullable=True)
     optins: dict[str, Any] | None = Field(default=None)
 
+    # Subscription fields for read operations
+    stripe_customer_id: str | None = Field(default=None, nullable=True)
+    subscription_status: str | None = Field(default="trial", nullable=True)
+    subscription_id: str | None = Field(default=None, nullable=True)
+    trial_start: datetime | None = Field(default=None, nullable=True)
+    trial_end: datetime | None = Field(default=None, nullable=True)
+    subscription_start: datetime | None = Field(default=None, nullable=True)
+    subscription_end: datetime | None = Field(default=None, nullable=True)
+
 
 class UserUpdate(SQLModel):
     username: str | None = None
@@ -80,3 +99,12 @@ class UserUpdate(SQLModel):
     is_superuser: bool | None = None
     last_login_at: datetime | None = None
     optins: dict[str, Any] | None = None
+
+    # Subscription update fields
+    stripe_customer_id: str | None = None
+    subscription_status: str | None = None
+    subscription_id: str | None = None
+    trial_start: datetime | None = None
+    trial_end: datetime | None = None
+    subscription_start: datetime | None = None
+    subscription_end: datetime | None = None

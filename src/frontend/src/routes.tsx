@@ -39,6 +39,9 @@ import ViewPage from "./pages/ViewPage";
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const LoginAdminPage = lazy(() => import("./pages/AdminPage/LoginPage"));
 const DeleteAccountPage = lazy(() => import("./pages/DeleteAccountPage"));
+const SignUpPage = lazy(() => import("./pages/SignUpPage"));
+const PricingPage = lazy(() => import("./pages/PricingPage"));
+const SubscriptionSuccessPage = lazy(() => import("./pages/SubscriptionSuccessPage"));
 
 const PlaygroundPage = lazy(() => import("./pages/Playground"));
 
@@ -167,6 +170,29 @@ const router = createBrowserRouter(
               <ProtectedLoginRoute>
                 <LoginPage />
               </ProtectedLoginRoute>
+            }
+          />
+
+          <Route
+            path="signup"
+            element={
+              <ProtectedLoginRoute>
+                <SignUpPage />
+              </ProtectedLoginRoute>
+            }
+          />
+
+          <Route
+            path="pricing"
+            element={
+              <PricingPage />
+            }
+          />
+
+          <Route
+            path="subscription-success"
+            element={
+              <SubscriptionSuccessPage />
             }
           />
 

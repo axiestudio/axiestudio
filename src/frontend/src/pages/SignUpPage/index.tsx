@@ -59,7 +59,7 @@ export default function SignUp(): JSX.Element {
         setSuccessData({
           title: SIGN_UP_SUCCESS,
         });
-        navigate("/login");
+        navigate("/pricing");
       },
       onError: (error) => {
         const {

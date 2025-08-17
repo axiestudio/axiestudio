@@ -36,6 +36,19 @@ from axiestudio.interface.components import get_and_cache_all_types_dict
 from axiestudio.interface.utils import setup_llm_caching
 from axiestudio.logging.logger import configure
 from axiestudio.middleware import ContentSizeLimitMiddleware
+try:
+    from axiestudio.middleware.trial_middleware import TrialMiddleware
+    TRIAL_MIDDLEWARE_AVAILABLE = True
+except ImportError:
+    TRIAL_MIDDLEWARE_AVAILABLE = False
+    TrialMiddleware = None
+
+# Import subscription setup (will auto-run in background)
+try:
+    from axiestudio.services.startup.subscription_setup import setup_subscription_schema
+    SUBSCRIPTION_SETUP_AVAILABLE = True
+except ImportError:
+    SUBSCRIPTION_SETUP_AVAILABLE = False
 from axiestudio.services.deps import (
     get_queue_service,
     get_settings_service,
@@ -299,6 +312,10 @@ def create_app():
         allow_headers=["*"],
     )
     app.add_middleware(JavaScriptMIMETypeMiddleware)
+
+    # Add trial middleware if available
+    if TRIAL_MIDDLEWARE_AVAILABLE:
+        app.add_middleware(TrialMiddleware)
 
     @app.middleware("http")
     async def check_boundary(request: Request, call_next):

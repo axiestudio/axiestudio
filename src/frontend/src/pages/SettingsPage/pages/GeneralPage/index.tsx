@@ -28,6 +28,7 @@ import useScrollToElement from "../hooks/use-scroll-to-element";
 import GeneralPageHeaderComponent from "./components/GeneralPageHeader";
 import PasswordFormComponent from "./components/PasswordForm";
 import ProfilePictureFormComponent from "./components/ProfilePictureForm";
+import SubscriptionManagement from "@/components/SubscriptionManagement";
 
 export const GeneralPage = () => {
   const { scrollId } = useParams();
@@ -160,6 +161,8 @@ export const GeneralPage = () => {
             handlePatchPassword={handlePatchPassword}
           />
         )}
+
+        <SubscriptionManagement />
       </div>
 
       <CustomTermsLinks />

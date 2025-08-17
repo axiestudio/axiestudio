@@ -131,6 +131,15 @@ export default function LoginPage(): JSX.Element {
                 Sign in
               </Button>
             </Form.Submit>
+
+            <div className="text-center mt-4">
+              <p className="text-sm text-muted-foreground">
+                Don't have an account?{" "}
+                <CustomLink to="/signup" className="text-primary hover:underline font-medium">
+                  Sign up
+                </CustomLink>
+              </p>
+            </div>
           </div>
 
         </div>

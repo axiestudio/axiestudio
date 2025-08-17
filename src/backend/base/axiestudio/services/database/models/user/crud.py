@@ -23,7 +23,17 @@ async def get_user_by_id(db: AsyncSession, user_id: UUID) -> User | None:
     return (await db.exec(stmt)).first()
 
 
-async def update_user(user_db: User | None, user: UserUpdate, db: AsyncSession) -> User:
+async def get_user_by_stripe_customer_id(db: AsyncSession, stripe_customer_id: str) -> User | None:
+    stmt = select(User).where(User.stripe_customer_id == stripe_customer_id)
+    return (await db.exec(stmt)).first()
+
+
+async def update_user(db: AsyncSession, user_id: UUID, user: UserUpdate) -> User:
+    user_db = await get_user_by_id(db, user_id)
+    return await update_user_instance(user_db, user, db)
+
+
+async def update_user_instance(user_db: User | None, user: UserUpdate, db: AsyncSession) -> User:
     if not user_db:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -57,6 +67,6 @@ async def update_user_last_login_at(user_id: UUID, db: AsyncSession):
     try:
         user_data = UserUpdate(last_login_at=datetime.now(timezone.utc))
         user = await get_user_by_id(db, user_id)
-        return await update_user(user, user_data, db)
+        return await update_user_instance(user, user_data, db)
     except Exception as e:  # noqa: BLE001
         logger.error(f"Error updating user last login at: {e!s}")

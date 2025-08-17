@@ -28,10 +28,19 @@ async def add_user(
     session: DbSession,
 ) -> User:
     """Add a new user to the database. Admin access required."""
+    from datetime import datetime, timezone, timedelta
+
     new_user = User.model_validate(user, from_attributes=True)
     try:
         new_user.password = get_password_hash(user.password)
         new_user.is_active = get_settings_service().auth_settings.NEW_USER_IS_ACTIVE
+
+        # Set trial information for new users
+        now = datetime.now(timezone.utc)
+        new_user.trial_start = now
+        new_user.trial_end = now + timedelta(days=7)
+        new_user.subscription_status = "trial"
+
         session.add(new_user)
         await session.commit()
         await session.refresh(new_user)
