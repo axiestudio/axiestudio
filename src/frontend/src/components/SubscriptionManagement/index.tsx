@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar, CreditCard, Crown, ExternalLink, AlertTriangle } from "lucide-react";
+import { DialogClose } from "@radix-ui/react-dialog";
+import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import { useGetSubscriptionStatus, useCreateCustomerPortal, useCancelSubscription } from "@/controllers/API/queries/subscriptions";
 import useAlertStore from "@/stores/alertStore";
 
@@ -78,7 +79,7 @@ export default function SubscriptionManagement(): JSX.Element {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
+            <ForwardedIconComponent name="CreditCard" className="h-5 w-5" />
             Subscription
           </CardTitle>
         </CardHeader>
@@ -97,7 +98,7 @@ export default function SubscriptionManagement(): JSX.Element {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5" />
+          <ForwardedIconComponent name="CreditCard" className="h-5 w-5" />
           Subscription Management
         </CardTitle>
         <CardDescription>
@@ -120,7 +121,7 @@ export default function SubscriptionManagement(): JSX.Element {
         {isOnTrial && (
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <div className="flex items-start gap-3">
-              <Crown className="h-5 w-5 text-blue-500 mt-0.5" />
+              <ForwardedIconComponent name="Crown" className="h-5 w-5 text-blue-500 mt-0.5" />
               <div>
                 <h4 className="font-medium text-blue-900 dark:text-blue-100">
                   Free Trial Active
@@ -145,7 +146,7 @@ export default function SubscriptionManagement(): JSX.Element {
         {trialExpired && !isSubscribed && (
           <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+              <ForwardedIconComponent name="AlertTriangle" className="h-5 w-5 text-red-500 mt-0.5" />
               <div>
                 <h4 className="font-medium text-red-900 dark:text-red-100">
                   Trial Expired
@@ -169,7 +170,7 @@ export default function SubscriptionManagement(): JSX.Element {
         {isSubscribed && (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <ForwardedIconComponent name="Calendar" className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm">
                 Next billing: {formatDate(subscriptionStatus.subscription_end)}
               </span>
@@ -184,7 +185,7 @@ export default function SubscriptionManagement(): JSX.Element {
               onClick={() => window.location.href = "/pricing"}
               className="flex-1"
             >
-              <Crown className="h-4 w-4 mr-2" />
+              <ForwardedIconComponent name="Crown" className="h-4 w-4 mr-2" />
               Upgrade to Pro
             </Button>
           )}
@@ -205,7 +206,7 @@ export default function SubscriptionManagement(): JSX.Element {
               disabled={isLoading}
               className="flex-1"
             >
-              <ExternalLink className="h-4 w-4 mr-2" />
+              <ForwardedIconComponent name="ExternalLink" className="h-4 w-4 mr-2" />
               {isLoading ? "Opening..." : "Manage Billing"}
             </Button>
           )}
@@ -225,10 +226,14 @@ export default function SubscriptionManagement(): JSX.Element {
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                  <Button variant="outline">Keep Subscription</Button>
-                  <Button variant="destructive" onClick={handleCancelSubscription}>
-                    Cancel Subscription
-                  </Button>
+                  <DialogClose asChild>
+                    <Button variant="outline">Keep Subscription</Button>
+                  </DialogClose>
+                  <DialogClose asChild>
+                    <Button variant="destructive" onClick={handleCancelSubscription}>
+                      Cancel Subscription
+                    </Button>
+                  </DialogClose>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
