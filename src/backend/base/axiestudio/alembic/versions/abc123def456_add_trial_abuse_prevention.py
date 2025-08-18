@@ -26,8 +26,9 @@ def upgrade() -> None:
     conn = op.get_bind()
     inspector = sa.inspect(conn)
     
-    # Get existing columns
+    # Get existing columns and indexes
     existing_columns = [col['name'] for col in inspector.get_columns('user')]
+    existing_indexes = [idx['name'] for idx in inspector.get_indexes('user')]
     
     # Add new columns if they don't exist
     with op.batch_alter_table('user', schema=None) as batch_op:
@@ -41,12 +42,12 @@ def upgrade() -> None:
         else:
             print("signup_ip column already exists - skipping creation")
 
-        # Ensure signup_ip index exists
-        try:
+        # Create signup_ip index only if it doesn't exist
+        if 'ix_user_signup_ip' not in existing_indexes:
             batch_op.create_index('ix_user_signup_ip', ['signup_ip'])
             print("Created signup_ip index")
-        except Exception:
-            print("signup_ip index may already exist - skipping")
+        else:
+            print("signup_ip index already exists - skipping")
 
         # Add device_fingerprint column
         if 'device_fingerprint' not in existing_columns:
@@ -55,12 +56,12 @@ def upgrade() -> None:
         else:
             print("device_fingerprint column already exists - skipping creation")
 
-        # Ensure device_fingerprint index exists
-        try:
+        # Create device_fingerprint index only if it doesn't exist
+        if 'ix_user_device_fingerprint' not in existing_indexes:
             batch_op.create_index('ix_user_device_fingerprint', ['device_fingerprint'])
             print("Created device_fingerprint index")
-        except Exception:
-            print("device_fingerprint index may already exist - skipping")
+        else:
+            print("device_fingerprint index already exists - skipping")
 
         # Note: Subscription fields (stripe_customer_id, subscription_status, etc.)
         # are handled by separate migration scripts and should already exist
