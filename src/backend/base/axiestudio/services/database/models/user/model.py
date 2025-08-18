@@ -25,7 +25,7 @@ class UserOptin(BaseModel):
 class User(SQLModel, table=True):  # type: ignore[call-arg]
     id: UUIDstr = Field(default_factory=uuid4, primary_key=True, unique=True)
     username: str = Field(index=True, unique=True)
-    email: str = Field(index=True, unique=True)  # Required and unique for trial abuse prevention
+    email: str | None = Field(default=None, nullable=True, index=True)  # Required for new users, nullable for existing users
     password: str = Field()
     profile_image: str | None = Field(default=None, nullable=True)
     is_active: bool = Field(default=False)
@@ -82,7 +82,7 @@ class UserCreate(SQLModel):
 class UserRead(SQLModel):
     id: UUID = Field(default_factory=uuid4)
     username: str = Field()
-    email: str = Field()  # Required field
+    email: str | None = Field(default=None, nullable=True)  # Nullable for existing users
     profile_image: str | None = Field()
     store_api_key: str | None = Field(nullable=True)
     is_active: bool = Field()

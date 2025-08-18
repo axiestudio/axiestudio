@@ -1,9 +1,10 @@
-"""Add trial abuse prevention fields
+"""Add trial abuse prevention fields (signup_ip, device_fingerprint)
 
 Revision ID: abc123def456
 Revises: 3162e83e485f
 Create Date: 2024-12-19 12:00:00.000000
 
+Note: Email and subscription fields are handled by separate migrations
 """
 from typing import Sequence, Union
 
@@ -18,7 +19,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """Add trial abuse prevention fields to user table."""
+    """Add trial abuse prevention fields (signup_ip, device_fingerprint) to user table.
+
+    Note: Email and subscription fields are handled by separate migration scripts.
+    """
     conn = op.get_bind()
     inspector = sa.inspect(conn)
     
@@ -27,57 +31,62 @@ def upgrade() -> None:
     
     # Add new columns if they don't exist
     with op.batch_alter_table('user', schema=None) as batch_op:
+        # Note: Email and subscription fields are handled by separate migration scripts
+        print("Email and subscription fields are handled by separate migrations - skipping")
+
         # Add signup_ip column
         if 'signup_ip' not in existing_columns:
             batch_op.add_column(sa.Column('signup_ip', sa.String(45), nullable=True))
+            print("Added signup_ip column")
+        else:
+            print("signup_ip column already exists - skipping creation")
+
+        # Ensure signup_ip index exists
+        try:
             batch_op.create_index('ix_user_signup_ip', ['signup_ip'])
-        
+            print("Created signup_ip index")
+        except Exception:
+            print("signup_ip index may already exist - skipping")
+
         # Add device_fingerprint column
         if 'device_fingerprint' not in existing_columns:
             batch_op.add_column(sa.Column('device_fingerprint', sa.String(32), nullable=True))
-            batch_op.create_index('ix_user_device_fingerprint', ['device_fingerprint'])
-        
-        # Make email unique if not already (but keep nullable for existing users)
-        # Note: We'll handle the NOT NULL constraint separately for existing data
+            print("Added device_fingerprint column")
+        else:
+            print("device_fingerprint column already exists - skipping creation")
+
+        # Ensure device_fingerprint index exists
         try:
-            # Check if unique constraint already exists
-            constraints = inspector.get_unique_constraints('user')
-            email_unique_exists = any('email' in constraint['column_names'] for constraint in constraints)
-            
-            if not email_unique_exists:
-                batch_op.create_unique_constraint('uq_user_email', ['email'])
-        except Exception as e:
-            # If constraint creation fails, log but continue
-            print(f"Warning: Could not create email unique constraint: {e}")
+            batch_op.create_index('ix_user_device_fingerprint', ['device_fingerprint'])
+            print("Created device_fingerprint index")
+        except Exception:
+            print("device_fingerprint index may already exist - skipping")
+
+        # Note: Subscription fields (stripe_customer_id, subscription_status, etc.)
+        # are handled by separate migration scripts and should already exist
+        print("Subscription fields are handled by separate migrations - skipping")
+
+        print("Trial abuse prevention migration completed successfully")
 
 
 def downgrade() -> None:
     """Remove trial abuse prevention fields from user table."""
     with op.batch_alter_table('user', schema=None) as batch_op:
-        # Remove indexes first
-        try:
-            batch_op.drop_index('ix_user_signup_ip')
-        except Exception:
-            pass
-        
-        try:
-            batch_op.drop_index('ix_user_device_fingerprint')
-        except Exception:
-            pass
-        
-        # Remove unique constraint
-        try:
-            batch_op.drop_constraint('uq_user_email', type_='unique')
-        except Exception:
-            pass
-        
-        # Remove columns
-        try:
-            batch_op.drop_column('signup_ip')
-        except Exception:
-            pass
-        
-        try:
-            batch_op.drop_column('device_fingerprint')
-        except Exception:
-            pass
+        # Remove indexes first (only the ones we created)
+        indexes_to_remove = ['ix_user_signup_ip', 'ix_user_device_fingerprint']
+        for index_name in indexes_to_remove:
+            try:
+                batch_op.drop_index(index_name)
+            except Exception:
+                pass
+
+        # Remove only the columns we added (not email or subscription fields)
+        columns_to_remove = ['signup_ip', 'device_fingerprint']
+
+        for column_name in columns_to_remove:
+            try:
+                batch_op.drop_column(column_name)
+            except Exception:
+                pass
+
+        # Note: We don't remove email or subscription fields as they're managed by other migrations
