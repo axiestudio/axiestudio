@@ -36,13 +36,19 @@ class TrialService:
                 "should_cleanup": False
             }
         
-        # Calculate trial end date
+        # Calculate trial end date with timezone consistency
         trial_start = user.trial_start or user.create_at
         trial_end = user.trial_end or (trial_start + timedelta(days=self.trial_duration_days))
-        
+
+        # Ensure timezone consistency for comparisons
+        if trial_start and trial_start.tzinfo is None:
+            trial_start = trial_start.replace(tzinfo=timezone.utc)
+        if trial_end and trial_end.tzinfo is None:
+            trial_end = trial_end.replace(tzinfo=timezone.utc)
+
         # Check if trial has expired
-        trial_expired = now > trial_end
-        days_left = max(0, (trial_end - now).days)
+        trial_expired = now > trial_end if trial_end else False
+        days_left = max(0, (trial_end - now).days) if trial_end else 0
         
         # Should cleanup if trial expired and no subscription
         should_cleanup = trial_expired and user.subscription_status != "active"
@@ -128,8 +134,13 @@ class TrialService:
             if not user:
                 return False
             
-            # Calculate new trial end date
+            # Calculate new trial end date with timezone consistency
             current_trial_end = user.trial_end or (user.trial_start + timedelta(days=self.trial_duration_days))
+
+            # Ensure timezone consistency
+            if current_trial_end and current_trial_end.tzinfo is None:
+                current_trial_end = current_trial_end.replace(tzinfo=timezone.utc)
+
             new_trial_end = current_trial_end + timedelta(days=additional_days)
             
             user.trial_end = new_trial_end
