@@ -51,8 +51,13 @@ async def create_checkout_session(
         # Create Stripe customer if not exists (handle missing column gracefully)
         stripe_customer_id = getattr(current_user, 'stripe_customer_id', None)
         if not stripe_customer_id:
+            # Use email if available, otherwise create a valid email from username
+            user_email = getattr(current_user, 'email', None)
+            if not user_email or '@' not in user_email:
+                user_email = f"{current_user.username}@axiestudio.se"
+
             customer_id = await stripe_service.create_customer(
-                email=current_user.username,  # Using username as email
+                email=user_email,
                 name=current_user.username
             )
             
@@ -64,7 +69,10 @@ async def create_checkout_session(
         
         # Calculate remaining trial days (don't give double trial)
         now = datetime.now(timezone.utc)
-        trial_end = current_user.trial_end or (current_user.trial_start + timedelta(days=7))
+
+        # Handle trial dates safely
+        trial_start = getattr(current_user, 'trial_start', None) or now
+        trial_end = getattr(current_user, 'trial_end', None) or (trial_start + timedelta(days=7))
 
         # Only give Stripe trial if user's trial hasn't expired yet
         remaining_trial_days = 0
@@ -97,8 +105,13 @@ async def create_customer_portal(
     try:
         # Create Stripe customer if not exists
         if not current_user.stripe_customer_id:
+            # Use email if available, otherwise create a valid email from username
+            user_email = getattr(current_user, 'email', None)
+            if not user_email or '@' not in user_email:
+                user_email = f"{current_user.username}@axiestudio.se"
+
             customer_id = await stripe_service.create_customer(
-                email=current_user.username,  # Using username as email
+                email=user_email,
                 name=current_user.username
             )
 

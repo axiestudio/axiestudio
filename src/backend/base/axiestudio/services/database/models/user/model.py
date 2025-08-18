@@ -25,6 +25,7 @@ class UserOptin(BaseModel):
 class User(SQLModel, table=True):  # type: ignore[call-arg]
     id: UUIDstr = Field(default_factory=uuid4, primary_key=True, unique=True)
     username: str = Field(index=True, unique=True)
+    email: str | None = Field(default=None, nullable=True, index=True)
     password: str = Field()
     profile_image: str | None = Field(default=None, nullable=True)
     is_active: bool = Field(default=False)
@@ -62,6 +63,7 @@ class User(SQLModel, table=True):  # type: ignore[call-arg]
 
 class UserCreate(SQLModel):
     username: str = Field()
+    email: str | None = Field(default=None)
     password: str = Field()
     optins: dict[str, Any] | None = Field(
         default={"github_starred": False, "dialog_dismissed": False, "discord_clicked": False}
@@ -72,6 +74,7 @@ class UserCreate(SQLModel):
 class UserRead(SQLModel):
     id: UUID = Field(default_factory=uuid4)
     username: str = Field()
+    email: str | None = Field(default=None, nullable=True)
     profile_image: str | None = Field()
     store_api_key: str | None = Field(nullable=True)
     is_active: bool = Field()
@@ -93,6 +96,7 @@ class UserRead(SQLModel):
 
 class UserUpdate(SQLModel):
     username: str | None = None
+    email: str | None = None
     profile_image: str | None = None
     password: str | None = None
     is_active: bool | None = None

@@ -57,6 +57,7 @@ async def setup_subscription_schema():
 
         # Define columns to add
         subscription_columns = {
+            'email': 'VARCHAR(255) NULL',
             'stripe_customer_id': 'VARCHAR(255) NULL',
             'subscription_status': "VARCHAR(50) DEFAULT 'trial'",
             'subscription_id': 'VARCHAR(255) NULL',

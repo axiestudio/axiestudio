@@ -32,6 +32,7 @@ async def migrate_subscription_schema():
             
             # Define columns to add
             columns_to_add = [
+                ('email', 'VARCHAR(255)'),
                 ('stripe_customer_id', 'VARCHAR(255)'),
                 ('subscription_status', "VARCHAR(50) DEFAULT 'trial'"),
                 ('subscription_id', 'VARCHAR(255)'),
