@@ -101,12 +101,15 @@ def run_subscription_setup():
 
 
 # Auto-run setup when module is imported (for Docker startup)
-if DB_AVAILABLE:
-    try:
-        # Try to run setup, but don't fail if it doesn't work
-        import threading
-        setup_thread = threading.Thread(target=run_subscription_setup, daemon=True)
-        setup_thread.start()
-        logger.info("Subscription setup initiated in background")
-    except Exception as e:
-        logger.debug(f"Background subscription setup failed: {e}")
+# TEMPORARILY DISABLED - causing startup hang
+# if DB_AVAILABLE:
+#     try:
+#         # Try to run setup, but don't fail if it doesn't work
+#         import threading
+#         setup_thread = threading.Thread(target=run_subscription_setup, daemon=True)
+#         setup_thread.start()
+#         logger.info("Subscription setup initiated in background")
+#     except Exception as e:
+#         logger.debug(f"Background subscription setup failed: {e}")
+
+logger.debug("Subscription setup auto-run temporarily disabled")
