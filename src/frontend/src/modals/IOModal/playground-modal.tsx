@@ -16,7 +16,7 @@ import { customOpenNewTab } from "@/customization/utils/custom-open-new-tab";
 import { AxieStudioButtonRedirectTarget } from "@/customization/utils/urls";
 import { useUtilityStore } from "@/stores/utilityStore";
 import { swatchColors } from "@/utils/styleUtils";
-import AxieStudioLogoColor from "../../assets/AxieStudioLogoColor.svg?react";
+
 import IconComponent from "../../components/common/genericIconComponent";
 import ShadTooltip from "../../components/common/shadTooltipComponent";
 import { Button } from "../../components/ui/button";
@@ -457,7 +457,11 @@ export default function IOModal({
                     className="h-12 w-12 !rounded-xl !p-4 shadow-lg"
                     onClick={AxieStudioButtonClick}
                   >
-                    <AxieStudioLogoColor className="h-[18px] w-[18px] scale-150" />
+                    <img
+                      src="https://scontent-arn2-1.xx.fbcdn.net/v/t39.30808-6/499498872_122132145854766980_5268724011023190696_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=u5dFev5AG-kQ7kNvwFS6K3m&_nc_oc=AdltILxg_X65VXBn-MK3Z58PgtgR7ITbbYcGrvZSWDnQLiIitDDiDq9uw1DoamQT61U&_nc_zt=23&_nc_ht=scontent-arn2-1.xx&_nc_gid=mpLb2UFdGIvVDUjGf2bZuw&oh=00_AfXfUa1TAFSuNwQPVCsbeshZuHKq0TqnRwUgl4EdrFju9w&oe=68A94B99"
+                      alt="Axie Studio Logo"
+                      className="h-[18px] w-[18px] scale-150 rounded object-contain"
+                    />
                   </Button>
                 </ShadTooltip>
               </div>
