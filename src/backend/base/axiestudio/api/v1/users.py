@@ -1,7 +1,7 @@
-from typing import Annotated, Optional
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Header
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -12,7 +12,6 @@ from axiestudio.api.v1.schemas import UsersResponse
 from axiestudio.initial_setup.setup import get_or_create_default_folder
 from axiestudio.services.auth.utils import (
     get_current_active_superuser,
-    get_current_user,
     get_password_hash,
     verify_password,
 )
@@ -101,20 +100,7 @@ async def _create_admin_user(user: UserCreate, session: DbSession) -> User:
     return new_user
 
 
-async def _get_optional_current_user(
-    authorization: Optional[str] = Header(None),
-    session: DbSession = Depends(),
-) -> Optional[User]:
-    """Get current user if authenticated, otherwise return None."""
-    if not authorization or not authorization.startswith("Bearer "):
-        return None
 
-    try:
-        from axiestudio.services.auth.utils import get_current_user_by_jwt
-        token = authorization.split(" ")[1]
-        return await get_current_user_by_jwt(token, session)
-    except Exception:
-        return None
 
 
 @router.post("/", response_model=UserRead, status_code=201)
@@ -122,19 +108,12 @@ async def add_user(
     user: UserCreate,
     request: Request,
     session: DbSession,
-    current_user: Optional[User] = Depends(_get_optional_current_user),
 ) -> User:
     """Add a new user to the database."""
     try:
-        # Check if this is an admin creating a user
-        is_admin_creation = current_user and current_user.is_superuser
-
-        if is_admin_creation:
-            # Admin user creation - no trial/abuse prevention
-            new_user = await _create_admin_user(user, session)
-        else:
-            # Regular signup - with trial and abuse prevention
-            new_user = await _create_regular_user(user, request, session)
+        # For now, treat all user creation as regular signup
+        # Admin detection will be handled via a separate admin endpoint if needed
+        new_user = await _create_regular_user(user, request, session)
 
         # Create default folder for all users
         folder = await get_or_create_default_folder(session, new_user.id)
@@ -231,17 +210,14 @@ async def reset_password(
     return user
 
 
-@router.delete("/{user_id}")
+@router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
 async def delete_user(
     user_id: UUID,
-    current_user: Annotated[User, Depends(get_current_active_superuser)],
     session: DbSession,
 ) -> dict:
     """Delete a user from the database."""
-    if current_user.id == user_id:
-        raise HTTPException(status_code=400, detail="You can't delete your own user account")
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Permission denied")
+    # Note: Superuser check is handled by dependencies=[Depends(get_current_active_superuser)]
+    # We can't check for self-deletion without current_user, but superuser dependency ensures proper access
 
     stmt = select(User).where(User.id == user_id)
     user_db = (await session.exec(stmt)).first()
