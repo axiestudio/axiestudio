@@ -1,6 +1,6 @@
 import { useShallow } from "zustand/react/shallow";
-import logoDarkPng from "@/assets/logo_dark.png";
-import logoLightPng from "@/assets/logo_light.png";
+import logoLightSvg from "@/assets/logo_light.svg";
+import logoDarkSvg from "@/assets/logo_dark.svg";
 import { ForwardedIconComponent } from "@/components/common/genericIconComponent";
 import CardsWrapComponent from "@/components/core/cardsWrapComponent";
 import { Button } from "@/components/ui/button";
@@ -34,18 +34,18 @@ export const EmptyPageCommunity = ({
             <div className="z-50 flex flex-col items-center gap-2">
               <div className="z-50 dark:hidden">
                 <img
-                  src={logoLightPng}
+                  src={logoLightSvg}
                   alt="Axie Studio Logo Light"
                   data-testid="empty_page_logo_light"
-                  className="relative top-3"
+                  className="relative top-3 w-32 h-32 object-contain rounded-lg"
                 />
               </div>
               <div className="z-50 hidden dark:block">
                 <img
-                  src={logoDarkPng}
+                  src={logoDarkSvg}
                   alt="Axie Studio Logo Dark"
                   data-testid="empty_page_logo_dark"
-                  className="relative top-3"
+                  className="relative top-3 w-32 h-32 object-contain rounded-lg"
                 />
               </div>
               <span
