@@ -43,7 +43,7 @@ except ImportError:
     TRIAL_MIDDLEWARE_AVAILABLE = False
     TrialMiddleware = None
 
-# Import subscription setup (will auto-run in background)
+# Import subscription setup (will run during startup lifespan)
 try:
     from axiestudio.services.startup.subscription_setup import setup_subscription_schema
     SUBSCRIPTION_SETUP_AVAILABLE = True
@@ -211,6 +211,19 @@ def get_lifespan(*, fix_migration=False, version=None):
             logger.debug("Loading mcp servers for projects")
             await init_mcp_servers()
             logger.debug(f"mcp servers loaded in {asyncio.get_event_loop().time() - current_time:.2f}s")
+
+            # Set up subscription schema during startup (with timeout protection)
+            if SUBSCRIPTION_SETUP_AVAILABLE:
+                current_time = asyncio.get_event_loop().time()
+                logger.debug("Setting up subscription schema")
+                try:
+                    # Add timeout to prevent hanging
+                    await asyncio.wait_for(setup_subscription_schema(), timeout=30.0)
+                    logger.debug(f"Subscription schema setup in {asyncio.get_event_loop().time() - current_time:.2f}s")
+                except asyncio.TimeoutError:
+                    logger.warning("Subscription schema setup timed out after 30 seconds - continuing startup")
+                except Exception as e:
+                    logger.warning(f"Subscription schema setup failed: {e} - continuing startup")
 
             total_time = asyncio.get_event_loop().time() - start_time
             logger.debug(f"Total initialization time: {total_time:.2f}s")
