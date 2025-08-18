@@ -100,13 +100,19 @@ async def create_checkout_session(
         # Calculate remaining trial days (don't give double trial)
         now = datetime.now(timezone.utc)
 
-        # Handle trial dates safely
+        # Handle trial dates safely with timezone consistency
         trial_start = getattr(current_user, 'trial_start', None) or now
         trial_end = getattr(current_user, 'trial_end', None) or (trial_start + timedelta(days=7))
 
+        # Ensure timezone consistency for comparisons
+        if trial_start and trial_start.tzinfo is None:
+            trial_start = trial_start.replace(tzinfo=timezone.utc)
+        if trial_end and trial_end.tzinfo is None:
+            trial_end = trial_end.replace(tzinfo=timezone.utc)
+
         # Only give Stripe trial if user's trial hasn't expired yet
         remaining_trial_days = 0
-        if now < trial_end:
+        if trial_end and now < trial_end:
             remaining_trial_days = max(0, (trial_end - now).days)
 
         # Create checkout session with remaining trial days
@@ -348,6 +354,12 @@ async def get_subscription_status(current_user: CurrentActiveUser):
             trial_end_date = trial_end or (trial_start + timedelta(days=7))
             now = datetime.now(timezone.utc)
 
+            # Ensure timezone consistency for comparisons
+            if trial_start.tzinfo is None:
+                trial_start = trial_start.replace(tzinfo=timezone.utc)
+            if trial_end_date.tzinfo is None:
+                trial_end_date = trial_end_date.replace(tzinfo=timezone.utc)
+
             if now > trial_end_date:
                 trial_expired = True
                 days_left = 0
@@ -356,6 +368,8 @@ async def get_subscription_status(current_user: CurrentActiveUser):
         else:
             # If no trial_start, assume user just signed up
             trial_start = current_user.create_at
+            if trial_start and trial_start.tzinfo is None:
+                trial_start = trial_start.replace(tzinfo=timezone.utc)
             trial_end = trial_start + timedelta(days=7) if trial_start else None
 
         return {
