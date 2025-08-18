@@ -67,25 +67,9 @@ export default function AppHeader(): JSX.Element {
           {ENABLE_DATASTAX_AXIESTUDIO ? (
             <DataStaxLogo className="fill-black dark:fill-[white]" />
           ) : (
-            <>
-              <img
-                src="https://www.axiestudio.se/Axiestudiologo.jpg"
-                alt="Axie Studio"
-                className="h-6 w-6 rounded object-contain"
-                onError={(e) => {
-                  // Fallback to text logo if image fails to load
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling.style.display = 'flex';
-                }}
-                style={{ maxWidth: '24px', maxHeight: '24px' }}
-              />
-              <div
-                className="h-6 w-6 bg-primary text-primary-foreground rounded flex items-center justify-center font-bold text-xs"
-                style={{ display: 'none' }}
-              >
-                AX
-              </div>
-            </>
+            <div className="h-6 w-6 bg-primary text-primary-foreground rounded flex items-center justify-center font-bold text-xs">
+              AX
+            </div>
           )}
         </Button>
         {ENABLE_DATASTAX_AXIESTUDIO && (
