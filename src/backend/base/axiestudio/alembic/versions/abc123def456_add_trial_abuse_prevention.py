@@ -37,29 +37,41 @@ def upgrade() -> None:
 
         # Add signup_ip column
         if 'signup_ip' not in existing_columns:
-            batch_op.add_column(sa.Column('signup_ip', sa.String(45), nullable=True))
-            print("Added signup_ip column")
+            try:
+                batch_op.add_column(sa.Column('signup_ip', sa.String(45), nullable=True))
+                print("Added signup_ip column")
+            except Exception as e:
+                print(f"Failed to add signup_ip column (may already exist): {e}")
         else:
             print("signup_ip column already exists - skipping creation")
 
         # Create signup_ip index only if it doesn't exist
         if 'ix_user_signup_ip' not in existing_indexes:
-            batch_op.create_index('ix_user_signup_ip', ['signup_ip'])
-            print("Created signup_ip index")
+            try:
+                batch_op.create_index('ix_user_signup_ip', ['signup_ip'])
+                print("Created signup_ip index")
+            except Exception as e:
+                print(f"Failed to create signup_ip index (may already exist): {e}")
         else:
             print("signup_ip index already exists - skipping")
 
         # Add device_fingerprint column
         if 'device_fingerprint' not in existing_columns:
-            batch_op.add_column(sa.Column('device_fingerprint', sa.String(32), nullable=True))
-            print("Added device_fingerprint column")
+            try:
+                batch_op.add_column(sa.Column('device_fingerprint', sa.String(32), nullable=True))
+                print("Added device_fingerprint column")
+            except Exception as e:
+                print(f"Failed to add device_fingerprint column (may already exist): {e}")
         else:
             print("device_fingerprint column already exists - skipping creation")
 
         # Create device_fingerprint index only if it doesn't exist
         if 'ix_user_device_fingerprint' not in existing_indexes:
-            batch_op.create_index('ix_user_device_fingerprint', ['device_fingerprint'])
-            print("Created device_fingerprint index")
+            try:
+                batch_op.create_index('ix_user_device_fingerprint', ['device_fingerprint'])
+                print("Created device_fingerprint index")
+            except Exception as e:
+                print(f"Failed to create device_fingerprint index (may already exist): {e}")
         else:
             print("device_fingerprint index already exists - skipping")
 
