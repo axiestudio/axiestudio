@@ -162,12 +162,12 @@ async def debug_database_schema(session: DbSession):
 
         if is_sqlite:
             # SQLite: Check table schema
-            result = await session.execute(text("PRAGMA table_info(user);"))
+            result = await session.exec(text("PRAGMA table_info(user);"))
             rows = result.fetchall()
             columns = [{"name": row[1], "type": row[2], "nullable": bool(row[3]), "default": row[4]} for row in rows]
         else:
             # PostgreSQL: Check information_schema
-            result = await session.execute(text("""
+            result = await session.exec(text("""
                 SELECT column_name, data_type, is_nullable, column_default
                 FROM information_schema.columns
                 WHERE table_name = 'user' AND table_schema = 'public'

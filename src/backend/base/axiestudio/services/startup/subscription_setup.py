@@ -38,13 +38,13 @@ async def setup_subscription_schema():
         try:
             if is_sqlite:
                 # SQLite: Check table schema
-                result = await session.execute(text("PRAGMA table_info(user);"))
+                result = await session.exec(text("PRAGMA table_info(user);"))
                 rows = result.fetchall()
                 existing_columns = {row[1] for row in rows}  # Column name is at index 1
                 logger.debug(f"SQLite existing columns: {existing_columns}")
             else:
                 # PostgreSQL: Check information_schema
-                result = await session.execute(text("""
+                result = await session.exec(text("""
                     SELECT column_name FROM information_schema.columns
                     WHERE table_name = 'user' AND table_schema = 'public';
                 """))
@@ -90,8 +90,8 @@ async def setup_subscription_schema():
                 # First, try to add columns (these might fail if columns already exist)
                 for i, command in enumerate(migration_commands, 1):
                     try:
-                        # Use session.execute for raw SQL commands
-                        await session.execute(text(command))
+                        # Use session.exec for raw SQL commands with text()
+                        await session.exec(text(command))
                         logger.debug(f"Executed subscription schema command {i}/{len(migration_commands)}: {command.strip()}")
                     except Exception as e:
                         # Column might already exist, which is fine
@@ -129,7 +129,7 @@ async def setup_subscription_schema():
                             WHERE trial_start IS NULL OR subscription_status IS NULL;
                         """)
 
-                    result = await session.execute(update_existing_users_query)
+                    result = await session.exec(update_existing_users_query)
                     await session.commit()
                     logger.info("Successfully set up subscription database schema and updated existing users")
                     return True
