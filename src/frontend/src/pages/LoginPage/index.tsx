@@ -67,14 +67,22 @@ export default function LoginPage(): JSX.Element {
         <div className="flex w-96 flex-col items-center justify-center gap-6 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-8 shadow-2xl">
           <div className="flex flex-col items-center gap-4">
             <img
-              src="/logo.jpg"
+              src="https://www.axiestudio.se/Axiestudiologo.jpg"
               alt="Axie Studio logo"
               className="h-12 w-12 rounded-xl object-contain"
               onError={(e) => {
-                e.currentTarget.src = "/logo.svg";
+                // Fallback to text logo if image fails to load
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling.style.display = 'flex';
               }}
               style={{ maxWidth: '48px', maxHeight: '48px' }}
             />
+            <div
+              className="h-12 w-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center font-bold text-lg"
+              style={{ display: 'none' }}
+            >
+              AX
+            </div>
             <div className="text-center">
               <h1 className="text-2xl font-light text-foreground tracking-tight">
                 Welcome to Axie Studio

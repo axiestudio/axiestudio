@@ -25,7 +25,7 @@ class UserOptin(BaseModel):
 class User(SQLModel, table=True):  # type: ignore[call-arg]
     id: UUIDstr = Field(default_factory=uuid4, primary_key=True, unique=True)
     username: str = Field(index=True, unique=True)
-    email: str | None = Field(default=None, nullable=True, index=True)
+    email: str = Field(index=True, unique=True)  # Required and unique for trial abuse prevention
     password: str = Field()
     profile_image: str | None = Field(default=None, nullable=True)
     is_active: bool = Field(default=False)
@@ -33,6 +33,10 @@ class User(SQLModel, table=True):  # type: ignore[call-arg]
     create_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_login_at: datetime | None = Field(default=None, nullable=True)
+
+    # Trial abuse prevention fields
+    signup_ip: str | None = Field(default=None, nullable=True, index=True)  # Track signup IP
+    device_fingerprint: str | None = Field(default=None, nullable=True, index=True)  # Track device fingerprint
 
     # Subscription fields
     stripe_customer_id: str | None = Field(default=None, nullable=True)
@@ -63,18 +67,22 @@ class User(SQLModel, table=True):  # type: ignore[call-arg]
 
 class UserCreate(SQLModel):
     username: str = Field()
-    email: str | None = Field(default=None)
+    email: str = Field()  # Required for trial abuse prevention
     password: str = Field()
     optins: dict[str, Any] | None = Field(
         default={"github_starred": False, "dialog_dismissed": False, "discord_clicked": False}
     )
     trial_start: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=True)
 
+    # Trial abuse prevention fields (set by backend, not user input)
+    signup_ip: str | None = Field(default=None, exclude=True)  # Exclude from user input
+    device_fingerprint: str | None = Field(default=None, exclude=True)  # Exclude from user input
+
 
 class UserRead(SQLModel):
     id: UUID = Field(default_factory=uuid4)
     username: str = Field()
-    email: str | None = Field(default=None, nullable=True)
+    email: str = Field()  # Required field
     profile_image: str | None = Field()
     store_api_key: str | None = Field(nullable=True)
     is_active: bool = Field()
@@ -112,3 +120,7 @@ class UserUpdate(SQLModel):
     trial_end: datetime | None = None
     subscription_start: datetime | None = None
     subscription_end: datetime | None = None
+
+    # Trial abuse prevention fields (admin only)
+    signup_ip: str | None = None
+    device_fingerprint: str | None = None

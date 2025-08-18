@@ -1,7 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -12,44 +12,143 @@ from axiestudio.api.v1.schemas import UsersResponse
 from axiestudio.initial_setup.setup import get_or_create_default_folder
 from axiestudio.services.auth.utils import (
     get_current_active_superuser,
+    get_current_user,
     get_password_hash,
     verify_password,
 )
 from axiestudio.services.database.models.user.crud import get_user_by_id, update_user
 from axiestudio.services.database.models.user.model import User, UserCreate, UserRead, UserUpdate
 from axiestudio.services.deps import get_settings_service
+from axiestudio.services.trial.abuse_prevention import trial_abuse_prevention
 
 router = APIRouter(tags=["Users"], prefix="/users")
+
+
+async def _create_regular_user(user: UserCreate, request: Request, session: DbSession) -> User:
+    """Create a regular user with trial and abuse prevention."""
+    from datetime import datetime, timezone, timedelta
+
+    # Extract client information for abuse prevention
+    signup_ip = trial_abuse_prevention.extract_client_ip(request)
+    device_fingerprint = trial_abuse_prevention.generate_device_fingerprint(request)
+
+    # Basic rate limiting for signup endpoint (prevent rapid-fire signups)
+    from axiestudio.api.v1.subscriptions import check_rate_limit
+    if not check_rate_limit(f"signup_{signup_ip}", "signup"):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many signup attempts from this location. Please wait before trying again."
+        )
+
+    # Check for trial abuse before creating user
+    abuse_check = await trial_abuse_prevention.check_trial_abuse(
+        session, user.email, signup_ip, device_fingerprint
+    )
+
+    # Block signup if high risk
+    if abuse_check["action"] == "block":
+        await trial_abuse_prevention.log_signup_attempt(
+            session, user.email, signup_ip, device_fingerprint, False, abuse_check["risk_score"]
+        )
+        raise HTTPException(
+            status_code=429,
+            detail="Account creation temporarily restricted. Please contact support if you believe this is an error."
+        )
+
+    new_user = User.model_validate(user, from_attributes=True)
+    new_user.password = get_password_hash(user.password)
+    new_user.is_active = get_settings_service().auth_settings.NEW_USER_IS_ACTIVE
+
+    # Set trial information for regular users
+    now = datetime.now(timezone.utc)
+    new_user.trial_start = now
+    new_user.trial_end = now + timedelta(days=7)
+    new_user.subscription_status = "trial"
+
+    # Set abuse prevention fields
+    new_user.signup_ip = signup_ip
+    new_user.device_fingerprint = device_fingerprint
+
+    session.add(new_user)
+    await session.commit()
+    await session.refresh(new_user)
+
+    # Log successful signup
+    await trial_abuse_prevention.log_signup_attempt(
+        session, user.email, signup_ip, device_fingerprint, True, abuse_check["risk_score"]
+    )
+
+    return new_user
+
+
+async def _create_admin_user(user: UserCreate, session: DbSession) -> User:
+    """Create a user via admin panel - no trial or abuse prevention."""
+    new_user = User.model_validate(user, from_attributes=True)
+    new_user.password = get_password_hash(user.password)
+
+    # Respect the admin's choice for is_active and is_superuser
+    # Don't override these - let the admin panel control them
+    # new_user.is_active and new_user.is_superuser are already set from user input
+
+    # Admin-created users don't get trial fields - they're managed manually
+    # No trial_start, trial_end, subscription_status set
+    # No signup_ip, device_fingerprint set
+
+    session.add(new_user)
+    await session.commit()
+    await session.refresh(new_user)
+
+    return new_user
+
+
+async def _get_optional_current_user(
+    authorization: Optional[str] = Header(None),
+    session: DbSession = Depends(),
+) -> Optional[User]:
+    """Get current user if authenticated, otherwise return None."""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+
+    try:
+        from axiestudio.services.auth.utils import get_current_user_by_jwt
+        token = authorization.split(" ")[1]
+        return await get_current_user_by_jwt(token, session)
+    except Exception:
+        return None
 
 
 @router.post("/", response_model=UserRead, status_code=201)
 async def add_user(
     user: UserCreate,
+    request: Request,
     session: DbSession,
+    current_user: Optional[User] = Depends(_get_optional_current_user),
 ) -> User:
-    """Add a new user to the database. Admin access required."""
-    from datetime import datetime, timezone, timedelta
-
-    new_user = User.model_validate(user, from_attributes=True)
+    """Add a new user to the database."""
     try:
-        new_user.password = get_password_hash(user.password)
-        new_user.is_active = get_settings_service().auth_settings.NEW_USER_IS_ACTIVE
+        # Check if this is an admin creating a user
+        is_admin_creation = current_user and current_user.is_superuser
 
-        # Set trial information for new users
-        now = datetime.now(timezone.utc)
-        new_user.trial_start = now
-        new_user.trial_end = now + timedelta(days=7)
-        new_user.subscription_status = "trial"
+        if is_admin_creation:
+            # Admin user creation - no trial/abuse prevention
+            new_user = await _create_admin_user(user, session)
+        else:
+            # Regular signup - with trial and abuse prevention
+            new_user = await _create_regular_user(user, request, session)
 
-        session.add(new_user)
-        await session.commit()
-        await session.refresh(new_user)
+        # Create default folder for all users
         folder = await get_or_create_default_folder(session, new_user.id)
         if not folder:
             raise HTTPException(status_code=500, detail="Error creating default project")
+
     except IntegrityError as e:
         await session.rollback()
-        raise HTTPException(status_code=400, detail="This username is unavailable.") from e
+        # Check if it's email uniqueness violation
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        if "email" in error_msg.lower():
+            raise HTTPException(status_code=400, detail="This email address is already registered.") from e
+        else:
+            raise HTTPException(status_code=400, detail="This username is unavailable.") from e
 
     return new_user
 

@@ -30,6 +30,7 @@ export default function UserManagementModal({
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState(data?.password ?? "");
   const [username, setUserName] = useState(data?.username ?? "");
+  const [email, setEmail] = useState(data?.email ?? "");
   const [confirmPassword, setConfirmPassword] = useState(data?.password ?? "");
   const [isActive, setIsActive] = useState(data?.is_active ?? false);
   const [isSuperUser, setIsSuperUser] = useState(data?.is_superuser ?? false);
@@ -48,10 +49,12 @@ export default function UserManagementModal({
         resetForm();
       } else {
         setUserName(data.username);
+        setEmail(data.email || "");
         setIsActive(data.is_active);
         setIsSuperUser(data.is_superuser);
 
         handleInput({ target: { name: "username", value: username } });
+        handleInput({ target: { name: "email", value: email } });
         handleInput({ target: { name: "is_active", value: isActive } });
         handleInput({ target: { name: "is_superuser", value: isSuperUser } });
       }
@@ -61,6 +64,7 @@ export default function UserManagementModal({
   function resetForm() {
     setPassword("");
     setUserName("");
+    setEmail("");
     setConfirmPassword("");
     setIsActive(false);
     setIsSuperUser(false);
@@ -118,6 +122,40 @@ export default function UserManagementModal({
               </Form.Control>
               <Form.Message match="valueMissing" className="field-invalid">
                 Please enter your username
+              </Form.Message>
+            </Form.Field>
+
+            <Form.Field name="email">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Form.Label className="data-[invalid]:label-invalid">
+                  Email{" "}
+                  <span className="font-medium text-destructive">*</span>
+                </Form.Label>
+              </div>
+              <Form.Control asChild>
+                <input
+                  onChange={({ target: { value } }) => {
+                    handleInput({ target: { name: "email", value } });
+                    setEmail(value);
+                  }}
+                  value={email}
+                  className="primary-input"
+                  required
+                  type="email"
+                  placeholder="user@example.com"
+                />
+              </Form.Control>
+              <Form.Message match="valueMissing" className="field-invalid">
+                Please enter a valid email address
+              </Form.Message>
+              <Form.Message match="typeMismatch" className="field-invalid">
+                Please enter a valid email address
               </Form.Message>
             </Form.Field>
 

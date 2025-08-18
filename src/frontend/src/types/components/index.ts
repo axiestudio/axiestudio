@@ -428,7 +428,7 @@ export type patchUserInputStateType = {
 
 export type UserInputType = {
   username: string;
-  email?: string;
+  email: string;  // Required for trial abuse prevention
   password: string;
   is_active?: boolean;
   is_superuser?: boolean;

@@ -9,6 +9,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axiestudio.services.database.models.user.model import User, UserUpdate
+from typing import List
 
 
 async def get_user_by_username(db: AsyncSession, username: str) -> User | None:
@@ -70,3 +71,23 @@ async def update_user_last_login_at(user_id: UUID, db: AsyncSession):
         return await update_user_instance(user, user_data, db)
     except Exception as e:  # noqa: BLE001
         logger.error(f"Error updating user last login at: {e!s}")
+
+
+async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
+    """Get user by email address."""
+    stmt = select(User).where(User.email == email)
+    return (await db.exec(stmt)).first()
+
+
+async def get_users_by_signup_ip(db: AsyncSession, signup_ip: str, limit: int = 10) -> List[User]:
+    """Get users who signed up from the same IP address."""
+    stmt = select(User).where(User.signup_ip == signup_ip).limit(limit)
+    result = await db.exec(stmt)
+    return result.all()
+
+
+async def get_users_by_device_fingerprint(db: AsyncSession, device_fingerprint: str, limit: int = 10) -> List[User]:
+    """Get users with the same device fingerprint."""
+    stmt = select(User).where(User.device_fingerprint == device_fingerprint).limit(limit)
+    result = await db.exec(stmt)
+    return result.all()

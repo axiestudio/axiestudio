@@ -3,6 +3,8 @@
 import os
 from datetime import datetime, timezone, timedelta
 from typing import Annotated
+from collections import defaultdict
+import time
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -20,6 +22,29 @@ try:
 except ImportError:
     SUBSCRIPTION_SETUP_AVAILABLE = False
 
+# Simple rate limiting for subscription endpoints
+_rate_limit_store = defaultdict(list)
+RATE_LIMIT_WINDOW = 300  # 5 minutes
+RATE_LIMIT_MAX_REQUESTS = 10  # Max 10 subscription requests per 5 minutes per user
+
+def check_rate_limit(user_id: str, endpoint: str) -> bool:
+    """Check if user has exceeded rate limit for subscription endpoints."""
+    now = time.time()
+    key = f"{user_id}:{endpoint}"
+
+    # Clean old entries
+    _rate_limit_store[key] = [
+        timestamp for timestamp in _rate_limit_store[key]
+        if now - timestamp < RATE_LIMIT_WINDOW
+    ]
+
+    # Check if limit exceeded
+    if len(_rate_limit_store[key]) >= RATE_LIMIT_MAX_REQUESTS:
+        return False
+
+    # Add current request
+    _rate_limit_store[key].append(now)
+    return True
 
 router = APIRouter(tags=["Subscriptions"], prefix="/subscriptions")
 
@@ -44,17 +69,22 @@ async def create_checkout_session(
     session: DbSession,
 ):
     """Create a Stripe checkout session for subscription."""
+    # Rate limiting check
+    if not check_rate_limit(str(current_user.id), "create-checkout"):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many subscription requests. Please wait a few minutes before trying again."
+        )
+
     if not stripe_service.is_configured():
         raise HTTPException(status_code=503, detail="Stripe is not configured. Please contact support.")
 
     try:
-        # Create Stripe customer if not exists (handle missing column gracefully)
+        # Create Stripe customer if not exists
         stripe_customer_id = getattr(current_user, 'stripe_customer_id', None)
         if not stripe_customer_id:
-            # Use email if available, otherwise create a valid email from username
-            user_email = getattr(current_user, 'email', None)
-            if not user_email or '@' not in user_email:
-                user_email = f"{current_user.username}@axiestudio.se"
+            # Use user's email (now required)
+            user_email = current_user.email
 
             customer_id = await stripe_service.create_customer(
                 email=user_email,
@@ -90,7 +120,8 @@ async def create_checkout_session(
         return CheckoutResponse(checkout_url=checkout_url)
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create checkout session: {str(e)}")
+        logger.error(f"Failed to create checkout session for user {current_user.id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create checkout session. Please try again or contact support.")
 
 
 @router.post("/customer-portal", response_model=CustomerPortalResponse)
@@ -99,16 +130,21 @@ async def create_customer_portal(
     session: DbSession,
 ):
     """Create a Stripe customer portal session."""
+    # Rate limiting check
+    if not check_rate_limit(str(current_user.id), "customer-portal"):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many portal requests. Please wait a few minutes before trying again."
+        )
+
     if not stripe_service.is_configured():
         raise HTTPException(status_code=503, detail="Stripe is not configured. Please contact support.")
 
     try:
         # Create Stripe customer if not exists
         if not current_user.stripe_customer_id:
-            # Use email if available, otherwise create a valid email from username
-            user_email = getattr(current_user, 'email', None)
-            if not user_email or '@' not in user_email:
-                user_email = f"{current_user.username}@axiestudio.se"
+            # Use user's email (now required)
+            user_email = current_user.email
 
             customer_id = await stripe_service.create_customer(
                 email=user_email,
@@ -133,7 +169,8 @@ async def create_customer_portal(
         return CustomerPortalResponse(portal_url=portal_url)
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create customer portal: {str(e)}")
+        logger.error(f"Failed to create customer portal for user {current_user.id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create customer portal. Please try again or contact support.")
 
 
 @router.get("/health")
@@ -349,38 +386,6 @@ async def get_subscription_status(current_user: CurrentActiveUser):
         }
 
 
-@router.delete("/cancel")
-async def cancel_subscription(
-    current_user: CurrentActiveUser,
-    session: DbSession,
-):
-    """Cancel current user's subscription."""
-    if not stripe_service.is_configured():
-        raise HTTPException(status_code=503, detail="Stripe is not configured. Please contact support.")
-
-    try:
-        if not current_user.subscription_id:
-            raise HTTPException(status_code=400, detail="No active subscription found")
-
-        # Cancel subscription in Stripe
-        success = await stripe_service.cancel_subscription(current_user.subscription_id)
-
-        if success:
-            # Update user subscription status
-            update_data = UserUpdate(subscription_status="canceled")
-            await update_user(session, current_user.id, update_data)
-
-            return {
-                "status": "success",
-                "message": "Subscription cancelled successfully"
-            }
-        else:
-            raise HTTPException(status_code=500, detail="Failed to cancel subscription")
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to cancel subscription: {str(e)}")
-
-
 @router.post("/webhook")
 async def stripe_webhook(request: Request, session: DbSession):
     """Handle Stripe webhook events."""
@@ -443,4 +448,5 @@ async def cancel_subscription(
             raise HTTPException(status_code=500, detail="Failed to cancel subscription")
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to cancel subscription: {str(e)}")
+        logger.error(f"Failed to cancel subscription for user {current_user.id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to cancel subscription. Please try again or contact support.")

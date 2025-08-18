@@ -1,5 +1,5 @@
 import * as Form from "@radix-ui/react-form";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useId } from "react";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
 import { Input } from "@/components/ui/input";
 import { ICON_STROKE_WIDTH } from "@/constants/constants";
@@ -47,6 +47,8 @@ export default function InputComponent({
   const [pwdVisible, setPwdVisible] = useState(false);
   const refInput = useRef<HTMLInputElement>(null);
   const [showOptions, setShowOptions] = useState<boolean>(false);
+  const uniqueId = useId();
+  const formId = id || uniqueId;
 
   useEffect(() => {
     if (disabled && value && onChange && value !== "") {
@@ -64,7 +66,7 @@ export default function InputComponent({
         <Form.Control asChild>
           <Input
             name={name}
-            id={"form-" + id}
+            id={"form-" + formId}
             ref={refInput}
             onBlur={onInputLostFocus}
             autoFocus={autoFocus}

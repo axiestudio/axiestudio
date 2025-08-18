@@ -33,7 +33,7 @@ class AuthSettings(BaseSettings):
     """If True, the application will skip authentication when AUTO_LOGIN is enabled.
     This will be removed in v1.6"""
 
-    NEW_USER_IS_ACTIVE: bool = False
+    NEW_USER_IS_ACTIVE: bool = True  # Allow new users to be active immediately
     SUPERUSER: str = DEFAULT_SUPERUSER
     SUPERUSER_PASSWORD: str = DEFAULT_SUPERUSER_PASSWORD
 

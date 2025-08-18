@@ -292,8 +292,12 @@ async def create_super_user(
     super_user = await get_user_by_username(db, username)
 
     if not super_user:
+        # For superuser, use username as email if it contains @, otherwise create admin email
+        admin_email = username if "@" in username else f"{username}@axiestudio.admin"
+
         super_user = User(
             username=username,
+            email=admin_email,  # Required field for new User model
             password=get_password_hash(password),
             is_superuser=True,
             is_active=True,

@@ -1,6 +1,6 @@
 import * as Form from "@radix-ui/react-form";
 import { type FormEvent, useEffect, useState } from "react";
-import AxieStudioLogo from "@/assets/AxieStudioLogo.svg?react";
+// import AxieStudioLogo from "@/assets/AxieStudioLogo.svg?react";
 import InputComponent from "@/components/core/parameterRenderComponent/components/inputComponent";
 import { useAddUser } from "@/controllers/API/queries/auth";
 import { CustomLink } from "@/customization/components/custom-link";
@@ -48,9 +48,19 @@ export default function SignUp(): JSX.Element {
 
   function handleSignup(): void {
     const { username, password, email } = inputState;
+
+    // Validate email is provided
+    if (!email || !email.trim()) {
+      setErrorData({
+        title: SIGNUP_ERROR_ALERT,
+        list: ["Email address is required"],
+      });
+      return;
+    }
+
     const newUser: UserInputType = {
       username: username.trim(),
-      email: email.trim() || undefined,
+      email: email.trim(),
       password: password.trim(),
     };
 
@@ -92,10 +102,22 @@ export default function SignUp(): JSX.Element {
     >
       <div className="flex h-full w-full flex-col items-center justify-center bg-muted">
         <div className="flex w-72 flex-col items-center justify-center gap-2">
-          <AxieStudioLogo
-            title="Axie Studio logo"
-            className="mb-4 h-10 w-10 scale-[1.5]"
+          <img
+            src="https://www.axiestudio.se/Axiestudiologo.jpg"
+            alt="Axie Studio logo"
+            className="mb-4 h-10 w-10 scale-[1.5] rounded"
+            onError={(e) => {
+              // Fallback to text logo if image fails to load
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling.style.display = 'flex';
+            }}
           />
+          <div
+            className="mb-4 h-10 w-10 scale-[1.5] bg-primary text-primary-foreground rounded flex items-center justify-center font-bold text-lg"
+            style={{ display: 'none' }}
+          >
+            AX
+          </div>
           <span className="mb-6 text-2xl font-semibold text-primary">
             Sign up for Axie Studio
           </span>
@@ -124,14 +146,15 @@ export default function SignUp(): JSX.Element {
             </Form.Field>
           </div>
           <div className="mb-3 w-full">
-            <Form.Field name="email">
+            <Form.Field name="email" serverInvalid={!email}>
               <Form.Label className="data-[invalid]:label-invalid">
-                Email <span className="text-muted-foreground">(optional)</span>
+                Email <span className="font-medium text-destructive">*</span>
               </Form.Label>
 
               <Form.Control asChild>
                 <Input
                   type="email"
+                  required
                   onChange={({ target: { value } }) => {
                     handleInput({ target: { name: "email", value } });
                   }}
@@ -143,6 +166,9 @@ export default function SignUp(): JSX.Element {
 
               <Form.Message match="typeMismatch" className="field-invalid">
                 Please enter a valid email address
+              </Form.Message>
+              <Form.Message match="valueMissing" className="field-invalid">
+                Email address is required
               </Form.Message>
             </Form.Field>
           </div>
