@@ -133,21 +133,100 @@ async def subscription_health():
 
 
 @router.post("/migrate-schema")
-async def migrate_subscription_schema():
-    """Manually trigger subscription schema migration (for debugging)."""
-    if not SUBSCRIPTION_SETUP_AVAILABLE:
-        raise HTTPException(status_code=503, detail="Subscription setup not available")
-
+async def migrate_subscription_schema(session: DbSession):
+    """Manually trigger subscription schema migration."""
     try:
-        result = await setup_subscription_schema()
+        from sqlalchemy import text
+
+        logger.info("Starting manual subscription schema migration...")
+
+        # Check database type
+        db_url = str(session.bind.url).lower()
+        is_sqlite = "sqlite" in db_url
+
+        # Check existing columns
+        if is_sqlite:
+            result = await session.exec(text("PRAGMA table_info(user);"))
+            existing_columns = {row[1] for row in result.fetchall()}
+        else:
+            result = await session.exec(text("""
+                SELECT column_name FROM information_schema.columns
+                WHERE table_name = 'user' AND table_schema = 'public';
+            """))
+            existing_columns = {row[0] for row in result.fetchall()}
+
+        # Define subscription columns
+        subscription_columns = [
+            ('stripe_customer_id', 'VARCHAR(255)'),
+            ('subscription_status', "VARCHAR(50) DEFAULT 'trial'"),
+            ('subscription_id', 'VARCHAR(255)'),
+            ('trial_start', 'TIMESTAMP'),
+            ('trial_end', 'TIMESTAMP'),
+            ('subscription_start', 'TIMESTAMP'),
+            ('subscription_end', 'TIMESTAMP')
+        ]
+
+        added_columns = []
+        errors = []
+
+        # Add missing columns
+        for column_name, column_def in subscription_columns:
+            if column_name not in existing_columns:
+                try:
+                    if is_sqlite:
+                        sql = f"ALTER TABLE user ADD COLUMN {column_name} {column_def};"
+                    else:
+                        sql = f'ALTER TABLE "user" ADD COLUMN {column_name} {column_def};'
+
+                    await session.exec(text(sql))
+                    added_columns.append(column_name)
+                    logger.info(f"Added column: {column_name}")
+                except Exception as e:
+                    error_msg = f"Failed to add {column_name}: {str(e)}"
+                    errors.append(error_msg)
+                    logger.error(error_msg)
+
+        # Commit changes
+        if added_columns:
+            await session.commit()
+
+            # Update existing users
+            try:
+                if is_sqlite:
+                    update_sql = """
+                        UPDATE user SET
+                            trial_start = COALESCE(trial_start, create_at),
+                            trial_end = COALESCE(trial_end, datetime(create_at, '+7 days')),
+                            subscription_status = COALESCE(subscription_status, 'trial')
+                        WHERE trial_start IS NULL OR subscription_status IS NULL;
+                    """
+                else:
+                    update_sql = """
+                        UPDATE "user" SET
+                            trial_start = COALESCE(trial_start, create_at),
+                            trial_end = COALESCE(trial_end, create_at + INTERVAL '7 days'),
+                            subscription_status = COALESCE(subscription_status, 'trial')
+                        WHERE trial_start IS NULL OR subscription_status IS NULL;
+                    """
+
+                await session.exec(text(update_sql))
+                await session.commit()
+                logger.info("Updated existing users with trial defaults")
+            except Exception as e:
+                errors.append(f"Failed to update users: {str(e)}")
+
         return {
-            "success": True,
-            "message": "Subscription schema migration completed",
-            "result": result
+            "success": len(errors) == 0,
+            "database_type": "sqlite" if is_sqlite else "postgresql",
+            "existing_columns": sorted(existing_columns),
+            "added_columns": added_columns,
+            "errors": errors,
+            "message": f"Added {len(added_columns)} columns" if added_columns else "All columns already exist"
         }
+
     except Exception as e:
-        logger.error(f"Manual schema migration failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Schema migration failed: {str(e)}")
+        logger.error(f"Migration failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Migration failed: {str(e)}")
 
 
 @router.get("/debug/schema")
