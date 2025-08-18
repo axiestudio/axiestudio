@@ -26,7 +26,7 @@ export default function SignUp(): JSX.Element {
 
   const [isDisabled, setDisableBtn] = useState<boolean>(true);
 
-  const { password, cnfPassword, username } = inputState;
+  const { password, cnfPassword, username, email } = inputState;
   const setSuccessData = useAlertStore((state) => state.setSuccessData);
   const setErrorData = useAlertStore((state) => state.setErrorData);
   const navigate = useCustomNavigate();
@@ -47,9 +47,10 @@ export default function SignUp(): JSX.Element {
   }, [password, cnfPassword, username, handleInput]);
 
   function handleSignup(): void {
-    const { username, password } = inputState;
+    const { username, password, email } = inputState;
     const newUser: UserInputType = {
       username: username.trim(),
+      email: email.trim() || undefined,
       password: password.trim(),
     };
 
@@ -119,6 +120,29 @@ export default function SignUp(): JSX.Element {
 
               <Form.Message match="valueMissing" className="field-invalid">
                 Please enter your username
+              </Form.Message>
+            </Form.Field>
+          </div>
+          <div className="mb-3 w-full">
+            <Form.Field name="email">
+              <Form.Label className="data-[invalid]:label-invalid">
+                Email <span className="text-muted-foreground">(optional)</span>
+              </Form.Label>
+
+              <Form.Control asChild>
+                <Input
+                  type="email"
+                  onChange={({ target: { value } }) => {
+                    handleInput({ target: { name: "email", value } });
+                  }}
+                  value={email}
+                  className="w-full"
+                  placeholder="your@email.com"
+                />
+              </Form.Control>
+
+              <Form.Message match="typeMismatch" className="field-invalid">
+                Please enter a valid email address
               </Form.Message>
             </Form.Field>
           </div>

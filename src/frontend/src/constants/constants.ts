@@ -605,6 +605,7 @@ export const CONTROL_INPUT_STATE = {
   password: "",
   cnfPassword: "",
   username: "",
+  email: "",
 };
 
 export const CONTROL_PATCH_USER_STATE = {
