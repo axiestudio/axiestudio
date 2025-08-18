@@ -33,29 +33,55 @@ async def setup_subscription_schema():
         db_url = str(db_service.database_url).lower()
         is_sqlite = "sqlite" in db_url
 
-        # SQL commands to add subscription fields if they don't exist
-        if is_sqlite:
-            # SQLite syntax (newer versions support IF NOT EXISTS)
-            migration_commands = [
-                "ALTER TABLE user ADD COLUMN stripe_customer_id VARCHAR(255) NULL;",
-                "ALTER TABLE user ADD COLUMN subscription_status VARCHAR(50) DEFAULT 'trial';",
-                "ALTER TABLE user ADD COLUMN subscription_id VARCHAR(255) NULL;",
-                "ALTER TABLE user ADD COLUMN trial_start TIMESTAMP NULL;",
-                "ALTER TABLE user ADD COLUMN trial_end TIMESTAMP NULL;",
-                "ALTER TABLE user ADD COLUMN subscription_start TIMESTAMP NULL;",
-                "ALTER TABLE user ADD COLUMN subscription_end TIMESTAMP NULL;"
-            ]
+        # Check which columns already exist to avoid errors
+        existing_columns = set()
+        try:
+            if is_sqlite:
+                # SQLite: Check table schema
+                result = await session.execute(text("PRAGMA table_info(user);"))
+                rows = result.fetchall()
+                existing_columns = {row[1] for row in rows}  # Column name is at index 1
+                logger.debug(f"SQLite existing columns: {existing_columns}")
+            else:
+                # PostgreSQL: Check information_schema
+                result = await session.execute(text("""
+                    SELECT column_name FROM information_schema.columns
+                    WHERE table_name = 'user' AND table_schema = 'public';
+                """))
+                rows = result.fetchall()
+                existing_columns = {row[0] for row in rows}
+                logger.debug(f"PostgreSQL existing columns: {existing_columns}")
+        except Exception as e:
+            logger.warning(f"Could not check existing columns: {e}")
+            existing_columns = set()
+
+        # Define columns to add
+        subscription_columns = {
+            'stripe_customer_id': 'VARCHAR(255) NULL',
+            'subscription_status': "VARCHAR(50) DEFAULT 'trial'",
+            'subscription_id': 'VARCHAR(255) NULL',
+            'trial_start': 'TIMESTAMP NULL',
+            'trial_end': 'TIMESTAMP NULL',
+            'subscription_start': 'TIMESTAMP NULL',
+            'subscription_end': 'TIMESTAMP NULL'
+        }
+
+        # Build migration commands for missing columns only
+        migration_commands = []
+        for column_name, column_def in subscription_columns.items():
+            if column_name not in existing_columns:
+                if is_sqlite:
+                    migration_commands.append(f"ALTER TABLE user ADD COLUMN {column_name} {column_def};")
+                else:
+                    migration_commands.append(f'ALTER TABLE "user" ADD COLUMN {column_name} {column_def};')
+            else:
+                logger.debug(f"Column {column_name} already exists, skipping")
+
+        if not migration_commands:
+            logger.info("All subscription columns already exist, skipping schema migration")
+            return True
         else:
-            # PostgreSQL syntax
-            migration_commands = [
-                "ALTER TABLE user ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR(255) NULL;",
-                "ALTER TABLE user ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(50) DEFAULT 'trial';",
-                "ALTER TABLE user ADD COLUMN IF NOT EXISTS subscription_id VARCHAR(255) NULL;",
-                "ALTER TABLE user ADD COLUMN IF NOT EXISTS trial_start TIMESTAMP NULL;",
-                "ALTER TABLE user ADD COLUMN IF NOT EXISTS trial_end TIMESTAMP NULL;",
-                "ALTER TABLE user ADD COLUMN IF NOT EXISTS subscription_start TIMESTAMP NULL;",
-                "ALTER TABLE user ADD COLUMN IF NOT EXISTS subscription_end TIMESTAMP NULL;"
-            ]
+            logger.info(f"Adding {len(migration_commands)} missing subscription columns: {list(subscription_columns.keys())}")
         
         try:
             async with db_service.with_session() as session:
@@ -64,11 +90,12 @@ async def setup_subscription_schema():
                 # First, try to add columns (these might fail if columns already exist)
                 for i, command in enumerate(migration_commands, 1):
                     try:
-                        await session.exec(text(command))
-                        logger.debug(f"Executed subscription schema command {i}/{len(migration_commands)}")
+                        # Use session.execute for raw SQL commands
+                        await session.execute(text(command))
+                        logger.debug(f"Executed subscription schema command {i}/{len(migration_commands)}: {command.strip()}")
                     except Exception as e:
                         # Column might already exist, which is fine
-                        logger.debug(f"Schema command {i} result: {e}")
+                        logger.debug(f"Schema command {i} result: {e} - Command: {command.strip()}")
 
                 # Commit the schema changes first
                 try:
@@ -102,14 +129,16 @@ async def setup_subscription_schema():
                             WHERE trial_start IS NULL OR subscription_status IS NULL;
                         """)
 
-                    result = await session.exec(update_existing_users_query)
+                    result = await session.execute(update_existing_users_query)
                     await session.commit()
                     logger.info("Successfully set up subscription database schema and updated existing users")
+                    return True
 
                 except Exception as e:
                     logger.warning(f"User update query failed: {e} - schema setup completed but user updates skipped")
                     await session.rollback()
-                    # Don't return False here - schema setup was successful
+                    # Schema setup was successful even if user updates failed
+                    return True
 
         except Exception as e:
             logger.error(f"Database session error during subscription setup: {e}")

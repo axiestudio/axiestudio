@@ -6,11 +6,19 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
+from loguru import logger
 
 from axiestudio.api.utils import CurrentActiveUser, DbSession
 from axiestudio.services.stripe.service import stripe_service
 from axiestudio.services.database.models.user.crud import update_user
 from axiestudio.services.database.models.user.model import UserUpdate
+
+# Import subscription setup for manual migration
+try:
+    from axiestudio.services.startup.subscription_setup import setup_subscription_schema
+    SUBSCRIPTION_SETUP_AVAILABLE = True
+except ImportError:
+    SUBSCRIPTION_SETUP_AVAILABLE = False
 
 
 router = APIRouter(tags=["Subscriptions"], prefix="/subscriptions")
@@ -40,8 +48,9 @@ async def create_checkout_session(
         raise HTTPException(status_code=503, detail="Stripe is not configured. Please contact support.")
 
     try:
-        # Create Stripe customer if not exists
-        if not current_user.stripe_customer_id:
+        # Create Stripe customer if not exists (handle missing column gracefully)
+        stripe_customer_id = getattr(current_user, 'stripe_customer_id', None)
+        if not stripe_customer_id:
             customer_id = await stripe_service.create_customer(
                 email=current_user.username,  # Using username as email
                 name=current_user.username
@@ -123,37 +132,129 @@ async def subscription_health():
     }
 
 
+@router.post("/migrate-schema")
+async def migrate_subscription_schema():
+    """Manually trigger subscription schema migration (for debugging)."""
+    if not SUBSCRIPTION_SETUP_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Subscription setup not available")
+
+    try:
+        result = await setup_subscription_schema()
+        return {
+            "success": True,
+            "message": "Subscription schema migration completed",
+            "result": result
+        }
+    except Exception as e:
+        logger.error(f"Manual schema migration failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Schema migration failed: {str(e)}")
+
+
+@router.get("/debug/schema")
+async def debug_database_schema(session: DbSession):
+    """Debug endpoint to check what columns exist in the user table."""
+    try:
+        from sqlalchemy import text
+
+        # Check if we're using SQLite or PostgreSQL
+        db_url = str(session.bind.url).lower()
+        is_sqlite = "sqlite" in db_url
+
+        if is_sqlite:
+            # SQLite: Check table schema
+            result = await session.execute(text("PRAGMA table_info(user);"))
+            rows = result.fetchall()
+            columns = [{"name": row[1], "type": row[2], "nullable": bool(row[3]), "default": row[4]} for row in rows]
+        else:
+            # PostgreSQL: Check information_schema
+            result = await session.execute(text("""
+                SELECT column_name, data_type, is_nullable, column_default
+                FROM information_schema.columns
+                WHERE table_name = 'user' AND table_schema = 'public'
+                ORDER BY ordinal_position;
+            """))
+            rows = result.fetchall()
+            columns = [{"name": row[0], "type": row[1], "nullable": row[2] == "YES", "default": row[3]} for row in rows]
+
+        # Check which subscription columns are missing
+        subscription_columns = [
+            'stripe_customer_id', 'subscription_status', 'subscription_id',
+            'trial_start', 'trial_end', 'subscription_start', 'subscription_end'
+        ]
+
+        existing_column_names = {col["name"] for col in columns}
+        missing_columns = [col for col in subscription_columns if col not in existing_column_names]
+
+        return {
+            "database_type": "sqlite" if is_sqlite else "postgresql",
+            "total_columns": len(columns),
+            "all_columns": columns,
+            "subscription_columns_missing": missing_columns,
+            "subscription_columns_present": [col for col in subscription_columns if col in existing_column_names]
+        }
+
+    except Exception as e:
+        logger.error(f"Error checking database schema: {e}")
+        raise HTTPException(status_code=500, detail=f"Schema check failed: {str(e)}")
+
+
 @router.get("/status")
 async def get_subscription_status(current_user: CurrentActiveUser):
     """Get current user's subscription status."""
     try:
+        # Handle missing subscription columns gracefully
+        trial_start = getattr(current_user, 'trial_start', None)
+        trial_end = getattr(current_user, 'trial_end', None)
+        subscription_status = getattr(current_user, 'subscription_status', 'trial')
+        subscription_id = getattr(current_user, 'subscription_id', None)
+        subscription_start = getattr(current_user, 'subscription_start', None)
+        subscription_end = getattr(current_user, 'subscription_end', None)
+        stripe_customer_id = getattr(current_user, 'stripe_customer_id', None)
+
         # Calculate trial status
         trial_expired = False
-        days_left = 0
+        days_left = 7  # Default to 7 days if no trial_start
 
-        if current_user.trial_start:
-            trial_end = current_user.trial_end or (current_user.trial_start + timedelta(days=7))
+        if trial_start:
+            trial_end_date = trial_end or (trial_start + timedelta(days=7))
             now = datetime.now(timezone.utc)
 
-            if now > trial_end:
+            if now > trial_end_date:
                 trial_expired = True
+                days_left = 0
             else:
-                days_left = (trial_end - now).days
+                days_left = (trial_end_date - now).days
+        else:
+            # If no trial_start, assume user just signed up
+            trial_start = current_user.create_at
+            trial_end = trial_start + timedelta(days=7) if trial_start else None
 
         return {
-            "subscription_status": current_user.subscription_status or "trial",
-            "subscription_id": current_user.subscription_id,
-            "trial_start": current_user.trial_start,
-            "trial_end": current_user.trial_end,
+            "subscription_status": subscription_status,
+            "subscription_id": subscription_id,
+            "trial_start": trial_start,
+            "trial_end": trial_end,
             "trial_expired": trial_expired,
             "trial_days_left": max(0, days_left),
-            "subscription_start": current_user.subscription_start,
-            "subscription_end": current_user.subscription_end,
-            "has_stripe_customer": bool(current_user.stripe_customer_id)
+            "subscription_start": subscription_start,
+            "subscription_end": subscription_end,
+            "has_stripe_customer": bool(stripe_customer_id)
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get subscription status: {str(e)}")
+        logger.error(f"Error getting subscription status: {e}")
+        # Return safe defaults if there's an error
+        return {
+            "subscription_status": "trial",
+            "subscription_id": None,
+            "trial_start": current_user.create_at,
+            "trial_end": current_user.create_at + timedelta(days=7) if current_user.create_at else None,
+            "trial_expired": False,
+            "trial_days_left": 7,
+            "subscription_start": None,
+            "subscription_end": None,
+            "has_stripe_customer": False
+        }
 
 
 @router.delete("/cancel")
