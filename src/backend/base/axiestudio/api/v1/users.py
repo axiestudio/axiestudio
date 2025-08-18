@@ -105,7 +105,7 @@ async def patch_user(
     if user_db := await get_user_by_id(session, user_id):
         if not update_password:
             user_update.password = user_db.password
-        return await update_user(user_db, user_update, session)
+        return await update_user(session, user_db.id, user_update)
     raise HTTPException(status_code=404, detail="User not found")
 
 
