@@ -18,6 +18,7 @@ from axiestudio.services.auth.utils import (
 from axiestudio.services.database.models.user.crud import get_user_by_id, update_user
 from axiestudio.services.database.models.user.model import User, UserCreate, UserRead, UserUpdate
 from axiestudio.services.deps import get_settings_service
+from axiestudio.services.email.service import email_service
 from axiestudio.services.trial.abuse_prevention import trial_abuse_prevention
 
 router = APIRouter(tags=["Users"], prefix="/users")
@@ -56,7 +57,17 @@ async def _create_regular_user(user: UserCreate, request: Request, session: DbSe
 
     new_user = User.model_validate(user, from_attributes=True)
     new_user.password = get_password_hash(user.password)
-    new_user.is_active = get_settings_service().auth_settings.NEW_USER_IS_ACTIVE
+
+    # For email verification: set is_active to False initially
+    new_user.is_active = False
+
+    # Generate email verification token
+    verification_token = email_service.generate_verification_token()
+    verification_expiry = email_service.get_verification_expiry()
+
+    new_user.email_verification_token = verification_token
+    new_user.email_verification_expires = verification_expiry
+    new_user.email_verified = False
 
     # Set trial information for regular users
     now = datetime.now(timezone.utc)
@@ -71,6 +82,16 @@ async def _create_regular_user(user: UserCreate, request: Request, session: DbSe
     session.add(new_user)
     await session.commit()
     await session.refresh(new_user)
+
+    # Send verification email
+    email_sent = await email_service.send_verification_email(
+        new_user.email, new_user.username, verification_token
+    )
+
+    if not email_sent:
+        # Log warning but don't fail the signup
+        from loguru import logger
+        logger.warning(f"Failed to send verification email to {new_user.email}")
 
     # Log successful signup
     await trial_abuse_prevention.log_signup_attempt(

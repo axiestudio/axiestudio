@@ -164,8 +164,18 @@ async def create_customer_portal(
             customer_id = current_user.stripe_customer_id
 
         # Get the frontend URL from environment or use default
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:7860")
+        # Try multiple environment variables for different deployment platforms
+        frontend_url = (
+            os.getenv("FRONTEND_URL") or
+            os.getenv("RAILWAY_PUBLIC_DOMAIN") and f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}" or
+            os.getenv("VERCEL_URL") and f"https://{os.getenv('VERCEL_URL')}" or
+            os.getenv("RENDER_EXTERNAL_URL") or
+            "http://localhost:7860"
+        )
         return_url = f"{frontend_url}/settings"
+
+        logger.info(f"Creating customer portal with return_url: {return_url}")
+        logger.debug(f"Environment variables - FRONTEND_URL: {os.getenv('FRONTEND_URL')}, RAILWAY_PUBLIC_DOMAIN: {os.getenv('RAILWAY_PUBLIC_DOMAIN')}")
 
         portal_url = await stripe_service.create_customer_portal_session(
             customer_id=customer_id,

@@ -61,7 +61,7 @@ export default function AppHeader(): JSX.Element {
         <Button
           variant="ghost"
           onClick={() => navigate("/")}
-          className="mr-2 flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/50 transition-colors duration-200"
+          className="mr-2 flex h-14 w-14 items-center justify-center rounded-lg hover:bg-muted/50 transition-colors duration-200"
           data-testid="icon-ChevronLeft"
         >
           {ENABLE_DATASTAX_AXIESTUDIO ? (
@@ -70,7 +70,7 @@ export default function AppHeader(): JSX.Element {
             <img
               src="https://scontent-arn2-1.xx.fbcdn.net/v/t39.30808-6/499498872_122132145854766980_5268724011023190696_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=u5dFev5AG-kQ7kNvwFS6K3m&_nc_oc=AdltILxg_X65VXBn-MK3Z58PgtgR7ITbbYcGrvZSWDnQLiIitDDiDq9uw1DoamQT61U&_nc_zt=23&_nc_ht=scontent-arn2-1.xx&_nc_gid=mpLb2UFdGIvVDUjGf2bZuw&oh=00_AfXfUa1TAFSuNwQPVCsbeshZuHKq0TqnRwUgl4EdrFju9w&oe=68A94B99"
               alt="Axie Studio Logo"
-              className="h-8 w-8 object-contain rounded"
+              className="h-12 w-12 object-contain rounded"
             />
           )}
         </Button>

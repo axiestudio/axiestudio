@@ -68,10 +68,10 @@ export default function SignUp(): JSX.Element {
       onSuccess: (user) => {
         track("User Signed Up", user);
         setSuccessData({
-          title: SIGN_UP_SUCCESS,
+          title: "Account created successfully! Please check your email to verify your account before logging in.",
         });
-        // Redirect to login page after successful signup
-        navigate("/login?message=signup-success");
+        // Stay on signup page to show success message
+        // User will need to verify email before they can log in
       },
       onError: (error) => {
         const {

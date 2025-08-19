@@ -38,6 +38,11 @@ class User(SQLModel, table=True):  # type: ignore[call-arg]
     signup_ip: str | None = Field(default=None, nullable=True, index=True)  # Track signup IP
     device_fingerprint: str | None = Field(default=None, nullable=True, index=True)  # Track device fingerprint
 
+    # Email verification fields
+    email_verified: bool = Field(default=False)
+    email_verification_token: str | None = Field(default=None, nullable=True)
+    email_verification_expires: datetime | None = Field(default=None, nullable=True)
+
     # Subscription fields
     stripe_customer_id: str | None = Field(default=None, nullable=True)
     subscription_status: str | None = Field(default="trial", nullable=True)  # trial, active, canceled, past_due
@@ -92,6 +97,9 @@ class UserRead(SQLModel):
     last_login_at: datetime | None = Field(nullable=True)
     optins: dict[str, Any] | None = Field(default=None)
 
+    # Email verification fields for read operations
+    email_verified: bool = Field(default=False)
+
     # Subscription fields for read operations
     stripe_customer_id: str | None = Field(default=None, nullable=True)
     subscription_status: str | None = Field(default="trial", nullable=True)
@@ -124,3 +132,8 @@ class UserUpdate(SQLModel):
     # Trial abuse prevention fields (admin only)
     signup_ip: str | None = None
     device_fingerprint: str | None = None
+
+    # Email verification update fields
+    email_verified: bool | None = None
+    email_verification_token: str | None = None
+    email_verification_expires: datetime | None = None
