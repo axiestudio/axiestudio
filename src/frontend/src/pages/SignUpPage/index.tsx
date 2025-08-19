@@ -70,8 +70,10 @@ export default function SignUp(): JSX.Element {
         setSuccessData({
           title: "Account created successfully! Please check your email to verify your account before logging in.",
         });
-        // Stay on signup page to show success message
-        // User will need to verify email before they can log in
+        // Redirect to login page after showing success message
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000); // Wait 2 seconds to show the success message
       },
       onError: (error) => {
         const {

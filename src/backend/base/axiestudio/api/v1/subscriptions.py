@@ -347,6 +347,21 @@ async def debug_database_schema(session: DbSession):
 async def get_subscription_status(current_user: CurrentActiveUser):
     """Get current user's subscription status."""
     try:
+        # Superusers don't have subscriptions - they have unlimited access
+        if current_user.is_superuser:
+            return {
+                "subscription_status": "admin",
+                "subscription_id": None,
+                "trial_start": None,
+                "trial_end": None,
+                "trial_expired": False,
+                "trial_days_left": None,
+                "subscription_start": None,
+                "subscription_end": None,
+                "has_stripe_customer": False,
+                "is_superuser": True
+            }
+
         # Handle missing subscription columns gracefully
         trial_start = getattr(current_user, 'trial_start', None)
         trial_end = getattr(current_user, 'trial_end', None)

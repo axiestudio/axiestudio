@@ -42,6 +42,8 @@ const LoginAdminPage = lazy(() => import("./pages/AdminPage/LoginPage"));
 const DeleteAccountPage = lazy(() => import("./pages/DeleteAccountPage"));
 const SignUpPage = lazy(() => import("./pages/SignUpPage"));
 const EmailVerificationPage = lazy(() => import("./pages/EmailVerificationPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const SubscriptionSuccessPage = lazy(() => import("./pages/SubscriptionSuccessPage"));
 
@@ -189,6 +191,22 @@ const router = createBrowserRouter(
             path="verify-email"
             element={
               <EmailVerificationPage />
+            }
+          />
+
+          <Route
+            path="forgot-password"
+            element={
+              <ProtectedLoginRoute>
+                <ForgotPasswordPage />
+              </ProtectedLoginRoute>
+            }
+          />
+
+          <Route
+            path="reset-password"
+            element={
+              <ResetPasswordPage />
             }
           />
 

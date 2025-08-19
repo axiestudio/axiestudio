@@ -58,6 +58,8 @@ export default function SubscriptionManagement(): JSX.Element {
         return <Badge className="bg-green-500 text-white">Active</Badge>;
       case "trial":
         return <Badge className="bg-blue-500 text-white">Free Trial</Badge>;
+      case "admin":
+        return <Badge className="bg-purple-500 text-white">Administrator</Badge>;
       case "canceled":
         return <Badge variant="secondary">Cancelled</Badge>;
       case "past_due":
@@ -92,7 +94,38 @@ export default function SubscriptionManagement(): JSX.Element {
 
   const isOnTrial = subscriptionStatus.subscription_status === "trial";
   const isSubscribed = subscriptionStatus.subscription_status === "active";
+  const isAdmin = subscriptionStatus.subscription_status === "admin";
   const trialExpired = subscriptionStatus.trial_expired;
+
+  // Don't show subscription management for admin users
+  if (isAdmin) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ForwardedIconComponent name="Shield" className="h-5 w-5" />
+            Administrator Account
+          </CardTitle>
+          <CardDescription>
+            You have full administrative access to Axie Studio
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <ForwardedIconComponent name="Crown" className="h-5 w-5 text-blue-500" />
+            <div>
+              <h4 className="font-medium text-blue-900 dark:text-blue-100">
+                Administrator Access
+              </h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                You have unlimited access to all Axie Studio features as an administrator.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

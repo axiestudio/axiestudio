@@ -140,7 +140,12 @@ export default function LoginPage(): JSX.Element {
               </Button>
             </Form.Submit>
 
-            <div className="text-center mt-4">
+            <div className="text-center mt-4 space-y-2">
+              <p className="text-sm text-muted-foreground">
+                <CustomLink to="/forgot-password" className="text-primary hover:underline font-medium">
+                  Forgot your password?
+                </CustomLink>
+              </p>
               <p className="text-sm text-muted-foreground">
                 Don't have an account?{" "}
                 <CustomLink to="/signup" className="text-primary hover:underline font-medium">

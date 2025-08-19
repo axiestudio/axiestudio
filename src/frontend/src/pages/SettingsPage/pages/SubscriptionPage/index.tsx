@@ -65,16 +65,58 @@ export default function SubscriptionPage(): JSX.Element {
 
   const isSubscribed = subscriptionStatus.subscription_status === "active";
   const isOnTrial = subscriptionStatus.subscription_status === "trial";
+  const isAdmin = subscriptionStatus.subscription_status === "admin";
   const trialExpired = subscriptionStatus.trial_expired;
+
+  // Show admin view for superusers
+  if (isAdmin) {
+    return (
+      <div className="flex h-full w-full flex-col gap-6 overflow-x-hidden">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-semibold tracking-tight">Subscription</h2>
+          <p className="text-muted-foreground">
+            Administrator account settings
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ForwardedIconComponent name="Shield" className="h-5 w-5" />
+              Administrator Account
+            </CardTitle>
+            <CardDescription>
+              You have full administrative access to Axie Studio
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <ForwardedIconComponent name="Crown" className="h-5 w-5 text-blue-500" />
+              <div>
+                <h4 className="font-medium text-blue-900 dark:text-blue-100">
+                  Administrator Access
+                </h4>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  As an administrator, you have unlimited access to all Axie Studio features without any subscription requirements.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
         return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Active</Badge>;
       case "trial":
-        return trialExpired 
+        return trialExpired
           ? <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">Trial Expired</Badge>
           : <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">Free Trial</Badge>;
+      case "admin":
+        return <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">Administrator</Badge>;
       case "canceled":
         return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300">Cancelled</Badge>;
       default:

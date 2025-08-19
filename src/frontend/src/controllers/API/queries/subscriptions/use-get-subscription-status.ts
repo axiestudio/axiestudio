@@ -9,10 +9,11 @@ interface SubscriptionStatus {
   trial_start: string | null;
   trial_end: string | null;
   trial_expired: boolean;
-  trial_days_left: number;
+  trial_days_left: number | null;
   subscription_start: string | null;
   subscription_end: string | null;
   has_stripe_customer: boolean;
+  is_superuser?: boolean;
 }
 
 export const useGetSubscriptionStatus: useQueryFunctionType<
