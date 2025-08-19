@@ -1,0 +1,419 @@
+{
+  "id": "b85a66c0-1922-45ca-ab9c-04eb76785fb3",
+  "name": "Jira Toolkit v.1",
+  "description": "Tools for interacting with Jira (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "barbob123",
+    "first_name": "Guilherme Barbosa Lima",
+    "last_name": "Lima",
+    "id": "620b20d4-3e2e-4bb7-b291-262580fefd42",
+    "full_name": "Guilherme Barbosa Lima Lima"
+  },
+  "store_url": "https://www.langflow.store/store/component/b85a66c0-1922-45ca-ab9c-04eb76785fb3",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-21T21:44:48.431Z",
+    "updated": "2024-10-21T21:44:48.461Z",
+    "downloaded": "2025-08-19T17:50:07.408Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "JiraTool",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Union, Optional\nfrom langchain_community.utilities.jira import JiraAPIWrapper\nfrom langchain_community.agent_toolkits.jira.toolkit import JiraToolkit\nfrom langchain.agents import AgentType, initialize_agent\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom axiestudio.inputs import SecretStrInput, MessageTextInput, DictInput, BoolInput\nfrom axiestudio.schema import Data\nfrom axiestudio.field_typing import Tool, BaseTool\nfrom langchain.tools import StructuredTool\nfrom pydantic import BaseModel, Field\nfrom axiestudio.io import Output, BoolInput\n\n\nclass JiraToolComponent(LCToolComponent):\n    display_name: str = \"Jira Tool v.1\"\n    description: str = \"Tools for interacting with Jira\"\n    name = \"JiraTool\"\n    beta = True\n    documentation: str = \"https://python.langchain.com/v0.2/docs/integrations/tools/jira/\"\n    icon = \"langchain_utilities\"\n    inputs = [\n        MessageTextInput(name=\"jira_username\", display_name=\"Atlassian Account's Email\", required=True),\n        SecretStrInput(name=\"jira_api_token\", display_name=\"Atlassian Account's API Token\", required=True),\n        MessageTextInput(name=\"jira_instance_url\", display_name=\"Jira Instance URL\", required=True),\n        MessageTextInput(name=\"jira_cloud\", display_name=\"Jira Cloud\", required=True, value=\"True\", advanced=True),\n    ]\n    outputs = [\n        Output(name=\"api_run_model\", display_name=\"Data\", method=\"run_model\"),\n        Output(name=\"api_build_tool\", display_name=\"Tool\", method=\"build_tool\"),\n    ]\n\n    def JiraAPIWrapper(self) -> JiraAPIWrapper:\n        jira_username = self.inputs[0].value\n        jira_api_token = self.inputs[1].value\n        jira_instance_url = self.inputs[2].value\n        jira_cloud = bool(self.inputs[3].value)\n        \n        return JiraAPIWrapper(\n            jira_api_token=jira_api_token,\n            jira_instance_url=jira_instance_url,\n            jira_cloud=jira_cloud,\n            jira_username=jira_username\n        )\n    \n    def build_tool(self) -> Tool:\n        jira_username = self.inputs[0].value\n        jira_api_token = self.inputs[1].value\n        jira_instance_url = self.inputs[2].value\n        jira_cloud = self.inputs[3].value\n\n        jira = JiraAPIWrapper(jira_api_token=jira_api_token, jira_instance_url=jira_instance_url, jira_cloud=jira_cloud, jira_username=jira_username)\n        toolkit = JiraToolkit.from_jira_api_wrapper(jira)\n        \n        for tool in toolkit.tools:\n            tool.name = tool.name.replace(\" \", \"_\")\n        \n        return toolkit.tools",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "jira_api_token": {
+                "load_from_db": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "jira_api_token",
+                "value": "",
+                "display_name": "Atlassian Account's API Token",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "jira_cloud": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "jira_cloud",
+                "value": "True",
+                "display_name": "Jira Cloud",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "jira_instance_url": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "jira_instance_url",
+                "value": "",
+                "display_name": "Jira Instance URL",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "jira_username": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "jira_username",
+                "value": "",
+                "display_name": "Atlassian Account's Email",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Tools for interacting with Jira",
+            "icon": "langchain_utilities",
+            "base_classes": [
+              "Data",
+              "Tool"
+            ],
+            "display_name": "Jira Toolkit v.1",
+            "documentation": "https://python.langchain.com/v0.2/docs/integrations/tools/jira/",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "jira_username",
+              "jira_api_token",
+              "jira_instance_url",
+              "jira_cloud"
+            ],
+            "beta": true,
+            "edited": true,
+            "lf_version": "1.0.17",
+            "official": false
+          },
+          "id": "JiraTool-ZRMPv"
+        },
+        "id": "JiraTool-ZRMPv",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "JiraTool": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "b85a66c0-1922-45ca-ab9c-04eb76785fb3",
+    "name": "Jira Toolkit v.1",
+    "description": "Tools for interacting with Jira",
+    "is_component": true,
+    "liked_by_count": "2",
+    "downloads_count": "52",
+    "metadata": {
+      "JiraTool": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.19",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "JiraTool",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Union, Optional\nfrom langchain_community.utilities.jira import JiraAPIWrapper\nfrom langchain_community.agent_toolkits.jira.toolkit import JiraToolkit\nfrom langchain.agents import AgentType, initialize_agent\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom axiestudio.inputs import SecretStrInput, MessageTextInput, DictInput, BoolInput\nfrom axiestudio.schema import Data\nfrom axiestudio.field_typing import Tool, BaseTool\nfrom langchain.tools import StructuredTool\nfrom pydantic import BaseModel, Field\nfrom axiestudio.io import Output, BoolInput\n\n\nclass JiraToolComponent(LCToolComponent):\n    display_name: str = \"Jira Tool v.1\"\n    description: str = \"Tools for interacting with Jira\"\n    name = \"JiraTool\"\n    beta = True\n    documentation: str = \"https://python.langchain.com/v0.2/docs/integrations/tools/jira/\"\n    icon = \"langchain_utilities\"\n    inputs = [\n        MessageTextInput(name=\"jira_username\", display_name=\"Atlassian Account's Email\", required=True),\n        SecretStrInput(name=\"jira_api_token\", display_name=\"Atlassian Account's API Token\", required=True),\n        MessageTextInput(name=\"jira_instance_url\", display_name=\"Jira Instance URL\", required=True),\n        MessageTextInput(name=\"jira_cloud\", display_name=\"Jira Cloud\", required=True, value=\"True\", advanced=True),\n    ]\n    outputs = [\n        Output(name=\"api_run_model\", display_name=\"Data\", method=\"run_model\"),\n        Output(name=\"api_build_tool\", display_name=\"Tool\", method=\"build_tool\"),\n    ]\n\n    def JiraAPIWrapper(self) -> JiraAPIWrapper:\n        jira_username = self.inputs[0].value\n        jira_api_token = self.inputs[1].value\n        jira_instance_url = self.inputs[2].value\n        jira_cloud = bool(self.inputs[3].value)\n        \n        return JiraAPIWrapper(\n            jira_api_token=jira_api_token,\n            jira_instance_url=jira_instance_url,\n            jira_cloud=jira_cloud,\n            jira_username=jira_username\n        )\n    \n    def build_tool(self) -> Tool:\n        jira_username = self.inputs[0].value\n        jira_api_token = self.inputs[1].value\n        jira_instance_url = self.inputs[2].value\n        jira_cloud = self.inputs[3].value\n\n        jira = JiraAPIWrapper(jira_api_token=jira_api_token, jira_instance_url=jira_instance_url, jira_cloud=jira_cloud, jira_username=jira_username)\n        toolkit = JiraToolkit.from_jira_api_wrapper(jira)\n        \n        for tool in toolkit.tools:\n            tool.name = tool.name.replace(\" \", \"_\")\n        \n        return toolkit.tools",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "jira_api_token": {
+                  "load_from_db": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "jira_api_token",
+                  "value": "",
+                  "display_name": "Atlassian Account's API Token",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "jira_cloud": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "jira_cloud",
+                  "value": "True",
+                  "display_name": "Jira Cloud",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "jira_instance_url": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "jira_instance_url",
+                  "value": "",
+                  "display_name": "Jira Instance URL",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "jira_username": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "jira_username",
+                  "value": "",
+                  "display_name": "Atlassian Account's Email",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Tools for interacting with Jira",
+              "icon": "langchain_utilities",
+              "base_classes": [
+                "Data",
+                "Tool"
+              ],
+              "display_name": "Jira Toolkit v.1",
+              "documentation": "https://python.langchain.com/v0.2/docs/integrations/tools/jira/",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "jira_username",
+                "jira_api_token",
+                "jira_instance_url",
+                "jira_cloud"
+              ],
+              "beta": true,
+              "edited": true,
+              "lf_version": "1.0.17",
+              "official": false
+            },
+            "id": "JiraTool-ZRMPv"
+          },
+          "id": "JiraTool-ZRMPv",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-21T21:44:48.431Z",
+    "date_updated": "2024-10-21T21:44:48.461Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "620b20d4-3e2e-4bb7-b291-262580fefd42",
+    "user_created": {
+      "username": "barbob123",
+      "first_name": "Guilherme Barbosa Lima",
+      "last_name": "Lima",
+      "id": "620b20d4-3e2e-4bb7-b291-262580fefd42"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.533Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

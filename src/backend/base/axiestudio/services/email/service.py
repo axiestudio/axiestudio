@@ -6,7 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from typing import Optional
 
 from loguru import logger
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 from axiestudio.services.deps import get_settings_service
 

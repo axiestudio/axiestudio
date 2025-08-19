@@ -1,0 +1,495 @@
+{
+  "id": "b2d2132c-ac60-4475-abc0-e59fd2aeb3ff",
+  "name": "Alibaba Cloud",
+  "description": "Alibaba Cloud's Qwen model family for text and image processing. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "Victor",
+    "first_name": "VICTOR",
+    "last_name": "GOMES",
+    "id": "3e203c77-c087-4ccf-a0c6-07c619d760f1",
+    "full_name": "VICTOR GOMES"
+  },
+  "store_url": "https://www.langflow.store/store/component/b2d2132c-ac60-4475-abc0-e59fd2aeb3ff",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-07T04:01:47.490Z",
+    "updated": "2024-09-07T04:01:47.515Z",
+    "downloaded": "2025-08-19T17:50:05.690Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "QwenComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "api_key": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "API Key",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Your DashScope API key.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import dashscope\nfrom http import HTTPStatus\nfrom axiestudio.custom import Component\nfrom axiestudio.io import (\n    MessageTextInput,\n    StrInput,\n    MultilineInput,\n    BoolInput,\n    DropdownInput,\n    Output\n)\nfrom axiestudio.schema.message import Message\n\nclass QwenComponent(Component):\n    display_name = \"Qwen Models\"\n    description = \"Alibaba Cloud's Qwen model family for text and image processing.\"\n    icon = \"cloud\"\n\n    QWEN_MODELS = [\n        \"qwen-max\",\n        \"qwen-plus\",\n        \"qwen-turbo\",\n        \"qwen2-72b-instruct\",\n        \"qwen2-57b-a14b-instruct\",\n        \"qwen2-7b-instruct\",\n        \"qwen1.5-110b-chat\",\n        \"qwen1.5-72b-chat\",\n        \"qwen1.5-32b-chat\",\n        \"qwen1.5-14b-chat\",\n        \"qwen1.5-7b-chat\",\n        \"qwen-vl-plus\",\n        \"qwen-vl-max\"\n    ]\n\n    inputs = [\n        MessageTextInput(\n            name=\"input\",\n            display_name=\"Input\",\n            info=\"Text input or image URL (for VL models).\",\n        ),\n        DropdownInput(\n            name=\"model_type\",\n            display_name=\"Model Type\",\n            options=QWEN_MODELS,\n            value=\"qwen-turbo\",\n            info=\"Select the Qwen model type.\",\n        ),\n        StrInput(\n            name=\"api_key\",\n            display_name=\"API Key\",\n            info=\"Your DashScope API key.\",\n        ),\n        MultilineInput(\n            name=\"system_message\",\n            display_name=\"System Message\",\n            info=\"Optional system message to guide the model's behavior.\",\n            value=\"You are a helpful assistant.\",\n        ),\n        MessageTextInput(\n            name=\"user_prompt\",\n            display_name=\"User Prompt\",\n            info=\"User prompt or question.\",\n            value=\"\",\n        ),\n        BoolInput(\n            name=\"stream\",\n            display_name=\"Stream\",\n            info=\"Whether to use streaming mode for the API call.\",\n            value=True,\n        ),\n    ]\n\n    outputs = [\n        Output(\n            name=\"text\",\n            display_name=\"Text\",\n            method=\"generate_response\",\n        ),\n    ]\n\n    def generate_response(self) -> Message:\n        dashscope.api_key = self.api_key\n        dashscope.base_http_api_url = 'https://dashscope-intl.aliyuncs.com/api/v1'\n\n        is_vl_model = 'vl' in self.model_type\n\n        try:\n            if is_vl_model:\n                messages = [\n                    {\n                        \"role\": \"user\",\n                        \"content\": [\n                            {\"image\": self.input},\n                            {\"text\": self.user_prompt}\n                        ]\n                    }\n                ]\n                response = dashscope.MultiModalConversation.call(\n                    model=self.model_type,\n                    messages=messages,\n                    stream=False  # Set to False for now to simplify handling\n                )\n            else:\n                messages = [\n                    {'role': 'system', 'content': self.system_message},\n                    {'role': 'user', 'content': f\"{self.input}\\n{self.user_prompt}\"}\n                ]\n                response = dashscope.Generation.call(\n                    self.model_type,\n                    messages=messages,\n                    result_format='message',\n                    stream=False  # Set to False for now to simplify handling\n                )\n\n            if isinstance(response, str):\n                # If the response is a string, it's likely an error message\n                return Message(text=f\"Error: {response}\")\n\n            if response.status_code == HTTPStatus.OK:\n                if is_vl_model:\n                    full_text = response.output.choices[0]['message']['content'][0]['text']\n                else:\n                    full_text = response.output.choices[0]['message']['content']\n                \n                self.status = full_text\n                return Message(text=full_text)\n            else:\n                error_message = f\"Error: Request id: {response.request_id}, Status code: {response.status_code}, Error code: {response.code}, Error message: {response.message}\"\n                return Message(text=error_message)\n\n        except Exception as e:\n            return Message(text=f\"An error occurred: {str(e)}\")",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Text input or image URL (for VL models).",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "model_type": {
+                "trace_as_metadata": true,
+                "options": [
+                  "qwen-max",
+                  "qwen-plus",
+                  "qwen-turbo",
+                  "qwen2-72b-instruct",
+                  "qwen2-57b-a14b-instruct",
+                  "qwen2-7b-instruct",
+                  "qwen1.5-110b-chat",
+                  "qwen1.5-72b-chat",
+                  "qwen1.5-32b-chat",
+                  "qwen1.5-14b-chat",
+                  "qwen1.5-7b-chat",
+                  "qwen-vl-plus",
+                  "qwen-vl-max"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "model_type",
+                "value": "qwen2-57b-a14b-instruct",
+                "display_name": "Model Type",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Select the Qwen model type.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput",
+                "load_from_db": false
+              },
+              "stream": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "stream",
+                "value": false,
+                "display_name": "Stream",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Whether to use streaming mode for the API call.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput",
+                "load_from_db": false
+              },
+              "system_message": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "system_message",
+                "value": "You are a helpful assistant.",
+                "display_name": "System Message",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Optional system message to guide the model's behavior.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "user_prompt": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "user_prompt",
+                "value": "",
+                "display_name": "User Prompt",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "User prompt or question.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Alibaba Cloud's Qwen model family for text and image processing.",
+            "icon": "cloud",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Alibaba Cloud",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text",
+                "display_name": "Text",
+                "method": "generate_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input",
+              "model_type",
+              "api_key",
+              "system_message",
+              "user_prompt",
+              "stream"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.17",
+            "official": false
+          },
+          "id": "QwenComponent-SUQgc"
+        },
+        "id": "QwenComponent-SUQgc",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "QwenComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "b2d2132c-ac60-4475-abc0-e59fd2aeb3ff",
+    "name": "Alibaba Cloud",
+    "description": "Alibaba Cloud's Qwen model family for text and image processing.",
+    "is_component": true,
+    "liked_by_count": "8",
+    "downloads_count": "85",
+    "metadata": {
+      "QwenComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "QwenComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "api_key": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "API Key",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Your DashScope API key.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import dashscope\nfrom http import HTTPStatus\nfrom axiestudio.custom import Component\nfrom axiestudio.io import (\n    MessageTextInput,\n    StrInput,\n    MultilineInput,\n    BoolInput,\n    DropdownInput,\n    Output\n)\nfrom axiestudio.schema.message import Message\n\nclass QwenComponent(Component):\n    display_name = \"Qwen Models\"\n    description = \"Alibaba Cloud's Qwen model family for text and image processing.\"\n    icon = \"cloud\"\n\n    QWEN_MODELS = [\n        \"qwen-max\",\n        \"qwen-plus\",\n        \"qwen-turbo\",\n        \"qwen2-72b-instruct\",\n        \"qwen2-57b-a14b-instruct\",\n        \"qwen2-7b-instruct\",\n        \"qwen1.5-110b-chat\",\n        \"qwen1.5-72b-chat\",\n        \"qwen1.5-32b-chat\",\n        \"qwen1.5-14b-chat\",\n        \"qwen1.5-7b-chat\",\n        \"qwen-vl-plus\",\n        \"qwen-vl-max\"\n    ]\n\n    inputs = [\n        MessageTextInput(\n            name=\"input\",\n            display_name=\"Input\",\n            info=\"Text input or image URL (for VL models).\",\n        ),\n        DropdownInput(\n            name=\"model_type\",\n            display_name=\"Model Type\",\n            options=QWEN_MODELS,\n            value=\"qwen-turbo\",\n            info=\"Select the Qwen model type.\",\n        ),\n        StrInput(\n            name=\"api_key\",\n            display_name=\"API Key\",\n            info=\"Your DashScope API key.\",\n        ),\n        MultilineInput(\n            name=\"system_message\",\n            display_name=\"System Message\",\n            info=\"Optional system message to guide the model's behavior.\",\n            value=\"You are a helpful assistant.\",\n        ),\n        MessageTextInput(\n            name=\"user_prompt\",\n            display_name=\"User Prompt\",\n            info=\"User prompt or question.\",\n            value=\"\",\n        ),\n        BoolInput(\n            name=\"stream\",\n            display_name=\"Stream\",\n            info=\"Whether to use streaming mode for the API call.\",\n            value=True,\n        ),\n    ]\n\n    outputs = [\n        Output(\n            name=\"text\",\n            display_name=\"Text\",\n            method=\"generate_response\",\n        ),\n    ]\n\n    def generate_response(self) -> Message:\n        dashscope.api_key = self.api_key\n        dashscope.base_http_api_url = 'https://dashscope-intl.aliyuncs.com/api/v1'\n\n        is_vl_model = 'vl' in self.model_type\n\n        try:\n            if is_vl_model:\n                messages = [\n                    {\n                        \"role\": \"user\",\n                        \"content\": [\n                            {\"image\": self.input},\n                            {\"text\": self.user_prompt}\n                        ]\n                    }\n                ]\n                response = dashscope.MultiModalConversation.call(\n                    model=self.model_type,\n                    messages=messages,\n                    stream=False  # Set to False for now to simplify handling\n                )\n            else:\n                messages = [\n                    {'role': 'system', 'content': self.system_message},\n                    {'role': 'user', 'content': f\"{self.input}\\n{self.user_prompt}\"}\n                ]\n                response = dashscope.Generation.call(\n                    self.model_type,\n                    messages=messages,\n                    result_format='message',\n                    stream=False  # Set to False for now to simplify handling\n                )\n\n            if isinstance(response, str):\n                # If the response is a string, it's likely an error message\n                return Message(text=f\"Error: {response}\")\n\n            if response.status_code == HTTPStatus.OK:\n                if is_vl_model:\n                    full_text = response.output.choices[0]['message']['content'][0]['text']\n                else:\n                    full_text = response.output.choices[0]['message']['content']\n                \n                self.status = full_text\n                return Message(text=full_text)\n            else:\n                error_message = f\"Error: Request id: {response.request_id}, Status code: {response.status_code}, Error code: {response.code}, Error message: {response.message}\"\n                return Message(text=error_message)\n\n        except Exception as e:\n            return Message(text=f\"An error occurred: {str(e)}\")",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Text input or image URL (for VL models).",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "model_type": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "qwen-max",
+                    "qwen-plus",
+                    "qwen-turbo",
+                    "qwen2-72b-instruct",
+                    "qwen2-57b-a14b-instruct",
+                    "qwen2-7b-instruct",
+                    "qwen1.5-110b-chat",
+                    "qwen1.5-72b-chat",
+                    "qwen1.5-32b-chat",
+                    "qwen1.5-14b-chat",
+                    "qwen1.5-7b-chat",
+                    "qwen-vl-plus",
+                    "qwen-vl-max"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "model_type",
+                  "value": "qwen2-57b-a14b-instruct",
+                  "display_name": "Model Type",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Select the Qwen model type.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput",
+                  "load_from_db": false
+                },
+                "stream": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "stream",
+                  "value": false,
+                  "display_name": "Stream",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Whether to use streaming mode for the API call.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput",
+                  "load_from_db": false
+                },
+                "system_message": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "system_message",
+                  "value": "You are a helpful assistant.",
+                  "display_name": "System Message",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Optional system message to guide the model's behavior.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "user_prompt": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "user_prompt",
+                  "value": "",
+                  "display_name": "User Prompt",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "User prompt or question.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Alibaba Cloud's Qwen model family for text and image processing.",
+              "icon": "cloud",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Alibaba Cloud",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text",
+                  "display_name": "Text",
+                  "method": "generate_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input",
+                "model_type",
+                "api_key",
+                "system_message",
+                "user_prompt",
+                "stream"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.17",
+              "official": false
+            },
+            "id": "QwenComponent-SUQgc"
+          },
+          "id": "QwenComponent-SUQgc",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-07T04:01:47.490Z",
+    "date_updated": "2024-09-07T04:01:47.515Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "3e203c77-c087-4ccf-a0c6-07c619d760f1",
+    "user_created": {
+      "username": "Victor",
+      "first_name": "VICTOR",
+      "last_name": "GOMES",
+      "id": "3e203c77-c087-4ccf-a0c6-07c619d760f1"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.468Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,1251 @@
+{
+  "id": "8f555caf-43e8-49df-b4dc-1e12b2357ae8",
+  "name": "Untitled document",
+  "description": "Catalyzing Business Growth through Conversational AI. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "Nipitpon",
+    "first_name": "Nipitpon",
+    "last_name": "Kampolrat",
+    "id": "33598414-dc33-4cdd-b13e-f4a79936986b",
+    "full_name": "Nipitpon Kampolrat"
+  },
+  "store_url": "https://www.langflow.store/store/component/8f555caf-43e8-49df-b4dc-1e12b2357ae8",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-06-10T06:59:16.049Z",
+    "updated": "2024-06-10T06:59:16.099Z",
+    "downloaded": "2025-08-19T17:50:05.305Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "0.6.19",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "CustomComponent-Nj1bU",
+        "type": "genericNode",
+        "position": {
+          "x": -519.6298196994344,
+          "y": 771.865794166228
+        },
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "API_KEY": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 123456,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "API_KEY",
+                "display_name": "API_KEY",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "HOST": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "HOST",
+                "display_name": "HOST",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true,
+                "value": "49.231.43.200"
+              },
+              "PORT": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "PORT",
+                "display_name": "PORT",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true,
+                "value": "8080"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio import CustomComponent\nfrom langchain.chains import LLMChain\nfrom langchain import PromptTemplate\nimport requests\n\nfrom langchain.llms.base import BaseLLM\n\nfrom typing import Any, Callable, List, Mapping, Optional\n\nfrom langchain.callbacks.manager import CallbackManagerForLLMRun\nfrom langchain.llms.base import LLM\nfrom langchain.pydantic_v1 import Field\n\n\nclass OpenthaiGPT(CustomComponent):\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\n    display_name = \"OpenthaiGPT\"\n\n    def build_config(self):\n        return {\"HOST\": {\"display_name\": \"HOST\"},\n                \"PORT\": {\"display_name\": \"PORT\"},\n                \"API_KEY\": {\"display_name\": \"API_KEY\", \"required\":False}\n                \n        }\n\n    def build(self, HOST: str, PORT: int, API_KEY: str = \"123456\") -> BaseLLM:\n        \n        class OpenthaiGPTcaller(LLM):\n            \n            host: str\n            port: int\n            api_key: str = None\n                \n            # input_func: Callable = Field(default_factory=lambda: _collect_user_input)\n            # prompt_func: Callable[[str], None] = Field(default_factory=lambda: _display_prompt)\n            # separator: str = \"\\n\"\n            # input_kwargs: Mapping[str, Any] = {}\n            # prompt_kwargs: Mapping[str, Any] = {}\n            # url: str = \"https://merve-chatgpt-prompt-generator.hf.space/run/predict\"\n\n            @property\n            def _identifying_params(self) -> Mapping[str, Any]:\n                \"\"\"\n                Returns an empty dictionary as there are no identifying parameters.\n                \"\"\"\n                return {}\n\n            @property\n            def _llm_type(self) -> str:\n                \"\"\"Returns the type of LLM.\"\"\"\n                return \"human-input\"\n\n\n            def _call(self,\n                prompt: str,\n                stop: Optional[List[str]] = None,\n                run_manager: Optional[CallbackManagerForLLMRun] = None,\n                **kwargs: Any,\n            ) -> str:\n                \"\"\"\n                Displays the prompt to the user and returns their input as a response.\n\n                Args:\n                    prompt (str): The prompt to be displayed to the user.\n                    stop (Optional[List[str]]): A list of stop strings.\n                    run_manager (Optional[CallbackManagerForLLMRun]): Currently not used.\n\n                Returns:\n                    str: The user's input as a response.\n                \"\"\"\n                url = f\"http://{self.host}:{self.port}/completion\"\n                \n                \n                payload = {\n                    \"prompt\": prompt,\n                    \"n_predict\": 512,\n                    \"n_probs\" : 8,\n                    \"temperature\" : 0.1\n                }\n\n                # Define headers\n                headers = {\n                    \"Content-Type\": \"application/json\",\n                    \"Authorization\": f\"Bearer abcde12345554\"\n                }\n\n                # Make the POST request\n                response = requests.post(url, json=payload, headers=headers)\n\n                # Check if the request was successful (status code 200)\n                if response.status_code == 200:\n                    # Parse the JSON response\n                    response_data = response.json()\n                    print(f\"this is prompt {prompt}\")\n                    #print(response_data)\n                    output = response_data[\"content\"]\n                else:\n                    output = \"[ERR] Sorry, the service is unavailable. Please try again later.\"\n            #print(\"Error:\", response.text)\n\n                return output\n                #self.prompt_func(prompt, **self.prompt_kwargs)\n\n                # output = \"\"\n                # TIMEOUT = 60\n                # # url = \"https://merve-chatgpt-prompt-generator.hf.space/run/predict\"\n\n                # response = requests.post(\n                #     url,\n                #     json={\"data\": [\"สวัสดี\"]},\n                #     timeout=TIMEOUT,\n                # )\n                # try:\n                #     output = response.json()\n                #     print(output)\n                # except requests.JSONDecodeError as e:\n                #     raise RuntimeError(\n                #         f\"Error decoding JSON from {url}. Text response: {response.text}\"\n                #     ) from e\n                # return output[\"data\"][0]\n\n        return OpenthaiGPTcaller(host=HOST, port=PORT, api_key=API_KEY)",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "_type": "CustomComponent"
+            },
+            "base_classes": [
+              "BaseLanguageModel",
+              "BaseLLM"
+            ],
+            "display_name": "OpenthaiGPT",
+            "documentation": "http://docs.axiestudio.org/components/custom",
+            "custom_fields": {
+              "HOST": null,
+              "PORT": null,
+              "API_KEY": null
+            },
+            "output_types": [
+              "BaseLLM"
+            ],
+            "field_formatters": {},
+            "beta": true
+          },
+          "id": "CustomComponent-Nj1bU",
+          "display_name": "OpenthaiGPT"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 553,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": -519.6298196994344,
+          "y": 771.865794166228
+        }
+      },
+      {
+        "id": "LLMChain-27PZn",
+        "type": "genericNode",
+        "position": {
+          "x": 32.84866510360234,
+          "y": 1227.1552115467625
+        },
+        "data": {
+          "type": "LLMChain",
+          "node": {
+            "template": {
+              "llm": {
+                "type": "BaseLanguageModel",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "llm",
+                "display_name": "LLM",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "memory": {
+                "type": "BaseMemory",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "memory",
+                "display_name": "Memory",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "prompt": {
+                "type": "BasePromptTemplate",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "prompt",
+                "display_name": "Prompt",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Callable, Optional, Union\n\nfrom langchain.chains import LLMChain\n\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import (\n    BaseLanguageModel,\n    BaseMemory,\n    BasePromptTemplate,\n    Chain,\n)\n\n\nclass LLMChainComponent(CustomComponent):\n    display_name = \"LLMChain\"\n    description = \"Chain to run queries against LLMs\"\n\n    def build_config(self):\n        return {\n            \"prompt\": {\"display_name\": \"Prompt\"},\n            \"llm\": {\"display_name\": \"LLM\"},\n            \"memory\": {\"display_name\": \"Memory\"},\n            \"code\": {\"show\": False},\n        }\n\n    def build(\n        self,\n        prompt: BasePromptTemplate,\n        llm: BaseLanguageModel,\n        memory: Optional[BaseMemory] = None,\n    ) -> Union[Chain, Callable, LLMChain]:\n        return LLMChain(prompt=prompt, llm=llm, memory=memory)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Chain to run queries against LLMs",
+            "base_classes": [
+              "Chain",
+              "Callable",
+              "LLMChain",
+              "Chain"
+            ],
+            "display_name": "LLMChain",
+            "documentation": "",
+            "custom_fields": {
+              "prompt": null,
+              "llm": null,
+              "memory": null
+            },
+            "output_types": [
+              "Chain",
+              "Callable",
+              "LLMChain"
+            ],
+            "field_formatters": {},
+            "beta": true
+          },
+          "id": "LLMChain-27PZn"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 424,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 32.84866510360234,
+          "y": 1227.1552115467625
+        }
+      },
+      {
+        "id": "HumanMessagePromptTemplate-BSR1L",
+        "type": "genericNode",
+        "position": {
+          "x": -950.6536886354796,
+          "y": 1432.2431147825096
+        },
+        "data": {
+          "type": "HumanMessagePromptTemplate",
+          "node": {
+            "template": {
+              "additional_kwargs": {
+                "type": "dict",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": false,
+                "multiline": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "additional_kwargs",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "prompt": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "<s>[INST] <<SYS>>\\nYou are a question answering assistant. Answer the question as truthful and helpful as possible คุณคือผู้ช่วยตอบคำถาม จงตอบคำถามอย่างถูกต้องและมีประโยชน์ที่สุด<</SYS>>\\n\\n{input}[/INST]\"\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "prompt",
+                "display_name": "prompt",
+                "advanced": false,
+                "input_types": [
+                  "Document",
+                  "BaseOutputParser"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "_type": "HumanMessagePromptTemplate"
+            },
+            "description": "Human message prompt template. This is a message sent from the user.",
+            "icon": null,
+            "base_classes": [
+              "BaseMessagePromptTemplate",
+              "_StringImageMessagePromptTemplate",
+              "HumanMessagePromptTemplate"
+            ],
+            "name": "",
+            "display_name": "HumanMessagePromptTemplate",
+            "documentation": "https://python.langchain.com/docs/modules/model_io/models/chat/how_to/prompts",
+            "custom_fields": {
+              "": [
+                "prompt"
+              ]
+            },
+            "output_types": [],
+            "full_path": null,
+            "field_formatters": {},
+            "beta": false,
+            "error": null
+          },
+          "id": "HumanMessagePromptTemplate-BSR1L",
+          "description": "Human message prompt template. This is a message sent from the user.",
+          "display_name": "HumanMessagePromptTemplate"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 308,
+        "positionAbsolute": {
+          "x": -950.6536886354796,
+          "y": 1432.2431147825096
+        },
+        "dragging": false
+      },
+      {
+        "id": "ChatPromptTemplate-3Ozyw",
+        "type": "genericNode",
+        "position": {
+          "x": -487.1957949736631,
+          "y": 1535.7987961370434
+        },
+        "data": {
+          "type": "ChatPromptTemplate",
+          "node": {
+            "template": {
+              "messages": {
+                "type": "BaseMessagePromptTemplate",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "messages",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "output_parser": {
+                "type": "BaseOutputParser",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": false,
+                "multiline": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "output_parser",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "input_types": {
+                "type": "dict",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": false,
+                "multiline": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "input_types",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "input_variables": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": false,
+                "multiline": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "input_variables",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "metadata": {
+                "type": "dict",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": false,
+                "multiline": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "metadata",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "name": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": false,
+                "multiline": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "name",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "partial_variables": {
+                "type": "dict",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": false,
+                "multiline": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "partial_variables",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "tags": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": false,
+                "multiline": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "tags",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "validate_template": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": false,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "validate_template",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "_type": "ChatPromptTemplate"
+            },
+            "description": "Prompt template for chat models.",
+            "base_classes": [
+              "BaseChatPromptTemplate",
+              "BasePromptTemplate",
+              "ChatPromptTemplate"
+            ],
+            "display_name": "ChatPromptTemplate",
+            "documentation": "https://python.langchain.com/docs/modules/model_io/models/chat/how_to/prompts",
+            "custom_fields": {},
+            "output_types": [],
+            "field_formatters": {},
+            "beta": false
+          },
+          "id": "ChatPromptTemplate-3Ozyw"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 242,
+        "positionAbsolute": {
+          "x": -487.1957949736631,
+          "y": 1535.7987961370434
+        },
+        "dragging": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "CustomComponent-Nj1bU",
+        "sourceHandle": "{œbaseClassesœ:[œBaseLanguageModelœ,œBaseLLMœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-Nj1bUœ}",
+        "target": "LLMChain-27PZn",
+        "targetHandle": "{œfieldNameœ:œllmœ,œidœ:œLLMChain-27PZnœ,œinputTypesœ:null,œtypeœ:œBaseLanguageModelœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "llm",
+            "id": "LLMChain-27PZn",
+            "inputTypes": null,
+            "type": "BaseLanguageModel"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "BaseLanguageModel",
+              "BaseLLM"
+            ],
+            "dataType": "CustomComponent",
+            "id": "CustomComponent-Nj1bU"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900  stroke-connection",
+        "animated": false,
+        "id": "reactflow__edge-CustomComponent-Nj1bU{œbaseClassesœ:[œBaseLanguageModelœ,œBaseLLMœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-Nj1bUœ}-LLMChain-27PZn{œfieldNameœ:œllmœ,œidœ:œLLMChain-27PZnœ,œinputTypesœ:null,œtypeœ:œBaseLanguageModelœ}"
+      },
+      {
+        "source": "HumanMessagePromptTemplate-BSR1L",
+        "sourceHandle": "{œbaseClassesœ:[œBaseMessagePromptTemplateœ,œ_StringImageMessagePromptTemplateœ,œHumanMessagePromptTemplateœ],œdataTypeœ:œHumanMessagePromptTemplateœ,œidœ:œHumanMessagePromptTemplate-BSR1Lœ}",
+        "target": "ChatPromptTemplate-3Ozyw",
+        "targetHandle": "{œfieldNameœ:œmessagesœ,œidœ:œChatPromptTemplate-3Ozywœ,œinputTypesœ:null,œtypeœ:œBaseMessagePromptTemplateœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "messages",
+            "id": "ChatPromptTemplate-3Ozyw",
+            "inputTypes": null,
+            "type": "BaseMessagePromptTemplate"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "BaseMessagePromptTemplate",
+              "_StringImageMessagePromptTemplate",
+              "HumanMessagePromptTemplate"
+            ],
+            "dataType": "HumanMessagePromptTemplate",
+            "id": "HumanMessagePromptTemplate-BSR1L"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900  stroke-connection",
+        "animated": false,
+        "id": "reactflow__edge-HumanMessagePromptTemplate-BSR1L{œbaseClassesœ:[œBaseMessagePromptTemplateœ,œ_StringImageMessagePromptTemplateœ,œHumanMessagePromptTemplateœ],œdataTypeœ:œHumanMessagePromptTemplateœ,œidœ:œHumanMessagePromptTemplate-BSR1Lœ}-ChatPromptTemplate-3Ozyw{œfieldNameœ:œmessagesœ,œidœ:œChatPromptTemplate-3Ozywœ,œinputTypesœ:null,œtypeœ:œBaseMessagePromptTemplateœ}"
+      },
+      {
+        "source": "ChatPromptTemplate-3Ozyw",
+        "sourceHandle": "{œbaseClassesœ:[œBaseChatPromptTemplateœ,œBasePromptTemplateœ,œChatPromptTemplateœ],œdataTypeœ:œChatPromptTemplateœ,œidœ:œChatPromptTemplate-3Ozywœ}",
+        "target": "LLMChain-27PZn",
+        "targetHandle": "{œfieldNameœ:œpromptœ,œidœ:œLLMChain-27PZnœ,œinputTypesœ:null,œtypeœ:œBasePromptTemplateœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "prompt",
+            "id": "LLMChain-27PZn",
+            "inputTypes": null,
+            "type": "BasePromptTemplate"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "BaseChatPromptTemplate",
+              "BasePromptTemplate",
+              "ChatPromptTemplate"
+            ],
+            "dataType": "ChatPromptTemplate",
+            "id": "ChatPromptTemplate-3Ozyw"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900  stroke-connection",
+        "animated": false,
+        "id": "reactflow__edge-ChatPromptTemplate-3Ozyw{œbaseClassesœ:[œBaseChatPromptTemplateœ,œBasePromptTemplateœ,œChatPromptTemplateœ],œdataTypeœ:œChatPromptTemplateœ,œidœ:œChatPromptTemplate-3Ozywœ}-LLMChain-27PZn{œfieldNameœ:œpromptœ,œidœ:œLLMChain-27PZnœ,œinputTypesœ:null,œtypeœ:œBasePromptTemplateœ}"
+      }
+    ],
+    "viewport": {
+      "x": 620.5842367742998,
+      "y": -218.46316252577606,
+      "zoom": 0.5339737862725962
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "LLMChain": {
+      "count": 1
+    },
+    "HumanMessagePromptTemplate": {
+      "count": 1
+    },
+    "ChatPromptTemplate": {
+      "count": 1
+    },
+    "total": 4
+  },
+  "original": {
+    "id": "8f555caf-43e8-49df-b4dc-1e12b2357ae8",
+    "name": "Untitled document",
+    "description": "Catalyzing Business Growth through Conversational AI.",
+    "is_component": false,
+    "liked_by_count": "0",
+    "downloads_count": "3",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "LLMChain": {
+        "count": 1
+      },
+      "HumanMessagePromptTemplate": {
+        "count": 1
+      },
+      "ChatPromptTemplate": {
+        "count": 1
+      },
+      "total": 4
+    },
+    "last_tested_version": "0.6.19",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "CustomComponent-Nj1bU",
+          "type": "genericNode",
+          "position": {
+            "x": -519.6298196994344,
+            "y": 771.865794166228
+          },
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "API_KEY": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 123456,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "API_KEY",
+                  "display_name": "API_KEY",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "HOST": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "HOST",
+                  "display_name": "HOST",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true,
+                  "value": "49.231.43.200"
+                },
+                "PORT": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "PORT",
+                  "display_name": "PORT",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true,
+                  "value": "8080"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio import CustomComponent\nfrom langchain.chains import LLMChain\nfrom langchain import PromptTemplate\nimport requests\n\nfrom langchain.llms.base import BaseLLM\n\nfrom typing import Any, Callable, List, Mapping, Optional\n\nfrom langchain.callbacks.manager import CallbackManagerForLLMRun\nfrom langchain.llms.base import LLM\nfrom langchain.pydantic_v1 import Field\n\n\nclass OpenthaiGPT(CustomComponent):\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\n    display_name = \"OpenthaiGPT\"\n\n    def build_config(self):\n        return {\"HOST\": {\"display_name\": \"HOST\"},\n                \"PORT\": {\"display_name\": \"PORT\"},\n                \"API_KEY\": {\"display_name\": \"API_KEY\", \"required\":False}\n                \n        }\n\n    def build(self, HOST: str, PORT: int, API_KEY: str = \"123456\") -> BaseLLM:\n        \n        class OpenthaiGPTcaller(LLM):\n            \n            host: str\n            port: int\n            api_key: str = None\n                \n            # input_func: Callable = Field(default_factory=lambda: _collect_user_input)\n            # prompt_func: Callable[[str], None] = Field(default_factory=lambda: _display_prompt)\n            # separator: str = \"\\n\"\n            # input_kwargs: Mapping[str, Any] = {}\n            # prompt_kwargs: Mapping[str, Any] = {}\n            # url: str = \"https://merve-chatgpt-prompt-generator.hf.space/run/predict\"\n\n            @property\n            def _identifying_params(self) -> Mapping[str, Any]:\n                \"\"\"\n                Returns an empty dictionary as there are no identifying parameters.\n                \"\"\"\n                return {}\n\n            @property\n            def _llm_type(self) -> str:\n                \"\"\"Returns the type of LLM.\"\"\"\n                return \"human-input\"\n\n\n            def _call(self,\n                prompt: str,\n                stop: Optional[List[str]] = None,\n                run_manager: Optional[CallbackManagerForLLMRun] = None,\n                **kwargs: Any,\n            ) -> str:\n                \"\"\"\n                Displays the prompt to the user and returns their input as a response.\n\n                Args:\n                    prompt (str): The prompt to be displayed to the user.\n                    stop (Optional[List[str]]): A list of stop strings.\n                    run_manager (Optional[CallbackManagerForLLMRun]): Currently not used.\n\n                Returns:\n                    str: The user's input as a response.\n                \"\"\"\n                url = f\"http://{self.host}:{self.port}/completion\"\n                \n                \n                payload = {\n                    \"prompt\": prompt,\n                    \"n_predict\": 512,\n                    \"n_probs\" : 8,\n                    \"temperature\" : 0.1\n                }\n\n                # Define headers\n                headers = {\n                    \"Content-Type\": \"application/json\",\n                    \"Authorization\": f\"Bearer abcde12345554\"\n                }\n\n                # Make the POST request\n                response = requests.post(url, json=payload, headers=headers)\n\n                # Check if the request was successful (status code 200)\n                if response.status_code == 200:\n                    # Parse the JSON response\n                    response_data = response.json()\n                    print(f\"this is prompt {prompt}\")\n                    #print(response_data)\n                    output = response_data[\"content\"]\n                else:\n                    output = \"[ERR] Sorry, the service is unavailable. Please try again later.\"\n            #print(\"Error:\", response.text)\n\n                return output\n                #self.prompt_func(prompt, **self.prompt_kwargs)\n\n                # output = \"\"\n                # TIMEOUT = 60\n                # # url = \"https://merve-chatgpt-prompt-generator.hf.space/run/predict\"\n\n                # response = requests.post(\n                #     url,\n                #     json={\"data\": [\"สวัสดี\"]},\n                #     timeout=TIMEOUT,\n                # )\n                # try:\n                #     output = response.json()\n                #     print(output)\n                # except requests.JSONDecodeError as e:\n                #     raise RuntimeError(\n                #         f\"Error decoding JSON from {url}. Text response: {response.text}\"\n                #     ) from e\n                # return output[\"data\"][0]\n\n        return OpenthaiGPTcaller(host=HOST, port=PORT, api_key=API_KEY)",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "_type": "CustomComponent"
+              },
+              "base_classes": [
+                "BaseLanguageModel",
+                "BaseLLM"
+              ],
+              "display_name": "OpenthaiGPT",
+              "documentation": "http://docs.axiestudio.org/components/custom",
+              "custom_fields": {
+                "HOST": null,
+                "PORT": null,
+                "API_KEY": null
+              },
+              "output_types": [
+                "BaseLLM"
+              ],
+              "field_formatters": {},
+              "beta": true
+            },
+            "id": "CustomComponent-Nj1bU",
+            "display_name": "OpenthaiGPT"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 553,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": -519.6298196994344,
+            "y": 771.865794166228
+          }
+        },
+        {
+          "id": "LLMChain-27PZn",
+          "type": "genericNode",
+          "position": {
+            "x": 32.84866510360234,
+            "y": 1227.1552115467625
+          },
+          "data": {
+            "type": "LLMChain",
+            "node": {
+              "template": {
+                "llm": {
+                  "type": "BaseLanguageModel",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "llm",
+                  "display_name": "LLM",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "memory": {
+                  "type": "BaseMemory",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "memory",
+                  "display_name": "Memory",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "prompt": {
+                  "type": "BasePromptTemplate",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "prompt",
+                  "display_name": "Prompt",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Callable, Optional, Union\n\nfrom langchain.chains import LLMChain\n\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import (\n    BaseLanguageModel,\n    BaseMemory,\n    BasePromptTemplate,\n    Chain,\n)\n\n\nclass LLMChainComponent(CustomComponent):\n    display_name = \"LLMChain\"\n    description = \"Chain to run queries against LLMs\"\n\n    def build_config(self):\n        return {\n            \"prompt\": {\"display_name\": \"Prompt\"},\n            \"llm\": {\"display_name\": \"LLM\"},\n            \"memory\": {\"display_name\": \"Memory\"},\n            \"code\": {\"show\": False},\n        }\n\n    def build(\n        self,\n        prompt: BasePromptTemplate,\n        llm: BaseLanguageModel,\n        memory: Optional[BaseMemory] = None,\n    ) -> Union[Chain, Callable, LLMChain]:\n        return LLMChain(prompt=prompt, llm=llm, memory=memory)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Chain to run queries against LLMs",
+              "base_classes": [
+                "Chain",
+                "Callable",
+                "LLMChain",
+                "Chain"
+              ],
+              "display_name": "LLMChain",
+              "documentation": "",
+              "custom_fields": {
+                "prompt": null,
+                "llm": null,
+                "memory": null
+              },
+              "output_types": [
+                "Chain",
+                "Callable",
+                "LLMChain"
+              ],
+              "field_formatters": {},
+              "beta": true
+            },
+            "id": "LLMChain-27PZn"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 424,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": 32.84866510360234,
+            "y": 1227.1552115467625
+          }
+        },
+        {
+          "id": "HumanMessagePromptTemplate-BSR1L",
+          "type": "genericNode",
+          "position": {
+            "x": -950.6536886354796,
+            "y": 1432.2431147825096
+          },
+          "data": {
+            "type": "HumanMessagePromptTemplate",
+            "node": {
+              "template": {
+                "additional_kwargs": {
+                  "type": "dict",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": false,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "additional_kwargs",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "prompt": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "<s>[INST] <<SYS>>\\nYou are a question answering assistant. Answer the question as truthful and helpful as possible คุณคือผู้ช่วยตอบคำถาม จงตอบคำถามอย่างถูกต้องและมีประโยชน์ที่สุด<</SYS>>\\n\\n{input}[/INST]\"\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "prompt",
+                  "display_name": "prompt",
+                  "advanced": false,
+                  "input_types": [
+                    "Document",
+                    "BaseOutputParser"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "_type": "HumanMessagePromptTemplate"
+              },
+              "description": "Human message prompt template. This is a message sent from the user.",
+              "icon": null,
+              "base_classes": [
+                "BaseMessagePromptTemplate",
+                "_StringImageMessagePromptTemplate",
+                "HumanMessagePromptTemplate"
+              ],
+              "name": "",
+              "display_name": "HumanMessagePromptTemplate",
+              "documentation": "https://python.langchain.com/docs/modules/model_io/models/chat/how_to/prompts",
+              "custom_fields": {
+                "": [
+                  "prompt"
+                ]
+              },
+              "output_types": [],
+              "full_path": null,
+              "field_formatters": {},
+              "beta": false,
+              "error": null
+            },
+            "id": "HumanMessagePromptTemplate-BSR1L",
+            "description": "Human message prompt template. This is a message sent from the user.",
+            "display_name": "HumanMessagePromptTemplate"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 308,
+          "positionAbsolute": {
+            "x": -950.6536886354796,
+            "y": 1432.2431147825096
+          },
+          "dragging": false
+        },
+        {
+          "id": "ChatPromptTemplate-3Ozyw",
+          "type": "genericNode",
+          "position": {
+            "x": -487.1957949736631,
+            "y": 1535.7987961370434
+          },
+          "data": {
+            "type": "ChatPromptTemplate",
+            "node": {
+              "template": {
+                "messages": {
+                  "type": "BaseMessagePromptTemplate",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "messages",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "output_parser": {
+                  "type": "BaseOutputParser",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": false,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "output_parser",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "input_types": {
+                  "type": "dict",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": false,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "input_types",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "input_variables": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": false,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "input_variables",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "metadata": {
+                  "type": "dict",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": false,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "metadata",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "name": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": false,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "name",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "partial_variables": {
+                  "type": "dict",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": false,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "partial_variables",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "tags": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": false,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "tags",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "validate_template": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": false,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "validate_template",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "_type": "ChatPromptTemplate"
+              },
+              "description": "Prompt template for chat models.",
+              "base_classes": [
+                "BaseChatPromptTemplate",
+                "BasePromptTemplate",
+                "ChatPromptTemplate"
+              ],
+              "display_name": "ChatPromptTemplate",
+              "documentation": "https://python.langchain.com/docs/modules/model_io/models/chat/how_to/prompts",
+              "custom_fields": {},
+              "output_types": [],
+              "field_formatters": {},
+              "beta": false
+            },
+            "id": "ChatPromptTemplate-3Ozyw"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 242,
+          "positionAbsolute": {
+            "x": -487.1957949736631,
+            "y": 1535.7987961370434
+          },
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "source": "CustomComponent-Nj1bU",
+          "sourceHandle": "{œbaseClassesœ:[œBaseLanguageModelœ,œBaseLLMœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-Nj1bUœ}",
+          "target": "LLMChain-27PZn",
+          "targetHandle": "{œfieldNameœ:œllmœ,œidœ:œLLMChain-27PZnœ,œinputTypesœ:null,œtypeœ:œBaseLanguageModelœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "llm",
+              "id": "LLMChain-27PZn",
+              "inputTypes": null,
+              "type": "BaseLanguageModel"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "BaseLanguageModel",
+                "BaseLLM"
+              ],
+              "dataType": "CustomComponent",
+              "id": "CustomComponent-Nj1bU"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900  stroke-connection",
+          "animated": false,
+          "id": "reactflow__edge-CustomComponent-Nj1bU{œbaseClassesœ:[œBaseLanguageModelœ,œBaseLLMœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-Nj1bUœ}-LLMChain-27PZn{œfieldNameœ:œllmœ,œidœ:œLLMChain-27PZnœ,œinputTypesœ:null,œtypeœ:œBaseLanguageModelœ}"
+        },
+        {
+          "source": "HumanMessagePromptTemplate-BSR1L",
+          "sourceHandle": "{œbaseClassesœ:[œBaseMessagePromptTemplateœ,œ_StringImageMessagePromptTemplateœ,œHumanMessagePromptTemplateœ],œdataTypeœ:œHumanMessagePromptTemplateœ,œidœ:œHumanMessagePromptTemplate-BSR1Lœ}",
+          "target": "ChatPromptTemplate-3Ozyw",
+          "targetHandle": "{œfieldNameœ:œmessagesœ,œidœ:œChatPromptTemplate-3Ozywœ,œinputTypesœ:null,œtypeœ:œBaseMessagePromptTemplateœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "messages",
+              "id": "ChatPromptTemplate-3Ozyw",
+              "inputTypes": null,
+              "type": "BaseMessagePromptTemplate"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "BaseMessagePromptTemplate",
+                "_StringImageMessagePromptTemplate",
+                "HumanMessagePromptTemplate"
+              ],
+              "dataType": "HumanMessagePromptTemplate",
+              "id": "HumanMessagePromptTemplate-BSR1L"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900  stroke-connection",
+          "animated": false,
+          "id": "reactflow__edge-HumanMessagePromptTemplate-BSR1L{œbaseClassesœ:[œBaseMessagePromptTemplateœ,œ_StringImageMessagePromptTemplateœ,œHumanMessagePromptTemplateœ],œdataTypeœ:œHumanMessagePromptTemplateœ,œidœ:œHumanMessagePromptTemplate-BSR1Lœ}-ChatPromptTemplate-3Ozyw{œfieldNameœ:œmessagesœ,œidœ:œChatPromptTemplate-3Ozywœ,œinputTypesœ:null,œtypeœ:œBaseMessagePromptTemplateœ}"
+        },
+        {
+          "source": "ChatPromptTemplate-3Ozyw",
+          "sourceHandle": "{œbaseClassesœ:[œBaseChatPromptTemplateœ,œBasePromptTemplateœ,œChatPromptTemplateœ],œdataTypeœ:œChatPromptTemplateœ,œidœ:œChatPromptTemplate-3Ozywœ}",
+          "target": "LLMChain-27PZn",
+          "targetHandle": "{œfieldNameœ:œpromptœ,œidœ:œLLMChain-27PZnœ,œinputTypesœ:null,œtypeœ:œBasePromptTemplateœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "prompt",
+              "id": "LLMChain-27PZn",
+              "inputTypes": null,
+              "type": "BasePromptTemplate"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "BaseChatPromptTemplate",
+                "BasePromptTemplate",
+                "ChatPromptTemplate"
+              ],
+              "dataType": "ChatPromptTemplate",
+              "id": "ChatPromptTemplate-3Ozyw"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900  stroke-connection",
+          "animated": false,
+          "id": "reactflow__edge-ChatPromptTemplate-3Ozyw{œbaseClassesœ:[œBaseChatPromptTemplateœ,œBasePromptTemplateœ,œChatPromptTemplateœ],œdataTypeœ:œChatPromptTemplateœ,œidœ:œChatPromptTemplate-3Ozywœ}-LLMChain-27PZn{œfieldNameœ:œpromptœ,œidœ:œLLMChain-27PZnœ,œinputTypesœ:null,œtypeœ:œBasePromptTemplateœ}"
+        }
+      ],
+      "viewport": {
+        "x": 620.5842367742998,
+        "y": -218.46316252577606,
+        "zoom": 0.5339737862725962
+      }
+    },
+    "date_created": "2024-06-10T06:59:16.049Z",
+    "date_updated": "2024-06-10T06:59:16.099Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "33598414-dc33-4cdd-b13e-f4a79936986b",
+    "user_created": {
+      "username": "Nipitpon",
+      "first_name": "Nipitpon",
+      "last_name": "Kampolrat",
+      "id": "33598414-dc33-4cdd-b13e-f4a79936986b"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:01.707Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

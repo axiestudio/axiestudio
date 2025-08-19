@@ -1,0 +1,1449 @@
+{
+  "id": "3a273184-faba-454e-8cd1-7c1d52141c9f",
+  "name": "AD_first_conv_flow",
+  "description": "Powerful Prompts, Perfectly Positioned. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "achimdehnert",
+    "first_name": "Achim",
+    "last_name": "Dehnert",
+    "id": "f332f093-261d-4c97-94ce-a4d3b263ec54",
+    "full_name": "Achim Dehnert"
+  },
+  "store_url": "https://www.langflow.store/store/component/3a273184-faba-454e-8cd1-7c1d52141c9f",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-31T16:09:56.318Z",
+    "updated": "2024-10-31T16:09:56.357Z",
+    "downloaded": "2025-08-19T17:50:07.378Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "OpenAIModel-YfWab",
+        "type": "genericNode",
+        "position": {
+          "x": 144,
+          "y": 5.703125
+        },
+        "data": {
+          "type": "OpenAIModel",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "output_parser": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "output_parser",
+                "value": "",
+                "display_name": "Output Parser",
+                "advanced": true,
+                "input_types": [
+                  "OutputParser"
+                ],
+                "dynamic": false,
+                "info": "The parser to use to parse the output of the model",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "api_key": {
+                "load_from_db": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "OpenAI API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The OpenAI API Key to use for the OpenAI model.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import operator\nfrom functools import reduce\n\nfrom langchain_openai import ChatOpenAI\nfrom pydantic.v1 import SecretStr\n\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.base.models.openai_constants import OPENAI_MODEL_NAMES\nfrom axiestudio.field_typing import LanguageModel\nfrom axiestudio.field_typing.range_spec import RangeSpec\nfrom axiestudio.inputs import (\n    BoolInput,\n    DictInput,\n    DropdownInput,\n    FloatInput,\n    IntInput,\n    SecretStrInput,\n    StrInput,\n)\nfrom axiestudio.inputs.inputs import HandleInput\n\n\nclass OpenAIModelComponent(LCModelComponent):\n    display_name = \"OpenAI\"\n    description = \"Generates text using OpenAI LLMs.\"\n    icon = \"OpenAI\"\n    name = \"OpenAIModel\"\n\n    inputs = [\n        *LCModelComponent._base_inputs,\n        IntInput(\n            name=\"max_tokens\",\n            display_name=\"Max Tokens\",\n            advanced=True,\n            info=\"The maximum number of tokens to generate. Set to 0 for unlimited tokens.\",\n            range_spec=RangeSpec(min=0, max=128000),\n        ),\n        DictInput(name=\"model_kwargs\", display_name=\"Model Kwargs\", advanced=True),\n        BoolInput(\n            name=\"json_mode\",\n            display_name=\"JSON Mode\",\n            advanced=True,\n            info=\"If True, it will output JSON regardless of passing a schema.\",\n        ),\n        DictInput(\n            name=\"output_schema\",\n            is_list=True,\n            display_name=\"Schema\",\n            advanced=True,\n            info=\"The schema for the Output of the model. \"\n            \"You must pass the word JSON in the prompt. \"\n            \"If left blank, JSON mode will be disabled.\",\n        ),\n        DropdownInput(\n            name=\"model_name\",\n            display_name=\"Model Name\",\n            advanced=False,\n            options=OPENAI_MODEL_NAMES,\n            value=OPENAI_MODEL_NAMES[0],\n        ),\n        StrInput(\n            name=\"openai_api_base\",\n            display_name=\"OpenAI API Base\",\n            advanced=True,\n            info=\"The base URL of the OpenAI API. \"\n            \"Defaults to https://api.openai.com/v1. \"\n            \"You can change this to use other APIs like JinaChat, LocalAI and Prem.\",\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"OpenAI API Key\",\n            info=\"The OpenAI API Key to use for the OpenAI model.\",\n            advanced=False,\n            value=\"OPENAI_API_KEY\",\n        ),\n        FloatInput(name=\"temperature\", display_name=\"Temperature\", value=0.1),\n        IntInput(\n            name=\"seed\",\n            display_name=\"Seed\",\n            info=\"The seed controls the reproducibility of the job.\",\n            advanced=True,\n            value=1,\n        ),\n        HandleInput(\n            name=\"output_parser\",\n            display_name=\"Output Parser\",\n            info=\"The parser to use to parse the output of the model\",\n            advanced=True,\n            input_types=[\"OutputParser\"],\n        ),\n    ]\n\n    def build_model(self) -> LanguageModel:  # type: ignore[type-var]\n        # self.output_schema is a list of dictionaries\n        # let's convert it to a dictionary\n        output_schema_dict: dict[str, str] = reduce(operator.ior, self.output_schema or {}, {})\n        openai_api_key = self.api_key\n        temperature = self.temperature\n        model_name: str = self.model_name\n        max_tokens = self.max_tokens\n        model_kwargs = self.model_kwargs or {}\n        openai_api_base = self.openai_api_base or \"https://api.openai.com/v1\"\n        json_mode = bool(output_schema_dict) or self.json_mode\n        seed = self.seed\n\n        api_key = SecretStr(openai_api_key) if openai_api_key else None\n        output = ChatOpenAI(\n            max_tokens=max_tokens or None,\n            model_kwargs=model_kwargs,\n            model=model_name,\n            base_url=openai_api_base,\n            api_key=api_key,\n            temperature=temperature if temperature is not None else 0.1,\n            seed=seed,\n        )\n        if json_mode:\n            if output_schema_dict:\n                output = output.with_structured_output(schema=output_schema_dict, method=\"json_mode\")\n            else:\n                output = output.bind(response_format={\"type\": \"json_object\"})\n\n        return output\n\n    def _get_exception_message(self, e: Exception):\n        \"\"\"\n        Get a message from an OpenAI exception.\n\n        Args:\n            exception (Exception): The exception to get the message from.\n\n        Returns:\n            str: The message from the exception.\n        \"\"\"\n\n        try:\n            from openai import BadRequestError\n        except ImportError:\n            return None\n        if isinstance(e, BadRequestError):\n            message = e.body.get(\"message\")\n            if message:\n                return message\n        return None\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageInput"
+              },
+              "json_mode": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "json_mode",
+                "value": false,
+                "display_name": "JSON Mode",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If True, it will output JSON regardless of passing a schema.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "max_tokens": {
+                "trace_as_metadata": true,
+                "range_spec": {
+                  "step_type": "float",
+                  "min": 0,
+                  "max": 128000,
+                  "step": 0.1
+                },
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_tokens",
+                "value": "",
+                "display_name": "Max Tokens",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The maximum number of tokens to generate. Set to 0 for unlimited tokens.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "model_kwargs": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "model_kwargs",
+                "value": {},
+                "display_name": "Model Kwargs",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "model_name": {
+                "trace_as_metadata": true,
+                "options": [
+                  "gpt-4o-mini",
+                  "gpt-4o",
+                  "gpt-4-turbo",
+                  "gpt-4-turbo-preview",
+                  "gpt-4",
+                  "gpt-3.5-turbo",
+                  "gpt-3.5-turbo-0125"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "model_name",
+                "value": "gpt-4o-mini",
+                "display_name": "Model Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "openai_api_base": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "openai_api_base",
+                "value": "",
+                "display_name": "OpenAI API Base",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The base URL of the OpenAI API. Defaults to https://api.openai.com/v1. You can change this to use other APIs like JinaChat, LocalAI and Prem.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "output_schema": {
+                "trace_as_input": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "output_schema",
+                "value": {},
+                "display_name": "Schema",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The schema for the Output of the model. You must pass the word JSON in the prompt. If left blank, JSON mode will be disabled.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "seed": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "seed",
+                "value": 1,
+                "display_name": "Seed",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The seed controls the reproducibility of the job.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "stream": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "stream",
+                "value": false,
+                "display_name": "Stream",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Stream the response from the model. Streaming works only in Chat.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "system_message": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "system_message",
+                "value": "",
+                "display_name": "System Message",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "System message to pass to the model.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "temperature": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "temperature",
+                "value": 0.1,
+                "display_name": "Temperature",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "float",
+                "_input_type": "FloatInput"
+              }
+            },
+            "description": "Generates text using OpenAI LLMs.",
+            "icon": "OpenAI",
+            "base_classes": [
+              "LanguageModel",
+              "Message"
+            ],
+            "display_name": "OpenAI",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text_output",
+                "display_name": "Text",
+                "method": "text_response",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": [
+                  "input_value",
+                  "stream",
+                  "system_message"
+                ]
+              },
+              {
+                "types": [
+                  "LanguageModel"
+                ],
+                "selected": "LanguageModel",
+                "name": "model_output",
+                "display_name": "Language Model",
+                "method": "build_model",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": [
+                  "api_key",
+                  "json_mode",
+                  "max_tokens",
+                  "model_kwargs",
+                  "model_name",
+                  "openai_api_base",
+                  "output_schema",
+                  "seed",
+                  "temperature"
+                ]
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "system_message",
+              "stream",
+              "max_tokens",
+              "model_kwargs",
+              "json_mode",
+              "output_schema",
+              "model_name",
+              "openai_api_base",
+              "api_key",
+              "temperature",
+              "seed",
+              "output_parser"
+            ],
+            "beta": false,
+            "edited": false,
+            "metadata": {},
+            "lf_version": "1.0.19.post2"
+          },
+          "id": "OpenAIModel-YfWab"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 587,
+        "positionAbsolute": {
+          "x": 144,
+          "y": 5.703125
+        },
+        "dragging": false
+      },
+      {
+        "id": "ConversationChain-U0wAY",
+        "type": "genericNode",
+        "position": {
+          "x": 696,
+          "y": 186.703125
+        },
+        "data": {
+          "type": "ConversationChain",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "llm": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "llm",
+                "value": "",
+                "display_name": "Language Model",
+                "advanced": false,
+                "input_types": [
+                  "LanguageModel"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "memory": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "memory",
+                "value": "",
+                "display_name": "Memory",
+                "advanced": false,
+                "input_types": [
+                  "BaseChatMemory"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langchain.chains import ConversationChain\n\nfrom axiestudio.base.chains.model import LCChainComponent\nfrom axiestudio.field_typing import Message\nfrom axiestudio.inputs import HandleInput, MultilineInput\n\n\nclass ConversationChainComponent(LCChainComponent):\n    display_name = \"ConversationChain\"\n    description = \"Chain to have a conversation and load context from memory.\"\n    name = \"ConversationChain\"\n\n    inputs = [\n        MultilineInput(\n            name=\"input_value\", display_name=\"Input\", info=\"The input value to pass to the chain.\", required=True\n        ),\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True),\n        HandleInput(\n            name=\"memory\",\n            display_name=\"Memory\",\n            input_types=[\"BaseChatMemory\"],\n        ),\n    ]\n\n    def invoke_chain(self) -> Message:\n        if not self.memory:\n            chain = ConversationChain(llm=self.llm)\n        else:\n            chain = ConversationChain(llm=self.llm, memory=self.memory)\n\n        result = chain.invoke({\"input\": self.input_value}, config={\"callbacks\": self.get_langchain_callbacks()})\n        if isinstance(result, dict):\n            result = result.get(chain.output_key, \"\")\n\n        elif not isinstance(result, str):\n            result = result.get(\"response\")\n        result = str(result)\n        self.status = result\n        return Message(text=result)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The input value to pass to the chain.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "Chain to have a conversation and load context from memory.",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "ConversationChain",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text",
+                "display_name": "Text",
+                "method": "invoke_chain",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": [
+                  "input_value",
+                  "llm",
+                  "memory"
+                ]
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "llm",
+              "memory"
+            ],
+            "beta": false,
+            "edited": false,
+            "metadata": {},
+            "lf_version": "1.0.19.post2"
+          },
+          "id": "ConversationChain-U0wAY"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 401,
+        "positionAbsolute": {
+          "x": 696,
+          "y": 186.703125
+        },
+        "dragging": false
+      },
+      {
+        "id": "Prompt-MBLAP",
+        "type": "genericNode",
+        "position": {
+          "x": 257,
+          "y": 687.703125
+        },
+        "data": {
+          "type": "Prompt",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.prompts.api_utils import process_prompt_template\nfrom axiestudio.custom import Component\nfrom axiestudio.inputs.inputs import DefaultPromptField\nfrom axiestudio.io import Output, PromptInput\nfrom axiestudio.schema.message import Message\nfrom axiestudio.template.utils import update_template_values\n\n\nclass PromptComponent(Component):\n    display_name: str = \"Prompt\"\n    description: str = \"Create a prompt template with dynamic variables.\"\n    icon = \"prompts\"\n    trace_type = \"prompt\"\n    name = \"Prompt\"\n\n    inputs = [\n        PromptInput(name=\"template\", display_name=\"Template\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Prompt Message\", name=\"prompt\", method=\"build_prompt\"),\n    ]\n\n    async def build_prompt(\n        self,\n    ) -> Message:\n        prompt = await Message.from_template_and_variables(**self._attributes)\n        self.status = prompt.text\n        return prompt\n\n    def _update_template(self, frontend_node: dict):\n        prompt_template = frontend_node[\"template\"][\"template\"][\"value\"]\n        custom_fields = frontend_node[\"custom_fields\"]\n        frontend_node_template = frontend_node[\"template\"]\n        _ = process_prompt_template(\n            template=prompt_template,\n            name=\"template\",\n            custom_fields=custom_fields,\n            frontend_node_template=frontend_node_template,\n        )\n        return frontend_node\n\n    def post_code_processing(self, new_frontend_node: dict, current_frontend_node: dict):\n        \"\"\"\n        This function is called after the code validation is done.\n        \"\"\"\n        frontend_node = super().post_code_processing(new_frontend_node, current_frontend_node)\n        template = frontend_node[\"template\"][\"template\"][\"value\"]\n        # Kept it duplicated for backwards compatibility\n        _ = process_prompt_template(\n            template=template,\n            name=\"template\",\n            custom_fields=frontend_node[\"custom_fields\"],\n            frontend_node_template=frontend_node[\"template\"],\n        )\n        # Now that template is updated, we need to grab any values that were set in the current_frontend_node\n        # and update the frontend_node with those values\n        update_template_values(new_template=frontend_node, previous_template=current_frontend_node[\"template\"])\n        return frontend_node\n\n    def _get_fallback_input(self, **kwargs):\n        return DefaultPromptField(**kwargs)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "template": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "template",
+                "value": "write in the style of shakespeare {userinput}",
+                "display_name": "Template",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "prompt",
+                "_input_type": "PromptInput"
+              },
+              "userinput": {
+                "field_type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "how to cook pasta",
+                "fileTypes": [],
+                "file_path": "",
+                "name": "userinput",
+                "display_name": "userinput",
+                "advanced": false,
+                "input_types": [
+                  "Message",
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "Create a prompt template with dynamic variables.",
+            "icon": "prompts",
+            "is_input": null,
+            "is_output": null,
+            "is_composition": null,
+            "base_classes": [
+              "Message"
+            ],
+            "name": "",
+            "display_name": "Prompt",
+            "documentation": "",
+            "custom_fields": {
+              "template": [
+                "userinput"
+              ]
+            },
+            "output_types": [],
+            "full_path": null,
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "prompt",
+                "hidden": null,
+                "display_name": "Prompt Message",
+                "method": "build_prompt",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": null
+              }
+            ],
+            "field_order": [
+              "template"
+            ],
+            "beta": false,
+            "error": null,
+            "edited": false,
+            "metadata": {},
+            "lf_version": "1.0.19.post2"
+          },
+          "id": "Prompt-MBLAP"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 391,
+        "dragging": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "OpenAIModel-YfWab",
+        "sourceHandle": "{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-YfWabœ,œnameœ:œmodel_outputœ,œoutput_typesœ:[œLanguageModelœ]}",
+        "target": "ConversationChain-U0wAY",
+        "targetHandle": "{œfieldNameœ:œllmœ,œidœ:œConversationChain-U0wAYœ,œinputTypesœ:[œLanguageModelœ],œtypeœ:œotherœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "llm",
+            "id": "ConversationChain-U0wAY",
+            "inputTypes": [
+              "LanguageModel"
+            ],
+            "type": "other"
+          },
+          "sourceHandle": {
+            "dataType": "OpenAIModel",
+            "id": "OpenAIModel-YfWab",
+            "name": "model_output",
+            "output_types": [
+              "LanguageModel"
+            ]
+          }
+        },
+        "id": "reactflow__edge-OpenAIModel-YfWab{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-YfWabœ,œnameœ:œmodel_outputœ,œoutput_typesœ:[œLanguageModelœ]}-ConversationChain-U0wAY{œfieldNameœ:œllmœ,œidœ:œConversationChain-U0wAYœ,œinputTypesœ:[œLanguageModelœ],œtypeœ:œotherœ}",
+        "animated": false,
+        "className": ""
+      },
+      {
+        "source": "Prompt-MBLAP",
+        "sourceHandle": "{œdataTypeœ:œPromptœ,œidœ:œPrompt-MBLAPœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "ConversationChain-U0wAY",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œConversationChain-U0wAYœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "ConversationChain-U0wAY",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "Prompt",
+            "id": "Prompt-MBLAP",
+            "name": "prompt",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-Prompt-MBLAP{œdataTypeœ:œPromptœ,œidœ:œPrompt-MBLAPœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}-ConversationChain-U0wAY{œfieldNameœ:œinput_valueœ,œidœ:œConversationChain-U0wAYœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "animated": false,
+        "className": ""
+      }
+    ],
+    "viewport": {
+      "x": 78.0974025974026,
+      "y": 49.8328797428062,
+      "zoom": 1.0415075120957473
+    }
+  },
+  "metadata": {
+    "OpenAIModel": {
+      "count": 1
+    },
+    "ConversationChain": {
+      "count": 1
+    },
+    "Prompt": {
+      "count": 1
+    },
+    "total": 3
+  },
+  "original": {
+    "id": "3a273184-faba-454e-8cd1-7c1d52141c9f",
+    "name": "AD_first_conv_flow",
+    "description": "Powerful Prompts, Perfectly Positioned.",
+    "is_component": false,
+    "liked_by_count": "0",
+    "downloads_count": "8",
+    "metadata": {
+      "OpenAIModel": {
+        "count": 1
+      },
+      "ConversationChain": {
+        "count": 1
+      },
+      "Prompt": {
+        "count": 1
+      },
+      "total": 3
+    },
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "OpenAIModel-YfWab",
+          "type": "genericNode",
+          "position": {
+            "x": 144,
+            "y": 5.703125
+          },
+          "data": {
+            "type": "OpenAIModel",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "output_parser": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "output_parser",
+                  "value": "",
+                  "display_name": "Output Parser",
+                  "advanced": true,
+                  "input_types": [
+                    "OutputParser"
+                  ],
+                  "dynamic": false,
+                  "info": "The parser to use to parse the output of the model",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "api_key": {
+                  "load_from_db": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "OpenAI API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The OpenAI API Key to use for the OpenAI model.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import operator\nfrom functools import reduce\n\nfrom langchain_openai import ChatOpenAI\nfrom pydantic.v1 import SecretStr\n\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.base.models.openai_constants import OPENAI_MODEL_NAMES\nfrom axiestudio.field_typing import LanguageModel\nfrom axiestudio.field_typing.range_spec import RangeSpec\nfrom axiestudio.inputs import (\n    BoolInput,\n    DictInput,\n    DropdownInput,\n    FloatInput,\n    IntInput,\n    SecretStrInput,\n    StrInput,\n)\nfrom axiestudio.inputs.inputs import HandleInput\n\n\nclass OpenAIModelComponent(LCModelComponent):\n    display_name = \"OpenAI\"\n    description = \"Generates text using OpenAI LLMs.\"\n    icon = \"OpenAI\"\n    name = \"OpenAIModel\"\n\n    inputs = [\n        *LCModelComponent._base_inputs,\n        IntInput(\n            name=\"max_tokens\",\n            display_name=\"Max Tokens\",\n            advanced=True,\n            info=\"The maximum number of tokens to generate. Set to 0 for unlimited tokens.\",\n            range_spec=RangeSpec(min=0, max=128000),\n        ),\n        DictInput(name=\"model_kwargs\", display_name=\"Model Kwargs\", advanced=True),\n        BoolInput(\n            name=\"json_mode\",\n            display_name=\"JSON Mode\",\n            advanced=True,\n            info=\"If True, it will output JSON regardless of passing a schema.\",\n        ),\n        DictInput(\n            name=\"output_schema\",\n            is_list=True,\n            display_name=\"Schema\",\n            advanced=True,\n            info=\"The schema for the Output of the model. \"\n            \"You must pass the word JSON in the prompt. \"\n            \"If left blank, JSON mode will be disabled.\",\n        ),\n        DropdownInput(\n            name=\"model_name\",\n            display_name=\"Model Name\",\n            advanced=False,\n            options=OPENAI_MODEL_NAMES,\n            value=OPENAI_MODEL_NAMES[0],\n        ),\n        StrInput(\n            name=\"openai_api_base\",\n            display_name=\"OpenAI API Base\",\n            advanced=True,\n            info=\"The base URL of the OpenAI API. \"\n            \"Defaults to https://api.openai.com/v1. \"\n            \"You can change this to use other APIs like JinaChat, LocalAI and Prem.\",\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"OpenAI API Key\",\n            info=\"The OpenAI API Key to use for the OpenAI model.\",\n            advanced=False,\n            value=\"OPENAI_API_KEY\",\n        ),\n        FloatInput(name=\"temperature\", display_name=\"Temperature\", value=0.1),\n        IntInput(\n            name=\"seed\",\n            display_name=\"Seed\",\n            info=\"The seed controls the reproducibility of the job.\",\n            advanced=True,\n            value=1,\n        ),\n        HandleInput(\n            name=\"output_parser\",\n            display_name=\"Output Parser\",\n            info=\"The parser to use to parse the output of the model\",\n            advanced=True,\n            input_types=[\"OutputParser\"],\n        ),\n    ]\n\n    def build_model(self) -> LanguageModel:  # type: ignore[type-var]\n        # self.output_schema is a list of dictionaries\n        # let's convert it to a dictionary\n        output_schema_dict: dict[str, str] = reduce(operator.ior, self.output_schema or {}, {})\n        openai_api_key = self.api_key\n        temperature = self.temperature\n        model_name: str = self.model_name\n        max_tokens = self.max_tokens\n        model_kwargs = self.model_kwargs or {}\n        openai_api_base = self.openai_api_base or \"https://api.openai.com/v1\"\n        json_mode = bool(output_schema_dict) or self.json_mode\n        seed = self.seed\n\n        api_key = SecretStr(openai_api_key) if openai_api_key else None\n        output = ChatOpenAI(\n            max_tokens=max_tokens or None,\n            model_kwargs=model_kwargs,\n            model=model_name,\n            base_url=openai_api_base,\n            api_key=api_key,\n            temperature=temperature if temperature is not None else 0.1,\n            seed=seed,\n        )\n        if json_mode:\n            if output_schema_dict:\n                output = output.with_structured_output(schema=output_schema_dict, method=\"json_mode\")\n            else:\n                output = output.bind(response_format={\"type\": \"json_object\"})\n\n        return output\n\n    def _get_exception_message(self, e: Exception):\n        \"\"\"\n        Get a message from an OpenAI exception.\n\n        Args:\n            exception (Exception): The exception to get the message from.\n\n        Returns:\n            str: The message from the exception.\n        \"\"\"\n\n        try:\n            from openai import BadRequestError\n        except ImportError:\n            return None\n        if isinstance(e, BadRequestError):\n            message = e.body.get(\"message\")\n            if message:\n                return message\n        return None\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageInput"
+                },
+                "json_mode": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "json_mode",
+                  "value": false,
+                  "display_name": "JSON Mode",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If True, it will output JSON regardless of passing a schema.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "max_tokens": {
+                  "trace_as_metadata": true,
+                  "range_spec": {
+                    "step_type": "float",
+                    "min": 0,
+                    "max": 128000,
+                    "step": 0.1
+                  },
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_tokens",
+                  "value": "",
+                  "display_name": "Max Tokens",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The maximum number of tokens to generate. Set to 0 for unlimited tokens.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "model_kwargs": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "model_kwargs",
+                  "value": {},
+                  "display_name": "Model Kwargs",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "model_name": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "gpt-4o-mini",
+                    "gpt-4o",
+                    "gpt-4-turbo",
+                    "gpt-4-turbo-preview",
+                    "gpt-4",
+                    "gpt-3.5-turbo",
+                    "gpt-3.5-turbo-0125"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "model_name",
+                  "value": "gpt-4o-mini",
+                  "display_name": "Model Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "openai_api_base": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "openai_api_base",
+                  "value": "",
+                  "display_name": "OpenAI API Base",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The base URL of the OpenAI API. Defaults to https://api.openai.com/v1. You can change this to use other APIs like JinaChat, LocalAI and Prem.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "output_schema": {
+                  "trace_as_input": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "output_schema",
+                  "value": {},
+                  "display_name": "Schema",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The schema for the Output of the model. You must pass the word JSON in the prompt. If left blank, JSON mode will be disabled.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "seed": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "seed",
+                  "value": 1,
+                  "display_name": "Seed",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The seed controls the reproducibility of the job.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "stream": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "stream",
+                  "value": false,
+                  "display_name": "Stream",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Stream the response from the model. Streaming works only in Chat.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "system_message": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "system_message",
+                  "value": "",
+                  "display_name": "System Message",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "System message to pass to the model.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "temperature": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "temperature",
+                  "value": 0.1,
+                  "display_name": "Temperature",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "float",
+                  "_input_type": "FloatInput"
+                }
+              },
+              "description": "Generates text using OpenAI LLMs.",
+              "icon": "OpenAI",
+              "base_classes": [
+                "LanguageModel",
+                "Message"
+              ],
+              "display_name": "OpenAI",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text_output",
+                  "display_name": "Text",
+                  "method": "text_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": [
+                    "input_value",
+                    "stream",
+                    "system_message"
+                  ]
+                },
+                {
+                  "types": [
+                    "LanguageModel"
+                  ],
+                  "selected": "LanguageModel",
+                  "name": "model_output",
+                  "display_name": "Language Model",
+                  "method": "build_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": [
+                    "api_key",
+                    "json_mode",
+                    "max_tokens",
+                    "model_kwargs",
+                    "model_name",
+                    "openai_api_base",
+                    "output_schema",
+                    "seed",
+                    "temperature"
+                  ]
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "system_message",
+                "stream",
+                "max_tokens",
+                "model_kwargs",
+                "json_mode",
+                "output_schema",
+                "model_name",
+                "openai_api_base",
+                "api_key",
+                "temperature",
+                "seed",
+                "output_parser"
+              ],
+              "beta": false,
+              "edited": false,
+              "metadata": {},
+              "lf_version": "1.0.19.post2"
+            },
+            "id": "OpenAIModel-YfWab"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 587,
+          "positionAbsolute": {
+            "x": 144,
+            "y": 5.703125
+          },
+          "dragging": false
+        },
+        {
+          "id": "ConversationChain-U0wAY",
+          "type": "genericNode",
+          "position": {
+            "x": 696,
+            "y": 186.703125
+          },
+          "data": {
+            "type": "ConversationChain",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "llm": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "llm",
+                  "value": "",
+                  "display_name": "Language Model",
+                  "advanced": false,
+                  "input_types": [
+                    "LanguageModel"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "memory": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "memory",
+                  "value": "",
+                  "display_name": "Memory",
+                  "advanced": false,
+                  "input_types": [
+                    "BaseChatMemory"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from langchain.chains import ConversationChain\n\nfrom axiestudio.base.chains.model import LCChainComponent\nfrom axiestudio.field_typing import Message\nfrom axiestudio.inputs import HandleInput, MultilineInput\n\n\nclass ConversationChainComponent(LCChainComponent):\n    display_name = \"ConversationChain\"\n    description = \"Chain to have a conversation and load context from memory.\"\n    name = \"ConversationChain\"\n\n    inputs = [\n        MultilineInput(\n            name=\"input_value\", display_name=\"Input\", info=\"The input value to pass to the chain.\", required=True\n        ),\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True),\n        HandleInput(\n            name=\"memory\",\n            display_name=\"Memory\",\n            input_types=[\"BaseChatMemory\"],\n        ),\n    ]\n\n    def invoke_chain(self) -> Message:\n        if not self.memory:\n            chain = ConversationChain(llm=self.llm)\n        else:\n            chain = ConversationChain(llm=self.llm, memory=self.memory)\n\n        result = chain.invoke({\"input\": self.input_value}, config={\"callbacks\": self.get_langchain_callbacks()})\n        if isinstance(result, dict):\n            result = result.get(chain.output_key, \"\")\n\n        elif not isinstance(result, str):\n            result = result.get(\"response\")\n        result = str(result)\n        self.status = result\n        return Message(text=result)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The input value to pass to the chain.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "Chain to have a conversation and load context from memory.",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "ConversationChain",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text",
+                  "display_name": "Text",
+                  "method": "invoke_chain",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": [
+                    "input_value",
+                    "llm",
+                    "memory"
+                  ]
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "llm",
+                "memory"
+              ],
+              "beta": false,
+              "edited": false,
+              "metadata": {},
+              "lf_version": "1.0.19.post2"
+            },
+            "id": "ConversationChain-U0wAY"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 401,
+          "positionAbsolute": {
+            "x": 696,
+            "y": 186.703125
+          },
+          "dragging": false
+        },
+        {
+          "id": "Prompt-MBLAP",
+          "type": "genericNode",
+          "position": {
+            "x": 257,
+            "y": 687.703125
+          },
+          "data": {
+            "type": "Prompt",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.prompts.api_utils import process_prompt_template\nfrom axiestudio.custom import Component\nfrom axiestudio.inputs.inputs import DefaultPromptField\nfrom axiestudio.io import Output, PromptInput\nfrom axiestudio.schema.message import Message\nfrom axiestudio.template.utils import update_template_values\n\n\nclass PromptComponent(Component):\n    display_name: str = \"Prompt\"\n    description: str = \"Create a prompt template with dynamic variables.\"\n    icon = \"prompts\"\n    trace_type = \"prompt\"\n    name = \"Prompt\"\n\n    inputs = [\n        PromptInput(name=\"template\", display_name=\"Template\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Prompt Message\", name=\"prompt\", method=\"build_prompt\"),\n    ]\n\n    async def build_prompt(\n        self,\n    ) -> Message:\n        prompt = await Message.from_template_and_variables(**self._attributes)\n        self.status = prompt.text\n        return prompt\n\n    def _update_template(self, frontend_node: dict):\n        prompt_template = frontend_node[\"template\"][\"template\"][\"value\"]\n        custom_fields = frontend_node[\"custom_fields\"]\n        frontend_node_template = frontend_node[\"template\"]\n        _ = process_prompt_template(\n            template=prompt_template,\n            name=\"template\",\n            custom_fields=custom_fields,\n            frontend_node_template=frontend_node_template,\n        )\n        return frontend_node\n\n    def post_code_processing(self, new_frontend_node: dict, current_frontend_node: dict):\n        \"\"\"\n        This function is called after the code validation is done.\n        \"\"\"\n        frontend_node = super().post_code_processing(new_frontend_node, current_frontend_node)\n        template = frontend_node[\"template\"][\"template\"][\"value\"]\n        # Kept it duplicated for backwards compatibility\n        _ = process_prompt_template(\n            template=template,\n            name=\"template\",\n            custom_fields=frontend_node[\"custom_fields\"],\n            frontend_node_template=frontend_node[\"template\"],\n        )\n        # Now that template is updated, we need to grab any values that were set in the current_frontend_node\n        # and update the frontend_node with those values\n        update_template_values(new_template=frontend_node, previous_template=current_frontend_node[\"template\"])\n        return frontend_node\n\n    def _get_fallback_input(self, **kwargs):\n        return DefaultPromptField(**kwargs)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "template": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "template",
+                  "value": "write in the style of shakespeare {userinput}",
+                  "display_name": "Template",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "prompt",
+                  "_input_type": "PromptInput"
+                },
+                "userinput": {
+                  "field_type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "how to cook pasta",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "name": "userinput",
+                  "display_name": "userinput",
+                  "advanced": false,
+                  "input_types": [
+                    "Message",
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "Create a prompt template with dynamic variables.",
+              "icon": "prompts",
+              "is_input": null,
+              "is_output": null,
+              "is_composition": null,
+              "base_classes": [
+                "Message"
+              ],
+              "name": "",
+              "display_name": "Prompt",
+              "documentation": "",
+              "custom_fields": {
+                "template": [
+                  "userinput"
+                ]
+              },
+              "output_types": [],
+              "full_path": null,
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "prompt",
+                  "hidden": null,
+                  "display_name": "Prompt Message",
+                  "method": "build_prompt",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": null
+                }
+              ],
+              "field_order": [
+                "template"
+              ],
+              "beta": false,
+              "error": null,
+              "edited": false,
+              "metadata": {},
+              "lf_version": "1.0.19.post2"
+            },
+            "id": "Prompt-MBLAP"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 391,
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "source": "OpenAIModel-YfWab",
+          "sourceHandle": "{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-YfWabœ,œnameœ:œmodel_outputœ,œoutput_typesœ:[œLanguageModelœ]}",
+          "target": "ConversationChain-U0wAY",
+          "targetHandle": "{œfieldNameœ:œllmœ,œidœ:œConversationChain-U0wAYœ,œinputTypesœ:[œLanguageModelœ],œtypeœ:œotherœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "llm",
+              "id": "ConversationChain-U0wAY",
+              "inputTypes": [
+                "LanguageModel"
+              ],
+              "type": "other"
+            },
+            "sourceHandle": {
+              "dataType": "OpenAIModel",
+              "id": "OpenAIModel-YfWab",
+              "name": "model_output",
+              "output_types": [
+                "LanguageModel"
+              ]
+            }
+          },
+          "id": "reactflow__edge-OpenAIModel-YfWab{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-YfWabœ,œnameœ:œmodel_outputœ,œoutput_typesœ:[œLanguageModelœ]}-ConversationChain-U0wAY{œfieldNameœ:œllmœ,œidœ:œConversationChain-U0wAYœ,œinputTypesœ:[œLanguageModelœ],œtypeœ:œotherœ}",
+          "animated": false,
+          "className": ""
+        },
+        {
+          "source": "Prompt-MBLAP",
+          "sourceHandle": "{œdataTypeœ:œPromptœ,œidœ:œPrompt-MBLAPœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "ConversationChain-U0wAY",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œConversationChain-U0wAYœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "ConversationChain-U0wAY",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "Prompt",
+              "id": "Prompt-MBLAP",
+              "name": "prompt",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-Prompt-MBLAP{œdataTypeœ:œPromptœ,œidœ:œPrompt-MBLAPœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}-ConversationChain-U0wAY{œfieldNameœ:œinput_valueœ,œidœ:œConversationChain-U0wAYœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "animated": false,
+          "className": ""
+        }
+      ],
+      "viewport": {
+        "x": 78.0974025974026,
+        "y": 49.8328797428062,
+        "zoom": 1.0415075120957473
+      }
+    },
+    "date_created": "2024-10-31T16:09:56.318Z",
+    "date_updated": "2024-10-31T16:09:56.357Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "f332f093-261d-4c97-94ce-a4d3b263ec54",
+    "user_created": {
+      "username": "achimdehnert",
+      "first_name": "Achim",
+      "last_name": "Dehnert",
+      "id": "f332f093-261d-4c97-94ce-a4d3b263ec54"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:56.440Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 30,
+    "converter_version": "1.0.0"
+  }
+}

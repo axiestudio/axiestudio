@@ -1,0 +1,657 @@
+{
+  "id": "72aef8dd-3301-4758-a787-d2a293ad1ff9",
+  "name": "Testing_Langflow_Share",
+  "description": "Testing (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "Zod",
+    "first_name": "General",
+    "last_name": "Zod",
+    "id": "ea9d3dc7-4ca7-44d2-967a-f68c08ea5b78",
+    "full_name": "General Zod"
+  },
+  "store_url": "https://www.langflow.store/store/component/72aef8dd-3301-4758-a787-d2a293ad1ff9",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-06-03T06:58:06.586Z",
+    "updated": "2024-06-03T06:58:06.624Z",
+    "downloaded": "2025-08-19T17:50:05.377Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Agent",
+        "id": "ccabb590-c9e8-4e56-9d6c-309955936c6c"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "APIRequest-MFTmq",
+        "type": "genericNode",
+        "position": {
+          "x": 246,
+          "y": 94.89999771118164
+        },
+        "data": {
+          "type": "APIRequest",
+          "node": {
+            "template": {
+              "body": {
+                "type": "Record",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "body",
+                "display_name": "Body",
+                "advanced": false,
+                "input_types": [
+                  "Record"
+                ],
+                "dynamic": false,
+                "info": "The body to send with the request (for POST, PATCH, PUT).",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "headers": {
+                "type": "Record",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "headers",
+                "display_name": "Headers",
+                "advanced": false,
+                "input_types": [
+                  "Record"
+                ],
+                "dynamic": false,
+                "info": "The headers to send with the request.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import asyncio\nimport json\nfrom typing import List, Optional\n\nimport httpx\nfrom axiestudio.interface.custom.custom_component import CustomComponent\nfrom axiestudio.schema import Record\n\n\nclass APIRequest(CustomComponent):\n    display_name: str = \"API Request\"\n    description: str = \"Make HTTP requests given one or more URLs.\"\n    output_types: list[str] = [\"Record\"]\n    documentation: str = \"https://docs.axiestudio.org/components/utilities#api-request\"\n    icon = \"Globe\"\n\n    field_config = {\n        \"urls\": {\"display_name\": \"URLs\", \"info\": \"URLs to make requests to.\"},\n        \"method\": {\n            \"display_name\": \"Method\",\n            \"info\": \"The HTTP method to use.\",\n            \"field_type\": \"str\",\n            \"options\": [\"GET\", \"POST\", \"PATCH\", \"PUT\"],\n            \"value\": \"GET\",\n        },\n        \"headers\": {\n            \"display_name\": \"Headers\",\n            \"info\": \"The headers to send with the request.\",\n            \"input_types\": [\"Record\"],\n        },\n        \"body\": {\n            \"display_name\": \"Body\",\n            \"info\": \"The body to send with the request (for POST, PATCH, PUT).\",\n            \"input_types\": [\"Record\"],\n        },\n        \"timeout\": {\n            \"display_name\": \"Timeout\",\n            \"field_type\": \"int\",\n            \"info\": \"The timeout to use for the request.\",\n            \"value\": 5,\n        },\n    }\n\n    async def make_request(\n        self,\n        client: httpx.AsyncClient,\n        method: str,\n        url: str,\n        headers: Optional[dict] = None,\n        body: Optional[dict] = None,\n        timeout: int = 5,\n    ) -> Record:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            raise ValueError(f\"Unsupported method: {method}\")\n\n        data = body if body else None\n        payload = json.dumps(data)\n        try:\n            response = await client.request(method, url, headers=headers, content=payload, timeout=timeout)\n            try:\n                result = response.json()\n            except Exception:\n                result = response.text\n            return Record(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except httpx.TimeoutException:\n            return Record(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except Exception as exc:\n            return Record(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    async def build(\n        self,\n        method: str,\n        urls: List[str],\n        headers: Optional[Record] = None,\n        body: Optional[Record] = None,\n        timeout: int = 5,\n    ) -> List[Record]:\n        if headers is None:\n            headers_dict = {}\n        else:\n            headers_dict = headers.data\n\n        bodies = []\n        if body:\n            if isinstance(body, list):\n                bodies = [b.data for b in body]\n            else:\n                bodies = [body.data]\n\n        if len(urls) != len(bodies):\n            # add bodies with None\n            bodies += [None] * (len(urls) - len(bodies))  # type: ignore\n        async with httpx.AsyncClient() as client:\n            results = await asyncio.gather(\n                *[self.make_request(client, method, u, headers_dict, rec, timeout) for u, rec in zip(urls, bodies)]\n            )\n        self.status = results\n        return results\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "method": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "GET",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "GET",
+                  "POST",
+                  "PATCH",
+                  "PUT"
+                ],
+                "name": "method",
+                "display_name": "Method",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The HTTP method to use.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "timeout": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 5,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "timeout",
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The timeout to use for the request.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "urls": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "urls",
+                "display_name": "URLs",
+                "advanced": false,
+                "dynamic": false,
+                "info": "URLs to make requests to.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Make HTTP requests given one or more URLs.",
+            "icon": "Globe",
+            "base_classes": [
+              "Record"
+            ],
+            "display_name": "API Request",
+            "documentation": "https://docs.axiestudio.org/components/utilities#api-request",
+            "custom_fields": {
+              "method": null,
+              "urls": null,
+              "headers": null,
+              "body": null,
+              "timeout": null
+            },
+            "output_types": [
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "urls",
+              "method",
+              "headers",
+              "body",
+              "timeout"
+            ],
+            "beta": false
+          },
+          "id": "APIRequest-MFTmq"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 555
+      },
+      {
+        "id": "RecordsOutput-jmfnO",
+        "type": "genericNode",
+        "position": {
+          "x": 782,
+          "y": 167.89999771118164
+        },
+        "data": {
+          "type": "RecordsOutput",
+          "node": {
+            "template": {
+              "input_value": {
+                "type": "Record",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import CustomComponent\nfrom axiestudio.schema import Record\n\n\nclass RecordsOutput(CustomComponent):\n    display_name = \"Records Output\"\n    description = \"Display Records as a Table\"\n\n    def build(self, input_value: Record) -> Record:\n        return input_value\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Display Records as a Table",
+            "base_classes": [
+              "Record"
+            ],
+            "display_name": "Records Output",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null
+            },
+            "output_types": [
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "RecordsOutput-jmfnO"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 242
+      }
+    ],
+    "edges": [
+      {
+        "source": "APIRequest-MFTmq",
+        "sourceHandle": "{œbaseClassesœ:[œRecordœ],œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-MFTmqœ}",
+        "target": "RecordsOutput-jmfnO",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œRecordsOutput-jmfnOœ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "RecordsOutput-jmfnO",
+            "inputTypes": null,
+            "type": "Record"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "Record"
+            ],
+            "dataType": "APIRequest",
+            "id": "APIRequest-MFTmq"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-foreground stroke-connection",
+        "id": "reactflow__edge-APIRequest-MFTmq{œbaseClassesœ:[œRecordœ],œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-MFTmqœ}-RecordsOutput-jmfnO{œfieldNameœ:œinput_valueœ,œidœ:œRecordsOutput-jmfnOœ,œinputTypesœ:null,œtypeœ:œRecordœ}"
+      }
+    ],
+    "viewport": {
+      "x": -0.9276277321342832,
+      "y": 0.9546526829040545,
+      "zoom": 1.0000000000000002
+    }
+  },
+  "metadata": {
+    "APIRequest": {
+      "count": 1
+    },
+    "RecordsOutput": {
+      "count": 1
+    },
+    "total": 2
+  },
+  "original": {
+    "id": "72aef8dd-3301-4758-a787-d2a293ad1ff9",
+    "name": "Testing_Langflow_Share",
+    "description": "Testing",
+    "is_component": false,
+    "liked_by_count": "1",
+    "downloads_count": "31",
+    "metadata": {
+      "APIRequest": {
+        "count": 1
+      },
+      "RecordsOutput": {
+        "count": 1
+      },
+      "total": 2
+    },
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "APIRequest-MFTmq",
+          "type": "genericNode",
+          "position": {
+            "x": 246,
+            "y": 94.89999771118164
+          },
+          "data": {
+            "type": "APIRequest",
+            "node": {
+              "template": {
+                "body": {
+                  "type": "Record",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "body",
+                  "display_name": "Body",
+                  "advanced": false,
+                  "input_types": [
+                    "Record"
+                  ],
+                  "dynamic": false,
+                  "info": "The body to send with the request (for POST, PATCH, PUT).",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "headers": {
+                  "type": "Record",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "headers",
+                  "display_name": "Headers",
+                  "advanced": false,
+                  "input_types": [
+                    "Record"
+                  ],
+                  "dynamic": false,
+                  "info": "The headers to send with the request.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import asyncio\nimport json\nfrom typing import List, Optional\n\nimport httpx\nfrom axiestudio.interface.custom.custom_component import CustomComponent\nfrom axiestudio.schema import Record\n\n\nclass APIRequest(CustomComponent):\n    display_name: str = \"API Request\"\n    description: str = \"Make HTTP requests given one or more URLs.\"\n    output_types: list[str] = [\"Record\"]\n    documentation: str = \"https://docs.axiestudio.org/components/utilities#api-request\"\n    icon = \"Globe\"\n\n    field_config = {\n        \"urls\": {\"display_name\": \"URLs\", \"info\": \"URLs to make requests to.\"},\n        \"method\": {\n            \"display_name\": \"Method\",\n            \"info\": \"The HTTP method to use.\",\n            \"field_type\": \"str\",\n            \"options\": [\"GET\", \"POST\", \"PATCH\", \"PUT\"],\n            \"value\": \"GET\",\n        },\n        \"headers\": {\n            \"display_name\": \"Headers\",\n            \"info\": \"The headers to send with the request.\",\n            \"input_types\": [\"Record\"],\n        },\n        \"body\": {\n            \"display_name\": \"Body\",\n            \"info\": \"The body to send with the request (for POST, PATCH, PUT).\",\n            \"input_types\": [\"Record\"],\n        },\n        \"timeout\": {\n            \"display_name\": \"Timeout\",\n            \"field_type\": \"int\",\n            \"info\": \"The timeout to use for the request.\",\n            \"value\": 5,\n        },\n    }\n\n    async def make_request(\n        self,\n        client: httpx.AsyncClient,\n        method: str,\n        url: str,\n        headers: Optional[dict] = None,\n        body: Optional[dict] = None,\n        timeout: int = 5,\n    ) -> Record:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            raise ValueError(f\"Unsupported method: {method}\")\n\n        data = body if body else None\n        payload = json.dumps(data)\n        try:\n            response = await client.request(method, url, headers=headers, content=payload, timeout=timeout)\n            try:\n                result = response.json()\n            except Exception:\n                result = response.text\n            return Record(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except httpx.TimeoutException:\n            return Record(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except Exception as exc:\n            return Record(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    async def build(\n        self,\n        method: str,\n        urls: List[str],\n        headers: Optional[Record] = None,\n        body: Optional[Record] = None,\n        timeout: int = 5,\n    ) -> List[Record]:\n        if headers is None:\n            headers_dict = {}\n        else:\n            headers_dict = headers.data\n\n        bodies = []\n        if body:\n            if isinstance(body, list):\n                bodies = [b.data for b in body]\n            else:\n                bodies = [body.data]\n\n        if len(urls) != len(bodies):\n            # add bodies with None\n            bodies += [None] * (len(urls) - len(bodies))  # type: ignore\n        async with httpx.AsyncClient() as client:\n            results = await asyncio.gather(\n                *[self.make_request(client, method, u, headers_dict, rec, timeout) for u, rec in zip(urls, bodies)]\n            )\n        self.status = results\n        return results\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "method": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "GET",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "GET",
+                    "POST",
+                    "PATCH",
+                    "PUT"
+                  ],
+                  "name": "method",
+                  "display_name": "Method",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The HTTP method to use.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "timeout": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 5,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "timeout",
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The timeout to use for the request.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "urls": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "urls",
+                  "display_name": "URLs",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "URLs to make requests to.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Make HTTP requests given one or more URLs.",
+              "icon": "Globe",
+              "base_classes": [
+                "Record"
+              ],
+              "display_name": "API Request",
+              "documentation": "https://docs.axiestudio.org/components/utilities#api-request",
+              "custom_fields": {
+                "method": null,
+                "urls": null,
+                "headers": null,
+                "body": null,
+                "timeout": null
+              },
+              "output_types": [
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "urls",
+                "method",
+                "headers",
+                "body",
+                "timeout"
+              ],
+              "beta": false
+            },
+            "id": "APIRequest-MFTmq"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 555
+        },
+        {
+          "id": "RecordsOutput-jmfnO",
+          "type": "genericNode",
+          "position": {
+            "x": 782,
+            "y": 167.89999771118164
+          },
+          "data": {
+            "type": "RecordsOutput",
+            "node": {
+              "template": {
+                "input_value": {
+                  "type": "Record",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import CustomComponent\nfrom axiestudio.schema import Record\n\n\nclass RecordsOutput(CustomComponent):\n    display_name = \"Records Output\"\n    description = \"Display Records as a Table\"\n\n    def build(self, input_value: Record) -> Record:\n        return input_value\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Display Records as a Table",
+              "base_classes": [
+                "Record"
+              ],
+              "display_name": "Records Output",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null
+              },
+              "output_types": [
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "RecordsOutput-jmfnO"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 242
+        }
+      ],
+      "edges": [
+        {
+          "source": "APIRequest-MFTmq",
+          "sourceHandle": "{œbaseClassesœ:[œRecordœ],œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-MFTmqœ}",
+          "target": "RecordsOutput-jmfnO",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œRecordsOutput-jmfnOœ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "RecordsOutput-jmfnO",
+              "inputTypes": null,
+              "type": "Record"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "Record"
+              ],
+              "dataType": "APIRequest",
+              "id": "APIRequest-MFTmq"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-foreground stroke-connection",
+          "id": "reactflow__edge-APIRequest-MFTmq{œbaseClassesœ:[œRecordœ],œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-MFTmqœ}-RecordsOutput-jmfnO{œfieldNameœ:œinput_valueœ,œidœ:œRecordsOutput-jmfnOœ,œinputTypesœ:null,œtypeœ:œRecordœ}"
+        }
+      ],
+      "viewport": {
+        "x": -0.9276277321342832,
+        "y": 0.9546526829040545,
+        "zoom": 1.0000000000000002
+      }
+    },
+    "date_created": "2024-06-03T06:58:06.586Z",
+    "date_updated": "2024-06-03T06:58:06.624Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "ea9d3dc7-4ca7-44d2-967a-f68c08ea5b78",
+    "user_created": {
+      "username": "Zod",
+      "first_name": "General",
+      "last_name": "Zod",
+      "id": "ea9d3dc7-4ca7-44d2-967a-f68c08ea5b78"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Agent",
+          "id": "ccabb590-c9e8-4e56-9d6c-309955936c6c"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:00.030Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 12,
+    "converter_version": "1.0.0"
+  }
+}

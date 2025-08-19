@@ -1,0 +1,361 @@
+{
+  "id": "505d99e7-68e3-4e29-b4f0-a3385e8ef1b3",
+  "name": "Git Log Local Repo",
+  "description": "A component that returns the git log of a local repository as a string formatted according to the query. It uses an LLM to generate the Python code of the command. It is returned as a Document. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "ogabrielluiz",
+    "first_name": "Gabriel",
+    "last_name": "Almeida",
+    "id": "f519fecb-da11-4a97-bce1-55b06f8ef086",
+    "full_name": "Gabriel Almeida"
+  },
+  "store_url": "https://www.langflow.store/store/component/505d99e7-68e3-4e29-b4f0-a3385e8ef1b3",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2023-12-13T20:53:14.958Z",
+    "updated": "2023-12-13T20:53:15.155Z",
+    "downloaded": "2025-08-19T17:50:05.904Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Chain",
+        "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+      }
+    },
+    {
+      "tags_id": {
+        "name": "Prompt",
+        "id": "57f5c681-a1f5-4053-be33-e9525e7eb00a"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "0.6.0",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "llm": {
+                "type": "BaseLanguageModel",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "llm",
+                "display_name": "LLM",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The language model to use."
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "\nfrom langchain.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_experimental.utilities import PythonREPL\n\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import BaseLanguageModel, Document, TemplateField\n\n\nclass Component(CustomComponent):\n    display_name: str = \"Git Log Local Repo\"\n    description: str = (\n        \"A component that returns the git log of a local repository\"\n        \" as a string formatter according to the parameters.\"\n    )\n\n    def get_prompt(self):\n        return r\"\"\"An user wants to know the git log of a local repository.\n    They will ask something like: \"commit logs of the last 4 months and containing the name, commit message and date of the commit\".\n\n    Return only python code in Markdown format, e.g.:\n    ```python\n    g = git.Git(\"C:/path/to/your/repo\")\n    g.log('--since=\"4 months ago\" --pretty=format:\"%h - %an, %ar : %s\"')\n    ```\n    \"\"\"\n\n    @staticmethod\n    def _sanitize_output(text: str):\n        _, after = text.split(\"```python\")\n        return after.split(\"```\")[0]\n\n    def get_user_prompt(self):\n\n        return \"\"\"\n    Last Output: {output}\n    Repo Path: {repo_path}\n    Query: {query}\"\"\"\n\n\n    def build_config(self):\n        return {\n            \"llm\": TemplateField(display_name=\"LLM\", info=\"The language model to use.\"),\n            \"repo_path\": TemplateField(\n                display_name=\"Repo Path\",\n                info=\"The path to the local repository. This Component can only be used with local repositories.\",\n            ),\n            \"query\": TemplateField(\n                display_name=\"Query\",\n                info=\"The query should be something like: 'Commits start two months ago, print only name and commit message'.\",\n                input_types=[\"str\"],\n            ),\n            \"max_retries\": TemplateField(\n                display_name=\"Max Retries\",\n                info=\"The maximum number of times to retry the command if it fails.\",\n            )\n\n        }\n\n    def build(self, llm: BaseLanguageModel, repo_path: str, query: str, max_retries:int=4) -> Document:\n        prompt = ChatPromptTemplate.from_messages([(\"system\", self.get_prompt()), (\"human\", self.get_user_prompt())])\n        python_repl = PythonREPL(_globals={\"git\": \"git\"})\n        chain = prompt | llm | StrOutputParser() | self._sanitize_output | python_repl.run\n        has_syntax_error = True\n        output= \"\"\n        retries = 0\n        while has_syntax_error and retries < max_retries:\n            result = chain.invoke({\"query\": query, \"repo_path\": repo_path, \"output\": output})\n            output = result\n            if not output.startswith(\"SyntaxError\"):\n                has_syntax_error = False\n            retries += 1\n\n        self.status = result\n        return Document(page_content=result, metadata={\"repo_path\": repo_path, \"query\": query})\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": ""
+              },
+              "max_retries": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 4,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "max_retries",
+                "display_name": "Max Retries",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The maximum number of times to retry the command if it fails."
+              },
+              "query": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "Log the commits with username, date and the commit message. No merges, please.",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "query",
+                "display_name": "Query",
+                "advanced": false,
+                "input_types": [
+                  "str"
+                ],
+                "dynamic": false,
+                "info": "The query should be something like: 'Commits start two months ago, print only name and commit message'."
+              },
+              "repo_path": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "repo_path",
+                "display_name": "Repo Path",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The path to the local repository. This Component can only be used with local repositories."
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "A component that returns the git log of a local repository as a string formatted according to the query. It uses an LLM to generate the Python code of the command. It is returned as a Document.",
+            "base_classes": [
+              "Document"
+            ],
+            "display_name": "Git Log Local Repo",
+            "documentation": "",
+            "custom_fields": {
+              "llm": null,
+              "max_retries": null,
+              "query": null,
+              "repo_path": null
+            },
+            "output_types": [
+              "Document"
+            ],
+            "field_formatters": {},
+            "beta": true,
+            "official": false
+          },
+          "id": "CustomComponent-cJm61"
+        },
+        "id": "CustomComponent-cJm61",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "505d99e7-68e3-4e29-b4f0-a3385e8ef1b3",
+    "name": "Git Log Local Repo",
+    "description": "A component that returns the git log of a local repository as a string formatted according to the query. It uses an LLM to generate the Python code of the command. It is returned as a Document.",
+    "is_component": true,
+    "liked_by_count": "26",
+    "downloads_count": "205",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "0.6.0",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "llm": {
+                  "type": "BaseLanguageModel",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "llm",
+                  "display_name": "LLM",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The language model to use."
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "\nfrom langchain.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_experimental.utilities import PythonREPL\n\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import BaseLanguageModel, Document, TemplateField\n\n\nclass Component(CustomComponent):\n    display_name: str = \"Git Log Local Repo\"\n    description: str = (\n        \"A component that returns the git log of a local repository\"\n        \" as a string formatter according to the parameters.\"\n    )\n\n    def get_prompt(self):\n        return r\"\"\"An user wants to know the git log of a local repository.\n    They will ask something like: \"commit logs of the last 4 months and containing the name, commit message and date of the commit\".\n\n    Return only python code in Markdown format, e.g.:\n    ```python\n    g = git.Git(\"C:/path/to/your/repo\")\n    g.log('--since=\"4 months ago\" --pretty=format:\"%h - %an, %ar : %s\"')\n    ```\n    \"\"\"\n\n    @staticmethod\n    def _sanitize_output(text: str):\n        _, after = text.split(\"```python\")\n        return after.split(\"```\")[0]\n\n    def get_user_prompt(self):\n\n        return \"\"\"\n    Last Output: {output}\n    Repo Path: {repo_path}\n    Query: {query}\"\"\"\n\n\n    def build_config(self):\n        return {\n            \"llm\": TemplateField(display_name=\"LLM\", info=\"The language model to use.\"),\n            \"repo_path\": TemplateField(\n                display_name=\"Repo Path\",\n                info=\"The path to the local repository. This Component can only be used with local repositories.\",\n            ),\n            \"query\": TemplateField(\n                display_name=\"Query\",\n                info=\"The query should be something like: 'Commits start two months ago, print only name and commit message'.\",\n                input_types=[\"str\"],\n            ),\n            \"max_retries\": TemplateField(\n                display_name=\"Max Retries\",\n                info=\"The maximum number of times to retry the command if it fails.\",\n            )\n\n        }\n\n    def build(self, llm: BaseLanguageModel, repo_path: str, query: str, max_retries:int=4) -> Document:\n        prompt = ChatPromptTemplate.from_messages([(\"system\", self.get_prompt()), (\"human\", self.get_user_prompt())])\n        python_repl = PythonREPL(_globals={\"git\": \"git\"})\n        chain = prompt | llm | StrOutputParser() | self._sanitize_output | python_repl.run\n        has_syntax_error = True\n        output= \"\"\n        retries = 0\n        while has_syntax_error and retries < max_retries:\n            result = chain.invoke({\"query\": query, \"repo_path\": repo_path, \"output\": output})\n            output = result\n            if not output.startswith(\"SyntaxError\"):\n                has_syntax_error = False\n            retries += 1\n\n        self.status = result\n        return Document(page_content=result, metadata={\"repo_path\": repo_path, \"query\": query})\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": ""
+                },
+                "max_retries": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 4,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "max_retries",
+                  "display_name": "Max Retries",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The maximum number of times to retry the command if it fails."
+                },
+                "query": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "Log the commits with username, date and the commit message. No merges, please.",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "query",
+                  "display_name": "Query",
+                  "advanced": false,
+                  "input_types": [
+                    "str"
+                  ],
+                  "dynamic": false,
+                  "info": "The query should be something like: 'Commits start two months ago, print only name and commit message'."
+                },
+                "repo_path": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "repo_path",
+                  "display_name": "Repo Path",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The path to the local repository. This Component can only be used with local repositories."
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "A component that returns the git log of a local repository as a string formatted according to the query. It uses an LLM to generate the Python code of the command. It is returned as a Document.",
+              "base_classes": [
+                "Document"
+              ],
+              "display_name": "Git Log Local Repo",
+              "documentation": "",
+              "custom_fields": {
+                "llm": null,
+                "max_retries": null,
+                "query": null,
+                "repo_path": null
+              },
+              "output_types": [
+                "Document"
+              ],
+              "field_formatters": {},
+              "beta": true,
+              "official": false
+            },
+            "id": "CustomComponent-cJm61"
+          },
+          "id": "CustomComponent-cJm61",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2023-12-13T20:53:14.958Z",
+    "date_updated": "2023-12-13T20:53:15.155Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "f519fecb-da11-4a97-bce1-55b06f8ef086",
+    "user_created": {
+      "username": "ogabrielluiz",
+      "first_name": "Gabriel",
+      "last_name": "Almeida",
+      "id": "f519fecb-da11-4a97-bce1-55b06f8ef086"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Chain",
+          "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+        }
+      },
+      {
+        "tags_id": {
+          "name": "Prompt",
+          "id": "57f5c681-a1f5-4053-be33-e9525e7eb00a"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.017Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 4,
+    "converter_version": "1.0.0"
+  }
+}

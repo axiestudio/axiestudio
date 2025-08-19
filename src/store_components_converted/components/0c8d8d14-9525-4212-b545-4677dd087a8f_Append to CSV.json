@@ -1,0 +1,299 @@
+{
+  "id": "0c8d8d14-9525-4212-b545-4677dd087a8f",
+  "name": "Append to CSV",
+  "description": "Creates a new CSV file or appends data to an existing one, handling various input data formats. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "NamastexLabs",
+    "first_name": "Felipe",
+    "last_name": "Rosa",
+    "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "full_name": "Felipe Rosa"
+  },
+  "store_url": "https://www.langflow.store/store/component/0c8d8d14-9525-4212-b545-4677dd087a8f",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-06-28T02:23:44.927Z",
+    "updated": "2024-06-28T02:23:44.962Z",
+    "downloaded": "2025-08-19T17:50:05.783Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.5",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "data": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "data",
+                "display_name": "Data",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The data to append to the CSV file. Can be a Data object, a dictionary, or a list of either.",
+                "title_case": false,
+                "type": "other"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import csv\r\nimport os\r\nfrom typing import List, Union, Dict\r\n\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import DataInput, StrInput, Output\r\nfrom axiestudio.schema.message import Message\r\nfrom axiestudio.schema import Data\r\n\r\nclass CSVAppender(Component):\r\n    display_name = \"CSV Appender\"\r\n    description = \"Creates a new CSV file or appends data to an existing one, handling various input data formats.\"\r\n    icon = \"📊\"\r\n\r\n    inputs = [\r\n        DataInput(\r\n            name=\"data\",\r\n            display_name=\"Data\",\r\n            info=\"The data to append to the CSV file. Can be a Data object, a dictionary, or a list of either.\",\r\n        ),\r\n        StrInput(\r\n            name=\"file_path\",\r\n            display_name=\"File Path\",\r\n            info=\"The path where the CSV file will be created or appended to.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(name=\"result\", display_name=\"Result\", method=\"append_to_csv\"),\r\n    ]\r\n\r\n    def _extract_data(self, input_data: Union[Data, Dict, List]) -> List[Dict]:\r\n        if isinstance(input_data, Data):\r\n            return [input_data.data] if isinstance(input_data.data, dict) else input_data.data\r\n        elif isinstance(input_data, dict):\r\n            return [input_data]\r\n        elif isinstance(input_data, list):\r\n            return [item.data if isinstance(item, Data) else item for item in input_data]\r\n        else:\r\n            raise ValueError(f\"Unsupported data type: {type(input_data)}\")\r\n\r\n    def append_to_csv(self) -> Message:\r\n        try:\r\n            file_path = self.file_path\r\n            data = self._extract_data(self.data)\r\n\r\n            if not data:\r\n                return Message(text=\"No data to append.\")\r\n\r\n            file_exists = os.path.isfile(file_path)\r\n\r\n            if not file_exists:\r\n                # Create new file with headers\r\n                fieldnames = list(data[0].keys())\r\n                with open(file_path, 'w', newline='') as csvfile:\r\n                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)\r\n                    writer.writeheader()\r\n                print(f\"Created new file: {file_path}\")\r\n            else:\r\n                # Read existing CSV to get column names\r\n                with open(file_path, 'r', newline='') as csvfile:\r\n                    reader = csv.reader(csvfile)\r\n                    fieldnames = next(reader)  # Get the first row as column names\r\n\r\n            # Append data to the CSV file\r\n            with open(file_path, 'a', newline='') as csvfile:\r\n                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)\r\n\r\n                for row in data:\r\n                    if isinstance(row, dict):\r\n                        # Only write fields that exist in the CSV\r\n                        writer.writerow({k: row.get(k, '') for k in fieldnames})\r\n                    else:\r\n                        return Message(text=f\"Error: Unexpected data format: {type(row)}\")\r\n\r\n            action = \"appended to\" if file_exists else \"written to new\"\r\n            self.status = f\"Data successfully {action} {file_path}\"\r\n            return Message(text=f\"Data successfully {action} {file_path}\")\r\n\r\n        except Exception as e:\r\n            error_message = f\"Error handling CSV file: {str(e)}\"\r\n            self.status = error_message\r\n            return Message(text=error_message)",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "file_path": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "1min-alerts3.csv",
+                "name": "file_path",
+                "display_name": "File Path",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The path where the CSV file will be created or appended to.",
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "Creates a new CSV file or appends data to an existing one, handling various input data formats.",
+            "icon": "📊",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Append to CSV",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "result",
+                "display_name": "Result",
+                "method": "append_to_csv",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "data",
+              "file_path"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-Deaxg",
+          "description": "Creates a new CSV file or appends data to an existing one, handling various input data formats.",
+          "display_name": "Custom Component"
+        },
+        "id": "CustomComponent-Deaxg",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "0c8d8d14-9525-4212-b545-4677dd087a8f",
+    "name": "Append to CSV",
+    "description": "Creates a new CSV file or appends data to an existing one, handling various input data formats.",
+    "is_component": true,
+    "liked_by_count": "16",
+    "downloads_count": "125",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.5",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "data": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "data",
+                  "display_name": "Data",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The data to append to the CSV file. Can be a Data object, a dictionary, or a list of either.",
+                  "title_case": false,
+                  "type": "other"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import csv\r\nimport os\r\nfrom typing import List, Union, Dict\r\n\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import DataInput, StrInput, Output\r\nfrom axiestudio.schema.message import Message\r\nfrom axiestudio.schema import Data\r\n\r\nclass CSVAppender(Component):\r\n    display_name = \"CSV Appender\"\r\n    description = \"Creates a new CSV file or appends data to an existing one, handling various input data formats.\"\r\n    icon = \"📊\"\r\n\r\n    inputs = [\r\n        DataInput(\r\n            name=\"data\",\r\n            display_name=\"Data\",\r\n            info=\"The data to append to the CSV file. Can be a Data object, a dictionary, or a list of either.\",\r\n        ),\r\n        StrInput(\r\n            name=\"file_path\",\r\n            display_name=\"File Path\",\r\n            info=\"The path where the CSV file will be created or appended to.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(name=\"result\", display_name=\"Result\", method=\"append_to_csv\"),\r\n    ]\r\n\r\n    def _extract_data(self, input_data: Union[Data, Dict, List]) -> List[Dict]:\r\n        if isinstance(input_data, Data):\r\n            return [input_data.data] if isinstance(input_data.data, dict) else input_data.data\r\n        elif isinstance(input_data, dict):\r\n            return [input_data]\r\n        elif isinstance(input_data, list):\r\n            return [item.data if isinstance(item, Data) else item for item in input_data]\r\n        else:\r\n            raise ValueError(f\"Unsupported data type: {type(input_data)}\")\r\n\r\n    def append_to_csv(self) -> Message:\r\n        try:\r\n            file_path = self.file_path\r\n            data = self._extract_data(self.data)\r\n\r\n            if not data:\r\n                return Message(text=\"No data to append.\")\r\n\r\n            file_exists = os.path.isfile(file_path)\r\n\r\n            if not file_exists:\r\n                # Create new file with headers\r\n                fieldnames = list(data[0].keys())\r\n                with open(file_path, 'w', newline='') as csvfile:\r\n                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)\r\n                    writer.writeheader()\r\n                print(f\"Created new file: {file_path}\")\r\n            else:\r\n                # Read existing CSV to get column names\r\n                with open(file_path, 'r', newline='') as csvfile:\r\n                    reader = csv.reader(csvfile)\r\n                    fieldnames = next(reader)  # Get the first row as column names\r\n\r\n            # Append data to the CSV file\r\n            with open(file_path, 'a', newline='') as csvfile:\r\n                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)\r\n\r\n                for row in data:\r\n                    if isinstance(row, dict):\r\n                        # Only write fields that exist in the CSV\r\n                        writer.writerow({k: row.get(k, '') for k in fieldnames})\r\n                    else:\r\n                        return Message(text=f\"Error: Unexpected data format: {type(row)}\")\r\n\r\n            action = \"appended to\" if file_exists else \"written to new\"\r\n            self.status = f\"Data successfully {action} {file_path}\"\r\n            return Message(text=f\"Data successfully {action} {file_path}\")\r\n\r\n        except Exception as e:\r\n            error_message = f\"Error handling CSV file: {str(e)}\"\r\n            self.status = error_message\r\n            return Message(text=error_message)",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "file_path": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "1min-alerts3.csv",
+                  "name": "file_path",
+                  "display_name": "File Path",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The path where the CSV file will be created or appended to.",
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "Creates a new CSV file or appends data to an existing one, handling various input data formats.",
+              "icon": "📊",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Append to CSV",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "result",
+                  "display_name": "Result",
+                  "method": "append_to_csv",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "data",
+                "file_path"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-Deaxg",
+            "description": "Creates a new CSV file or appends data to an existing one, handling various input data formats.",
+            "display_name": "Custom Component"
+          },
+          "id": "CustomComponent-Deaxg",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-06-28T02:23:44.927Z",
+    "date_updated": "2024-06-28T02:23:44.962Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "user_created": {
+      "username": "NamastexLabs",
+      "first_name": "Felipe",
+      "last_name": "Rosa",
+      "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:08.903Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}
