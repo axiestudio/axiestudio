@@ -65,42 +65,116 @@ For production deployments, use these environment variables:
 
 ```bash
 # 🗄️ DATABASE CONFIGURATION
-AXIESTUDIO_DATABASE_URL=postgresql://username:password@your-db-host:25060/database?sslmode=require
+AXIESTUDIO_DATABASE_URL="postgresql://your_username:your_password@your-db-host:5432/your_database?sslmode=require"
 
 # 🔐 AUTHENTICATION CONFIGURATION
-AXIESTUDIO_SUPERUSER=admin@yourdomain.com
-AXIESTUDIO_SUPERUSER_PASSWORD=your_secure_password
-AXIESTUDIO_AUTO_LOGIN=false
-AXIESTUDIO_NEW_USER_IS_ACTIVE=false
+AXIESTUDIO_SUPERUSER="admin@yourdomain.com"
+AXIESTUDIO_SUPERUSER_PASSWORD="your_secure_password"
+AXIESTUDIO_AUTO_LOGIN="false"
+AXIESTUDIO_NEW_USER_IS_ACTIVE="true"
 
 # 🔒 SECURITY CONFIGURATION
-AXIESTUDIO_SECRET_KEY=your-production-secret-key-here
-AXIESTUDIO_JWT_SECRET=your-jwt-secret-here
+AXIESTUDIO_SECRET_KEY="your-production-secret-key-change-this-in-production"
 
 # 🌐 SERVER CONFIGURATION
-AXIESTUDIO_HOST=0.0.0.0
-AXIESTUDIO_PORT=7860
-PORT=7860
+AXIESTUDIO_HOST="0.0.0.0"
+AXIESTUDIO_PORT="7860"
+PORT="7860"
 
 # 📊 PERFORMANCE & LOGGING
-AXIESTUDIO_LOG_LEVEL=INFO
-AXIESTUDIO_DEBUG=false
-AXIESTUDIO_WORKERS=1
+AXIESTUDIO_LOG_LEVEL="INFO"
+AXIESTUDIO_WORKERS="1"
 
 # 💾 CACHE & STORAGE
-AXIESTUDIO_CACHE_TYPE=memory
-AXIESTUDIO_STORE=false
+AXIESTUDIO_CACHE_TYPE="memory"
 
-# 🔧 APPLICATION SETTINGS
-AXIESTUDIO_SAVE_DB_IN_CONFIG_DIR=false
-AXIESTUDIO_STORE_ENVIRONMENT_VARIABLES=true
-AXIESTUDIO_FALLBACK_TO_ENV_VAR=true
-AXIESTUDIO_AUTO_SAVING=true
+# 💳 STRIPE CONFIGURATION (Optional - for subscription features)
+STRIPE_PRICE_ID="your_stripe_price_id_here"
+STRIPE_PUBLISHABLE_KEY="your_stripe_publishable_key_here"
+STRIPE_SECRET_KEY="your_stripe_secret_key_here"
+STRIPE_WEBHOOK_SECRET="your_stripe_webhook_secret_here"
 
 # 📈 MONITORING
-DO_NOT_TRACK=1
-AXIESTUDIO_OPEN_BROWSER=false
+DO_NOT_TRACK="1"
 ```
+
+## 🗄️ Database Migration for Subscription Features
+
+If you're using PostgreSQL and encounter migration errors related to subscription columns, run these SQL commands in your database console:
+
+### 📋 Step-by-Step Migration Commands
+
+Copy and paste each command **one by one** into your PostgreSQL console:
+
+#### 1. Add Email Column
+```sql
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS email VARCHAR;
+```
+
+#### 2. Add Stripe Customer ID
+```sql
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR;
+```
+
+#### 3. Add Subscription Status (with default)
+```sql
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS subscription_status VARCHAR DEFAULT 'trial';
+```
+
+#### 4. Add Subscription ID
+```sql
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS subscription_id VARCHAR;
+```
+
+#### 5. Add Trial Start Date
+```sql
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS trial_start TIMESTAMP;
+```
+
+#### 6. Add Trial End Date
+```sql
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS trial_end TIMESTAMP;
+```
+
+#### 7. Add Subscription Start Date
+```sql
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS subscription_start TIMESTAMP;
+```
+
+#### 8. Add Subscription End Date
+```sql
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS subscription_end TIMESTAMP;
+```
+
+#### 9. Create Email Index for Performance
+```sql
+CREATE INDEX IF NOT EXISTS ix_user_email ON "user" (email);
+```
+
+#### 10. Update Existing Users with Trial Status
+```sql
+UPDATE "user"
+SET subscription_status = 'trial',
+    trial_start = NOW()
+WHERE subscription_status IS NULL;
+```
+
+#### 11. Verify Migration Success
+```sql
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_name = 'user' AND table_schema = 'public'
+ORDER BY ordinal_position;
+```
+
+### 🎯 Migration Notes
+
+- ✅ **Safe to run multiple times** - Uses `IF NOT EXISTS` clauses
+- ✅ **No data loss** - Only adds columns, doesn't modify existing data
+- ✅ **Works with any PostgreSQL** - Neon, Supabase, DigitalOcean, etc.
+- ✅ **Required for subscription features** - Enables Stripe integration
+
+> **💡 Tip:** If you're using Neon, Supabase, or another cloud PostgreSQL service, run these commands in their web console SQL editor.
 
 ### 🔐 Production Features
 
