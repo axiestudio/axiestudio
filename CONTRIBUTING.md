@@ -2,6 +2,8 @@
 
 Thank you for your interest in contributing!
 
+**Note:** Axie Studio is a fork of [Langflow](https://github.com/langflow-ai/langflow) with enhanced features for production use, including email verification, subscription management, and integrated store functionality.
+
 ## How to Contribute
 
 1. Fork the [Axie Studio GitHub repository](https://github.com/axiestudio/axiestudio).

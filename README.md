@@ -4,7 +4,7 @@
 
 
 [![Release Notes](https://img.shields.io/github/release/axiestudio/axiestudio?style=flat-square)](https://github.com/axiestudio/axiestudio/releases)
-[![PyPI - License](https://img.shields.io/badge/license-MIT-orange)](https://opensource.org/licenses/MIT)
+[![PyPI - License](https://img.shields.io/badge/license-MIT%20(Open%20Source)-green)](https://opensource.org/licenses/MIT)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/axiestudio?style=flat-square)](https://pypistats.org/packages/axiestudio)
 [![GitHub star chart](https://img.shields.io/github/stars/axiestudio/axiestudio?style=flat-square)](https://star-history.com/#axiestudio/axiestudio)
 [![Open Issues](https://img.shields.io/github/issues-raw/axiestudio/axiestudio?style=flat-square)](https://github.com/axiestudio/axiestudio/issues)
@@ -193,22 +193,48 @@ SET subscription_status = 'trial',
 WHERE subscription_status IS NULL;
 ```
 
-#### 11. Add Email Verification Column
+#### 11. Add Email Verification Column (Required for Email Verification)
 ```sql
 ALTER TABLE "user" ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false;
 ```
 
-#### 12. Add Active Status Column
+#### 12. Add Active Status Column (Required for User Activation)
 ```sql
 ALTER TABLE "user" ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true;
 ```
 
-#### 13. Update Email Verification Index
+#### 13. Set Default Email Verified Status for Existing Users
+```sql
+UPDATE "user"
+SET email_verified = false
+WHERE email_verified IS NULL;
+```
+
+#### 14. Set Default Active Status for Existing Users
+```sql
+UPDATE "user"
+SET active = true
+WHERE active IS NULL;
+```
+
+#### 15. Create Email Verification Index for Performance
 ```sql
 CREATE INDEX IF NOT EXISTS ix_user_email_verified ON "user" (email_verified);
 ```
 
-#### 14. Verify Migration Success
+#### 16. Create Active Status Index for Performance
+```sql
+CREATE INDEX IF NOT EXISTS ix_user_active ON "user" (active);
+```
+
+#### 17. Verify Email Verification Setup
+```sql
+SELECT email, email_verified, active
+FROM "user"
+LIMIT 5;
+```
+
+#### 18. Verify Migration Success
 ```sql
 SELECT column_name, data_type, is_nullable, column_default
 FROM information_schema.columns
@@ -222,8 +248,12 @@ ORDER BY ordinal_position;
 - ✅ **No data loss** - Only adds columns, doesn't modify existing data
 - ✅ **Works with any PostgreSQL** - Neon, Supabase, DigitalOcean, etc.
 - ✅ **Required for subscription features** - Enables Stripe integration
+- ✅ **Required for email verification** - Enables secure user activation
+- ✅ **Performance optimized** - Includes indexes for fast queries
 
 > **💡 Tip:** If you're using Neon, Supabase, or another cloud PostgreSQL service, run these commands in their web console SQL editor.
+
+> **⚠️ Important:** Commands 11-17 are required for email verification functionality. Run them if you're implementing user email verification.
 
 ### 🔐 Production Features
 
@@ -246,11 +276,13 @@ ORDER BY ordinal_position;
 
 ## 🤝 Contributing
 
+Axie Studio is a fork of [Langflow](https://github.com/langflow-ai/langflow) with enhanced features for production use.
+
 We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+This project is licensed under the MIT License (Open Source) - see the [LICENSE](./LICENSE) file for details.
 
 ## 🔒 Security
 
