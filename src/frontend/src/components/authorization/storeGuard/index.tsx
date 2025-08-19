@@ -1,7 +1,12 @@
+import { ReactNode } from "react";
 import { CustomNavigate } from "@/customization/components/custom-navigate";
 import { useStoreStore } from "../../../stores/storeStore";
 
-export const StoreGuard = ({ children }) => {
+interface StoreGuardProps {
+  children: ReactNode;
+}
+
+export const StoreGuard = ({ children }: StoreGuardProps) => {
   const hasStore = useStoreStore((state) => state.hasStore);
 
   if (!hasStore) {
