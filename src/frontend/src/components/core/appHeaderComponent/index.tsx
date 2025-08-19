@@ -67,14 +67,11 @@ export default function AppHeader(): JSX.Element {
           {ENABLE_DATASTAX_AXIESTUDIO ? (
             <DataStaxLogo className="fill-black dark:fill-[white]" />
           ) : (
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-lg flex items-center justify-center font-bold text-sm shadow-lg">
-                AX
-              </div>
-              <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AXIE STUDIO
-              </span>
-            </div>
+            <img
+              src="https://scontent-arn2-1.xx.fbcdn.net/v/t39.30808-6/499498872_122132145854766980_5268724011023190696_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=u5dFev5AG-kQ7kNvwFS6K3m&_nc_oc=AdltILxg_X65VXBn-MK3Z58PgtgR7ITbbYcGrvZSWDnQLiIitDDiDq9uw1DoamQT61U&_nc_zt=23&_nc_ht=scontent-arn2-1.xx&_nc_gid=mpLb2UFdGIvVDUjGf2bZuw&oh=00_AfXfUa1TAFSuNwQPVCsbeshZuHKq0TqnRwUgl4EdrFju9w&oe=68A94B99"
+              alt="Axie Studio Logo"
+              className="h-8 w-8 object-contain rounded"
+            />
           )}
         </Button>
         {ENABLE_DATASTAX_AXIESTUDIO && (
