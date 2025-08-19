@@ -17,7 +17,7 @@ class ResendEmailRequest(BaseModel):
 @router.get("/verify")
 async def verify_email(
     token: str = Query(..., description="Email verification token"),
-    session: DbSession = Depends(),
+    session: DbSession,
 ):
     """Verify email address using token."""
     if not token:
@@ -53,7 +53,7 @@ async def verify_email(
 @router.post("/resend-verification")
 async def resend_verification_email(
     request: ResendEmailRequest,
-    session: DbSession = Depends(),
+    session: DbSession,
 ):
     """Resend verification email."""
     # Find user by email
