@@ -13,6 +13,9 @@ import type {
 import type { FlowStyleType, FlowType } from "../../types/flow";
 import type { StoreComponentResponse } from "../../types/store";
 
+// Export api for use in other components
+export { api };
+
 // GitHub and Discord API URLs removed for Axie Studio
 
 export async function getRepoStars(owner: string, repo: string) {
