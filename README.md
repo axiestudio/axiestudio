@@ -102,7 +102,7 @@ AXIESTUDIO_DATABASE_URL="postgresql://your_username:your_password@your-db-host:5
 AXIESTUDIO_SUPERUSER="admin@yourdomain.com"
 AXIESTUDIO_SUPERUSER_PASSWORD="your_secure_password"
 AXIESTUDIO_AUTO_LOGIN="false"
-AXIESTUDIO_NEW_USER_IS_ACTIVE="true"
+AXIESTUDIO_NEW_USER_IS_ACTIVE="false"  # Users must verify email to activate
 
 # 🔒 SECURITY CONFIGURATION
 AXIESTUDIO_SECRET_KEY="your-production-secret-key-change-this-in-production"
@@ -122,7 +122,12 @@ AXIESTUDIO_CACHE_TYPE="memory"
 # 🏪 STORE CONFIGURATION
 ENABLE_AXIESTUDIO_STORE="true"
 
-# 💳 STRIPE CONFIGURATION (Optional - for subscription features)
+# � EMAIL VERIFICATION CONFIGURATION
+# Set to "false" to require email verification before users can login
+# Users will receive activation email and must click link to activate account
+AXIESTUDIO_NEW_USER_IS_ACTIVE="false"
+
+# �💳 STRIPE CONFIGURATION (Optional - for subscription features)
 STRIPE_PRICE_ID="your_stripe_price_id_here"
 STRIPE_PUBLISHABLE_KEY="your_stripe_publishable_key_here"
 STRIPE_SECRET_KEY="your_stripe_secret_key_here"
