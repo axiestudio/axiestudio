@@ -20,6 +20,7 @@
 - **Multi-agent orchestration** with conversation management and retrieval.
 - **Deploy as an API** or export as JSON for Python apps.
 - **Deploy as an MCP server** and turn your flows into tools for MCP clients.
+- **Integrated Store** with one-click flow import and modern search functionality.
 - **Observability** with LangSmith, LangFuse and other integrations.
 - **Enterprise-ready** security and scalability.
 
@@ -42,6 +43,36 @@ uv run axiestudio run
 3. Go to the default Axie Studio URL at `http://127.0.0.1:7860`.
 
 For more information about installing Axie Studio, including Docker and Desktop options, see [Install Axie Studio](https://docs.axiestudio.org/get-started-installation).
+
+## 🏪 Axie Studio Store
+
+Axie Studio now includes an integrated store for discovering and importing community flows and components:
+
+### ✨ Store Features
+
+- **🔍 Smart Search** - Find flows and components with real-time search across names, descriptions, authors, and tags
+- **🎯 One-Click Import** - "Grab Flow" functionality to instantly add flows to your workspace
+- **🎨 Modern UI** - Clean, professional black and white design optimized for productivity
+- **📱 Responsive Design** - Works seamlessly on desktop, tablet, and mobile devices
+- **🚀 Toolbar Integration** - Quick access via Store button in the flow toolbar
+- **🔄 Live Updates** - Real-time filtering and sorting for efficient browsing
+
+### 🛠️ How to Use the Store
+
+1. **Access the Store** - Click the "Store" button in any flow page toolbar
+2. **Search & Filter** - Use the search bar or filter by Flows/Components
+3. **Preview** - Click "Preview" to see flow details before importing
+4. **Import** - Click "Grab Flow" to add flows directly to your workspace
+5. **Start Building** - Imported flows open automatically for immediate use
+
+### 🎯 Store Configuration
+
+The store is enabled by default. To disable it, set:
+
+```bash
+# Disable store features
+ENABLE_AXIESTUDIO_STORE="false"
+```
 
 ## 🐳 Docker
 
@@ -87,6 +118,9 @@ AXIESTUDIO_WORKERS="1"
 
 # 💾 CACHE & STORAGE
 AXIESTUDIO_CACHE_TYPE="memory"
+
+# 🏪 STORE CONFIGURATION
+ENABLE_AXIESTUDIO_STORE="true"
 
 # 💳 STRIPE CONFIGURATION (Optional - for subscription features)
 STRIPE_PRICE_ID="your_stripe_price_id_here"
@@ -159,7 +193,22 @@ SET subscription_status = 'trial',
 WHERE subscription_status IS NULL;
 ```
 
-#### 11. Verify Migration Success
+#### 11. Add Email Verification Column
+```sql
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false;
+```
+
+#### 12. Add Active Status Column
+```sql
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true;
+```
+
+#### 13. Update Email Verification Index
+```sql
+CREATE INDEX IF NOT EXISTS ix_user_email_verified ON "user" (email_verified);
+```
+
+#### 14. Verify Migration Success
 ```sql
 SELECT column_name, data_type, is_nullable, column_default
 FROM information_schema.columns
@@ -179,9 +228,11 @@ ORDER BY ordinal_position;
 ### 🔐 Production Features
 
 - ✅ **Enterprise Database Support** (PostgreSQL, SQLite)
-- ✅ **Secure Authentication** (Login required, admin approval)
+- ✅ **Secure Authentication** (Login required, email verification)
 - ✅ **Production Security** (JWT tokens, secret keys)
-- ✅ **Store Disabled** (No external dependencies)
+- ✅ **Integrated Store** (Community flows and components)
+- ✅ **Email Verification** (Secure user activation)
+- ✅ **Subscription Management** (Stripe integration)
 - ✅ **Optimized Performance** (Memory caching, configurable workers)
 
 > **⚠️ Security Note:** Replace placeholder values with your actual production credentials. Keep sensitive data in environment variables, not in repositories.
