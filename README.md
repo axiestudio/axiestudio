@@ -296,3 +296,5 @@ For security concerns, please see our [Security Policy](./SECURITY.md).
 ---
 
 **Built with ❤️ by the Axie Studio team**
+
+<!-- Force rebuild: 2025-08-19 -->
