@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { useCustomNavigate } from "../../customization/hooks/use-custom-navigate";
 import { CustomLink } from "../../customization/components/custom-link";
-import { api } from "../../controllers/API";
+import { api } from "../../controllers/API/api";
 
 export default function EmailVerificationPage(): JSX.Element {
   const [searchParams] = useSearchParams();
