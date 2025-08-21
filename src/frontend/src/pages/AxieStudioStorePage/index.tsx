@@ -87,7 +87,7 @@ export default function AxieStudioStorePage(): JSX.Element {
     const loadStoreData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/v1/axiestudio-store');
+        const response = await fetch('/api/v1/store/');
         const data: StoreData = await response.json();
         setStoreData(data);
         
@@ -169,7 +169,7 @@ export default function AxieStudioStorePage(): JSX.Element {
       setImportingItems(prev => new Set(prev).add(item.id));
 
       // Fetch the actual flow/component data
-      const response = await fetch(`/api/v1/axiestudio-store/${item.type.toLowerCase()}/${item.id}`);
+      const response = await fetch(`/api/v1/store/${item.type.toLowerCase()}/${item.id}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch ${item.type.toLowerCase()}: ${response.statusText}`);
       }

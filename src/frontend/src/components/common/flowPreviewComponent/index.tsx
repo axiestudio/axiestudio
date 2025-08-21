@@ -68,7 +68,7 @@ export default function FlowPreviewComponent({
 
     try {
       const endpoint = item.type === "FLOW" ? "flow" : "component";
-      const response = await fetch(`/api/v1/axiestudio-store/${endpoint}/${item.id}`);
+      const response = await fetch(`/api/v1/store/${endpoint}/${item.id}`);
       
       if (!response.ok) {
         throw new Error(`Failed to load ${item.type.toLowerCase()} data`);

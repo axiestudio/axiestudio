@@ -21,11 +21,11 @@ export const CustomStoreSidebar = (
 
   if (hasStore) {
     items.push({
-      title: "Axie Studio Store",
+      title: "Component Showcase",
       href: "/settings/store",
       icon: (
         <ForwardedIconComponent
-          name="Store"
+          name="Package"
           className="w-4 flex-shrink-0 justify-start stroke-[1.5]"
         />
       ),

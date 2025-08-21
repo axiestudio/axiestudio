@@ -1,86 +1,81 @@
-import { useContext, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import { CONTROL_PATCH_USER_STATE } from "@/constants/constants";
-import { AuthContext } from "@/contexts/authContext";
-import { usePostAddApiKey } from "@/controllers/API/queries/api-keys";
-import useAlertStore from "@/stores/alertStore";
-import { useStoreStore } from "@/stores/storeStore";
-import type { inputHandlerEventType } from "@/types/components";
-import useScrollToElement from "../hooks/use-scroll-to-element";
-import StoreApiKeyFormComponent from "./components/StoreApiKeyForm";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const StoreApiKeyPage = () => {
-  const { scrollId } = useParams();
-  const [inputState, setInputState] = useState(CONTROL_PATCH_USER_STATE);
-  const { storeApiKey } = useContext(AuthContext);
-  useScrollToElement(scrollId);
-
-  const setSuccessData = useAlertStore((state) => state.setSuccessData);
-  const setErrorData = useAlertStore((state) => state.setErrorData);
-  const {
-    validApiKey,
-    hasApiKey,
-    loadingApiKey,
-    updateHasApiKey: setHasApiKey,
-    updateValidApiKey: setValidApiKey,
-    updateLoadingApiKey: setLoadingApiKey,
-  } = useStoreStore();
-
-  const { mutate: addApiKey } = usePostAddApiKey({
-    onSuccess: () => {
-      setSuccessData({ title: "API key saved successfully" });
-      setHasApiKey(true);
-      setValidApiKey(true);
-      setLoadingApiKey(false);
-      handleInput({ target: { name: "apikey", value: "" } });
-    },
-    onError: (error) => {
-      setErrorData({
-        title: "API key save error",
-        list: [(error as any)?.response?.data?.detail],
-      });
-      setHasApiKey(false);
-      setValidApiKey(false);
-      setLoadingApiKey(false);
-    },
-  });
-
-  const handleSaveKey = (apikey: string) => {
-    if (apikey) {
-      addApiKey({ key: apikey });
-      storeApiKey(apikey);
-    }
-  };
-
-  const handleInput = ({ target: { name, value } }: inputHandlerEventType) => {
-    setInputState((prev) => ({ ...prev, [name]: value }));
-  };
+  const navigate = useCustomNavigate();
 
   return (
     <div className="flex h-full w-full flex-col gap-6">
       <div className="flex w-full items-start gap-6">
         <div className="flex w-full flex-col">
           <h2 className="flex items-center text-lg font-semibold tracking-tight">
-            Axie Studio Store
+            Component & Flow Showcase
             <ForwardedIconComponent
-              name="Store"
+              name="Package"
               className="ml-2 h-5 w-5 text-primary"
             />
           </h2>
           <p className="text-sm text-muted-foreground">
-            Manage access to the Axie Studio Store.
+            Browse and download from our collection of 1,600 professional components and flows.
           </p>
         </div>
       </div>
-      <StoreApiKeyFormComponent
-        apikey={inputState.apikey}
-        handleInput={handleInput}
-        handleSaveKey={handleSaveKey}
-        loadingApiKey={loadingApiKey}
-        validApiKey={validApiKey}
-        hasApiKey={hasApiKey}
-      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ForwardedIconComponent name="Library" className="h-5 w-5" />
+            AxieStudio Component Library
+          </CardTitle>
+          <CardDescription>
+            Discover ready-to-use components and flows to accelerate your development.
+            All items are available for immediate download and use in your projects.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <ForwardedIconComponent name="Workflow" className="h-3 w-3" />
+              1,172 Flows
+            </Badge>
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <ForwardedIconComponent name="Component" className="h-3 w-3" />
+              428 Components
+            </Badge>
+            <Badge variant="outline" className="flex items-center gap-1">
+              <ForwardedIconComponent name="Download" className="h-3 w-3" />
+              Free Downloads
+            </Badge>
+          </div>
+
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              <strong>What you can do:</strong>
+            </div>
+            <ul className="text-sm text-muted-foreground space-y-1 ml-4">
+              <li>• Browse all 1,600 components and flows</li>
+              <li>• Search and filter by categories</li>
+              <li>• Preview components before downloading</li>
+              <li>• Download as JSON files for immediate use</li>
+              <li>• Import directly into your flows</li>
+            </ul>
+          </div>
+
+          <div className="pt-4">
+            <Button
+              onClick={() => navigate("/showcase")}
+              className="w-full"
+              size="lg"
+            >
+              <ForwardedIconComponent name="ExternalLink" className="mr-2 h-4 w-4" />
+              Open Component Showcase
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

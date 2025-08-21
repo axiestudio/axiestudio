@@ -43,6 +43,20 @@ except ImportError:
     TRIAL_MIDDLEWARE_AVAILABLE = False
     TrialMiddleware = None
 
+# Import verification middleware
+try:
+    from axiestudio.middleware.verification_middleware import add_verification_middleware
+    VERIFICATION_MIDDLEWARE_AVAILABLE = True
+except ImportError:
+    VERIFICATION_MIDDLEWARE_AVAILABLE = False
+
+# Import verification scheduler
+try:
+    from axiestudio.services.verification_scheduler import start_verification_scheduler, stop_verification_scheduler
+    VERIFICATION_SCHEDULER_AVAILABLE = True
+except ImportError:
+    VERIFICATION_SCHEDULER_AVAILABLE = False
+
 # Import subscription setup (will run during startup lifespan)
 try:
     from axiestudio.services.startup.subscription_setup import setup_subscription_schema
@@ -245,6 +259,16 @@ def get_lifespan(*, fix_migration=False, version=None):
                 except Exception as e:
                     logger.warning(f"Enhanced security schema setup failed: {e} - continuing startup")
 
+            # Start verification scheduler during startup
+            if VERIFICATION_SCHEDULER_AVAILABLE:
+                current_time = asyncio.get_event_loop().time()
+                logger.debug("Starting verification scheduler")
+                try:
+                    await start_verification_scheduler()
+                    logger.debug(f"Verification scheduler started in {asyncio.get_event_loop().time() - current_time:.2f}s")
+                except Exception as e:
+                    logger.warning(f"Verification scheduler startup failed: {e} - continuing startup")
+
             total_time = asyncio.get_event_loop().time() - start_time
             logger.debug(f"Total initialization time: {total_time:.2f}s")
             yield
@@ -279,6 +303,14 @@ def get_lifespan(*, fix_migration=False, version=None):
                     if sync_flows_from_fs_task:
                         sync_flows_from_fs_task.cancel()
                         await asyncio.wait([sync_flows_from_fs_task])
+
+                    # Stop verification scheduler
+                    if VERIFICATION_SCHEDULER_AVAILABLE:
+                        try:
+                            await stop_verification_scheduler()
+                            logger.debug("Verification scheduler stopped")
+                        except Exception as e:
+                            logger.warning(f"Error stopping verification scheduler: {e}")
 
                 # Step 2: Cleaning Up Services
                 with shutdown_progress.step(2):
@@ -349,6 +381,10 @@ def create_app():
     # Add trial middleware if available
     if TRIAL_MIDDLEWARE_AVAILABLE:
         app.add_middleware(TrialMiddleware)
+
+    # Add verification middleware if available
+    if VERIFICATION_MIDDLEWARE_AVAILABLE:
+        add_verification_middleware(app)
 
     @app.middleware("http")
     async def check_boundary(request: Request, call_next):

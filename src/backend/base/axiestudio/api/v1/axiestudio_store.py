@@ -81,17 +81,18 @@ class StoreData(BaseModel):
 
 def get_store_components_path() -> Path:
     """Get the path to the converted store components directory."""
-    # Get the project root directory
+    # Get the path relative to the current file
     current_file = Path(__file__)
-    project_root = current_file.parents[5]  # Go up to the project root
-    store_path = project_root / "src" / "store_components_converted"
-    
+    # From temp/src/backend/base/axiestudio/api/v1/axiestudio_store.py
+    # Go up to temp/src/ and then to store_components_converted
+    store_path = current_file.parents[5] / "store_components_converted"
+
     if not store_path.exists():
         raise HTTPException(
             status_code=404,
             detail="AxieStudio Store components directory not found. Please ensure the store components have been downloaded and converted."
         )
-    
+
     return store_path
 
 
