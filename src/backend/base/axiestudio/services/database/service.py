@@ -428,7 +428,10 @@ class DatabaseService(Service):
 
     @staticmethod
     def _add_enhanced_security_columns(connection) -> None:
-        """Add enhanced security columns to user table if they don't exist."""
+        """Add enhanced security columns to user table if they don't exist.
+
+        Deployment trigger: 2025-08-21 - Database fix ready for production.
+        """
         from sqlalchemy import text, inspect
 
         try:
