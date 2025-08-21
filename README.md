@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD030 -->
 <!-- Database Fix Deployment Trigger - 2025-08-21 -->
 
-![Axie Studio logo](https://scontent-arn2-1.xx.fbcdn.net/v/t39.30808-6/499498872_122132145854766980_5268724011023190696_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=xLVYhlEYae4Q7kNvwHtfkHd&_nc_oc=AdnJqlOOFeYRaGihnOCTDh7BqhomO70C4ohACN7i21RGp7WtWOUoaBYAWaAmv9Vl4R4&_nc_zt=23&_nc_ht=scontent-arn2-1.xx&_nc_gid=CjUMK_SK11uYLtn5b4hAyA&oh=00_AfUgO7heIBkN7WFcOFkMJNEfUGhjbDv5rfiuXoH7vwQz_g&oe=68AD4019)
+![Axie Studio logo](./docs/static/img/axiestudio-logo-color-black-solid.svg)
 
 
 [![Release Notes](https://img.shields.io/github/release/axiestudio/axiestudio?style=flat-square)](https://github.com/axiestudio/axiestudio/releases)
@@ -45,36 +45,34 @@ uv run axiestudio run
 
 For more information about installing Axie Studio, including Docker and Desktop options, see [Install Axie Studio](https://docs.axiestudio.org/get-started-installation).
 
-## 🏪 Component & Flow Showcase
+## 🏪 Axie Studio Store
 
-AxieStudio features a comprehensive showcase with **1,600 professional components and flows** ready for immediate use:
+Axie Studio now includes an integrated store for discovering and importing community flows and components:
 
-### ✨ Showcase Features
+### ✨ Store Features
 
-- **📊 1,600 Items** - Complete collection of 1,172 flows and 428 components
-- **🔍 Advanced Search** - Real-time search across names, descriptions, authors, and tags
-- **🎯 Smart Filtering** - Filter by type (flows/components), categories, and popularity
-- **📱 Modern Interface** - Beautiful, responsive design with grid layout and pagination
-- **⚡ Instant Download** - Download components as JSON files for immediate use
-- **🔗 Easy Access** - Available via Library button in flow toolbar and Settings page
-- **🎨 Preview Mode** - View component details before downloading
+- **🔍 Smart Search** - Find flows and components with real-time search across names, descriptions, authors, and tags
+- **🎯 One-Click Import** - "Grab Flow" functionality to instantly add flows to your workspace
+- **🎨 Modern UI** - Clean, professional black and white design optimized for productivity
+- **📱 Responsive Design** - Works seamlessly on desktop, tablet, and mobile devices
+- **🚀 Toolbar Integration** - Quick access via Store button in the flow toolbar
+- **🔄 Live Updates** - Real-time filtering and sorting for efficient browsing
 
-### 🛠️ How to Use the Showcase
+### 🛠️ How to Use the Store
 
-1. **Access via Toolbar** - Click the Library icon (📚) in any flow page toolbar
-2. **Browse Collection** - Explore all 1,600 components and flows with pagination
-3. **Search & Filter** - Use advanced search and filtering to find exactly what you need
-4. **Preview Items** - Click on any item to see detailed information
-5. **Download** - Get JSON files for immediate import into your projects
-6. **Settings Access** - Also available through Settings → Component Showcase
+1. **Access the Store** - Click the "Store" button in any flow page toolbar
+2. **Search & Filter** - Use the search bar or filter by Flows/Components
+3. **Preview** - Click "Preview" to see flow details before importing
+4. **Import** - Click "Grab Flow" to add flows directly to your workspace
+5. **Start Building** - Imported flows open automatically for immediate use
 
-### 🎯 Showcase Configuration
+### 🎯 Store Configuration
 
-The showcase is enabled by default and includes all store data. To customize:
+The store is enabled by default. To disable it, set:
 
 ```bash
-# Enable/disable showcase features
-ENABLE_AXIESTUDIO_STORE="true"  # Controls showcase availability
+# Disable store features
+ENABLE_AXIESTUDIO_STORE="false"
 ```
 
 ## 🐳 Docker
@@ -95,58 +93,59 @@ Deploy Axie Studio on your preferred cloud platform:
 
 ## 🗄️ Enhanced Database Management System
 
-AxieStudio features an **enterprise-grade automatic database management system** with intelligent table creation, migration handling, and comprehensive monitoring.
+AxieStudio features an **enterprise-grade auto-migration system** that automatically handles database schema updates and table creation.
 
-### 🚀 **Automatic Table Creation**
+### **Auto-Table Creation System**
 
-The system automatically creates and manages all database tables on startup:
-
-```bash
-# Enhanced CLI Database Administration Tool
-python database_admin.py status          # Show comprehensive database status
-python database_admin.py create-tables   # Create missing tables automatically
-python database_admin.py migrate         # Run database migration
-python database_admin.py health          # Perform health check
-python database_admin.py list-tables     # List all tables with details
-python database_admin.py help            # Show help information
-```
-
-### 🔧 **Database API Endpoints (Admin Only)**
+Our system automatically creates and manages database tables based on SQLModel definitions:
 
 ```bash
-# Comprehensive database management API
-GET    /api/v1/database/status           # Detailed database status & table info
-GET    /api/v1/database/tables           # List all tables with column details
-GET    /api/v1/database/migration-status # Current migration version info
-POST   /api/v1/database/create-tables    # Create missing tables automatically
-POST   /api/v1/database/migrate          # Run full Alembic migration
-GET    /api/v1/database/health           # Comprehensive health check
+# Check database status
+python database_migration_script.py status
+
+# Run enhanced migration
+python database_migration_script.py migrate
+
+# Show help
+python database_migration_script.py help
 ```
 
-### 📊 **Auto-Created Database Tables**
+### **Database API Endpoints**
 
-The system automatically creates and maintains these core tables:
-- **user** - User accounts, authentication, and profiles
-- **flow** - AI workflow definitions and configurations
-- **folder** - Project organization and hierarchy
-- **apikey** - API key management and authentication
-- **variable** - Global variables and environment settings
-- **file** - File attachments and document storage
-- **message** - Chat messages and conversation history
-- **transaction** - Subscription and billing transactions
-- **vertex_build** - Build information and deployment logs
-- **alembic_version** - Database migration version tracking
+```bash
+# Database management endpoints (admin only)
+GET /api/v1/database/status              # Database status
+GET /api/v1/database/tables              # List all tables
+GET /api/v1/database/migration-status    # Migration status
+POST /api/v1/database/auto-create-tables # Create missing tables
+POST /api/v1/database/run-migration      # Run full migration
+GET /api/v1/database/health              # Health check
+```
 
-### ✨ **Advanced Features**
+### **Database Tables Auto-Created**
 
-- 🔄 **Intelligent Startup** - Automatically detects and creates missing tables
-- 📈 **Progress Tracking** - Real-time progress indicators with emoji status
-- 🛡️ **Error Recovery** - Robust error handling with detailed logging
-- 🔍 **Health Monitoring** - Comprehensive database health checks
-- 📋 **Rich CLI Interface** - Beautiful command-line tools with tables and panels
-- 🔒 **Security Columns** - Automatic addition of enhanced security fields
-- 📊 **Detailed Reporting** - Table counts, row counts, and status information
-- 🎯 **Production Ready** - Enterprise-grade reliability and monitoring
+The system automatically creates these tables:
+- **user** - User accounts and authentication
+- **flow** - AI workflow definitions
+- **folder** - Organization structure
+- **apikey** - API key management
+- **variable** - Global variables
+- **file** - File attachments
+- **message** - Chat messages
+- **transaction** - Subscription transactions
+- **vertex_build** - Build information
+- **alembic_version** - Migration versioning
+
+### **Migration Features**
+
+- ✅ **Automatic Table Creation** from SQLModel definitions
+- ✅ **Alembic Integration** for schema versioning
+- ✅ **Migration Status Monitoring** with detailed reporting
+- ✅ **Error Recovery** and rollback support
+- ✅ **Comprehensive Logging** for audit trails
+- ✅ **Rich CLI Interface** with progress indicators
+- ✅ **Admin API** for database management
+- ✅ **Health Checks** for production monitoring
 
 ### 🔧 Production Environment Configuration
 

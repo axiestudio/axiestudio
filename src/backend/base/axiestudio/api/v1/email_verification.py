@@ -23,48 +23,112 @@ async def verify_email(
     session: DbSession,
     token: str = Query(..., description="Email verification token"),
 ):
-    """Verify email address using token."""
+    """
+    🎯 EMAIL VERIFICATION ENDPOINT
+    This is called when user clicks "Confirm Email" button in their email.
+    It MUST activate the user account automatically.
+    """
+    from loguru import logger
+
     if not token:
+        logger.warning("Email verification attempted without token")
         raise HTTPException(status_code=400, detail="Verification token is required")
-    
+
+    logger.info(f"🔍 Email verification attempt with token: {token[:8]}...")
+
     # Find user by verification token
     stmt = select(User).where(User.email_verification_token == token)
     user = (await session.exec(stmt)).first()
 
     if not user:
+        logger.warning(f"❌ Invalid verification token: {token[:8]}...")
         raise HTTPException(
             status_code=400,
             detail="Invalid or expired verification token. If you already verified your email, please try logging in directly."
         )
-    
+
+    logger.info(f"✅ Found user for verification: {user.username} (email: {user.email})")
+
     # Check if token has expired
     if user.email_verification_expires and user.email_verification_expires < datetime.now(timezone.utc):
+        logger.warning(f"⏰ Expired verification token for user: {user.username}")
         raise HTTPException(status_code=400, detail="Verification token has expired")
-    
-    # Verify the user
-    user.email_verified = True
-    user.is_active = True  # Activate the user
-    user.email_verification_token = None  # Clear the token
-    user.email_verification_expires = None  # Clear expiry
-    user.updated_at = datetime.now(timezone.utc)
 
-    await session.commit()
-    await session.refresh(user)
+    # Log current state BEFORE verification
+    logger.info(f"📊 BEFORE verification - User: {user.username}, is_active: {user.is_active}, email_verified: {user.email_verified}")
+
+    try:
+        # 🎯 CRITICAL: This is what happens when user clicks "Confirm Email"
+        logger.info(f"🚀 ACTIVATING USER: {user.username}")
+
+        # Step 1: Mark email as verified
+        user.email_verified = True
+        logger.info(f"✅ Set email_verified = True for {user.username}")
+
+        # Step 2: ACTIVATE THE ACCOUNT - THIS IS THE KEY!
+        user.is_active = True
+        logger.info(f"🔓 Set is_active = True for {user.username}")
+
+        # Step 3: Clear verification tokens
+        user.email_verification_token = None
+        user.email_verification_expires = None
+        logger.info(f"🧹 Cleared verification tokens for {user.username}")
+
+        # Step 4: Update timestamp
+        user.updated_at = datetime.now(timezone.utc)
+
+        # Step 5: Reset any failed login attempts
+        if hasattr(user, 'failed_login_attempts'):
+            user.failed_login_attempts = 0
+        if hasattr(user, 'locked_until'):
+            user.locked_until = None
+
+        # Step 6: COMMIT TO DATABASE - CRITICAL!
+        logger.info(f"💾 COMMITTING changes to database for {user.username}")
+        await session.commit()
+        await session.refresh(user)
+
+        # Log final state AFTER verification
+        logger.info(f"🎉 AFTER verification - User: {user.username}, is_active: {user.is_active}, email_verified: {user.email_verified}")
+        logger.info(f"✅ USER {user.username} SUCCESSFULLY VERIFIED AND ACTIVATED!")
+
+    except Exception as e:
+        logger.error(f"❌ FAILED to verify user {user.username}: {e}")
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error during verification: {str(e)}")
 
     # Generate access token for automatic login
-    from axiestudio.services.auth.utils import create_user_tokens
-    tokens = await create_user_tokens(user.id, session, update_last_login=True)
+    try:
+        from axiestudio.services.auth.utils import create_user_tokens
+        tokens = await create_user_tokens(user.id, session, update_last_login=True)
+        logger.info(f"🔑 Generated access tokens for {user.username}")
 
-    return {
-        "message": "Email verified successfully! You are now logged in.",
-        "verified": True,
-        "access_token": tokens["access_token"],
-        "refresh_token": tokens["refresh_token"],
-        "token_type": "bearer",
-        "user_id": str(user.id),
-        "username": user.username,
-        "auto_login": True
-    }
+        return {
+            "message": "🎉 Email verified successfully! Your account is now active and you are logged in.",
+            "verified": True,
+            "activated": True,
+            "access_token": tokens["access_token"],
+            "refresh_token": tokens["refresh_token"],
+            "token_type": "bearer",
+            "user_id": str(user.id),
+            "username": user.username,
+            "email": user.email,
+            "auto_login": True,
+            "can_login": True
+        }
+
+    except Exception as e:
+        logger.error(f"❌ Failed to generate tokens for {user.username}: {e}")
+        # Don't fail verification if token generation fails
+        return {
+            "message": "Email verified successfully! Your account is active. Please log in manually.",
+            "verified": True,
+            "activated": True,
+            "auto_login": False,
+            "username": user.username,
+            "email": user.email,
+            "can_login": True
+        }
 
 
 @router.post("/resend-verification")
@@ -224,4 +288,39 @@ async def reset_password(
         "user_id": str(user.id),
         "username": user.username,
         "redirect_to_settings": True
+    }
+
+
+@router.get("/check-user/{username}")
+async def check_user_status(
+    username: str,
+    session: DbSession,
+):
+    """
+    🔍 Check user verification status for debugging.
+    Use this to verify that email verification is working properly.
+    """
+    from loguru import logger
+
+    stmt = select(User).where(User.username == username)
+    user = (await session.exec(stmt)).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    logger.info(f"📊 User status check for: {username}")
+
+    return {
+        "username": user.username,
+        "email": user.email,
+        "is_active": user.is_active,
+        "email_verified": user.email_verified,
+        "has_verification_token": user.email_verification_token is not None,
+        "verification_expires": user.email_verification_expires,
+        "created_at": user.create_at,
+        "updated_at": user.updated_at,
+        "last_login_at": user.last_login_at,
+        "can_login": user.is_active and user.email_verified,
+        "status": "✅ READY TO LOGIN" if (user.is_active and user.email_verified) else "❌ NEEDS VERIFICATION",
+        "next_action": "User can login now" if (user.is_active and user.email_verified) else "User must click email verification link"
     }
