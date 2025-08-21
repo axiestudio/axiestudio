@@ -49,6 +49,13 @@ try:
     SUBSCRIPTION_SETUP_AVAILABLE = True
 except ImportError:
     SUBSCRIPTION_SETUP_AVAILABLE = False
+
+# Import enhanced security setup (will run during startup lifespan)
+try:
+    from axiestudio.services.startup.enhanced_security_setup import initialize_enhanced_security
+    ENHANCED_SECURITY_SETUP_AVAILABLE = True
+except ImportError:
+    ENHANCED_SECURITY_SETUP_AVAILABLE = False
 from axiestudio.services.deps import (
     get_queue_service,
     get_settings_service,
@@ -224,6 +231,19 @@ def get_lifespan(*, fix_migration=False, version=None):
                     logger.warning("Subscription schema setup timed out after 30 seconds - continuing startup")
                 except Exception as e:
                     logger.warning(f"Subscription schema setup failed: {e} - continuing startup")
+
+            # Set up enhanced security schema during startup (with timeout protection)
+            if ENHANCED_SECURITY_SETUP_AVAILABLE:
+                current_time = asyncio.get_event_loop().time()
+                logger.debug("Setting up enhanced security schema")
+                try:
+                    # Add timeout to prevent hanging
+                    await asyncio.wait_for(initialize_enhanced_security(), timeout=30.0)
+                    logger.debug(f"Enhanced security schema setup in {asyncio.get_event_loop().time() - current_time:.2f}s")
+                except asyncio.TimeoutError:
+                    logger.warning("Enhanced security schema setup timed out after 30 seconds - continuing startup")
+                except Exception as e:
+                    logger.warning(f"Enhanced security schema setup failed: {e} - continuing startup")
 
             total_time = asyncio.get_event_loop().time() - start_time
             logger.debug(f"Total initialization time: {total_time:.2f}s")
