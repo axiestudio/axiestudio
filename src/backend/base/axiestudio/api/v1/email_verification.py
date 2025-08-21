@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from axiestudio.api.utils import DbSession
 from axiestudio.services.database.models.user.model import User
 from axiestudio.services.email.service import email_service
+from axiestudio.services.auth.verification_code import validate_code, create_verification
 
 router = APIRouter(prefix="/email", tags=["Email Verification"])
 
@@ -15,6 +16,17 @@ class ResendEmailRequest(BaseModel):
 
 
 class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class VerifyCodeRequest(BaseModel):
+    """🎯 Request model for 6-digit code verification"""
+    email: str
+    code: str
+
+
+class ResendCodeRequest(BaseModel):
+    """🎯 Request model for resending 6-digit code"""
     email: str
 
 
@@ -324,3 +336,250 @@ async def check_user_status(
         "status": "✅ READY TO LOGIN" if (user.is_active and user.email_verified) else "❌ NEEDS VERIFICATION",
         "next_action": "User can login now" if (user.is_active and user.email_verified) else "User must click email verification link"
     }
+
+
+@router.post("/verify-code")
+async def verify_code(
+    request: VerifyCodeRequest,
+    session: DbSession,
+):
+    """
+    🎯 ENTERPRISE 6-DIGIT CODE VERIFICATION ENDPOINT
+
+    This is the NEW way users verify their email - by entering a 6-digit code
+    instead of clicking a link. This is how Google, Microsoft, AWS, etc. do it.
+
+    When user enters the 6-digit code:
+    1. Validates the code format and expiry
+    2. Checks rate limiting (max 5 attempts)
+    3. Activates the user account (is_active = True)
+    4. Marks email as verified (email_verified = True)
+    5. Auto-logs the user in
+    """
+    from loguru import logger
+
+    logger.info(f"🔍 6-digit code verification attempt for email: {request.email}")
+
+    # Find user by email
+    stmt = select(User).where(User.email == request.email)
+    user = (await session.exec(stmt)).first()
+
+    if not user:
+        logger.warning(f"❌ Code verification attempted for non-existent email: {request.email}")
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "message": "User not found",
+                "action": "signup_required"
+            }
+        )
+
+    logger.info(f"✅ Found user for code verification: {user.username}")
+
+    # Check if user is already verified
+    if user.email_verified and user.is_active:
+        logger.info(f"🔄 User {user.username} already verified and active")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "Email already verified. You can login now.",
+                "verified": True,
+                "can_login": True,
+                "action": "login_now"
+            }
+        )
+
+    # Validate the 6-digit code using our enterprise service
+    validation_result = validate_code(
+        code=request.code,
+        stored_code=user.verification_code,
+        expiry=user.verification_code_expires,
+        attempts=user.verification_attempts
+    )
+
+    # Handle validation failure
+    if not validation_result["valid"]:
+        # Increment failed attempts
+        user.verification_attempts += 1
+        await session.commit()
+
+        logger.warning(f"❌ Invalid code for {user.username}: {validation_result['error']}")
+
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": validation_result["error"],
+                "remaining_attempts": validation_result["remaining_attempts"],
+                "rate_limited": validation_result["rate_limited"],
+                "expired": validation_result["expired"]
+            }
+        )
+
+    # 🎉 SUCCESS - Activate the user account!
+    try:
+        logger.info(f"🚀 ACTIVATING USER ACCOUNT: {user.username}")
+
+        # Step 1: Mark email as verified
+        user.email_verified = True
+        logger.info(f"✅ Set email_verified = True for {user.username}")
+
+        # Step 2: ACTIVATE THE ACCOUNT - THIS IS THE KEY!
+        user.is_active = True
+        logger.info(f"🔓 Set is_active = True for {user.username}")
+
+        # Step 3: Clear verification codes and reset attempts
+        user.verification_code = None
+        user.verification_code_expires = None
+        user.verification_attempts = 0
+        logger.info(f"🧹 Cleared verification codes for {user.username}")
+
+        # Step 4: Clear legacy token fields too
+        user.email_verification_token = None
+        user.email_verification_expires = None
+
+        # Step 5: Update timestamp
+        user.updated_at = datetime.now(timezone.utc)
+
+        # Step 6: Reset any failed login attempts
+        if hasattr(user, 'failed_login_attempts'):
+            user.failed_login_attempts = 0
+        if hasattr(user, 'locked_until'):
+            user.locked_until = None
+
+        # Step 7: COMMIT TO DATABASE - CRITICAL!
+        logger.info(f"💾 COMMITTING account activation to database for {user.username}")
+        await session.commit()
+        await session.refresh(user)
+
+        logger.info(f"🎉 USER {user.username} SUCCESSFULLY VERIFIED AND ACTIVATED!")
+
+    except Exception as e:
+        logger.error(f"❌ FAILED to activate user {user.username}: {e}")
+        await session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error during account activation: {str(e)}"
+        )
+
+    # Generate access tokens for automatic login
+    try:
+        from axiestudio.services.auth.utils import create_user_tokens
+        tokens = await create_user_tokens(user.id, session, update_last_login=True)
+        logger.info(f"🔑 Generated access tokens for {user.username}")
+
+        return {
+            "message": "🎉 Email verified successfully! Your account is now active and you are logged in.",
+            "verified": True,
+            "activated": True,
+            "access_token": tokens["access_token"],
+            "refresh_token": tokens["refresh_token"],
+            "token_type": "bearer",
+            "user_id": str(user.id),
+            "username": user.username,
+            "email": user.email,
+            "auto_login": True,
+            "can_login": True,
+            "redirect_to": "/dashboard"
+        }
+
+    except Exception as e:
+        logger.error(f"❌ Failed to generate tokens for {user.username}: {e}")
+        # Don't fail verification if token generation fails
+        return {
+            "message": "✅ Email verified successfully! Your account is active. Please log in manually.",
+            "verified": True,
+            "activated": True,
+            "auto_login": False,
+            "username": user.username,
+            "email": user.email,
+            "can_login": True,
+            "redirect_to": "/login"
+        }
+
+
+@router.post("/resend-code")
+async def resend_verification_code(
+    request: ResendCodeRequest,
+    session: DbSession,
+):
+    """
+    🔄 Resend 6-digit verification code
+
+    Generates a new 6-digit code and sends it via email.
+    Resets the attempt counter for security.
+    """
+    from loguru import logger
+
+    logger.info(f"🔄 Resend code request for email: {request.email}")
+
+    # Find user by email
+    stmt = select(User).where(User.email == request.email)
+    user = (await session.exec(stmt)).first()
+
+    if not user:
+        logger.warning(f"❌ Resend code requested for non-existent email: {request.email}")
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "message": "User not found",
+                "action": "signup_required"
+            }
+        )
+
+    # Check if user is already verified
+    if user.email_verified and user.is_active:
+        logger.info(f"🔄 Resend code requested for already verified user: {user.username}")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "Email already verified. You can login now.",
+                "verified": True,
+                "can_login": True,
+                "action": "login_now"
+            }
+        )
+
+    try:
+        # Generate new 6-digit code
+        new_code, code_expiry = create_verification()
+
+        # Update user with new code
+        user.verification_code = new_code
+        user.verification_code_expires = code_expiry
+        user.verification_attempts = 0  # Reset attempts
+        user.updated_at = datetime.now(timezone.utc)
+
+        await session.commit()
+
+        # Send new verification code email
+        email_sent = await email_service.send_verification_code_email(
+            user.email, user.username, new_code
+        )
+
+        if not email_sent:
+            logger.error(f"❌ Failed to send verification code to {user.email}")
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "message": "Failed to send verification code",
+                    "action": "try_again_later"
+                }
+            )
+
+        logger.info(f"✅ New verification code sent to {user.email}")
+
+        return {
+            "message": "New verification code sent successfully!",
+            "email": user.email,
+            "expires_in": "10 minutes",
+            "max_attempts": 5,
+            "check_spam": True
+        }
+
+    except Exception as e:
+        logger.error(f"❌ Error resending verification code to {user.email}: {e}")
+        await session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to resend verification code: {str(e)}"
+        )

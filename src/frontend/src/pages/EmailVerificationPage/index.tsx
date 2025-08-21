@@ -1,10 +1,19 @@
 import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Alert, AlertDescription } from "../../components/ui/alert";
+import { Loader2, Mail, Shield, ArrowLeft } from "lucide-react";
 import { useCustomNavigate } from "../../customization/hooks/use-custom-navigate";
 import { CustomLink } from "../../customization/components/custom-link";
 import { AuthContext } from "../../contexts/authContext";
 import { api } from "../../controllers/API";
+
+interface VerificationStep {
+  step: 'email' | 'code' | 'success' | 'token-verify';
+  email?: string;
+}
 
 export default function EmailVerificationPage(): JSX.Element {
   const [searchParams] = useSearchParams();
@@ -14,16 +23,35 @@ export default function EmailVerificationPage(): JSX.Element {
   const [message, setMessage] = useState("");
   const [isResending, setIsResending] = useState(false);
 
+  // 🎯 NEW: 6-digit code verification state
+  const [currentStep, setCurrentStep] = useState<VerificationStep>({ step: 'email' });
+  const [email, setEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [countdown, setCountdown] = useState(0);
+
   const token = searchParams.get("token");
 
+  // Countdown timer for resend button
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setMessage("Invalid verification link. Please check your email for the correct link.");
-      return;
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
     }
+  }, [countdown]);
 
-    verifyEmail(token);
+  useEffect(() => {
+    if (token) {
+      // Legacy token-based verification
+      setCurrentStep({ step: 'token-verify' });
+      verifyEmail(token);
+    } else {
+      // New 6-digit code verification flow
+      setCurrentStep({ step: 'email' });
+      setStatus("loading"); // Reset status for code flow
+    }
   }, [token]);
 
   const verifyEmail = async (verificationToken: string) => {
@@ -79,13 +107,287 @@ export default function EmailVerificationPage(): JSX.Element {
     navigate("/login");
   };
 
+  // 🎯 NEW: 6-digit code verification functions
+  const handleSendCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await api.post('/api/v1/email/resend-code', { email });
+
+      if (response.data) {
+        setCurrentStep({ step: 'code', email });
+        setSuccess('✅ Verification code sent! Check your email.');
+        setCountdown(60); // 60 second cooldown
+      }
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || 'Failed to send verification code';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await api.post('/api/v1/email/verify-code', {
+        email: currentStep.email,
+        code: verificationCode
+      });
+
+      if (response.data) {
+        // Auto-login if tokens provided
+        if (response.data.access_token) {
+          login(response.data.access_token, "email_verification", response.data.refresh_token);
+        }
+
+        setCurrentStep({ step: 'success' });
+        setSuccess('🎉 Account activated successfully!');
+
+        // Redirect to dashboard after 2 seconds
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
+      }
+    } catch (err: any) {
+      const errorData = err.response?.data?.detail;
+      let errorMessage = 'Invalid verification code';
+
+      if (typeof errorData === 'object') {
+        errorMessage = errorData.message || errorMessage;
+        if (errorData.remaining_attempts !== undefined) {
+          errorMessage += ` (${errorData.remaining_attempts} attempts remaining)`;
+        }
+      } else if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      }
+
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (countdown > 0) return;
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      await api.post('/api/v1/email/resend-code', { email: currentStep.email });
+      setSuccess('✅ New verification code sent!');
+      setCountdown(60);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to resend code');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 🎯 NEW: Render functions for 6-digit code flow
+  const renderEmailStep = () => (
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader className="text-center">
+        <div className="mx-auto mb-4 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+          <Mail className="w-6 h-6 text-blue-600" />
+        </div>
+        <CardTitle className="text-2xl">Account Not Activated?</CardTitle>
+        <CardDescription>
+          Enter your email address to receive a verification code
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSendCode} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium mb-2">
+              Email Address
+            </label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
+              required
+              disabled={isLoading}
+            />
+          </div>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {success && (
+            <Alert>
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          )}
+
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending Code...
+              </>
+            ) : (
+              'Send Verification Code'
+            )}
+          </Button>
+
+          <div className="text-center">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => navigate('/login')}
+              className="text-sm"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Login
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+
+  const renderCodeStep = () => (
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader className="text-center">
+        <div className="mx-auto mb-4 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+          <Shield className="w-6 h-6 text-green-600" />
+        </div>
+        <CardTitle className="text-2xl">Enter Verification Code</CardTitle>
+        <CardDescription>
+          We sent a 6-digit code to<br />
+          <strong>{currentStep.email}</strong>
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleVerifyCode} className="space-y-4">
+          <div>
+            <label htmlFor="code" className="block text-sm font-medium mb-2">
+              6-Digit Code
+            </label>
+            <Input
+              id="code"
+              type="text"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="123456"
+              required
+              disabled={isLoading}
+              className="text-center text-2xl tracking-widest"
+              maxLength={6}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              ⏰ Code expires in 10 minutes
+            </p>
+          </div>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {success && (
+            <Alert>
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
+          )}
+
+          <Button type="submit" className="w-full" disabled={isLoading || verificationCode.length !== 6}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              'Verify & Activate Account'
+            )}
+          </Button>
+
+          <div className="text-center space-y-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleResendCode}
+              disabled={countdown > 0 || isLoading}
+              className="text-sm"
+            >
+              {countdown > 0 ? `Resend in ${countdown}s` : 'Resend Code'}
+            </Button>
+
+            <br />
+
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setCurrentStep({ step: 'email' })}
+              className="text-sm"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Change Email
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+
+  const renderSuccessStep = () => (
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader className="text-center">
+        <div className="mx-auto mb-4 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+          <Shield className="w-6 h-6 text-green-600" />
+        </div>
+        <CardTitle className="text-2xl text-green-600">Account Activated!</CardTitle>
+        <CardDescription>
+          Your account has been successfully activated.<br />
+          Redirecting to dashboard...
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="text-center">
+        <div className="animate-spin mx-auto w-8 h-8 border-4 border-green-200 border-t-green-600 rounded-full mb-4"></div>
+        <p className="text-sm text-gray-600">
+          You can now access all features of AxieStudio!
+        </p>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center bg-muted">
-      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-        <div className="flex flex-col space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Email Verification
-          </h1>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="mx-auto w-16 h-16 bg-black rounded-full flex items-center justify-center mb-4">
+            <span className="text-white font-bold text-xl">AX</span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">AxieStudio</h1>
+          <p className="text-gray-600">Email Verification</p>
+        </div>
+
+        {/* Render based on current step */}
+        {currentStep.step === 'email' && renderEmailStep()}
+        {currentStep.step === 'code' && renderCodeStep()}
+        {currentStep.step === 'success' && renderSuccessStep()}
+
+        {/* Legacy token-based verification */}
+        {currentStep.step === 'token-verify' && (
+          <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+            <div className="flex flex-col space-y-2 text-center">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Email Verification
+              </h1>
           
           {status === "loading" && (
             <div className="flex flex-col items-center space-y-4">
@@ -157,6 +459,13 @@ export default function EmailVerificationPage(): JSX.Element {
               </div>
             </div>
           )}
+            </div>
+          </div>
+        )}
+
+        {/* Help text */}
+        <div className="text-center mt-6 text-sm text-gray-500">
+          <p>Need help? Contact our support team</p>
         </div>
       </div>
     </div>

@@ -38,10 +38,15 @@ class User(SQLModel, table=True):  # type: ignore[call-arg]
     signup_ip: str | None = Field(default=None, nullable=True, index=True)  # Track signup IP
     device_fingerprint: str | None = Field(default=None, nullable=True, index=True)  # Track device fingerprint
 
-    # Email verification fields
+    # Email verification fields (legacy token-based)
     email_verified: bool = Field(default=False)
     email_verification_token: str | None = Field(default=None, nullable=True)
     email_verification_expires: datetime | None = Field(default=None, nullable=True)
+
+    # 🎯 NEW: 6-digit code verification fields (enterprise-grade)
+    verification_code: str | None = Field(default=None, nullable=True, max_length=6)
+    verification_code_expires: datetime | None = Field(default=None, nullable=True)
+    verification_attempts: int = Field(default=0)  # Track failed attempts for security
 
     # Enhanced security fields for enterprise auth
     login_attempts: int = Field(default=0)

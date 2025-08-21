@@ -62,13 +62,22 @@ async def _create_regular_user(user: UserCreate, request: Request, session: DbSe
     # This ensures consistent behavior regardless of environment settings
     new_user.is_active = False  # Always start inactive, become active after email verification
 
-    # Generate email verification token
-    verification_token = email_service.generate_verification_token()
+    # 🎯 NEW: Generate 6-digit verification code (Enterprise approach)
+    from axiestudio.services.auth.verification_code import create_verification
+    verification_code, code_expiry = create_verification()
+
+    # Set both legacy token (for backward compatibility) and new code system
+    verification_token = email_service.generate_verification_token()  # Keep for now
     verification_expiry = email_service.get_verification_expiry()
 
     new_user.email_verification_token = verification_token
     new_user.email_verification_expires = verification_expiry
     new_user.email_verified = False
+
+    # 🎯 NEW: Set 6-digit code fields
+    new_user.verification_code = verification_code
+    new_user.verification_code_expires = code_expiry
+    new_user.verification_attempts = 0
 
     # Set trial information for regular users
     now = datetime.now(timezone.utc)
@@ -84,10 +93,30 @@ async def _create_regular_user(user: UserCreate, request: Request, session: DbSe
     await session.commit()
     await session.refresh(new_user)
 
-    # Send verification email
-    email_sent = await email_service.send_verification_email(
-        new_user.email, new_user.username, verification_token
-    )
+    # 🎯 Send verification email based on admin preference
+    from axiestudio.services.settings import settings
+
+    verification_method = settings.EMAIL_VERIFICATION_METHOD
+
+    if verification_method == "code":
+        # Enterprise approach: 6-digit verification code
+        email_sent = await email_service.send_verification_code_email(
+            new_user.email, new_user.username, verification_code
+        )
+    elif verification_method == "link":
+        # Legacy approach: verification link
+        email_sent = await email_service.send_verification_email(
+            new_user.email, new_user.username, verification_token
+        )
+    else:  # verification_method == "both"
+        # Send both code and link for maximum compatibility
+        code_sent = await email_service.send_verification_code_email(
+            new_user.email, new_user.username, verification_code
+        )
+        link_sent = await email_service.send_verification_email(
+            new_user.email, new_user.username, verification_token
+        )
+        email_sent = code_sent or link_sent  # Success if either works
 
     if not email_sent:
         # Log warning but don't fail the signup

@@ -453,7 +453,11 @@ class DatabaseService(Service):
                 "last_login_ip": "VARCHAR",
                 "password_changed_at": "TIMESTAMP",
                 "failed_login_attempts": "INTEGER DEFAULT 0",
-                "last_failed_login": "TIMESTAMP"
+                "last_failed_login": "TIMESTAMP",
+                # 🎯 NEW: 6-digit verification code columns (enterprise-grade)
+                "verification_code": "VARCHAR(6)",
+                "verification_code_expires": "TIMESTAMP",
+                "verification_attempts": "INTEGER DEFAULT 0"
             }
 
             # Check database type for appropriate syntax
@@ -467,7 +471,11 @@ class DatabaseService(Service):
                     "last_login_ip": "TEXT",
                     "password_changed_at": "DATETIME",
                     "failed_login_attempts": "INTEGER DEFAULT 0",
-                    "last_failed_login": "DATETIME"
+                    "last_failed_login": "DATETIME",
+                    # 🎯 NEW: 6-digit verification code columns (SQLite format)
+                    "verification_code": "TEXT",
+                    "verification_code_expires": "DATETIME",
+                    "verification_attempts": "INTEGER DEFAULT 0"
                 }
 
             # Add missing columns

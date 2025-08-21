@@ -147,6 +147,11 @@ export default function LoginPage(): JSX.Element {
                 </CustomLink>
               </p>
               <p className="text-sm text-muted-foreground">
+                <CustomLink to="/verify-email" className="text-primary hover:underline font-medium">
+                  Account not activated?
+                </CustomLink>
+              </p>
+              <p className="text-sm text-muted-foreground">
                 Don't have an account?{" "}
                 <CustomLink to="/signup" className="text-primary hover:underline font-medium">
                   Sign up

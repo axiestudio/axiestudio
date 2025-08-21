@@ -34,6 +34,19 @@ class AuthSettings(BaseSettings):
     This will be removed in v1.6"""
 
     # NEW_USER_IS_ACTIVE removed - users are always inactive until email verification
+
+    # 🎯 Email verification method preference
+    EMAIL_VERIFICATION_METHOD: Literal["code", "link", "both"] = "code"
+    """
+    Email verification method preference:
+    - "code": Send 6-digit verification codes (Enterprise approach - DEFAULT)
+    - "link": Send verification links (Legacy approach)
+    - "both": Send both code and link (Maximum compatibility)
+
+    The "code" method is recommended as it follows enterprise standards
+    used by Google, Microsoft, AWS, etc.
+    """
+
     SUPERUSER: str = DEFAULT_SUPERUSER
     SUPERUSER_PASSWORD: str = DEFAULT_SUPERUSER_PASSWORD
 
