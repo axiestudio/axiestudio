@@ -59,17 +59,23 @@ class EmailService:
                 <title>Verify your Axie Studio account</title>
                 <style>
                     .logo {{
-                        width: 60px;
-                        height: 60px;
+                        width: 80px;
+                        height: 80px;
                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        border-radius: 12px;
+                        border-radius: 16px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        color: white;
-                        font-weight: bold;
-                        font-size: 24px;
-                        margin-bottom: 20px;
+                        margin: 0 auto 20px;
+                        overflow: hidden;
+                        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                        border: 3px solid rgba(255, 255, 255, 0.2);
+                    }}
+                    .logo img {{
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                        border-radius: 13px;
                     }}
                     .verify-btn {{
                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -92,7 +98,9 @@ class EmailService:
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f8fafc;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                     <!-- Logo -->
-                    <div class="logo">AS</div>
+                    <div class="logo">
+                        <img src="https://scontent-arn2-1.xx.fbcdn.net/v/t39.30808-6/499498872_122132145854766980_5268724011023190696_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=u5dFev5AG-kQ7kNvwFS6K3m&_nc_oc=AdltILxg_X65VXBn-MK3Z58PgtgR7ITbbYcGrvZSWDnQLiIitDDiDq9uw1DoamQT61U&_nc_zt=23&_nc_ht=scontent-arn2-1.xx&_nc_gid=mpLb2UFdGIvVDUjGf2bZuw&oh=00_AfXfUa1TAFSuNwQPVCsbeshZuHKq0TqnRwUgl4EdrFju9w&oe=68A94B99" alt="Axie Studio Logo" />
+                    </div>
 
                     <h2 style="color: #2563eb; margin-bottom: 20px;">Welcome to Axie Studio!</h2>
 
@@ -129,7 +137,7 @@ class EmailService:
                         </div>
                         <p style="color: #666; font-size: 12px; margin: 0;">
                             This email was sent by <strong>Axie Studio</strong><br>
-                            Building the future of AI workflows at <a href="https://axiestudio.se" style="color: #2563eb;">axiestudio.se</a>
+                            Building the future of AI workflows at <a href="https://flow.axiestudio.se" style="color: #2563eb;">axiestudio.se</a>
                         </p>
                         <p style="color: #999; font-size: 11px; margin-top: 10px;">
                             Need help? Contact our support team - we're here to help! 💬
@@ -174,7 +182,7 @@ class EmailService:
             logger.error(f"Failed to send verification email to {email}: {e}")
             return False
 
-    async def send_password_reset_email(self, email: str, username: str, token: str) -> bool:
+    async def send_password_reset_email(self, email: str, username: str, token: str, client_ip: str = "unknown") -> bool:
         """Send password reset email."""
         try:
             # Get frontend URL from settings
@@ -195,17 +203,23 @@ class EmailService:
                 <title>Reset your Axie Studio password</title>
                 <style>
                     .logo {{
-                        width: 60px;
-                        height: 60px;
+                        width: 80px;
+                        height: 80px;
                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        border-radius: 12px;
+                        border-radius: 16px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        color: white;
-                        font-weight: bold;
-                        font-size: 24px;
-                        margin-bottom: 20px;
+                        margin: 0 auto 20px;
+                        overflow: hidden;
+                        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                        border: 3px solid rgba(255, 255, 255, 0.2);
+                    }}
+                    .logo img {{
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                        border-radius: 13px;
                     }}
                     .reset-btn {{
                         background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
@@ -228,7 +242,9 @@ class EmailService:
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f8fafc;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                     <!-- Logo -->
-                    <div class="logo">AS</div>
+                    <div class="logo">
+                        <img src="https://scontent-arn2-1.xx.fbcdn.net/v/t39.30808-6/499498872_122132145854766980_5268724011023190696_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=u5dFev5AG-kQ7kNvwFS6K3m&_nc_oc=AdltILxg_X65VXBn-MK3Z58PgtgR7ITbbYcGrvZSWDnQLiIitDDiDq9uw1DoamQT61U&_nc_zt=23&_nc_ht=scontent-arn2-1.xx&_nc_gid=mpLb2UFdGIvVDUjGf2bZuw&oh=00_AfXfUa1TAFSuNwQPVCsbeshZuHKq0TqnRwUgl4EdrFju9w&oe=68A94B99" alt="Axie Studio Logo" />
+                    </div>
 
                     <h2 style="color: #dc2626; margin-bottom: 20px;">Reset Your Password</h2>
 
@@ -259,6 +275,7 @@ class EmailService:
 
                     <div style="background-color: #fee2e2; border-left: 4px solid #dc2626; padding: 12px; margin: 20px 0; border-radius: 6px;">
                         <p style="margin: 0; color: #991b1b;"><strong>🚨 Security Notice:</strong> If you didn't request this password reset, please ignore this email. Your account is still secure.</p>
+                        <p style="margin: 8px 0 0 0; color: #991b1b; font-size: 12px;">Request originated from IP: {client_ip}</p>
                     </div>
 
                     <div class="footer">
@@ -267,7 +284,7 @@ class EmailService:
                         </div>
                         <p style="color: #666; font-size: 12px; margin: 0;">
                             This email was sent by <strong>Axie Studio</strong><br>
-                            Building the future of AI workflows at <a href="https://axiestudio.se" style="color: #2563eb;">axiestudio.se</a>
+                            Building the future of AI workflows at <a href="https://flow.axiestudio.se" style="color: #2563eb;">axiestudio.se</a>
                         </p>
                         <p style="color: #999; font-size: 11px; margin-top: 10px;">
                             Need help? Contact our support team - we're here to help! 💬

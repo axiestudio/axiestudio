@@ -2,6 +2,7 @@ import * as Form from "@radix-ui/react-form";
 import { type FormEvent, useEffect, useState } from "react";
 // import AxieStudioLogo from "@/assets/AxieStudioLogo.svg?react";
 import InputComponent from "@/components/core/parameterRenderComponent/components/inputComponent";
+
 import { useAddUser } from "@/controllers/API/queries/auth";
 import { CustomLink } from "@/customization/components/custom-link";
 import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
@@ -200,6 +201,8 @@ export default function SignUp(): JSX.Element {
                   Passwords do not match
                 </Form.Message>
               )}
+
+
             </Form.Field>
           </div>
           <div className="w-full">

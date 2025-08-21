@@ -58,13 +58,9 @@ async def _create_regular_user(user: UserCreate, request: Request, session: DbSe
     new_user = User.model_validate(user, from_attributes=True)
     new_user.password = get_password_hash(user.password)
 
-    # Check if new users should be active immediately (from environment variable)
-    from axiestudio.services.deps import get_settings_service
-    settings_service = get_settings_service()
-    new_user_is_active = settings_service.auth_settings.NEW_USER_IS_ACTIVE
-
-    # For email verification: set is_active based on settings
-    new_user.is_active = new_user_is_active
+    # Email verification flow: Users are ALWAYS INACTIVE until they verify their email
+    # This ensures consistent behavior regardless of environment settings
+    new_user.is_active = False  # Always start inactive, become active after email verification
 
     # Generate email verification token
     verification_token = email_service.generate_verification_token()

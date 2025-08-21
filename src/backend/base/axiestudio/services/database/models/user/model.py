@@ -43,6 +43,14 @@ class User(SQLModel, table=True):  # type: ignore[call-arg]
     email_verification_token: str | None = Field(default=None, nullable=True)
     email_verification_expires: datetime | None = Field(default=None, nullable=True)
 
+    # Enhanced security fields for enterprise auth
+    login_attempts: int = Field(default=0)
+    locked_until: datetime | None = Field(default=None, nullable=True)
+    last_login_ip: str | None = Field(default=None, nullable=True)
+    password_changed_at: datetime | None = Field(default=None, nullable=True)
+    failed_login_attempts: int = Field(default=0)
+    last_failed_login: datetime | None = Field(default=None, nullable=True)
+
     # Subscription fields
     stripe_customer_id: str | None = Field(default=None, nullable=True)
     subscription_status: str | None = Field(default="trial", nullable=True)  # trial, active, canceled, past_due

@@ -23,12 +23,17 @@ router = APIRouter(tags=["Login"])
 @router.post("/login", response_model=Token)
 async def login_to_get_access_token(
     response: Response,
+    request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: DbSession,
 ):
     auth_settings = get_settings_service().auth_settings
+
+    # Get client IP for security logging
+    client_ip = request.client.host if request.client else "unknown"
+
     try:
-        user = await authenticate_user(form_data.username, form_data.password, db)
+        user = await authenticate_user(form_data.username, form_data.password, db, client_ip)
     except Exception as exc:
         if isinstance(exc, HTTPException):
             raise

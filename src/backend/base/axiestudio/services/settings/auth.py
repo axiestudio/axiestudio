@@ -20,7 +20,7 @@ class AuthSettings(BaseSettings):
         frozen=False,
     )
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_SECONDS: int = 60 * 60  # 1 hour
+    ACCESS_TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 24  # 24 hours (increased from 1 hour)
     REFRESH_TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 24 * 7  # 7 days
 
     # API Key to execute /process endpoint
@@ -33,7 +33,7 @@ class AuthSettings(BaseSettings):
     """If True, the application will skip authentication when AUTO_LOGIN is enabled.
     This will be removed in v1.6"""
 
-    NEW_USER_IS_ACTIVE: bool = True  # Allow new users to be active immediately
+    # NEW_USER_IS_ACTIVE removed - users are always inactive until email verification
     SUPERUSER: str = DEFAULT_SUPERUSER
     SUPERUSER_PASSWORD: str = DEFAULT_SUPERUSER_PASSWORD
 

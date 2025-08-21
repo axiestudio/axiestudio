@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from sqlmodel import select
 from pydantic import BaseModel
 
@@ -30,9 +30,12 @@ async def verify_email(
     # Find user by verification token
     stmt = select(User).where(User.email_verification_token == token)
     user = (await session.exec(stmt)).first()
-    
+
     if not user:
-        raise HTTPException(status_code=400, detail="Invalid verification token")
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired verification token. If you already verified your email, please try logging in directly."
+        )
     
     # Check if token has expired
     if user.email_verification_expires and user.email_verification_expires < datetime.now(timezone.utc):
@@ -44,13 +47,23 @@ async def verify_email(
     user.email_verification_token = None  # Clear the token
     user.email_verification_expires = None  # Clear expiry
     user.updated_at = datetime.now(timezone.utc)
-    
+
     await session.commit()
     await session.refresh(user)
-    
+
+    # Generate access token for automatic login
+    from axiestudio.services.auth.utils import create_user_tokens
+    tokens = await create_user_tokens(user.id, session, update_last_login=True)
+
     return {
-        "message": "Email verified successfully! You can now log in to your account.",
-        "verified": True
+        "message": "Email verified successfully! You are now logged in.",
+        "verified": True,
+        "access_token": tokens["access_token"],
+        "refresh_token": tokens["refresh_token"],
+        "token_type": "bearer",
+        "user_id": str(user.id),
+        "username": user.username,
+        "auto_login": True
     }
 
 
@@ -97,8 +110,14 @@ async def resend_verification_email(
 async def forgot_password(
     request: ForgotPasswordRequest,
     session: DbSession,
+    http_request: Request,
 ):
-    """Send password reset email."""
+    """Send password reset email with enterprise security features."""
+    from loguru import logger
+
+    # Get client IP for security logging
+    client_ip = http_request.client.host if http_request.client else "unknown"
+
     # Find user by email
     stmt = select(User).where(User.email == request.email)
     user = (await session.exec(stmt)).first()
@@ -106,35 +125,56 @@ async def forgot_password(
     # Always return success to prevent email enumeration attacks
     success_response = {
         "message": "If an account with that email exists, a password reset link has been sent.",
-        "email": request.email
+        "email": request.email,
+        "security_notice": "For security reasons, we don't confirm whether this email exists in our system."
     }
 
     if not user:
-        # Don't reveal that the user doesn't exist
+        # Log suspicious activity for security monitoring
+        logger.warning(f"Password reset attempted for non-existent email: {request.email} from IP: {client_ip}")
         return success_response
 
     if not user.is_active:
-        # Don't send reset emails to inactive users
+        # Log inactive user reset attempts
+        logger.info(f"Password reset attempted for inactive user: {user.username} from IP: {client_ip}")
         return success_response
 
-    # Generate password reset token (reuse verification token logic)
+    # Check for recent reset attempts (rate limiting)
+    if user.email_verification_expires and user.email_verification_expires > datetime.now(timezone.utc):
+        time_remaining = user.email_verification_expires - datetime.now(timezone.utc)
+        if time_remaining.total_seconds() > 23 * 3600:  # If less than 1 hour since last request
+            logger.warning(f"Rate limited password reset for user: {user.username} from IP: {client_ip}")
+            return {
+                "message": "A password reset link was recently sent. Please check your email or wait before requesting another.",
+                "email": request.email,
+                "rate_limited": True
+            }
+
+    # Generate password reset token with enhanced security
     reset_token = email_service.generate_verification_token()
     reset_expiry = email_service.get_verification_expiry()  # 24 hours
 
-    # Store reset token in email_verification_token field (we'll reuse this field)
+    # Store reset token and security metadata
     user.email_verification_token = reset_token
     user.email_verification_expires = reset_expiry
     user.updated_at = datetime.now(timezone.utc)
 
+    # Log successful reset request for security audit
+    logger.info(f"Password reset requested for user: {user.username} from IP: {client_ip}")
+
     await session.commit()
 
-    # Send password reset email
-    email_sent = await email_service.send_password_reset_email(user.email, user.username, reset_token)
+    # Send password reset email with enhanced template
+    email_sent = await email_service.send_password_reset_email(
+        user.email,
+        user.username,
+        reset_token,
+        client_ip=client_ip  # Pass IP for security notice in email
+    )
 
     if not email_sent:
         # Log error but still return success to prevent enumeration
-        from loguru import logger
-        logger.error(f"Failed to send password reset email to {user.email}")
+        logger.error(f"Failed to send password reset email to {user.email} from IP: {client_ip}")
 
     return success_response
 
@@ -174,7 +214,7 @@ async def reset_password(
 
     # Generate access token for automatic login
     from axiestudio.services.auth.utils import create_user_tokens
-    tokens = await create_user_tokens(user.id, session)
+    tokens = await create_user_tokens(user.id, session, update_last_login=True)
 
     return {
         "message": "Password reset successful! You are now logged in. Please go to Settings to change your password.",

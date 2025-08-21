@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { useCustomNavigate } from "../../customization/hooks/use-custom-navigate";
 import { CustomLink } from "../../customization/components/custom-link";
+import { AuthContext } from "../../contexts/authContext";
 import { api } from "../../controllers/API";
 
 export default function EmailVerificationPage(): JSX.Element {
   const [searchParams] = useSearchParams();
   const navigate = useCustomNavigate();
+  const { login } = useContext(AuthContext);
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
   const [isResending, setIsResending] = useState(false);
@@ -27,10 +29,23 @@ export default function EmailVerificationPage(): JSX.Element {
   const verifyEmail = async (verificationToken: string) => {
     try {
       const response = await api.get(`/api/v1/email/verify?token=${verificationToken}`);
-      
+
       if (response.data.verified) {
         setStatus("success");
-        setMessage("Email verified successfully! You can now log in to your account.");
+
+        // Check if auto-login tokens are provided
+        if (response.data.access_token && response.data.auto_login) {
+          // Log the user in automatically
+          login(response.data.access_token, "email_verification", response.data.refresh_token);
+          setMessage("Email verified successfully! You are now logged in. Redirecting to dashboard...");
+
+          // Redirect to dashboard after a short delay
+          setTimeout(() => {
+            navigate("/");
+          }, 2000);
+        } else {
+          setMessage("Email verified successfully! You can now log in to your account.");
+        }
       } else {
         setStatus("error");
         setMessage("Email verification failed. Please try again.");

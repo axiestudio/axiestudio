@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/axiestudio-store", tags=["AxieStudio Store"])
+router = APIRouter(prefix="/store", tags=["AxieStudio Store"])
 
 
 class StoreAuthor(BaseModel):

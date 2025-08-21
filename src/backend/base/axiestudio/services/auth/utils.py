@@ -419,18 +419,65 @@ async def create_refresh_token(refresh_token: str, db: AsyncSession):
         ) from e
 
 
-async def authenticate_user(username: str, password: str, db: AsyncSession) -> User | None:
+async def authenticate_user(username: str, password: str, db: AsyncSession, client_ip: str = "unknown") -> User | None:
+    """Enhanced authentication with enterprise security features."""
+    from loguru import logger
+
     user = await get_user_by_username(db, username)
 
     if not user:
+        # Log failed login attempt for non-existent user
+        logger.warning(f"Login attempt for non-existent user: {username} from IP: {client_ip}")
         return None
 
-    if not user.is_active:
-        if not user.last_login_at:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Waiting for approval")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive user")
+    # Check if account is locked
+    if user.locked_until and user.locked_until > datetime.now(timezone.utc):
+        time_remaining = user.locked_until - datetime.now(timezone.utc)
+        logger.warning(f"Login attempt for locked account: {username} from IP: {client_ip}")
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail=f"Account is temporarily locked. Try again in {int(time_remaining.total_seconds() / 60)} minutes."
+        )
 
-    return user if verify_password(password, user.password) else None
+    if not user.is_active:
+        if not user.email_verified:
+            logger.info(f"Login attempt for unverified user: {username} from IP: {client_ip}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Please verify your email address before logging in. Check your inbox for the verification link."
+            )
+        if not user.last_login_at:
+            logger.info(f"Login attempt for pending user: {username} from IP: {client_ip}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Account pending approval")
+        logger.warning(f"Login attempt for inactive user: {username} from IP: {client_ip}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account is inactive")
+
+    # Verify password
+    if verify_password(password, user.password):
+        # Successful login - reset failed attempts and update login info
+        user.failed_login_attempts = 0
+        user.last_failed_login = None
+        user.locked_until = None
+        user.last_login_ip = client_ip
+        user.login_attempts += 1
+
+        logger.info(f"Successful login for user: {username} from IP: {client_ip}")
+        await db.commit()
+        return user
+    else:
+        # Failed login - increment failed attempts
+        user.failed_login_attempts += 1
+        user.last_failed_login = datetime.now(timezone.utc)
+
+        # Lock account after 5 failed attempts
+        if user.failed_login_attempts >= 5:
+            user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=30)
+            logger.warning(f"Account locked for user: {username} after 5 failed attempts from IP: {client_ip}")
+        else:
+            logger.warning(f"Failed login attempt {user.failed_login_attempts}/5 for user: {username} from IP: {client_ip}")
+
+        await db.commit()
+        return None
 
 
 def add_padding(s):

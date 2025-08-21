@@ -90,6 +90,62 @@ Deploy Axie Studio on your preferred cloud platform:
 - [Railway](./RAILWAY_ENV.md)
 - [Docker Hub](https://hub.docker.com/r/axiestudio/axiestudio)
 
+## 🗄️ Enhanced Database Management System
+
+AxieStudio features an **enterprise-grade auto-migration system** that automatically handles database schema updates and table creation.
+
+### **Auto-Table Creation System**
+
+Our system automatically creates and manages database tables based on SQLModel definitions:
+
+```bash
+# Check database status
+python database_migration_script.py status
+
+# Run enhanced migration
+python database_migration_script.py migrate
+
+# Show help
+python database_migration_script.py help
+```
+
+### **Database API Endpoints**
+
+```bash
+# Database management endpoints (admin only)
+GET /api/v1/database/status              # Database status
+GET /api/v1/database/tables              # List all tables
+GET /api/v1/database/migration-status    # Migration status
+POST /api/v1/database/auto-create-tables # Create missing tables
+POST /api/v1/database/run-migration      # Run full migration
+GET /api/v1/database/health              # Health check
+```
+
+### **Database Tables Auto-Created**
+
+The system automatically creates these tables:
+- **user** - User accounts and authentication
+- **flow** - AI workflow definitions
+- **folder** - Organization structure
+- **apikey** - API key management
+- **variable** - Global variables
+- **file** - File attachments
+- **message** - Chat messages
+- **transaction** - Subscription transactions
+- **vertex_build** - Build information
+- **alembic_version** - Migration versioning
+
+### **Migration Features**
+
+- ✅ **Automatic Table Creation** from SQLModel definitions
+- ✅ **Alembic Integration** for schema versioning
+- ✅ **Migration Status Monitoring** with detailed reporting
+- ✅ **Error Recovery** and rollback support
+- ✅ **Comprehensive Logging** for audit trails
+- ✅ **Rich CLI Interface** with progress indicators
+- ✅ **Admin API** for database management
+- ✅ **Health Checks** for production monitoring
+
 ### 🔧 Production Environment Configuration
 
 For production deployments, use these environment variables:
