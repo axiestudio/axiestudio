@@ -448,6 +448,11 @@ class DatabaseService(Service):
 
             # Define enhanced security columns to add
             enhanced_security_columns = {
+                # Email verification fields (legacy token-based)
+                "email_verified": "BOOLEAN DEFAULT FALSE",
+                "email_verification_token": "VARCHAR",
+                "email_verification_expires": "TIMESTAMP",
+                # Enhanced security fields
                 "login_attempts": "INTEGER DEFAULT 0",
                 "locked_until": "TIMESTAMP",
                 "last_login_ip": "VARCHAR",
@@ -466,6 +471,11 @@ class DatabaseService(Service):
 
             if is_sqlite:
                 enhanced_security_columns = {
+                    # Email verification fields (SQLite format)
+                    "email_verified": "INTEGER DEFAULT 0",  # SQLite uses INTEGER for BOOLEAN
+                    "email_verification_token": "TEXT",
+                    "email_verification_expires": "DATETIME",
+                    # Enhanced security fields
                     "login_attempts": "INTEGER DEFAULT 0",
                     "locked_until": "DATETIME",
                     "last_login_ip": "TEXT",
