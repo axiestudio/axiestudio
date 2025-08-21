@@ -5,6 +5,7 @@ from axiestudio.api.v1 import (
     api_key_router,
     axiestudio_store_router,
     chat_router,
+    database_admin_router,
     email_verification_router,
     endpoints_router,
     files_router,
@@ -52,6 +53,7 @@ router_v1.include_router(mcp_router)
 router_v1.include_router(voice_mode_router)
 router_v1.include_router(mcp_projects_router)
 router_v1.include_router(axiestudio_store_router)
+router_v1.include_router(database_admin_router, prefix="/database")
 
 router_v2.include_router(files_router_v2)
 router_v2.include_router(mcp_router_v2)
