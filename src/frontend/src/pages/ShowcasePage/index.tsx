@@ -118,6 +118,16 @@ export default function ShowcasePage(): JSX.Element {
     }
   };
 
+  // Sanitize filename to match how files were saved
+  const sanitizeFilename = (name: string): string => {
+    return name
+      .replace(/[()]/g, '') // Remove parentheses: "(2)" → "2"
+      .replace(/[<>:"/\\|?*]/g, '') // Remove other invalid filename characters
+      .replace(/\s*\+\s*/g, '  ') // Replace " + " with double space: " + " → "  "
+      .replace(/\s{3,}/g, '  ') // Replace 3+ spaces with double space
+      .trim();
+  };
+
   const handleDownload = async (item: StoreItem) => {
     if (downloadingItems.has(item.id)) return;
 
@@ -126,8 +136,9 @@ export default function ShowcasePage(): JSX.Element {
     try {
       // FRONTEND-ONLY SOLUTION: Load files directly from static folder
       const folder = item.type === "FLOW" ? "flows" : "components";
-      // Use the exact name as it appears in the store index
-      const filePath = `/store_components_converted/${folder}/${item.id}_${item.name}.json`;
+      // Sanitize the filename to match how files were actually saved
+      const sanitizedName = sanitizeFilename(item.name);
+      const filePath = `/store_components_converted/${folder}/${item.id}_${sanitizedName}.json`;
 
       console.log(`🔄 Downloading ${item.type}: ${item.name} from ${filePath}`);
 
