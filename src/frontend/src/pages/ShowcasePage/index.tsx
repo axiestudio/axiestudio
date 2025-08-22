@@ -309,7 +309,7 @@ export default function ShowcasePage(): JSX.Element {
     <div className="flex h-screen flex-col">
       {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-6">
+        <div className="w-full px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <Button
@@ -356,7 +356,7 @@ export default function ShowcasePage(): JSX.Element {
 
       {/* Enhanced Filters */}
       <div className="border-b bg-muted/30 backdrop-blur">
-        <div className="container mx-auto px-4 py-4 space-y-4">
+        <div className="w-full px-6 py-4 space-y-4">
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative flex-1 min-w-[300px] max-w-md">
               <IconComponent name="Search" className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -494,7 +494,7 @@ export default function ShowcasePage(): JSX.Element {
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-          <div className="border-b px-4">
+          <div className="border-b px-6">
             <TabsList>
               <TabsTrigger value="all">All ({filteredItems.length})</TabsTrigger>
               <TabsTrigger value="flows">Flows ({storeData?.flows.length || 0})</TabsTrigger>
@@ -503,7 +503,7 @@ export default function ShowcasePage(): JSX.Element {
           </div>
 
           <TabsContent value={activeTab} className="h-full overflow-auto">
-            <div className="p-4 space-y-4">
+            <div className="px-6 py-4 space-y-4">
               {/* Results Info */}
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
@@ -538,7 +538,7 @@ export default function ShowcasePage(): JSX.Element {
               </div>
 
               {/* Items Grid */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {paginatedItems.map((item) => (
                   <ShowcaseCard
                     key={item.id}

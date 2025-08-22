@@ -272,6 +272,10 @@ class Settings(BaseSettings):
     update_starter_projects: bool = True
     """If set to True, Axie Studio will update starter projects."""
 
+    # Email Verification
+    EMAIL_VERIFICATION_METHOD: Literal["code", "link"] = "code"
+    """Email verification method: 'code' for 6-digit verification code, 'link' for verification link."""
+
     @field_validator("use_noop_database", mode="before")
     @classmethod
     def set_use_noop_database(cls, value):

@@ -173,7 +173,13 @@ async def resend_verification_email(
     user = (await session.exec(stmt)).first()
     
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        # 🔐 ENTERPRISE SECURITY: Prevent email enumeration
+        # Always return success to prevent revealing if email exists
+        logger.warning(f"❌ Forgot password attempted for non-existent email: {request.email}")
+        return {
+            "message": "If this email exists in our system, you will receive a password reset link.",
+            "success": True
+        }
     
     if user.email_verified:
         raise HTTPException(status_code=400, detail="Email is already verified")
@@ -317,13 +323,14 @@ async def reset_password(
     tokens = await create_user_tokens(user.id, session, update_last_login=True)
 
     return {
-        "message": "Password reset successful! You are now logged in. Please go to Settings to change your password.",
+        "message": "Password reset successful! You are now logged in. Please set a new password.",
         "access_token": tokens["access_token"],
         "refresh_token": tokens["refresh_token"],
         "token_type": "bearer",
         "user_id": str(user.id),
         "username": user.username,
-        "redirect_to_settings": True
+        "redirect_to_change_password": True,  # 🔐 ENTERPRISE: Redirect to change password page
+        "redirect_url": "/change-password?from_reset=true"
     }
 
 
@@ -389,13 +396,12 @@ async def verify_code(
     user = (await session.exec(stmt)).first()
 
     if not user:
+        # 🔐 ENTERPRISE SECURITY: Prevent email enumeration
+        # Return generic error without revealing email existence
         logger.warning(f"❌ Code verification attempted for non-existent email: {request.email}")
         raise HTTPException(
-            status_code=404,
-            detail={
-                "message": "User not found",
-                "action": "signup_required"
-            }
+            status_code=400,
+            detail="Invalid verification code or email address"
         )
 
     logger.info(f"✅ Found user for code verification: {user.username}")
@@ -525,6 +531,7 @@ async def verify_code(
 async def resend_verification_code(
     request: ResendCodeRequest,
     session: DbSession,
+    http_request: Request,
 ):
     """
     🔄 Resend 6-digit verification code
@@ -536,19 +543,29 @@ async def resend_verification_code(
 
     logger.info(f"🔄 Resend code request for email: {request.email}")
 
+    # 🛡️ ENTERPRISE SECURITY: Rate limiting for resend endpoint
+    client_ip = http_request.client.host if http_request.client else "unknown"
+
+    # Basic rate limiting for resend endpoint (prevent spam)
+    from axiestudio.api.v1.subscriptions import check_rate_limit
+    if not check_rate_limit(f"resend_{client_ip}", "resend"):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many resend attempts from this location. Please wait before trying again."
+        )
+
     # Find user by email
     stmt = select(User).where(User.email == request.email)
     user = (await session.exec(stmt)).first()
 
     if not user:
+        # 🔐 ENTERPRISE SECURITY: Prevent email enumeration
+        # Always return success to prevent revealing if email exists
         logger.warning(f"❌ Resend code requested for non-existent email: {request.email}")
-        raise HTTPException(
-            status_code=404,
-            detail={
-                "message": "User not found",
-                "action": "signup_required"
-            }
-        )
+        return {
+            "message": "If this email exists in our system, a new verification code has been sent.",
+            "success": True
+        }
 
     # Check if user is already verified
     if user.email_verified and user.is_active:

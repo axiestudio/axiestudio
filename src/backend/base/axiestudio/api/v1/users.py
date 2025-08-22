@@ -55,7 +55,32 @@ async def _create_regular_user(user: UserCreate, request: Request, session: DbSe
             detail="Account creation temporarily restricted. Please contact support if you believe this is an error."
         )
 
+    # 🔐 ENTERPRISE: Email validation
+    if not user.email or not user.email.strip():
+        raise HTTPException(status_code=400, detail="Email address is required")
+
+    # Basic email format validation
+    import re
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_pattern, user.email.strip()):
+        raise HTTPException(status_code=400, detail="Invalid email address format")
+
+    # 🔐 ENTERPRISE: Password strength validation
+    if not user.password or len(user.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+
+    # Check for basic password complexity
+    if not re.search(r'[A-Z]', user.password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one uppercase letter")
+
+    if not re.search(r'[a-z]', user.password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one lowercase letter")
+
+    if not re.search(r'\d', user.password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one number")
+
     new_user = User.model_validate(user, from_attributes=True)
+    new_user.email = user.email.strip().lower()  # Normalize email
     new_user.password = get_password_hash(user.password)
 
     # Email verification flow: Users are ALWAYS INACTIVE until they verify their email
@@ -275,7 +300,24 @@ async def delete_user(
     if not user_db:
         raise HTTPException(status_code=404, detail="User not found")
 
-    await session.delete(user_db)
-    await session.commit()
+    try:
+        # First, try to delete related files to avoid foreign key constraint violations
+        from axiestudio.services.database.models.file.model import File
 
-    return {"detail": "User deleted"}
+        # Delete all files associated with this user
+        file_stmt = select(File).where(File.user_id == user_id)
+        files = (await session.exec(file_stmt)).all()
+        for file in files:
+            await session.delete(file)
+
+        # Now delete the user
+        await session.delete(user_db)
+        await session.commit()
+
+        return {"detail": "User deleted"}
+    except IntegrityError as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete user due to foreign key constraints: {str(e)}"
+        )

@@ -15,6 +15,7 @@ from axiestudio.api.v1 import (
     mcp_router,
     monitor_router,
     projects_router,
+    showcase_router,
     starter_projects_router,
     subscriptions_router,
     users_router,
@@ -52,6 +53,7 @@ router_v1.include_router(mcp_router)
 router_v1.include_router(voice_mode_router)
 router_v1.include_router(mcp_projects_router)
 router_v1.include_router(axiestudio_store_router)
+router_v1.include_router(showcase_router)
 
 router_v2.include_router(files_router_v2)
 router_v2.include_router(mcp_router_v2)

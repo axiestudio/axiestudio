@@ -1,3 +1,7 @@
 from . import factory, service
+from .base import Settings
 
-__all__ = ["factory", "service"]
+# Create a global settings instance
+settings = Settings()
+
+__all__ = ["factory", "service", "settings", "Settings"]

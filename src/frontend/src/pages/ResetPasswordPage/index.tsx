@@ -107,17 +107,17 @@ export default function ResetPasswordPage(): JSX.Element {
             <div className="w-full space-y-4">
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <p className="text-sm text-green-800">
-                  🎉 <strong>You're logged in!</strong><br/>
-                  ⚙️ <strong>Go to Settings</strong> to change your password<br/>
-                  🔐 <strong>Choose a strong password</strong> to keep your account secure
+                  <strong>You're logged in!</strong><br/>
+                  <strong>Set a new password</strong> to secure your account<br/>
+                  <strong>Choose a strong password</strong> to keep your account safe
                 </p>
               </div>
-              
-              <Button 
-                onClick={() => navigate("/settings")}
+
+              <Button
+                onClick={() => navigate("/change-password?from_reset=true")}
                 className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
               >
-                Go to Settings
+                Set New Password
               </Button>
               
               <div className="text-center">

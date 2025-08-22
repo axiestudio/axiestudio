@@ -11,6 +11,7 @@ from axiestudio.api.v1.mcp import router as mcp_router
 from axiestudio.api.v1.mcp_projects import router as mcp_projects_router
 from axiestudio.api.v1.monitor import router as monitor_router
 from axiestudio.api.v1.projects import router as projects_router
+from axiestudio.api.v1.showcase import router as showcase_router
 from axiestudio.api.v1.starter_projects import router as starter_projects_router
 from axiestudio.api.v1.subscriptions import router as subscriptions_router
 from axiestudio.api.v1.users import router as users_router
@@ -32,6 +33,7 @@ __all__ = [
     "mcp_router",
     "monitor_router",
     "projects_router",
+    "showcase_router",
     "starter_projects_router",
     "subscriptions_router",
     "users_router",

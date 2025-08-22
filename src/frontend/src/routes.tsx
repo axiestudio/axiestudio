@@ -44,6 +44,7 @@ const SignUpPage = lazy(() => import("./pages/SignUpPage"));
 const EmailVerificationPage = lazy(() => import("./pages/EmailVerificationPage"));
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const ChangePasswordPage = lazy(() => import("./pages/ChangePasswordPage"));
 const PricingPage = lazy(() => import("./pages/PricingPage"));
 const SubscriptionSuccessPage = lazy(() => import("./pages/SubscriptionSuccessPage"));
 
@@ -207,6 +208,15 @@ const router = createBrowserRouter(
             path="reset-password"
             element={
               <ResetPasswordPage />
+            }
+          />
+
+          <Route
+            path="change-password"
+            element={
+              <ProtectedRoute>
+                <ChangePasswordPage />
+              </ProtectedRoute>
             }
           />
 

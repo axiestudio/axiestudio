@@ -49,6 +49,14 @@ function ApiInterceptor() {
       request: (url, config) => {
         const accessToken = customGetAccessToken();
 
+        // Ensure config and config.headers exist
+        if (!config) {
+          config = {};
+        }
+        if (!config.headers) {
+          config.headers = {};
+        }
+
         if (!isExternalURL(url)) {
           if (accessToken && !isAuthorizedURL(config?.url)) {
             config.headers["Authorization"] = `Bearer ${accessToken}`;
