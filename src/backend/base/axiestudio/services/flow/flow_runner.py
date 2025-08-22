@@ -23,8 +23,8 @@ from axiestudio.services.deps import get_cache_service, get_storage_service, ses
 from axiestudio.utils.util import update_settings
 
 
-class Axie StudioRunnerExperimental:
-    """Axie StudioRunnerExperimental orchestrates flow execution without a dedicated server.
+class AxieStudioRunnerExperimental:
+    """AxieStudioRunnerExperimental orchestrates flow execution without a dedicated server.
 
     .. warning::
         This class is currently **experimental** and in a **beta phase**.
@@ -35,7 +35,7 @@ class Axie StudioRunnerExperimental:
     Instantiate the class and call the `run` method with the desired flow and input.
 
     Example:
-        runner = Axie StudioRunnerExperimental()
+        runner = AxieStudioRunnerExperimental()
         result = await runner.run(flow="path/to/flow.json", input_value="Hello", session_id=str(uuid.uuid4()))
 
     """
