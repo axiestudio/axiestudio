@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { api } from '../../services/api';
+import { useAuth } from '../../contexts/authContext';
+import { api } from '../../controllers/API/api';
 
 interface ChangePasswordPageProps {}
 

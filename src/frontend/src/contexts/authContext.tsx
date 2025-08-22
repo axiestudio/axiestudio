@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { Cookies } from "react-cookie";
 import {
   AXIESTUDIO_ACCESS_TOKEN,
@@ -122,4 +122,13 @@ export function AuthProvider({ children }): React.ReactElement {
       {children}
     </AuthContext.Provider>
   );
+}
+
+// Custom hook to use the AuthContext
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
