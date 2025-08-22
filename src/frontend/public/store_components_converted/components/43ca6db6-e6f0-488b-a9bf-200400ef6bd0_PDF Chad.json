@@ -1,0 +1,385 @@
+{
+  "id": "43ca6db6-e6f0-488b-a9bf-200400ef6bd0",
+  "name": "PDF Chad",
+  "description": "Reads PDF files with options for table extraction and scanned page processing. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "FunnyGuy",
+    "first_name": "Vasyl",
+    "last_name": "Yakovishak",
+    "id": "a44965f3-034e-47f8-867a-ea1e4cd572ca",
+    "full_name": "Vasyl Yakovishak"
+  },
+  "store_url": "https://www.langflow.store/store/component/43ca6db6-e6f0-488b-a9bf-200400ef6bd0",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-03T13:34:56.611Z",
+    "updated": "2024-07-03T13:35:09.871Z",
+    "downloaded": "2025-08-19T17:50:04.973Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Agent",
+        "id": "ccabb590-c9e8-4e56-9d6c-309955936c6c"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.5",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "input_data": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "input_data",
+                "display_name": "Input Data",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "List of Data objects from Enhanced Directory Loader.",
+                "title_case": false,
+                "type": "other"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import base64\nimport csv\nimport io\nimport json\nimport os\nfrom typing import List, Dict, Any\nimport requests\nfrom PIL import Image\nimport pytesseract\nimport pypdf\nimport pandas as pd\nfrom tabula import read_pdf\nfrom pdf2image import convert_from_path\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, MessageTextInput, BoolInput, Output\nfrom axiestudio.schema import Data\nfrom pathlib import Path\nimport camelot\n\nclass AdvancedPDFReader(Component):\n    display_name = \"Advanced PDF Reader\"\n    description = \"Reads PDF files with options for table extraction and scanned page processing.\"\n    icon = \"file-text\"\n\n    inputs = [\n        DataInput(\n            name=\"input_data\",\n            display_name=\"Input Data\",\n            info=\"List of Data objects from Enhanced Directory Loader.\",\n        ),\n        MessageTextInput(\n            name=\"openai_api_key\",\n            display_name=\"OpenAI API Key\",\n            info=\"API key for OpenAI's GPT-4 Vision API.\",\n            advanced=False,\n            value=\"OPENAI_API_KEY\",\n        ),\n        BoolInput(\n            name=\"detect_tables\",\n            display_name=\"Detect Tables\",\n            info=\"Enable table detection and extraction.\",\n            advanced=False,\n            value=True,\n        ),\n        BoolInput(\n            name=\"process_scanned\",\n            display_name=\"Process Scanned Pages\",\n            info=\"Enable processing of scanned pages using GPT-4 Vision.\",\n            advanced=False,\n            value=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Processed Data\", name=\"processed_data\", method=\"process_pdfs\"),\n    ]\n\n    def __init__(self, user_id: str = None, **kwargs):\n        super().__init__(user_id=user_id, **kwargs)\n        self.user_id = user_id\n\n    def encode_image(self, image_path):\n        with open(image_path, \"rb\") as image_file:\n            return base64.b64encode(image_file.read()).decode('utf-8')\n\n    def extract_text_from_image(self, image_path):\n        image = Image.open(image_path)\n        return pytesseract.image_to_string(image)\n\n    def is_scanned_page(self, page):\n        text = page.extract_text()\n        return len(text.strip()) == 0\n\n    def query_gpt4_vision(self, image_path, file_name, page_num):\n        base64_image = self.encode_image(image_path)\n        headers = {\n            \"Content-Type\": \"application/json\",\n            \"Authorization\": f\"Bearer {self.openai_api_key}\"\n        }\n        prompt = f\"\"\"\n        Please analyze this image and determine if it contains a table.\n        If it does contain a table, return the following structured format:\n        {{\n            \"contains_table\": true,\n            \"file_name\": \"{file_name}\",\n            \"page_number\": {page_num},\n            \"table_title\": \"Title_of_the_table_(if_exists_replace_spaces_with_underscores)\",\n            \"columns\": [\"col1\", \"col2\", \"col3\", ...],\n            \"rows\": [\n                [\"value1\", \"value2\", \"value3\"],\n                [\"value4\", \"value5\", \"value6\"],\n                ...\n            ],\n            \"table_csv\": \"{file_name}_page_{page_num}.csv\"\n        }}\n        If it does not contain a table, return the following:\n        {{\n            \"contains_table\": false,\n            \"file_name\": \"{file_name}\",\n            \"page_number\": {page_num}\n        }}\n        IMPORTANT: Ensure the table is correctly formatted and accurate.\n        \n        RESPOND ONLY IN JSON FORMAT. ANY OTHER FORMAT WILL BE CONSIDERED INVALID.\n        \"\"\"\n        payload = {\n            \"model\": \"gpt-4-vision-preview\",\n            \"messages\": [\n                {\n                    \"role\": \"user\",\n                    \"content\": [\n                        {\"type\": \"text\", \"text\": prompt},\n                        {\n                            \"type\": \"image_url\",\n                            \"image_url\": {\n                                \"url\": f\"data:image/jpeg;base64,{base64_image}\"\n                            }\n                        }\n                    ]\n                }\n            ],\n            \"max_tokens\": 2000\n        }\n        response = requests.post(\"https://api.openai.com/v1/chat/completions\", headers=headers, json=payload)\n        response.raise_for_status()\n        return response.json()[\"choices\"][0][\"message\"][\"content\"]\n\n    def save_table_from_gpt4_response(self, gpt4_response, file_name, page_num):\n        try:\n            gpt4_response = gpt4_response.strip('```json\\n').strip('```')\n            table_data = json.loads(gpt4_response)\n\n            if not table_data[\"contains_table\"]:\n                return None\n\n            table_title = table_data.get('table_title', '').replace(\" \", \"_\")\n            columns = table_data['columns']\n            rows = table_data['rows']\n\n            max_columns = max(len(row) for row in rows)\n            for row in rows:\n                while len(row) < max_columns:\n                    row.append('N/A')\n\n            if any(len(row) != len(columns) for row in rows):\n                print(f\"Warning: Column mismatch in GPT-4 Vision response for {file_name} page {page_num}\")\n                return None\n\n            df = pd.DataFrame(rows, columns=columns)\n            csv_filename = f\"{file_name}_page_{page_num}.csv\"\n            df.to_csv(csv_filename, index=False)\n            return {\"table_title\": table_title, \"csv_filename\": csv_filename}\n        except (json.JSONDecodeError, KeyError, ValueError) as e:\n            print(f\"Error parsing GPT-4 Vision response: {e}\")\n            return None\n\n    def extract_tables_from_pdf_page(self, pdf_path, page_num):\n        try:\n            tables = camelot.read_pdf(pdf_path, pages=str(page_num + 1))\n            csv_files = []\n            for i, table in enumerate(tables):\n                csv_filename = f\"{Path(pdf_path).stem}_page_{page_num}_table_{i}.csv\"\n                table.to_csv(csv_filename)\n                csv_files.append(csv_filename)\n            return csv_files\n        except Exception as e:\n            print(f\"Error extracting tables with camelot: {e}\")\n            return []\n\n    def process_pdf(self, file_path: str, file_name: str) -> Dict[str, Any]:\n        processed_data = {\"file_name\": file_name}\n        \n        with open(file_path, 'rb') as file:\n            reader = pypdf.PdfReader(file)\n            processed_data[\"total_pages\"] = len(reader.pages)\n            processed_data[\"pages\"] = []\n            \n            for page_num, page in enumerate(reader.pages):\n                page_data = {\"page_number\": page_num + 1}\n                \n                is_scanned = self.is_scanned_page(page)\n                \n                if is_scanned and self.process_scanned:\n                    images = convert_from_path(file_path, first_page=page_num+1, last_page=page_num+1)\n                    image_path = f\"{file_name}_page_{page_num}.jpg\"\n                    images[0].save(image_path, 'JPEG')\n                    \n                    page_data[\"text\"] = self.extract_text_from_image(image_path)\n                    \n                    if self.detect_tables:\n                        gpt4_response = self.query_gpt4_vision(image_path, file_name, page_num)\n                        table_info = self.save_table_from_gpt4_response(gpt4_response, file_name, page_num)\n                        if table_info:\n                            page_data[\"table_csv\"] = table_info[\"csv_filename\"]\n                            page_data[\"table_title\"] = table_info[\"table_title\"]\n                            table = pd.read_csv(table_info[\"csv_filename\"])\n                            page_data[\"table_columns\"] = table.columns.tolist()\n                    \n                    os.remove(image_path)  # Clean up the temporary image file\n                else:\n                    page_data[\"text\"] = page.extract_text()\n                    \n                    if self.detect_tables:\n                        csv_files = self.extract_tables_from_pdf_page(file_path, page_num)\n                        if csv_files:\n                            page_data[\"table_csv\"] = csv_files\n                            table = pd.read_csv(csv_files[0])\n                            page_data[\"table_columns\"] = table.columns.tolist()\n                \n                processed_data[\"pages\"].append(page_data)\n        \n        return processed_data\n\n    def process_pdfs(self) -> List[Data]:\n        if not isinstance(self.input_data, list):\n            self.input_data = [self.input_data]\n\n        if self.process_scanned and not self.openai_api_key:\n            raise ValueError(\"OpenAI API Key is required for processing scanned pages.\")\n\n        processed_data = []\n        \n        for data in self.input_data:\n            if not isinstance(data, Data):\n                continue\n\n            file_path = Path(data.metadata['folder_path']) / data.metadata['file_name']\n            file_name = data.metadata['file_name']\n\n            if file_path.suffix.lower() != '.pdf':\n                continue  # Skip non-PDF files\n\n            pdf_data = self.process_pdf(str(file_path), file_name)\n            \n            enhanced_metadata = data.metadata.copy()\n            enhanced_metadata.update(pdf_data)\n            \n            processed_data.append(Data(\n                content=\"\",\n                data={\"file_name\": file_name},\n                metadata=enhanced_metadata\n            ))\n\n        self.status = f\"Processed {len(processed_data)} PDF files\"\n        return processed_data",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "detect_tables": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": true,
+                "name": "detect_tables",
+                "display_name": "Detect Tables",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Enable table detection and extraction.",
+                "title_case": false,
+                "type": "bool"
+              },
+              "openai_api_key": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "OPENAI_API_KEY",
+                "name": "openai_api_key",
+                "display_name": "OpenAI API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "API key for OpenAI's GPT-4 Vision API.",
+                "title_case": false,
+                "type": "str"
+              },
+              "process_scanned": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": true,
+                "name": "process_scanned",
+                "display_name": "Process Scanned Pages",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Enable processing of scanned pages using GPT-4 Vision.",
+                "title_case": false,
+                "type": "bool"
+              }
+            },
+            "description": "Reads PDF files with options for table extraction and scanned page processing.",
+            "icon": "file-text",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "PDF Chad",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "processed_data",
+                "display_name": "Processed Data",
+                "method": "process_pdfs",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_data",
+              "openai_api_key",
+              "detect_tables",
+              "process_scanned"
+            ],
+            "beta": false,
+            "edited": false,
+            "official": false
+          },
+          "id": "CustomComponent-6OB3d",
+          "description": "Reads PDF files with options for table extraction and scanned page processing.",
+          "display_name": "PDF Chad"
+        },
+        "id": "CustomComponent-6OB3d",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "43ca6db6-e6f0-488b-a9bf-200400ef6bd0",
+    "name": "PDF Chad",
+    "description": "Reads PDF files with options for table extraction and scanned page processing.",
+    "is_component": true,
+    "liked_by_count": "0",
+    "downloads_count": "1",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.5",
+    "private": true,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "input_data": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "input_data",
+                  "display_name": "Input Data",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "List of Data objects from Enhanced Directory Loader.",
+                  "title_case": false,
+                  "type": "other"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import base64\nimport csv\nimport io\nimport json\nimport os\nfrom typing import List, Dict, Any\nimport requests\nfrom PIL import Image\nimport pytesseract\nimport pypdf\nimport pandas as pd\nfrom tabula import read_pdf\nfrom pdf2image import convert_from_path\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, MessageTextInput, BoolInput, Output\nfrom axiestudio.schema import Data\nfrom pathlib import Path\nimport camelot\n\nclass AdvancedPDFReader(Component):\n    display_name = \"Advanced PDF Reader\"\n    description = \"Reads PDF files with options for table extraction and scanned page processing.\"\n    icon = \"file-text\"\n\n    inputs = [\n        DataInput(\n            name=\"input_data\",\n            display_name=\"Input Data\",\n            info=\"List of Data objects from Enhanced Directory Loader.\",\n        ),\n        MessageTextInput(\n            name=\"openai_api_key\",\n            display_name=\"OpenAI API Key\",\n            info=\"API key for OpenAI's GPT-4 Vision API.\",\n            advanced=False,\n            value=\"OPENAI_API_KEY\",\n        ),\n        BoolInput(\n            name=\"detect_tables\",\n            display_name=\"Detect Tables\",\n            info=\"Enable table detection and extraction.\",\n            advanced=False,\n            value=True,\n        ),\n        BoolInput(\n            name=\"process_scanned\",\n            display_name=\"Process Scanned Pages\",\n            info=\"Enable processing of scanned pages using GPT-4 Vision.\",\n            advanced=False,\n            value=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Processed Data\", name=\"processed_data\", method=\"process_pdfs\"),\n    ]\n\n    def __init__(self, user_id: str = None, **kwargs):\n        super().__init__(user_id=user_id, **kwargs)\n        self.user_id = user_id\n\n    def encode_image(self, image_path):\n        with open(image_path, \"rb\") as image_file:\n            return base64.b64encode(image_file.read()).decode('utf-8')\n\n    def extract_text_from_image(self, image_path):\n        image = Image.open(image_path)\n        return pytesseract.image_to_string(image)\n\n    def is_scanned_page(self, page):\n        text = page.extract_text()\n        return len(text.strip()) == 0\n\n    def query_gpt4_vision(self, image_path, file_name, page_num):\n        base64_image = self.encode_image(image_path)\n        headers = {\n            \"Content-Type\": \"application/json\",\n            \"Authorization\": f\"Bearer {self.openai_api_key}\"\n        }\n        prompt = f\"\"\"\n        Please analyze this image and determine if it contains a table.\n        If it does contain a table, return the following structured format:\n        {{\n            \"contains_table\": true,\n            \"file_name\": \"{file_name}\",\n            \"page_number\": {page_num},\n            \"table_title\": \"Title_of_the_table_(if_exists_replace_spaces_with_underscores)\",\n            \"columns\": [\"col1\", \"col2\", \"col3\", ...],\n            \"rows\": [\n                [\"value1\", \"value2\", \"value3\"],\n                [\"value4\", \"value5\", \"value6\"],\n                ...\n            ],\n            \"table_csv\": \"{file_name}_page_{page_num}.csv\"\n        }}\n        If it does not contain a table, return the following:\n        {{\n            \"contains_table\": false,\n            \"file_name\": \"{file_name}\",\n            \"page_number\": {page_num}\n        }}\n        IMPORTANT: Ensure the table is correctly formatted and accurate.\n        \n        RESPOND ONLY IN JSON FORMAT. ANY OTHER FORMAT WILL BE CONSIDERED INVALID.\n        \"\"\"\n        payload = {\n            \"model\": \"gpt-4-vision-preview\",\n            \"messages\": [\n                {\n                    \"role\": \"user\",\n                    \"content\": [\n                        {\"type\": \"text\", \"text\": prompt},\n                        {\n                            \"type\": \"image_url\",\n                            \"image_url\": {\n                                \"url\": f\"data:image/jpeg;base64,{base64_image}\"\n                            }\n                        }\n                    ]\n                }\n            ],\n            \"max_tokens\": 2000\n        }\n        response = requests.post(\"https://api.openai.com/v1/chat/completions\", headers=headers, json=payload)\n        response.raise_for_status()\n        return response.json()[\"choices\"][0][\"message\"][\"content\"]\n\n    def save_table_from_gpt4_response(self, gpt4_response, file_name, page_num):\n        try:\n            gpt4_response = gpt4_response.strip('```json\\n').strip('```')\n            table_data = json.loads(gpt4_response)\n\n            if not table_data[\"contains_table\"]:\n                return None\n\n            table_title = table_data.get('table_title', '').replace(\" \", \"_\")\n            columns = table_data['columns']\n            rows = table_data['rows']\n\n            max_columns = max(len(row) for row in rows)\n            for row in rows:\n                while len(row) < max_columns:\n                    row.append('N/A')\n\n            if any(len(row) != len(columns) for row in rows):\n                print(f\"Warning: Column mismatch in GPT-4 Vision response for {file_name} page {page_num}\")\n                return None\n\n            df = pd.DataFrame(rows, columns=columns)\n            csv_filename = f\"{file_name}_page_{page_num}.csv\"\n            df.to_csv(csv_filename, index=False)\n            return {\"table_title\": table_title, \"csv_filename\": csv_filename}\n        except (json.JSONDecodeError, KeyError, ValueError) as e:\n            print(f\"Error parsing GPT-4 Vision response: {e}\")\n            return None\n\n    def extract_tables_from_pdf_page(self, pdf_path, page_num):\n        try:\n            tables = camelot.read_pdf(pdf_path, pages=str(page_num + 1))\n            csv_files = []\n            for i, table in enumerate(tables):\n                csv_filename = f\"{Path(pdf_path).stem}_page_{page_num}_table_{i}.csv\"\n                table.to_csv(csv_filename)\n                csv_files.append(csv_filename)\n            return csv_files\n        except Exception as e:\n            print(f\"Error extracting tables with camelot: {e}\")\n            return []\n\n    def process_pdf(self, file_path: str, file_name: str) -> Dict[str, Any]:\n        processed_data = {\"file_name\": file_name}\n        \n        with open(file_path, 'rb') as file:\n            reader = pypdf.PdfReader(file)\n            processed_data[\"total_pages\"] = len(reader.pages)\n            processed_data[\"pages\"] = []\n            \n            for page_num, page in enumerate(reader.pages):\n                page_data = {\"page_number\": page_num + 1}\n                \n                is_scanned = self.is_scanned_page(page)\n                \n                if is_scanned and self.process_scanned:\n                    images = convert_from_path(file_path, first_page=page_num+1, last_page=page_num+1)\n                    image_path = f\"{file_name}_page_{page_num}.jpg\"\n                    images[0].save(image_path, 'JPEG')\n                    \n                    page_data[\"text\"] = self.extract_text_from_image(image_path)\n                    \n                    if self.detect_tables:\n                        gpt4_response = self.query_gpt4_vision(image_path, file_name, page_num)\n                        table_info = self.save_table_from_gpt4_response(gpt4_response, file_name, page_num)\n                        if table_info:\n                            page_data[\"table_csv\"] = table_info[\"csv_filename\"]\n                            page_data[\"table_title\"] = table_info[\"table_title\"]\n                            table = pd.read_csv(table_info[\"csv_filename\"])\n                            page_data[\"table_columns\"] = table.columns.tolist()\n                    \n                    os.remove(image_path)  # Clean up the temporary image file\n                else:\n                    page_data[\"text\"] = page.extract_text()\n                    \n                    if self.detect_tables:\n                        csv_files = self.extract_tables_from_pdf_page(file_path, page_num)\n                        if csv_files:\n                            page_data[\"table_csv\"] = csv_files\n                            table = pd.read_csv(csv_files[0])\n                            page_data[\"table_columns\"] = table.columns.tolist()\n                \n                processed_data[\"pages\"].append(page_data)\n        \n        return processed_data\n\n    def process_pdfs(self) -> List[Data]:\n        if not isinstance(self.input_data, list):\n            self.input_data = [self.input_data]\n\n        if self.process_scanned and not self.openai_api_key:\n            raise ValueError(\"OpenAI API Key is required for processing scanned pages.\")\n\n        processed_data = []\n        \n        for data in self.input_data:\n            if not isinstance(data, Data):\n                continue\n\n            file_path = Path(data.metadata['folder_path']) / data.metadata['file_name']\n            file_name = data.metadata['file_name']\n\n            if file_path.suffix.lower() != '.pdf':\n                continue  # Skip non-PDF files\n\n            pdf_data = self.process_pdf(str(file_path), file_name)\n            \n            enhanced_metadata = data.metadata.copy()\n            enhanced_metadata.update(pdf_data)\n            \n            processed_data.append(Data(\n                content=\"\",\n                data={\"file_name\": file_name},\n                metadata=enhanced_metadata\n            ))\n\n        self.status = f\"Processed {len(processed_data)} PDF files\"\n        return processed_data",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "detect_tables": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": true,
+                  "name": "detect_tables",
+                  "display_name": "Detect Tables",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Enable table detection and extraction.",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "openai_api_key": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "OPENAI_API_KEY",
+                  "name": "openai_api_key",
+                  "display_name": "OpenAI API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "API key for OpenAI's GPT-4 Vision API.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "process_scanned": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": true,
+                  "name": "process_scanned",
+                  "display_name": "Process Scanned Pages",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Enable processing of scanned pages using GPT-4 Vision.",
+                  "title_case": false,
+                  "type": "bool"
+                }
+              },
+              "description": "Reads PDF files with options for table extraction and scanned page processing.",
+              "icon": "file-text",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "PDF Chad",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "processed_data",
+                  "display_name": "Processed Data",
+                  "method": "process_pdfs",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_data",
+                "openai_api_key",
+                "detect_tables",
+                "process_scanned"
+              ],
+              "beta": false,
+              "edited": false,
+              "official": false
+            },
+            "id": "CustomComponent-6OB3d",
+            "description": "Reads PDF files with options for table extraction and scanned page processing.",
+            "display_name": "PDF Chad"
+          },
+          "id": "CustomComponent-6OB3d",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-07-03T13:34:56.611Z",
+    "date_updated": "2024-07-03T13:35:09.871Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "a44965f3-034e-47f8-867a-ea1e4cd572ca",
+    "user_created": {
+      "username": "FunnyGuy",
+      "first_name": "Vasyl",
+      "last_name": "Yakovishak",
+      "id": "a44965f3-034e-47f8-867a-ea1e4cd572ca"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Agent",
+          "id": "ccabb590-c9e8-4e56-9d6c-309955936c6c"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.843Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

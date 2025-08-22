@@ -8,6 +8,23 @@ from axiestudio.services.database.models.user.model import User
 from axiestudio.services.email.service import email_service
 from axiestudio.services.auth.verification_code import validate_code, create_verification
 
+
+def ensure_timezone_aware(dt: datetime | None) -> datetime | None:
+    """
+    Ensure a datetime is timezone-aware.
+
+    This fixes the common issue where database datetimes are stored as naive
+    but need to be compared with timezone-aware datetimes.
+    """
+    if dt is None:
+        return None
+
+    if dt.tzinfo is None:
+        # Assume naive datetimes are in UTC (database default)
+        return dt.replace(tzinfo=timezone.utc)
+
+    return dt
+
 router = APIRouter(prefix="/email", tags=["Email Verification"])
 
 
@@ -61,10 +78,12 @@ async def verify_email(
 
     logger.info(f"✅ Found user for verification: {user.username} (email: {user.email})")
 
-    # Check if token has expired
-    if user.email_verification_expires and user.email_verification_expires < datetime.now(timezone.utc):
-        logger.warning(f"⏰ Expired verification token for user: {user.username}")
-        raise HTTPException(status_code=400, detail="Verification token has expired")
+    # Check if token has expired (with timezone-safe comparison)
+    if user.email_verification_expires:
+        user_expires = ensure_timezone_aware(user.email_verification_expires)
+        if user_expires and user_expires < datetime.now(timezone.utc):
+            logger.warning(f"⏰ Expired verification token for user: {user.username}")
+            raise HTTPException(status_code=400, detail="Verification token has expired")
 
     # Log current state BEFORE verification
     logger.info(f"📊 BEFORE verification - User: {user.username}, is_active: {user.is_active}, email_verified: {user.email_verified}")
@@ -215,9 +234,12 @@ async def forgot_password(
         logger.info(f"Password reset attempted for inactive user: {user.username} from IP: {client_ip}")
         return success_response
 
-    # Check for recent reset attempts (rate limiting)
-    if user.email_verification_expires and user.email_verification_expires > datetime.now(timezone.utc):
-        time_remaining = user.email_verification_expires - datetime.now(timezone.utc)
+    # Check for recent reset attempts (rate limiting) - with timezone-safe comparison
+    if user.email_verification_expires:
+        user_expires = ensure_timezone_aware(user.email_verification_expires)
+        now = datetime.now(timezone.utc)
+        if user_expires and user_expires > now:
+            time_remaining = user_expires - now
         if time_remaining.total_seconds() > 23 * 3600:  # If less than 1 hour since last request
             logger.warning(f"Rate limited password reset for user: {user.username} from IP: {client_ip}")
             return {
@@ -271,9 +293,11 @@ async def reset_password(
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
 
-    # Check if token has expired
-    if user.email_verification_expires and user.email_verification_expires < datetime.now(timezone.utc):
-        raise HTTPException(status_code=400, detail="Reset token has expired")
+    # Check if token has expired (with timezone-safe comparison)
+    if user.email_verification_expires:
+        user_expires = ensure_timezone_aware(user.email_verification_expires)
+        if user_expires and user_expires < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="Reset token has expired")
 
     # Activate the user if they're not active (password reset also serves as email verification)
     if not user.is_active:

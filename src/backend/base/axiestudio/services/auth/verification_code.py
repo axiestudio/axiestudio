@@ -14,6 +14,29 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def ensure_timezone_aware(dt: datetime | None) -> datetime | None:
+    """
+    Ensure a datetime is timezone-aware.
+
+    This fixes the common issue where database datetimes are stored as naive
+    but need to be compared with timezone-aware datetimes.
+
+    Args:
+        dt: Datetime that might be naive or aware
+
+    Returns:
+        datetime | None: Timezone-aware datetime or None
+    """
+    if dt is None:
+        return None
+
+    if dt.tzinfo is None:
+        # Assume naive datetimes are in UTC (database default)
+        return dt.replace(tzinfo=timezone.utc)
+
+    return dt
+
+
 class VerificationCodeService:
     """
     🏢 Enterprise-grade verification code service
@@ -69,16 +92,21 @@ class VerificationCodeService:
     def is_code_expired(expiry_time: datetime | None) -> bool:
         """
         🕐 Check if verification code has expired
-        
+
         Args:
             expiry_time: When the code expires (UTC)
-            
+
         Returns:
             bool: True if expired, False if still valid
         """
         if not expiry_time:
             return True
-        
+
+        # Ensure timezone-aware comparison to prevent offset-naive vs offset-aware errors
+        expiry_time = ensure_timezone_aware(expiry_time)
+        if not expiry_time:
+            return True
+
         now = datetime.now(timezone.utc)
         expired = now > expiry_time
         

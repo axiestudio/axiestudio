@@ -1,0 +1,419 @@
+{
+  "id": "614946f4-0ad6-464c-94fb-b2c71d5a9e8b",
+  "name": "SQLite3 inserting",
+  "description": "Inserts list of data into a specified SQLite database and table. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "Fabio Braga",
+    "first_name": "Fabio",
+    "last_name": "Braga",
+    "id": "cbc14150-3856-4a71-90b3-f9755a81b82b",
+    "full_name": "Fabio Braga"
+  },
+  "store_url": "https://www.langflow.store/store/component/614946f4-0ad6-464c-94fb-b2c71d5a9e8b",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-14T15:13:55.621Z",
+    "updated": "2024-08-14T15:13:55.650Z",
+    "downloaded": "2025-08-19T17:50:05.187Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "SQLiteComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "data_list": {
+                "trace_as_metadata": true,
+                "list": false,
+                "trace_as_input": true,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "data_list",
+                "value": "",
+                "display_name": "Data List",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "List of Data objects to be inserted into the table.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\r\nfrom axiestudio.inputs import MessageTextInput, DataInput, BoolInput\r\nfrom axiestudio.template import Output\r\nfrom axiestudio.schema import Data\r\nfrom sqlalchemy import create_engine, Table, Column, MetaData, String, delete\r\nfrom sqlalchemy.exc import SQLAlchemyError\r\nfrom sqlalchemy.orm import Session\r\n\r\nclass SQLiteComponent(Component):\r\n    display_name = \"SQLite Inserter\"\r\n    description = \"Inserts list of data into a specified SQLite database and table.\"\r\n    icon = \"database\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"database_name\",\r\n            display_name=\"Database Name\",\r\n            info=\"Name of the SQLite database file.\",\r\n            required=True\r\n        ),\r\n        MessageTextInput(\r\n            name=\"table_name\",\r\n            display_name=\"Table Name\",\r\n            info=\"Name of the table to insert data into.\",\r\n            required=True\r\n        ),\r\n        DataInput(\r\n            name=\"data_list\",\r\n            display_name=\"Data List\",\r\n            info=\"List of Data objects to be inserted into the table.\",\r\n            required=True\r\n        ),\r\n        BoolInput(\r\n            name=\"delete_before_insert\",\r\n            display_name=\"Delete Before Insert\",\r\n            info=\"Delete existing records before inserting new data.\"\r\n        ),\r\n        BoolInput(\r\n            name=\"drop_before_insert\",\r\n            display_name=\"Drop Table Before Insert\",\r\n            info=\"Drop table before inserting new data.\"\r\n        )\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Insertion Status\", name=\"insertion_status\", method=\"insert_data\"),\r\n    ]\r\n\r\n    def insert_data(self) -> Data:\r\n        database_name = self.database_name\r\n        table_name = self.table_name\r\n        data_list = self.data_list\r\n        delete_before_insert = self.delete_before_insert if self.delete_before_insert is not None else True\r\n        drop_before_insert = self.drop_before_insert if self.drop_before_insert is not None else True\r\n        \r\n\r\n        # Convert list of Data objects to list of dictionaries\r\n        try:\r\n            json_data = [data.data for data in data_list]\r\n        except AttributeError:\r\n            return Data(data={\"error\": \"Invalid Data object format\"})\r\n\r\n        # Connect to the SQLite database using SQLAlchemy\r\n        engine = create_engine(f\"sqlite:///{database_name}\")\r\n        metadata = MetaData()\r\n\r\n        # Define the table structure dynamically based on JSON keys\r\n        if json_data:\r\n            columns = [Column(col, String) for col in json_data[0].keys()]\r\n            table = Table(table_name, metadata, *columns, extend_existing=True)\r\n\r\n            try:\r\n                \r\n                if drop_before_insert:\r\n                    # Reflect the table from the database\r\n                    metadata.reflect(bind=engine)\r\n                    if table_name in metadata.tables:\r\n                        table.drop(engine)\r\n                # Create table if it does not exist\r\n                metadata.create_all(engine)\r\n\r\n                with Session(engine) as session:\r\n                    \r\n                    if delete_before_insert:\r\n                        # Delete all existing records\r\n                        session.execute(delete(table))\r\n                        session.commit()\r\n\r\n                    # Insert new data\r\n                    for row in json_data:\r\n                        insert_stmt = table.insert().values(**row)\r\n                        session.execute(insert_stmt)\r\n                    session.commit()\r\n\r\n                self.status = \"Data inserted successfully\" if not delete_before_insert else \"Data deleted and inserted successfully\"\r\n            except SQLAlchemyError as e:\r\n                self.status = f\"Error inserting data: {str(e)}\"\r\n        else:\r\n            self.status = \"No data to insert\"\r\n\r\n        return Data(data={\"status\": self.status})\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "database_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "database_name",
+                "value": "database.db",
+                "display_name": "Database Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Name of the SQLite database file.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "delete_before_insert": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "delete_before_insert",
+                "value": false,
+                "display_name": "Delete Before Insert",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Delete existing records before inserting new data.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "drop_before_insert": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "drop_before_insert",
+                "value": false,
+                "display_name": "Drop Table Before Insert",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Drop table before inserting new data.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "table_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "table_name",
+                "value": "table_name",
+                "display_name": "Table Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Name of the table to insert data into.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Inserts list of data into a specified SQLite database and table.",
+            "icon": "database",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "SQLite3 inserting",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "insertion_status",
+                "display_name": "Insertion Status",
+                "method": "insert_data",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "database_name",
+              "table_name",
+              "data_list",
+              "delete_before_insert",
+              "drop_before_insert"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "SQLiteComponent-VZH1N"
+        },
+        "id": "SQLiteComponent-VZH1N",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "SQLiteComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "614946f4-0ad6-464c-94fb-b2c71d5a9e8b",
+    "name": "SQLite3 inserting",
+    "description": "Inserts list of data into a specified SQLite database and table.",
+    "is_component": true,
+    "liked_by_count": "5",
+    "downloads_count": "76",
+    "metadata": {
+      "SQLiteComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "SQLiteComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "data_list": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "trace_as_input": true,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "data_list",
+                  "value": "",
+                  "display_name": "Data List",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "List of Data objects to be inserted into the table.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\r\nfrom axiestudio.inputs import MessageTextInput, DataInput, BoolInput\r\nfrom axiestudio.template import Output\r\nfrom axiestudio.schema import Data\r\nfrom sqlalchemy import create_engine, Table, Column, MetaData, String, delete\r\nfrom sqlalchemy.exc import SQLAlchemyError\r\nfrom sqlalchemy.orm import Session\r\n\r\nclass SQLiteComponent(Component):\r\n    display_name = \"SQLite Inserter\"\r\n    description = \"Inserts list of data into a specified SQLite database and table.\"\r\n    icon = \"database\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"database_name\",\r\n            display_name=\"Database Name\",\r\n            info=\"Name of the SQLite database file.\",\r\n            required=True\r\n        ),\r\n        MessageTextInput(\r\n            name=\"table_name\",\r\n            display_name=\"Table Name\",\r\n            info=\"Name of the table to insert data into.\",\r\n            required=True\r\n        ),\r\n        DataInput(\r\n            name=\"data_list\",\r\n            display_name=\"Data List\",\r\n            info=\"List of Data objects to be inserted into the table.\",\r\n            required=True\r\n        ),\r\n        BoolInput(\r\n            name=\"delete_before_insert\",\r\n            display_name=\"Delete Before Insert\",\r\n            info=\"Delete existing records before inserting new data.\"\r\n        ),\r\n        BoolInput(\r\n            name=\"drop_before_insert\",\r\n            display_name=\"Drop Table Before Insert\",\r\n            info=\"Drop table before inserting new data.\"\r\n        )\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Insertion Status\", name=\"insertion_status\", method=\"insert_data\"),\r\n    ]\r\n\r\n    def insert_data(self) -> Data:\r\n        database_name = self.database_name\r\n        table_name = self.table_name\r\n        data_list = self.data_list\r\n        delete_before_insert = self.delete_before_insert if self.delete_before_insert is not None else True\r\n        drop_before_insert = self.drop_before_insert if self.drop_before_insert is not None else True\r\n        \r\n\r\n        # Convert list of Data objects to list of dictionaries\r\n        try:\r\n            json_data = [data.data for data in data_list]\r\n        except AttributeError:\r\n            return Data(data={\"error\": \"Invalid Data object format\"})\r\n\r\n        # Connect to the SQLite database using SQLAlchemy\r\n        engine = create_engine(f\"sqlite:///{database_name}\")\r\n        metadata = MetaData()\r\n\r\n        # Define the table structure dynamically based on JSON keys\r\n        if json_data:\r\n            columns = [Column(col, String) for col in json_data[0].keys()]\r\n            table = Table(table_name, metadata, *columns, extend_existing=True)\r\n\r\n            try:\r\n                \r\n                if drop_before_insert:\r\n                    # Reflect the table from the database\r\n                    metadata.reflect(bind=engine)\r\n                    if table_name in metadata.tables:\r\n                        table.drop(engine)\r\n                # Create table if it does not exist\r\n                metadata.create_all(engine)\r\n\r\n                with Session(engine) as session:\r\n                    \r\n                    if delete_before_insert:\r\n                        # Delete all existing records\r\n                        session.execute(delete(table))\r\n                        session.commit()\r\n\r\n                    # Insert new data\r\n                    for row in json_data:\r\n                        insert_stmt = table.insert().values(**row)\r\n                        session.execute(insert_stmt)\r\n                    session.commit()\r\n\r\n                self.status = \"Data inserted successfully\" if not delete_before_insert else \"Data deleted and inserted successfully\"\r\n            except SQLAlchemyError as e:\r\n                self.status = f\"Error inserting data: {str(e)}\"\r\n        else:\r\n            self.status = \"No data to insert\"\r\n\r\n        return Data(data={\"status\": self.status})\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "database_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "database_name",
+                  "value": "database.db",
+                  "display_name": "Database Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Name of the SQLite database file.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "delete_before_insert": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "delete_before_insert",
+                  "value": false,
+                  "display_name": "Delete Before Insert",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Delete existing records before inserting new data.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "drop_before_insert": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "drop_before_insert",
+                  "value": false,
+                  "display_name": "Drop Table Before Insert",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Drop table before inserting new data.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "table_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "table_name",
+                  "value": "table_name",
+                  "display_name": "Table Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Name of the table to insert data into.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Inserts list of data into a specified SQLite database and table.",
+              "icon": "database",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "SQLite3 inserting",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "insertion_status",
+                  "display_name": "Insertion Status",
+                  "method": "insert_data",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "database_name",
+                "table_name",
+                "data_list",
+                "delete_before_insert",
+                "drop_before_insert"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "SQLiteComponent-VZH1N"
+          },
+          "id": "SQLiteComponent-VZH1N",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-14T15:13:55.621Z",
+    "date_updated": "2024-08-14T15:13:55.650Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "cbc14150-3856-4a71-90b3-f9755a81b82b",
+    "user_created": {
+      "username": "Fabio Braga",
+      "first_name": "Fabio",
+      "last_name": "Braga",
+      "id": "cbc14150-3856-4a71-90b3-f9755a81b82b"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.342Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

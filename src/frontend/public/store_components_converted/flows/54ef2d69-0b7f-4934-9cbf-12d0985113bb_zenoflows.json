@@ -1,0 +1,799 @@
+{
+  "id": "54ef2d69-0b7f-4934-9cbf-12d0985113bb",
+  "name": "zenoflows",
+  "description": "Uncover Business Opportunities with NLP. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "sagarscaminosoftai",
+    "first_name": "sagar",
+    "last_name": "sharma",
+    "id": "8c6dc012-9525-4c9b-88fa-8241810659db",
+    "full_name": "sagar sharma"
+  },
+  "store_url": "https://www.langflow.store/store/component/54ef2d69-0b7f-4934-9cbf-12d0985113bb",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-06-03T06:39:16.798Z",
+    "updated": "2024-06-03T06:39:16.840Z",
+    "downloaded": "2025-08-19T17:50:05.348Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Memory",
+        "id": "e660a9ea-35fb-4587-bfbd-13dba4c556d1"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "APIRequest-J4DBz",
+        "type": "genericNode",
+        "position": {
+          "x": -222,
+          "y": -35.10000228881836
+        },
+        "data": {
+          "type": "APIRequest",
+          "node": {
+            "template": {
+              "body": {
+                "type": "Record",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "body",
+                "display_name": "Body",
+                "advanced": false,
+                "input_types": [
+                  "Record"
+                ],
+                "dynamic": false,
+                "info": "The body to send with the request (for POST, PATCH, PUT).",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "headers": {
+                "type": "Record",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "headers",
+                "display_name": "Headers",
+                "advanced": false,
+                "input_types": [
+                  "Record"
+                ],
+                "dynamic": false,
+                "info": "The headers to send with the request.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import asyncio\r\nimport json\r\nfrom typing import List, Optional\r\n\r\nimport httpx\r\nfrom axiestudio.interface.custom.custom_component import CustomComponent\r\nfrom axiestudio.schema import Record\r\n\r\nclass APIRequest(CustomComponent):\r\n    display_name: str = \"API Request\"\r\n    description: str = \"Make HTTP requests given one or more URLs.\"\r\n    output_types: list[str] = [\"Record\"]\r\n    documentation: str = \"https://docs.axiestudio.org/components/utilities#api-request\"\r\n    icon = \"Globe\"\r\n\r\n    field_config = {\r\n        \"urls\": {\"display_name\": \"URLs\", \"info\": \"URLs to make requests to.\"},\r\n        \"method\": {\r\n            \"display_name\": \"Method\",\r\n            \"info\": \"The HTTP method to use.\",\r\n            \"field_type\": \"str\",\r\n            \"options\": [\"GET\", \"POST\", \"PATCH\", \"PUT\"],\r\n            \"value\": \"GET\",\r\n        },\r\n        \"headers\": {\r\n            \"display_name\": \"Headers\",\r\n            \"info\": \"The headers to send with the request.\",\r\n            \"input_types\": [\"Record\"],\r\n        },\r\n        \"body\": {\r\n            \"display_name\": \"Body\",\r\n            \"info\": \"The body to send with the request (for POST, PATCH, PUT).\",\r\n            \"input_types\": [\"Record\"],\r\n        },\r\n        \"timeout\": {\r\n            \"display_name\": \"Timeout\",\r\n            \"field_type\": \"int\",\r\n            \"info\": \"The timeout to use for the request.\",\r\n            \"value\": 5,\r\n        },\r\n    }\r\n\r\n    async def make_request(\r\n        self,\r\n        client: httpx.AsyncClient,\r\n        method: str,\r\n        url: str,\r\n        headers: Optional[dict] = None,\r\n        body: Optional[dict] = None,\r\n        timeout: int = 5,\r\n    ) -> Record:\r\n        method = method.upper()\r\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\r\n            raise ValueError(f\"Unsupported method: {method}\")\r\n\r\n        data = body if body else None\r\n        payload = json.dumps(data)\r\n\r\n        try:\r\n            response = await client.request(method, url, headers=headers, content=payload, timeout=timeout)\r\n            try:\r\n                result = response.json()\r\n            except Exception:\r\n                result = response.text\r\n            return Record(\r\n                data={\r\n                    \"source\": url,\r\n                    \"headers\": headers,\r\n                    \"status_code\": response.status_code,\r\n                    \"result\": result,\r\n                },\r\n            )\r\n        except httpx.TimeoutException:\r\n            return Record(\r\n                data={\r\n                    \"source\": url,\r\n                    \"headers\": headers,\r\n                    \"status_code\": 408,\r\n                    \"error\": \"Request timed out\",\r\n                },\r\n            )\r\n        except Exception as exc:\r\n            return Record(\r\n                data={\r\n                    \"source\": url,\r\n                    \"headers\": headers,\r\n                    \"status_code\": 500,\r\n                    \"error\": str(exc),\r\n                },\r\n            )\r\n\r\n    async def build(\r\n        self,\r\n        method: str,\r\n        urls: List[str],\r\n        token: Optional[str] = None,\r\n        username: Optional[str] = None,\r\n        password: Optional[str] = None,\r\n        headers: Optional[Record] = None,\r\n        body: Optional[Record] = None,\r\n        timeout: int = 5,\r\n    ) -> List[Record]:\r\n        headers_dict = {}\r\n\r\n        # Combine headers from field_config and token\r\n        if headers:\r\n            headers_dict.update(headers.data)\r\n\r\n        # Add authentication headers based on provided credentials\r\n        if token:\r\n            headers_dict[\"Authorization\"] = f\"Bearer {token}\"\r\n        elif username and password:\r\n            auth = (username, password)\r\n            headers_dict[\"Authorization\"] = f\"Basic {auth}\"\r\n\r\n        bodies = []\r\n        if body:\r\n            if isinstance(body, list):\r\n                bodies = [b.data for b in body]\r\n            else:\r\n                bodies = [body.data]\r\n\r\n        if len(urls) != len(bodies):\r\n            bodies += [None] * (len(urls) - len(bodies))\r\n\r\n        async with httpx.AsyncClient() as client:\r\n            results = await asyncio.gather(\r\n                *[self.make_request(client, method, u, headers_dict, rec, timeout) for u, rec in zip(urls, bodies)]\r\n            )\r\n\r\n        self.status = results\r\n        return results\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "method": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "POST",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "GET",
+                  "POST",
+                  "PATCH",
+                  "PUT"
+                ],
+                "name": "method",
+                "display_name": "Method",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The HTTP method to use.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "password": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "password",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "shivam"
+              },
+              "timeout": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 5,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "timeout",
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The timeout to use for the request.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "token": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "token",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "urls": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "urls",
+                "display_name": "URLs",
+                "advanced": false,
+                "dynamic": false,
+                "info": "URLs to make requests to.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": [
+                  "https://coreapi.genmat.org/api/v1/login"
+                ]
+              },
+              "username": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "username",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "shivam"
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Make HTTP requests given one or more URLs.",
+            "icon": "Globe",
+            "base_classes": [
+              "Record"
+            ],
+            "display_name": "API Request",
+            "documentation": "https://docs.axiestudio.org/components/utilities#api-request",
+            "custom_fields": {
+              "method": null,
+              "urls": null,
+              "token": null,
+              "username": null,
+              "password": null,
+              "headers": null,
+              "body": null,
+              "timeout": null
+            },
+            "output_types": [
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "urls",
+              "method",
+              "headers",
+              "body",
+              "timeout"
+            ],
+            "beta": false
+          },
+          "id": "APIRequest-J4DBz",
+          "description": "Make HTTP requests given one or more URLs.",
+          "display_name": "API Request"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 836
+      },
+      {
+        "id": "RecordsOutput-2rK66",
+        "type": "genericNode",
+        "position": {
+          "x": 465.05803229267957,
+          "y": 183.90543029802754
+        },
+        "data": {
+          "type": "RecordsOutput",
+          "node": {
+            "template": {
+              "input_value": {
+                "type": "Record",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import CustomComponent\nfrom axiestudio.schema import Record\n\n\nclass RecordsOutput(CustomComponent):\n    display_name = \"Records Output\"\n    description = \"Display Records as a Table\"\n\n    def build(self, input_value: Record) -> Record:\n        return input_value\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Display Records as a Table",
+            "base_classes": [
+              "Record"
+            ],
+            "display_name": "Records Output",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null
+            },
+            "output_types": [
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "RecordsOutput-2rK66"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 242
+      }
+    ],
+    "edges": [
+      {
+        "source": "APIRequest-J4DBz",
+        "target": "RecordsOutput-2rK66",
+        "sourceHandle": "{œbaseClassesœ:[œRecordœ],œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-J4DBzœ}",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œRecordsOutput-2rK66œ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+        "id": "reactflow__edge-APIRequest-J4DBz{œbaseClassesœ:[œRecordœ],œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-J4DBzœ}-RecordsOutput-2rK66{œfieldNameœ:œinput_valueœ,œidœ:œRecordsOutput-2rK66œ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "RecordsOutput-2rK66",
+            "inputTypes": null,
+            "type": "Record"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "Record"
+            ],
+            "dataType": "APIRequest",
+            "id": "APIRequest-J4DBz"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 ",
+        "selected": false
+      }
+    ],
+    "viewport": {
+      "x": 203.62972376280416,
+      "y": 105.44502836053995,
+      "zoom": 0.4327862847832753
+    }
+  },
+  "metadata": {
+    "APIRequest": {
+      "count": 1
+    },
+    "RecordsOutput": {
+      "count": 1
+    },
+    "total": 2
+  },
+  "original": {
+    "id": "54ef2d69-0b7f-4934-9cbf-12d0985113bb",
+    "name": "zenoflows",
+    "description": "Uncover Business Opportunities with NLP.",
+    "is_component": false,
+    "liked_by_count": "4",
+    "downloads_count": "34",
+    "metadata": {
+      "APIRequest": {
+        "count": 1
+      },
+      "RecordsOutput": {
+        "count": 1
+      },
+      "total": 2
+    },
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "APIRequest-J4DBz",
+          "type": "genericNode",
+          "position": {
+            "x": -222,
+            "y": -35.10000228881836
+          },
+          "data": {
+            "type": "APIRequest",
+            "node": {
+              "template": {
+                "body": {
+                  "type": "Record",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "body",
+                  "display_name": "Body",
+                  "advanced": false,
+                  "input_types": [
+                    "Record"
+                  ],
+                  "dynamic": false,
+                  "info": "The body to send with the request (for POST, PATCH, PUT).",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "headers": {
+                  "type": "Record",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "headers",
+                  "display_name": "Headers",
+                  "advanced": false,
+                  "input_types": [
+                    "Record"
+                  ],
+                  "dynamic": false,
+                  "info": "The headers to send with the request.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import asyncio\r\nimport json\r\nfrom typing import List, Optional\r\n\r\nimport httpx\r\nfrom axiestudio.interface.custom.custom_component import CustomComponent\r\nfrom axiestudio.schema import Record\r\n\r\nclass APIRequest(CustomComponent):\r\n    display_name: str = \"API Request\"\r\n    description: str = \"Make HTTP requests given one or more URLs.\"\r\n    output_types: list[str] = [\"Record\"]\r\n    documentation: str = \"https://docs.axiestudio.org/components/utilities#api-request\"\r\n    icon = \"Globe\"\r\n\r\n    field_config = {\r\n        \"urls\": {\"display_name\": \"URLs\", \"info\": \"URLs to make requests to.\"},\r\n        \"method\": {\r\n            \"display_name\": \"Method\",\r\n            \"info\": \"The HTTP method to use.\",\r\n            \"field_type\": \"str\",\r\n            \"options\": [\"GET\", \"POST\", \"PATCH\", \"PUT\"],\r\n            \"value\": \"GET\",\r\n        },\r\n        \"headers\": {\r\n            \"display_name\": \"Headers\",\r\n            \"info\": \"The headers to send with the request.\",\r\n            \"input_types\": [\"Record\"],\r\n        },\r\n        \"body\": {\r\n            \"display_name\": \"Body\",\r\n            \"info\": \"The body to send with the request (for POST, PATCH, PUT).\",\r\n            \"input_types\": [\"Record\"],\r\n        },\r\n        \"timeout\": {\r\n            \"display_name\": \"Timeout\",\r\n            \"field_type\": \"int\",\r\n            \"info\": \"The timeout to use for the request.\",\r\n            \"value\": 5,\r\n        },\r\n    }\r\n\r\n    async def make_request(\r\n        self,\r\n        client: httpx.AsyncClient,\r\n        method: str,\r\n        url: str,\r\n        headers: Optional[dict] = None,\r\n        body: Optional[dict] = None,\r\n        timeout: int = 5,\r\n    ) -> Record:\r\n        method = method.upper()\r\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\r\n            raise ValueError(f\"Unsupported method: {method}\")\r\n\r\n        data = body if body else None\r\n        payload = json.dumps(data)\r\n\r\n        try:\r\n            response = await client.request(method, url, headers=headers, content=payload, timeout=timeout)\r\n            try:\r\n                result = response.json()\r\n            except Exception:\r\n                result = response.text\r\n            return Record(\r\n                data={\r\n                    \"source\": url,\r\n                    \"headers\": headers,\r\n                    \"status_code\": response.status_code,\r\n                    \"result\": result,\r\n                },\r\n            )\r\n        except httpx.TimeoutException:\r\n            return Record(\r\n                data={\r\n                    \"source\": url,\r\n                    \"headers\": headers,\r\n                    \"status_code\": 408,\r\n                    \"error\": \"Request timed out\",\r\n                },\r\n            )\r\n        except Exception as exc:\r\n            return Record(\r\n                data={\r\n                    \"source\": url,\r\n                    \"headers\": headers,\r\n                    \"status_code\": 500,\r\n                    \"error\": str(exc),\r\n                },\r\n            )\r\n\r\n    async def build(\r\n        self,\r\n        method: str,\r\n        urls: List[str],\r\n        token: Optional[str] = None,\r\n        username: Optional[str] = None,\r\n        password: Optional[str] = None,\r\n        headers: Optional[Record] = None,\r\n        body: Optional[Record] = None,\r\n        timeout: int = 5,\r\n    ) -> List[Record]:\r\n        headers_dict = {}\r\n\r\n        # Combine headers from field_config and token\r\n        if headers:\r\n            headers_dict.update(headers.data)\r\n\r\n        # Add authentication headers based on provided credentials\r\n        if token:\r\n            headers_dict[\"Authorization\"] = f\"Bearer {token}\"\r\n        elif username and password:\r\n            auth = (username, password)\r\n            headers_dict[\"Authorization\"] = f\"Basic {auth}\"\r\n\r\n        bodies = []\r\n        if body:\r\n            if isinstance(body, list):\r\n                bodies = [b.data for b in body]\r\n            else:\r\n                bodies = [body.data]\r\n\r\n        if len(urls) != len(bodies):\r\n            bodies += [None] * (len(urls) - len(bodies))\r\n\r\n        async with httpx.AsyncClient() as client:\r\n            results = await asyncio.gather(\r\n                *[self.make_request(client, method, u, headers_dict, rec, timeout) for u, rec in zip(urls, bodies)]\r\n            )\r\n\r\n        self.status = results\r\n        return results\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "method": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "POST",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "GET",
+                    "POST",
+                    "PATCH",
+                    "PUT"
+                  ],
+                  "name": "method",
+                  "display_name": "Method",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The HTTP method to use.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "password": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "password",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "shivam"
+                },
+                "timeout": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 5,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "timeout",
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The timeout to use for the request.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "token": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "token",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "urls": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "urls",
+                  "display_name": "URLs",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "URLs to make requests to.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": [
+                    "https://coreapi.genmat.org/api/v1/login"
+                  ]
+                },
+                "username": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "username",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "shivam"
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Make HTTP requests given one or more URLs.",
+              "icon": "Globe",
+              "base_classes": [
+                "Record"
+              ],
+              "display_name": "API Request",
+              "documentation": "https://docs.axiestudio.org/components/utilities#api-request",
+              "custom_fields": {
+                "method": null,
+                "urls": null,
+                "token": null,
+                "username": null,
+                "password": null,
+                "headers": null,
+                "body": null,
+                "timeout": null
+              },
+              "output_types": [
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "urls",
+                "method",
+                "headers",
+                "body",
+                "timeout"
+              ],
+              "beta": false
+            },
+            "id": "APIRequest-J4DBz",
+            "description": "Make HTTP requests given one or more URLs.",
+            "display_name": "API Request"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 836
+        },
+        {
+          "id": "RecordsOutput-2rK66",
+          "type": "genericNode",
+          "position": {
+            "x": 465.05803229267957,
+            "y": 183.90543029802754
+          },
+          "data": {
+            "type": "RecordsOutput",
+            "node": {
+              "template": {
+                "input_value": {
+                  "type": "Record",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import CustomComponent\nfrom axiestudio.schema import Record\n\n\nclass RecordsOutput(CustomComponent):\n    display_name = \"Records Output\"\n    description = \"Display Records as a Table\"\n\n    def build(self, input_value: Record) -> Record:\n        return input_value\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Display Records as a Table",
+              "base_classes": [
+                "Record"
+              ],
+              "display_name": "Records Output",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null
+              },
+              "output_types": [
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "RecordsOutput-2rK66"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 242
+        }
+      ],
+      "edges": [
+        {
+          "source": "APIRequest-J4DBz",
+          "target": "RecordsOutput-2rK66",
+          "sourceHandle": "{œbaseClassesœ:[œRecordœ],œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-J4DBzœ}",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œRecordsOutput-2rK66œ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+          "id": "reactflow__edge-APIRequest-J4DBz{œbaseClassesœ:[œRecordœ],œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-J4DBzœ}-RecordsOutput-2rK66{œfieldNameœ:œinput_valueœ,œidœ:œRecordsOutput-2rK66œ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "RecordsOutput-2rK66",
+              "inputTypes": null,
+              "type": "Record"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "Record"
+              ],
+              "dataType": "APIRequest",
+              "id": "APIRequest-J4DBz"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 ",
+          "selected": false
+        }
+      ],
+      "viewport": {
+        "x": 203.62972376280416,
+        "y": 105.44502836053995,
+        "zoom": 0.4327862847832753
+      }
+    },
+    "date_created": "2024-06-03T06:39:16.798Z",
+    "date_updated": "2024-06-03T06:39:16.840Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "8c6dc012-9525-4c9b-88fa-8241810659db",
+    "user_created": {
+      "username": "sagarscaminosoftai",
+      "first_name": "sagar",
+      "last_name": "sharma",
+      "id": "8c6dc012-9525-4c9b-88fa-8241810659db"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Memory",
+          "id": "e660a9ea-35fb-4587-bfbd-13dba4c556d1"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:58.095Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 12,
+    "converter_version": "1.0.0"
+  }
+}

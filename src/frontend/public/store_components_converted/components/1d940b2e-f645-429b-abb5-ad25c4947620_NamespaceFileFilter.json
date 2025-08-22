@@ -1,0 +1,561 @@
+{
+  "id": "1d940b2e-f645-429b-abb5-ad25c4947620",
+  "name": "NamespaceFileFilter",
+  "description": "Load and filter files using their names as namespaces, with support for exclusion lists. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "MarceloSMiranda",
+    "first_name": "Marcelo",
+    "last_name": "Miranda",
+    "id": "0bfa5b3f-b077-4257-b45f-4c8adcfc64bc",
+    "full_name": "Marcelo Miranda"
+  },
+  "store_url": "https://www.langflow.store/store/component/1d940b2e-f645-429b-abb5-ad25c4947620",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-11-01T19:07:37.959Z",
+    "updated": "2024-11-01T19:07:37.995Z",
+    "downloaded": "2025-08-19T17:50:07.534Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "NamespaceFileFilter",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List, Optional, Tuple\r\n\r\nfrom axiestudio.base.data.utils import (\r\n    TEXT_FILE_TYPES,\r\n    parallel_load_data,\r\n    parse_text_file_to_data,\r\n    retrieve_file_paths,\r\n)\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import BoolInput, IntInput, MessageTextInput\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.template import Output\r\nimport os\r\n\r\n\r\nclass NamespaceFileFilter(Component):\r\n    \"\"\"\r\n    NamespaceFileFilter - Version 1.0\r\n    Created by Claude (Anthropic) - GitHub: anthropics\r\n    \r\n    A component that loads files from a directory and filters them based on their namespaces\r\n    (derived from filenames). Each file's name becomes its namespace, allowing for\r\n    selective processing by excluding specific namespaces. Supports multiple file types,\r\n    recursive directory scanning, and parallel processing.\r\n    \"\"\"\r\n\r\n    display_name = \"Namespace File Filter\"\r\n    description = \"Load and filter files using their names as namespaces, with support for exclusion lists.\"\r\n    icon = \"folder\"\r\n    color = \"#87CEEB\"\r\n    beta = False\r\n    version = \"1.0\"\r\n    name = \"NamespaceFileFilter\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"path\",\r\n            display_name=\"Directory Path\",\r\n            info=\"Path to the directory containing the files to process.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"exclude_namespaces\",\r\n            display_name=\"Exclude Namespaces\",\r\n            info=\"List of namespaces (filenames without extension) to exclude from processing. Comma-separated or as a list.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"types\",\r\n            display_name=\"File Types\",\r\n            info=\"File extensions to process (e.g., .txt, .md). Leave empty for default supported types.\",\r\n            is_list=True,\r\n        ),\r\n        IntInput(\r\n            name=\"depth\",\r\n            display_name=\"Search Depth\",\r\n            info=\"Maximum directory depth for file search. 0 for unlimited.\",\r\n            value=0,\r\n        ),\r\n        IntInput(\r\n            name=\"max_concurrency\",\r\n            display_name=\"Max Concurrency\",\r\n            advanced=True,\r\n            info=\"Maximum number of parallel processes for file loading.\",\r\n            value=2,\r\n        ),\r\n        BoolInput(\r\n            name=\"load_hidden\",\r\n            display_name=\"Load Hidden Files\",\r\n            advanced=True,\r\n            info=\"Include hidden files and directories in processing.\",\r\n        ),\r\n        BoolInput(\r\n            name=\"recursive\",\r\n            display_name=\"Recursive Search\",\r\n            advanced=True,\r\n            info=\"Search for files in subdirectories.\",\r\n        ),\r\n        BoolInput(\r\n            name=\"silent_errors\",\r\n            display_name=\"Silent Errors\",\r\n            advanced=True,\r\n            info=\"Suppress error exceptions during file processing.\",\r\n        ),\r\n        BoolInput(\r\n            name=\"use_multithreading\",\r\n            display_name=\"Use Multithreading\",\r\n            advanced=True,\r\n            info=\"Enable parallel file processing using multiple threads.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Filtered Files\", name=\"data\", method=\"load_directory\"),\r\n    ]\r\n\r\n    def parse_exclude_list(self, exclude_string: str) -> List[str]:\r\n        \"\"\"\r\n        Parse the exclude string into a list of namespaces to exclude.\r\n        Handles both comma-separated strings and list representations.\r\n        \r\n        Args:\r\n            exclude_string: String containing namespaces to exclude (e.g., \"namespace1, namespace2\" or \"[namespace1, namespace2]\")\r\n            \r\n        Returns:\r\n            List of namespace strings to exclude\r\n        \"\"\"\r\n        if not exclude_string:\r\n            return []\r\n\r\n        try:\r\n            # Remove brackets and clean the string\r\n            cleaned_string = exclude_string.strip('[]').strip()\r\n\r\n            if not cleaned_string:\r\n                return []\r\n\r\n            # Split by comma and clean each item\r\n            items = [\r\n                item.strip().strip(\"'\").strip('\"')\r\n                for item in cleaned_string.split(',')\r\n                if item.strip()\r\n            ]\r\n\r\n            return items\r\n\r\n        except Exception as e:\r\n            self.status = f\"Warning: Error parsing exclude list: {str(e)}\"\r\n            return []\r\n\r\n    def process_file_data(\r\n        self, \r\n        text_data: Tuple[str, str], \r\n        file_path: str, \r\n        exclude_list: List[str]\r\n    ) -> Optional[Data]:\r\n        \"\"\"\r\n        Process a single file's data and create a Data object if its namespace is not excluded.\r\n        The namespace is derived from the filename without extension.\r\n        \r\n        Args:\r\n            text_data: Tuple containing the file's text content\r\n            file_path: Path to the processed file\r\n            exclude_list: List of namespaces to exclude\r\n            \r\n        Returns:\r\n            Data object if file's namespace is not excluded, None if excluded\r\n        \"\"\"\r\n        filename_with_ext = os.path.basename(file_path)\r\n        filename, _ = os.path.splitext(filename_with_ext)  # filename becomes the namespace\r\n\r\n        if filename not in exclude_list:\r\n            return Data(\r\n                text=text_data.text,\r\n                data={'namespace': filename}\r\n            )\r\n        return None\r\n\r\n    def load_directory(self) -> List[Data]:\r\n        \"\"\"\r\n        Load files from directory and filter them based on namespaces.\r\n        Files whose names (without extension) match entries in the exclude list\r\n        will be filtered out.\r\n        \r\n        Returns:\r\n            List of Data objects for files that weren't excluded by namespace\r\n        \"\"\"\r\n        # Initialize parameters\r\n        file_types = self.types if self.types and self.types != [\"\"] else TEXT_FILE_TYPES\r\n        exclude_list = self.parse_exclude_list(self.exclude_namespaces)\r\n\r\n        # Resolve path and get file list\r\n        resolved_path = self.resolve_path(self.path)\r\n        file_paths = retrieve_file_paths(\r\n            resolved_path,\r\n            self.load_hidden,\r\n            self.recursive,\r\n            self.depth,\r\n            file_types\r\n        )\r\n\r\n        # Filter files by type if specified\r\n        if file_types:\r\n            file_paths = [\r\n                fp for fp in file_paths \r\n                if any(fp.endswith(ext) for ext in file_types)\r\n            ]\r\n\r\n        # Load file content\r\n        if self.use_multithreading:\r\n            loaded_texts = parallel_load_data(\r\n                file_paths,\r\n                self.silent_errors,\r\n                self.max_concurrency\r\n            )\r\n        else:\r\n            loaded_texts = [\r\n                parse_text_file_to_data(file_path, self.silent_errors)\r\n                for file_path in file_paths\r\n            ]\r\n\r\n        # Filter out None results and process data, excluding specified namespaces\r\n        loaded_texts = list(filter(None, loaded_texts))\r\n        loaded_data = []\r\n\r\n        for text, file_path in zip(loaded_texts, file_paths):\r\n            processed_data = self.process_file_data(text, file_path, exclude_list)\r\n            if processed_data:\r\n                loaded_data.append(processed_data)\r\n\r\n        self.status = f\"Processed {len(file_paths)} files, {len(loaded_data)} passed namespace filtering\"\r\n        return loaded_data",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "depth": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "depth",
+                "value": 0,
+                "display_name": "Search Depth",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Maximum directory depth for file search. 0 for unlimited.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "exclude_namespaces": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "exclude_namespaces",
+                "value": "",
+                "display_name": "Exclude Namespaces",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "List of namespaces (filenames without extension) to exclude from processing. Comma-separated or as a list.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "load_hidden": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "load_hidden",
+                "value": false,
+                "display_name": "Load Hidden Files",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Include hidden files and directories in processing.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "max_concurrency": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_concurrency",
+                "value": 2,
+                "display_name": "Max Concurrency",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Maximum number of parallel processes for file loading.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "path": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "path",
+                "value": "D:\\LangFlow\\Propostas",
+                "display_name": "Directory Path",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Path to the directory containing the files to process.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "recursive": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "recursive",
+                "value": false,
+                "display_name": "Recursive Search",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Search for files in subdirectories.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "silent_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "silent_errors",
+                "value": false,
+                "display_name": "Silent Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Suppress error exceptions during file processing.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "types": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "types",
+                "value": "",
+                "display_name": "File Types",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "File extensions to process (e.g., .txt, .md). Leave empty for default supported types.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "use_multithreading": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "use_multithreading",
+                "value": false,
+                "display_name": "Use Multithreading",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Enable parallel file processing using multiple threads.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Load and filter files using their names as namespaces, with support for exclusion lists.",
+            "icon": "folder",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "NamespaceFileFilter",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Filtered Files",
+                "method": "load_directory",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "path",
+              "exclude_namespaces",
+              "types",
+              "depth",
+              "max_concurrency",
+              "load_hidden",
+              "recursive",
+              "silent_errors",
+              "use_multithreading"
+            ],
+            "beta": false,
+            "edited": true,
+            "metadata": {},
+            "lf_version": "1.0.19.post2",
+            "official": false
+          },
+          "id": "Directory-Yue3b"
+        },
+        "id": "Directory-Yue3b",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Directory": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "1d940b2e-f645-429b-abb5-ad25c4947620",
+    "name": "NamespaceFileFilter",
+    "description": "Load and filter files using their names as namespaces, with support for exclusion lists.",
+    "is_component": true,
+    "liked_by_count": "2",
+    "downloads_count": "14",
+    "metadata": {
+      "Directory": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "NamespaceFileFilter",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List, Optional, Tuple\r\n\r\nfrom axiestudio.base.data.utils import (\r\n    TEXT_FILE_TYPES,\r\n    parallel_load_data,\r\n    parse_text_file_to_data,\r\n    retrieve_file_paths,\r\n)\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import BoolInput, IntInput, MessageTextInput\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.template import Output\r\nimport os\r\n\r\n\r\nclass NamespaceFileFilter(Component):\r\n    \"\"\"\r\n    NamespaceFileFilter - Version 1.0\r\n    Created by Claude (Anthropic) - GitHub: anthropics\r\n    \r\n    A component that loads files from a directory and filters them based on their namespaces\r\n    (derived from filenames). Each file's name becomes its namespace, allowing for\r\n    selective processing by excluding specific namespaces. Supports multiple file types,\r\n    recursive directory scanning, and parallel processing.\r\n    \"\"\"\r\n\r\n    display_name = \"Namespace File Filter\"\r\n    description = \"Load and filter files using their names as namespaces, with support for exclusion lists.\"\r\n    icon = \"folder\"\r\n    color = \"#87CEEB\"\r\n    beta = False\r\n    version = \"1.0\"\r\n    name = \"NamespaceFileFilter\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"path\",\r\n            display_name=\"Directory Path\",\r\n            info=\"Path to the directory containing the files to process.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"exclude_namespaces\",\r\n            display_name=\"Exclude Namespaces\",\r\n            info=\"List of namespaces (filenames without extension) to exclude from processing. Comma-separated or as a list.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"types\",\r\n            display_name=\"File Types\",\r\n            info=\"File extensions to process (e.g., .txt, .md). Leave empty for default supported types.\",\r\n            is_list=True,\r\n        ),\r\n        IntInput(\r\n            name=\"depth\",\r\n            display_name=\"Search Depth\",\r\n            info=\"Maximum directory depth for file search. 0 for unlimited.\",\r\n            value=0,\r\n        ),\r\n        IntInput(\r\n            name=\"max_concurrency\",\r\n            display_name=\"Max Concurrency\",\r\n            advanced=True,\r\n            info=\"Maximum number of parallel processes for file loading.\",\r\n            value=2,\r\n        ),\r\n        BoolInput(\r\n            name=\"load_hidden\",\r\n            display_name=\"Load Hidden Files\",\r\n            advanced=True,\r\n            info=\"Include hidden files and directories in processing.\",\r\n        ),\r\n        BoolInput(\r\n            name=\"recursive\",\r\n            display_name=\"Recursive Search\",\r\n            advanced=True,\r\n            info=\"Search for files in subdirectories.\",\r\n        ),\r\n        BoolInput(\r\n            name=\"silent_errors\",\r\n            display_name=\"Silent Errors\",\r\n            advanced=True,\r\n            info=\"Suppress error exceptions during file processing.\",\r\n        ),\r\n        BoolInput(\r\n            name=\"use_multithreading\",\r\n            display_name=\"Use Multithreading\",\r\n            advanced=True,\r\n            info=\"Enable parallel file processing using multiple threads.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Filtered Files\", name=\"data\", method=\"load_directory\"),\r\n    ]\r\n\r\n    def parse_exclude_list(self, exclude_string: str) -> List[str]:\r\n        \"\"\"\r\n        Parse the exclude string into a list of namespaces to exclude.\r\n        Handles both comma-separated strings and list representations.\r\n        \r\n        Args:\r\n            exclude_string: String containing namespaces to exclude (e.g., \"namespace1, namespace2\" or \"[namespace1, namespace2]\")\r\n            \r\n        Returns:\r\n            List of namespace strings to exclude\r\n        \"\"\"\r\n        if not exclude_string:\r\n            return []\r\n\r\n        try:\r\n            # Remove brackets and clean the string\r\n            cleaned_string = exclude_string.strip('[]').strip()\r\n\r\n            if not cleaned_string:\r\n                return []\r\n\r\n            # Split by comma and clean each item\r\n            items = [\r\n                item.strip().strip(\"'\").strip('\"')\r\n                for item in cleaned_string.split(',')\r\n                if item.strip()\r\n            ]\r\n\r\n            return items\r\n\r\n        except Exception as e:\r\n            self.status = f\"Warning: Error parsing exclude list: {str(e)}\"\r\n            return []\r\n\r\n    def process_file_data(\r\n        self, \r\n        text_data: Tuple[str, str], \r\n        file_path: str, \r\n        exclude_list: List[str]\r\n    ) -> Optional[Data]:\r\n        \"\"\"\r\n        Process a single file's data and create a Data object if its namespace is not excluded.\r\n        The namespace is derived from the filename without extension.\r\n        \r\n        Args:\r\n            text_data: Tuple containing the file's text content\r\n            file_path: Path to the processed file\r\n            exclude_list: List of namespaces to exclude\r\n            \r\n        Returns:\r\n            Data object if file's namespace is not excluded, None if excluded\r\n        \"\"\"\r\n        filename_with_ext = os.path.basename(file_path)\r\n        filename, _ = os.path.splitext(filename_with_ext)  # filename becomes the namespace\r\n\r\n        if filename not in exclude_list:\r\n            return Data(\r\n                text=text_data.text,\r\n                data={'namespace': filename}\r\n            )\r\n        return None\r\n\r\n    def load_directory(self) -> List[Data]:\r\n        \"\"\"\r\n        Load files from directory and filter them based on namespaces.\r\n        Files whose names (without extension) match entries in the exclude list\r\n        will be filtered out.\r\n        \r\n        Returns:\r\n            List of Data objects for files that weren't excluded by namespace\r\n        \"\"\"\r\n        # Initialize parameters\r\n        file_types = self.types if self.types and self.types != [\"\"] else TEXT_FILE_TYPES\r\n        exclude_list = self.parse_exclude_list(self.exclude_namespaces)\r\n\r\n        # Resolve path and get file list\r\n        resolved_path = self.resolve_path(self.path)\r\n        file_paths = retrieve_file_paths(\r\n            resolved_path,\r\n            self.load_hidden,\r\n            self.recursive,\r\n            self.depth,\r\n            file_types\r\n        )\r\n\r\n        # Filter files by type if specified\r\n        if file_types:\r\n            file_paths = [\r\n                fp for fp in file_paths \r\n                if any(fp.endswith(ext) for ext in file_types)\r\n            ]\r\n\r\n        # Load file content\r\n        if self.use_multithreading:\r\n            loaded_texts = parallel_load_data(\r\n                file_paths,\r\n                self.silent_errors,\r\n                self.max_concurrency\r\n            )\r\n        else:\r\n            loaded_texts = [\r\n                parse_text_file_to_data(file_path, self.silent_errors)\r\n                for file_path in file_paths\r\n            ]\r\n\r\n        # Filter out None results and process data, excluding specified namespaces\r\n        loaded_texts = list(filter(None, loaded_texts))\r\n        loaded_data = []\r\n\r\n        for text, file_path in zip(loaded_texts, file_paths):\r\n            processed_data = self.process_file_data(text, file_path, exclude_list)\r\n            if processed_data:\r\n                loaded_data.append(processed_data)\r\n\r\n        self.status = f\"Processed {len(file_paths)} files, {len(loaded_data)} passed namespace filtering\"\r\n        return loaded_data",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "depth": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "depth",
+                  "value": 0,
+                  "display_name": "Search Depth",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Maximum directory depth for file search. 0 for unlimited.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "exclude_namespaces": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "exclude_namespaces",
+                  "value": "",
+                  "display_name": "Exclude Namespaces",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "List of namespaces (filenames without extension) to exclude from processing. Comma-separated or as a list.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "load_hidden": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "load_hidden",
+                  "value": false,
+                  "display_name": "Load Hidden Files",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Include hidden files and directories in processing.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "max_concurrency": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_concurrency",
+                  "value": 2,
+                  "display_name": "Max Concurrency",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Maximum number of parallel processes for file loading.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "path": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "path",
+                  "value": "D:\\LangFlow\\Propostas",
+                  "display_name": "Directory Path",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Path to the directory containing the files to process.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "recursive": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "recursive",
+                  "value": false,
+                  "display_name": "Recursive Search",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Search for files in subdirectories.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "silent_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "silent_errors",
+                  "value": false,
+                  "display_name": "Silent Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Suppress error exceptions during file processing.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "types": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "types",
+                  "value": "",
+                  "display_name": "File Types",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "File extensions to process (e.g., .txt, .md). Leave empty for default supported types.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "use_multithreading": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "use_multithreading",
+                  "value": false,
+                  "display_name": "Use Multithreading",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Enable parallel file processing using multiple threads.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Load and filter files using their names as namespaces, with support for exclusion lists.",
+              "icon": "folder",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "NamespaceFileFilter",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Filtered Files",
+                  "method": "load_directory",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "path",
+                "exclude_namespaces",
+                "types",
+                "depth",
+                "max_concurrency",
+                "load_hidden",
+                "recursive",
+                "silent_errors",
+                "use_multithreading"
+              ],
+              "beta": false,
+              "edited": true,
+              "metadata": {},
+              "lf_version": "1.0.19.post2",
+              "official": false
+            },
+            "id": "Directory-Yue3b"
+          },
+          "id": "Directory-Yue3b",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-11-01T19:07:37.959Z",
+    "date_updated": "2024-11-01T19:07:37.995Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "0bfa5b3f-b077-4257-b45f-4c8adcfc64bc",
+    "user_created": {
+      "username": "MarceloSMiranda",
+      "first_name": "Marcelo",
+      "last_name": "Miranda",
+      "id": "0bfa5b3f-b077-4257-b45f-4c8adcfc64bc"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.164Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

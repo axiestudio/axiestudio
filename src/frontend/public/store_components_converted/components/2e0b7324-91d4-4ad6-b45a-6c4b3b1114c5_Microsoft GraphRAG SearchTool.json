@@ -1,0 +1,389 @@
+{
+  "id": "2e0b7324-91d4-4ad6-b45a-6c4b3b1114c5",
+  "name": "Microsoft GraphRAG SearchTool",
+  "description": "A component that uses GraphRag to search data. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "yamon",
+    "first_name": "YamonCompany",
+    "last_name": "kim",
+    "id": "23c5d1e9-66fe-4789-85da-d07be25ec3cc",
+    "full_name": "YamonCompany kim"
+  },
+  "store_url": "https://www.langflow.store/store/component/2e0b7324-91d4-4ad6-b45a-6c4b3b1114c5",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-23T08:44:45.620Z",
+    "updated": "2024-07-23T08:44:45.723Z",
+    "downloaded": "2025-08-19T17:50:06.323Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.12",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "GraphRagSearchTool",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.io import DropdownInput, Output, MessageTextInput\r\n\r\nfrom langchain.agents import Tool\r\nfrom langchain.tools import StructuredTool\r\n\r\nfrom axiestudio.custom import Component\r\n\r\n\r\nclass GraphRagSearchTool(Component):\r\n    display_name = \"Microsoft GraphRAG SearchTool\"\r\n    description = \"A component that uses GraphRag to search data.\"\r\n    name = \"GraphRagSearchTool\"\r\n    \r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"tool_name\",\r\n            display_name=\"Tool Name\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"persist_directory\",\r\n            display_name=\"Persist Directory\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"search_type\",\r\n            display_name=\"Search Type\",\r\n            advanced=False,\r\n            options=[\r\n                \"local\",\r\n                \"global\",\r\n            ],\r\n            value=\"local\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"search_query\",\r\n            display_name=\"Search Query\",\r\n            is_list=True,\r\n        ),\r\n    ]\r\n    \r\n    outputs = [\r\n        Output(display_name=\"Tool\", name=\"tool\", method=\"create_tool\")\r\n    ]\r\n    \r\n    def create_tool(self) -> Tool:\r\n        name = f\"_{self.tool_name}\"\r\n            \r\n        class SearchViaGraphRag:\r\n            persist_directory: str = \"\"\r\n            search_type: str = \"\"\r\n            search_query: str = \"\"\r\n\r\n            def search(search_type: str = \"\", search_query: str = \"\") -> str:\r\n                from graphrag.query.cli import run_global_search, run_local_search\r\n                if not search_type:\r\n                    search_type = self.search_type\r\n                if not search_query:\r\n                    search_query = self.search_query\r\n                if search_type == \"local\":\r\n                    return run_local_search(\r\n                        None,\r\n                        self.persist_directory,\r\n                        2,\r\n                        \"Multiple Paragraphs\",\r\n                        search_query\r\n                    )\r\n                elif search_type == \"global\":\r\n                    return run_global_search(\r\n                        None,\r\n                        self.persist_directory,\r\n                        2,\r\n                        \"Multiple Paragraphs\",\r\n                        search_query\r\n                    )\r\n                else:\r\n                    raise ValueError(\"Invalid search type.\")\r\n\r\n        _globals = globals()\r\n        _local = {}\r\n        _local[name] = SearchViaGraphRag\r\n        _globals.update(_local)\r\n\r\n        SearchViaGraphRag.persist_directory = self.persist_directory\r\n        SearchViaGraphRag.search_type = self.search_type\r\n        SearchViaGraphRag.search_query = self.search_query\r\n\r\n        tool = StructuredTool.from_function(\r\n            func=_local[name].search,\r\n            name=name,\r\n            description=\"Search via graphrag\",\r\n            return_direct=False\r\n        )\r\n        \r\n        return tool",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "persist_directory": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "persist_directory",
+                "display_name": "Persist Directory",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str"
+              },
+              "search_query": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "search_query",
+                "display_name": "Search Query",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str"
+              },
+              "search_type": {
+                "trace_as_metadata": true,
+                "options": [
+                  "local",
+                  "global"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "global",
+                "name": "search_type",
+                "display_name": "Search Type",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "load_from_db": false
+              },
+              "tool_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "search_via_graphrag",
+                "name": "tool_name",
+                "display_name": "Tool Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "A component that uses GraphRag to search data.",
+            "base_classes": [
+              "Tool"
+            ],
+            "display_name": "Microsoft GraphRAG SearchTool",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "tool",
+                "display_name": "Tool",
+                "method": "create_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "tool_name",
+              "persist_directory",
+              "search_type",
+              "search_query"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "GraphRagSearchTool-BRf8L",
+          "description": "A component that uses GraphRag to search data.",
+          "display_name": "Microsoft GraphRAG Store"
+        },
+        "id": "GraphRagSearchTool-BRf8L",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "GraphRagSearchTool": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "2e0b7324-91d4-4ad6-b45a-6c4b3b1114c5",
+    "name": "Microsoft GraphRAG SearchTool",
+    "description": "A component that uses GraphRag to search data.",
+    "is_component": true,
+    "liked_by_count": "27",
+    "downloads_count": "181",
+    "metadata": {
+      "GraphRagSearchTool": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.12",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "GraphRagSearchTool",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.io import DropdownInput, Output, MessageTextInput\r\n\r\nfrom langchain.agents import Tool\r\nfrom langchain.tools import StructuredTool\r\n\r\nfrom axiestudio.custom import Component\r\n\r\n\r\nclass GraphRagSearchTool(Component):\r\n    display_name = \"Microsoft GraphRAG SearchTool\"\r\n    description = \"A component that uses GraphRag to search data.\"\r\n    name = \"GraphRagSearchTool\"\r\n    \r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"tool_name\",\r\n            display_name=\"Tool Name\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"persist_directory\",\r\n            display_name=\"Persist Directory\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"search_type\",\r\n            display_name=\"Search Type\",\r\n            advanced=False,\r\n            options=[\r\n                \"local\",\r\n                \"global\",\r\n            ],\r\n            value=\"local\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"search_query\",\r\n            display_name=\"Search Query\",\r\n            is_list=True,\r\n        ),\r\n    ]\r\n    \r\n    outputs = [\r\n        Output(display_name=\"Tool\", name=\"tool\", method=\"create_tool\")\r\n    ]\r\n    \r\n    def create_tool(self) -> Tool:\r\n        name = f\"_{self.tool_name}\"\r\n            \r\n        class SearchViaGraphRag:\r\n            persist_directory: str = \"\"\r\n            search_type: str = \"\"\r\n            search_query: str = \"\"\r\n\r\n            def search(search_type: str = \"\", search_query: str = \"\") -> str:\r\n                from graphrag.query.cli import run_global_search, run_local_search\r\n                if not search_type:\r\n                    search_type = self.search_type\r\n                if not search_query:\r\n                    search_query = self.search_query\r\n                if search_type == \"local\":\r\n                    return run_local_search(\r\n                        None,\r\n                        self.persist_directory,\r\n                        2,\r\n                        \"Multiple Paragraphs\",\r\n                        search_query\r\n                    )\r\n                elif search_type == \"global\":\r\n                    return run_global_search(\r\n                        None,\r\n                        self.persist_directory,\r\n                        2,\r\n                        \"Multiple Paragraphs\",\r\n                        search_query\r\n                    )\r\n                else:\r\n                    raise ValueError(\"Invalid search type.\")\r\n\r\n        _globals = globals()\r\n        _local = {}\r\n        _local[name] = SearchViaGraphRag\r\n        _globals.update(_local)\r\n\r\n        SearchViaGraphRag.persist_directory = self.persist_directory\r\n        SearchViaGraphRag.search_type = self.search_type\r\n        SearchViaGraphRag.search_query = self.search_query\r\n\r\n        tool = StructuredTool.from_function(\r\n            func=_local[name].search,\r\n            name=name,\r\n            description=\"Search via graphrag\",\r\n            return_direct=False\r\n        )\r\n        \r\n        return tool",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "persist_directory": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "persist_directory",
+                  "display_name": "Persist Directory",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "search_query": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "search_query",
+                  "display_name": "Search Query",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "search_type": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "local",
+                    "global"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "global",
+                  "name": "search_type",
+                  "display_name": "Search Type",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "load_from_db": false
+                },
+                "tool_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "search_via_graphrag",
+                  "name": "tool_name",
+                  "display_name": "Tool Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "A component that uses GraphRag to search data.",
+              "base_classes": [
+                "Tool"
+              ],
+              "display_name": "Microsoft GraphRAG SearchTool",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "tool",
+                  "display_name": "Tool",
+                  "method": "create_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "tool_name",
+                "persist_directory",
+                "search_type",
+                "search_query"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "GraphRagSearchTool-BRf8L",
+            "description": "A component that uses GraphRag to search data.",
+            "display_name": "Microsoft GraphRAG Store"
+          },
+          "id": "GraphRagSearchTool-BRf8L",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-07-23T08:44:45.620Z",
+    "date_updated": "2024-07-23T08:44:45.723Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "23c5d1e9-66fe-4789-85da-d07be25ec3cc",
+    "user_created": {
+      "username": "yamon",
+      "first_name": "YamonCompany",
+      "last_name": "kim",
+      "id": "23c5d1e9-66fe-4789-85da-d07be25ec3cc"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.423Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 4,
+    "converter_version": "1.0.0"
+  }
+}

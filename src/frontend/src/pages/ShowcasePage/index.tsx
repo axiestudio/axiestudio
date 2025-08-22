@@ -78,13 +78,40 @@ export default function ShowcasePage(): JSX.Element {
   const loadStoreData = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/api/v1/store/");
-      setStoreData(response.data);
+
+      // FRONTEND-ONLY SOLUTION: Load store data directly from static files
+      console.log('🔄 Loading store data from frontend files...');
+      const response = await fetch('/store_components_converted/store_index.json');
+
+      if (!response.ok) {
+        throw new Error(`Failed to load store data: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Successfully loaded store data:', {
+        total_items: data.summary?.total_items || 0,
+        flows: data.summary?.total_flows || 0,
+        components: data.summary?.total_components || 0
+      });
+
+      // Debug: Log first few items to verify structure
+      if (data.flows && data.flows.length > 0) {
+        console.log('📋 Sample flow:', data.flows[0]);
+      }
+      if (data.components && data.components.length > 0) {
+        console.log('🧩 Sample component:', data.components[0]);
+      }
+
+      setStoreData(data);
     } catch (error) {
-      console.error("Failed to load store data:", error);
+      console.error("❌ Failed to load store data:", error);
       setErrorData({
         title: "Failed to load showcase data",
-        list: ["Please try again later"]
+        list: [
+          "Could not load store data from frontend files",
+          "Please ensure store_components_converted folder is accessible",
+          error instanceof Error ? error.message : "Unknown error"
+        ]
       });
     } finally {
       setLoading(false);
@@ -95,16 +122,27 @@ export default function ShowcasePage(): JSX.Element {
     if (downloadingItems.has(item.id)) return;
 
     setDownloadingItems(prev => new Set(prev).add(item.id));
-    
+
     try {
-      const endpoint = item.type === "FLOW" ? `/api/v1/store/flow/${item.id}` : `/api/v1/store/component/${item.id}`;
-      const response = await api.get(endpoint);
-      
+      // FRONTEND-ONLY SOLUTION: Load files directly from static folder
+      const folder = item.type === "FLOW" ? "flows" : "components";
+      // Use the exact name as it appears in the store index
+      const filePath = `/store_components_converted/${folder}/${item.id}_${item.name}.json`;
+
+      console.log(`🔄 Downloading ${item.type}: ${item.name} from ${filePath}`);
+
+      const response = await fetch(filePath);
+      if (!response.ok) {
+        throw new Error(`Failed to download file: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
       // Create download link
-      const dataStr = JSON.stringify(response.data, null, 2);
+      const dataStr = JSON.stringify(data, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(dataBlob);
-      
+
       const link = document.createElement('a');
       link.href = url;
       link.download = `${item.name.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
@@ -112,15 +150,20 @@ export default function ShowcasePage(): JSX.Element {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
+
+      console.log(`✅ Successfully downloaded: ${item.name}`);
       setSuccessData({
         title: `${item.type === "FLOW" ? "Flow" : "Component"} downloaded successfully!`
       });
     } catch (error) {
-      console.error("Download failed:", error);
+      console.error("❌ Download failed:", error);
       setErrorData({
         title: "Download failed",
-        list: ["Please try again later"]
+        list: [
+          `Could not download ${item.name}`,
+          error instanceof Error ? error.message : "Unknown error",
+          "Please try again later"
+        ]
       });
     } finally {
       setDownloadingItems(prev => {

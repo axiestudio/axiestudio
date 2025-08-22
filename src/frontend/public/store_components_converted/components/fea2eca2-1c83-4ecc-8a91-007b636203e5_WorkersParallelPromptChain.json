@@ -1,0 +1,537 @@
+{
+  "id": "fea2eca2-1c83-4ecc-8a91-007b636203e5",
+  "name": "WorkersParallelPromptChain",
+  "description": "This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "joaoguilhermeS",
+    "first_name": "João",
+    "last_name": "Oliveira",
+    "id": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "full_name": "João Oliveira"
+  },
+  "store_url": "https://www.langflow.store/store/component/fea2eca2-1c83-4ecc-8a91-007b636203e5",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-04-25T14:52:18.477Z",
+    "updated": "2024-04-25T14:52:18.517Z",
+    "downloaded": "2025-08-19T17:50:05.050Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.0a24",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "API_MODEL_KEY": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "API_MODEL_KEY",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n        subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n        return 1\n    \ninstall(\"llm\")\n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"Workers Paralel Prompt Chain\"\n    description = \"This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.\"\n    def build_config(self):\n        return {\n            \"theme\": {\n                \"display_name\": \"Theme\",\n                \"advanced\": False,\n                \"required\": True,\n            },\n            \"model\":{\n                \"display_name\": \"Model\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"claude-3-haiku\",\n                    \"claude-3-sonnet\",\n                    \"claude-3-opus\",\n                    \"gpt-4-turbo\",\n                    \"gpt-4-0125-preview\",\n                    \"gpt-3.5-turbo\",\n                ],\n                \n            },\n            \"web\":{\n                \"display_name\": \"Additional Information (Web, Book, etc.)\",\n                \"advanced\": False,\n                \"required\": False,\n                \"default\": \"\"\n                \n            },\n            \"detail_text\":{\n                \"display_name\": \"Detail Text\",\n                \"advanced\": False,\n                \"required\": True,\n                \"default\": \"No\",\n                \"options\": [\n                    \"Yes\",\n                    \"No\"\n                ],\n            },\n            \"internal_prompt_theme\":{\n                \"display_name\": \"Internal Prompt Theme\",\n                \"required\": False,\n                \"default\": \"Generate a clickworthy title about this topic\"\n            },\n            \"internal_prompt_instruction\":{\n                \"display_name\": \"Internal Prompt Instruction\",\n                \"required\": False,\n                \"default\": \"Generate a compelling 3 section outline given this information\"\n            },\n            \"API_MODEL_KEY\":{\n                \"password\": True,\n                \"required\": True,\n            }\n        }\n    \n    def build(self, theme: str, model: str, API_MODEL_KEY: str, detail_text: bool, internal_prompt_theme: str = '', internal_prompt_instruction: str = '', web: str = '') -> str:\n        \"\"\"\n            Workers Paralel Chain: Start with a small topic and then expand it using paralel workers:\n            [User provide a topic -> chain 1 make a title -> chain 1,2,3,n work in paralel to process the subtasks -> return in json]\n        \"\"\"\n        def install(package):\n            subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n            return 1\n        install(\"llm\")\n        import llm\n        from time import sleep\n        \n        # It is that way to allow you changing it to use more models if you need it ;)\n        model1 = llm.get_model(model) \n        model2 = llm.get_model(model)\n        model3 = llm.get_model(model)\n        \n        model1.key = API_MODEL_KEY\n        model2.key = API_MODEL_KEY\n        model3.key = API_MODEL_KEY\n        \n        prompt_plan = f'{internal_prompt_theme} {theme}, be creative in this process.'\n\n        \n        if(len(web) > 10):\n            prompt_plan += \"Here is some additional information to create the topics.\"\n        \n        if(detail_text):\n            prompt_plan += \"Detail the text as the maximum as you can (I want a lot of topics)\"\n    \n        code_planner_prompt_response = model1.prompt(\n        prompt_plan + '''\\n\n        {Respond in json format {\"newsletter\": [\"topic1\", \"topic2\", \"topic 3\", \"topic 4\", \"topic 5\", ...]}.''' + str(internal_prompt_instruction)\n        )\n    \n        \n        code_planner_result = code_planner_prompt_response.text()\n        \n        function_stubs = json.loads(code_planner_result)[\"newsletter\"]\n\n        function_stub_raw_results = \"# \" + f\"**{theme}**\" + \"\\n\\n\"\n        \n        \n        for stub in function_stubs:\n            function_stub_raw_results += \"\\n\" + f\"## **{stub}**\" + \"\\n\\n\"\n            \n            if(detail_text):\n                code_executor_prompt_response = model1.prompt(\n                    f\"You are writing a newsletter, write the content in plain text about the: {stub}. Remember the context {prompt_plan}. Remember to return the data as plain text in the maximumparagraphs you can generate I want a really big output.\"\n                )\n            else:\n                code_executor_prompt_response = model1.prompt(\n                    f\"You are writing a newsletter, write the content in plain text about the: {stub}. Remember the context {prompt_plan}. Remember to return the data as plain text in 2 or more paragraphs.\"\n                )\n                \n            \n\n            function_stub_raw_results += code_executor_prompt_response.text()\n            \n        return function_stub_raw_results",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "detail_text": {
+                "type": "bool",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Yes",
+                  "No"
+                ],
+                "name": "detail_text",
+                "display_name": "Detail Text",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "internal_prompt_instruction": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "internal_prompt_instruction",
+                "display_name": "Internal Prompt Instruction",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "internal_prompt_theme": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "internal_prompt_theme",
+                "display_name": "Internal Prompt Theme",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "model": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "claude-3-haiku",
+                  "claude-3-sonnet",
+                  "claude-3-opus",
+                  "gpt-4-turbo",
+                  "gpt-4-0125-preview",
+                  "gpt-3.5-turbo"
+                ],
+                "name": "model",
+                "display_name": "Model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "gpt-3.5-turbo"
+              },
+              "theme": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "theme",
+                "display_name": "Theme",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "web": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "web",
+                "display_name": "Additional Information (Web, Book, etc.)",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "WorkersParallelPromptChain",
+            "documentation": "",
+            "custom_fields": {
+              "theme": null,
+              "model": null,
+              "API_MODEL_KEY": null,
+              "detail_text": null,
+              "internal_prompt_theme": null,
+              "internal_prompt_instruction": null,
+              "web": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-Ik35q",
+          "description": "This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.",
+          "display_name": "WorkersParallelPromptChain"
+        },
+        "id": "CustomComponent-Ik35q",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "fea2eca2-1c83-4ecc-8a91-007b636203e5",
+    "name": "WorkersParallelPromptChain",
+    "description": "This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.",
+    "is_component": true,
+    "liked_by_count": "29",
+    "downloads_count": "193",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.0a24",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "API_MODEL_KEY": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "API_MODEL_KEY",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n        subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n        return 1\n    \ninstall(\"llm\")\n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"Workers Paralel Prompt Chain\"\n    description = \"This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.\"\n    def build_config(self):\n        return {\n            \"theme\": {\n                \"display_name\": \"Theme\",\n                \"advanced\": False,\n                \"required\": True,\n            },\n            \"model\":{\n                \"display_name\": \"Model\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"claude-3-haiku\",\n                    \"claude-3-sonnet\",\n                    \"claude-3-opus\",\n                    \"gpt-4-turbo\",\n                    \"gpt-4-0125-preview\",\n                    \"gpt-3.5-turbo\",\n                ],\n                \n            },\n            \"web\":{\n                \"display_name\": \"Additional Information (Web, Book, etc.)\",\n                \"advanced\": False,\n                \"required\": False,\n                \"default\": \"\"\n                \n            },\n            \"detail_text\":{\n                \"display_name\": \"Detail Text\",\n                \"advanced\": False,\n                \"required\": True,\n                \"default\": \"No\",\n                \"options\": [\n                    \"Yes\",\n                    \"No\"\n                ],\n            },\n            \"internal_prompt_theme\":{\n                \"display_name\": \"Internal Prompt Theme\",\n                \"required\": False,\n                \"default\": \"Generate a clickworthy title about this topic\"\n            },\n            \"internal_prompt_instruction\":{\n                \"display_name\": \"Internal Prompt Instruction\",\n                \"required\": False,\n                \"default\": \"Generate a compelling 3 section outline given this information\"\n            },\n            \"API_MODEL_KEY\":{\n                \"password\": True,\n                \"required\": True,\n            }\n        }\n    \n    def build(self, theme: str, model: str, API_MODEL_KEY: str, detail_text: bool, internal_prompt_theme: str = '', internal_prompt_instruction: str = '', web: str = '') -> str:\n        \"\"\"\n            Workers Paralel Chain: Start with a small topic and then expand it using paralel workers:\n            [User provide a topic -> chain 1 make a title -> chain 1,2,3,n work in paralel to process the subtasks -> return in json]\n        \"\"\"\n        def install(package):\n            subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n            return 1\n        install(\"llm\")\n        import llm\n        from time import sleep\n        \n        # It is that way to allow you changing it to use more models if you need it ;)\n        model1 = llm.get_model(model) \n        model2 = llm.get_model(model)\n        model3 = llm.get_model(model)\n        \n        model1.key = API_MODEL_KEY\n        model2.key = API_MODEL_KEY\n        model3.key = API_MODEL_KEY\n        \n        prompt_plan = f'{internal_prompt_theme} {theme}, be creative in this process.'\n\n        \n        if(len(web) > 10):\n            prompt_plan += \"Here is some additional information to create the topics.\"\n        \n        if(detail_text):\n            prompt_plan += \"Detail the text as the maximum as you can (I want a lot of topics)\"\n    \n        code_planner_prompt_response = model1.prompt(\n        prompt_plan + '''\\n\n        {Respond in json format {\"newsletter\": [\"topic1\", \"topic2\", \"topic 3\", \"topic 4\", \"topic 5\", ...]}.''' + str(internal_prompt_instruction)\n        )\n    \n        \n        code_planner_result = code_planner_prompt_response.text()\n        \n        function_stubs = json.loads(code_planner_result)[\"newsletter\"]\n\n        function_stub_raw_results = \"# \" + f\"**{theme}**\" + \"\\n\\n\"\n        \n        \n        for stub in function_stubs:\n            function_stub_raw_results += \"\\n\" + f\"## **{stub}**\" + \"\\n\\n\"\n            \n            if(detail_text):\n                code_executor_prompt_response = model1.prompt(\n                    f\"You are writing a newsletter, write the content in plain text about the: {stub}. Remember the context {prompt_plan}. Remember to return the data as plain text in the maximumparagraphs you can generate I want a really big output.\"\n                )\n            else:\n                code_executor_prompt_response = model1.prompt(\n                    f\"You are writing a newsletter, write the content in plain text about the: {stub}. Remember the context {prompt_plan}. Remember to return the data as plain text in 2 or more paragraphs.\"\n                )\n                \n            \n\n            function_stub_raw_results += code_executor_prompt_response.text()\n            \n        return function_stub_raw_results",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "detail_text": {
+                  "type": "bool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Yes",
+                    "No"
+                  ],
+                  "name": "detail_text",
+                  "display_name": "Detail Text",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "internal_prompt_instruction": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "internal_prompt_instruction",
+                  "display_name": "Internal Prompt Instruction",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "internal_prompt_theme": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "internal_prompt_theme",
+                  "display_name": "Internal Prompt Theme",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "model": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "claude-3-haiku",
+                    "claude-3-sonnet",
+                    "claude-3-opus",
+                    "gpt-4-turbo",
+                    "gpt-4-0125-preview",
+                    "gpt-3.5-turbo"
+                  ],
+                  "name": "model",
+                  "display_name": "Model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "gpt-3.5-turbo"
+                },
+                "theme": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "theme",
+                  "display_name": "Theme",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "web": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "web",
+                  "display_name": "Additional Information (Web, Book, etc.)",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "WorkersParallelPromptChain",
+              "documentation": "",
+              "custom_fields": {
+                "theme": null,
+                "model": null,
+                "API_MODEL_KEY": null,
+                "detail_text": null,
+                "internal_prompt_theme": null,
+                "internal_prompt_instruction": null,
+                "web": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-Ik35q",
+            "description": "This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.",
+            "display_name": "WorkersParallelPromptChain"
+          },
+          "id": "CustomComponent-Ik35q",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-04-25T14:52:18.477Z",
+    "date_updated": "2024-04-25T14:52:18.517Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "user_created": {
+      "username": "joaoguilhermeS",
+      "first_name": "João",
+      "last_name": "Oliveira",
+      "id": "94b2e207-1a44-4905-856c-4f5a69c168ce"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:12.748Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,501 @@
+{
+  "id": "42b75032-92bc-4d4b-af07-5b907f995249",
+  "name": "API Request",
+  "description": "This component allows you to make HTTP requests to one or more URLs. You can provide headers and body as either dictionaries or Data objects. Additionally, you can append query parameters to the URLs.\n\n**Note:** Check advanced options for more settings. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "muhammad-ashar123",
+    "first_name": "Muhammad",
+    "last_name": "Ashar Ishfaq",
+    "id": "45b4113c-b758-4c74-8d53-d559a160b7cd",
+    "full_name": "Muhammad Ashar Ishfaq"
+  },
+  "store_url": "https://www.langflow.store/store/component/42b75032-92bc-4d4b-af07-5b907f995249",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-15T03:51:46.696Z",
+    "updated": "2024-07-15T03:51:46.733Z",
+    "downloaded": "2025-08-19T17:50:05.055Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.8",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "APIRequest",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "query_params": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "query_params",
+                "display_name": "Query Parameters",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The query parameters to append to the URL.",
+                "title_case": false,
+                "type": "other"
+              },
+              "body": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": {},
+                "name": "body",
+                "display_name": "Body",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.",
+                "title_case": false,
+                "type": "NestedDict"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import asyncio\nimport json\nfrom typing import Any, List, Optional\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\n\nimport httpx\nfrom loguru import logger\n\nfrom axiestudio.base.curl.parse import parse_context\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, NestedDictInput, Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\n\nclass APIRequestComponent(Component):\n    display_name = \"API Request\"\n    description = (\n        \"This component allows you to make HTTP requests to one or more URLs. \"\n        \"You can provide headers and body as either dictionaries or Data objects. \"\n        \"Additionally, you can append query parameters to the URLs.\\n\\n\"\n        \"**Note:** Check advanced options for more settings.\"\n    )\n    icon = \"Globe\"\n    name = \"APIRequest\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"urls\",\n            display_name=\"URLs\",\n            is_list=True,\n            info=\"Enter one or more URLs, separated by commas.\",\n        ),\n        MessageTextInput(\n            name=\"curl\",\n            display_name=\"Curl\",\n            info=\"Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.\",\n            advanced=False,\n            refresh_button=True,\n        ),\n        DropdownInput(\n            name=\"method\",\n            display_name=\"Method\",\n            options=[\"GET\", \"POST\", \"PATCH\", \"PUT\"],\n            value=\"GET\",\n            info=\"The HTTP method to use (GET, POST, PATCH, PUT).\",\n        ),\n        NestedDictInput(\n            name=\"headers\",\n            display_name=\"Headers\",\n            info=\"The headers to send with the request as a dictionary. This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        NestedDictInput(\n            name=\"body\",\n            display_name=\"Body\",\n            info=\"The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        DataInput(\n            name=\"query_params\",\n            display_name=\"Query Parameters\",\n            info=\"The query parameters to append to the URL.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            value=5,\n            info=\"The timeout to use for the request.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"make_requests\"),\n    ]\n\n    def parse_curl(self, curl: str, build_config: dotdict) -> dotdict:\n        try:\n            parsed = parse_context(curl)\n            build_config[\"urls\"][\"value\"] = [parsed.url]\n            build_config[\"method\"][\"value\"] = parsed.method.upper()\n            build_config[\"headers\"][\"value\"] = dict(parsed.headers)\n\n            if parsed.data:\n                try:\n                    json_data = json.loads(parsed.data)\n                    build_config[\"body\"][\"value\"] = json_data\n                except json.JSONDecodeError as e:\n                    logger.error(f\"Error decoding JSON data: {e}\")\n            else:\n                build_config[\"body\"][\"value\"] = {}\n        except Exception as exc:\n            logger.error(f\"Error parsing curl: {exc}\")\n            raise ValueError(f\"Error parsing curl: {exc}\")\n        return build_config\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\n        if field_name == \"curl\" and field_value:\n            build_config = self.parse_curl(field_value, build_config)\n        return build_config\n\n    async def make_request(\n        self,\n        client: httpx.AsyncClient,\n        method: str,\n        url: str,\n        headers: Optional[dict] = None,\n        body: Optional[dict] = None,\n        timeout: int = 5,\n    ) -> Data:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            raise ValueError(f\"Unsupported method: {method}\")\n\n        if isinstance(body, str) and body:\n            try:\n                body = json.loads(body)\n            except Exception as e:\n                logger.error(f\"Error decoding JSON data: {e}\")\n                body = None\n                raise ValueError(f\"Error decoding JSON data: {e}\")\n\n        data = body if body else None\n\n        try:\n            response = await client.request(method, url, headers=headers, json=data, timeout=timeout)\n            try:\n                result = response.json()\n            except Exception:\n                result = response.text\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except httpx.TimeoutException:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except Exception as exc:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    def add_query_params(self, url: str, params: dict) -> str:\n        url_parts = list(urlparse(url))\n        query = dict(parse_qsl(url_parts[4]))\n        query.update(params)\n        url_parts[4] = urlencode(query)\n        return urlunparse(url_parts)\n\n    async def make_requests(self) -> List[Data]:\n        method = self.method\n        urls = [url.strip() for url in self.urls if url.strip()]\n        curl = self.curl\n        headers = self.headers or {}\n        body = self.body or {}\n        timeout = self.timeout\n        query_params = self.query_params.data if self.query_params else {}\n\n        if curl:\n            self._build_config = self.parse_curl(curl, dotdict())\n\n        if isinstance(headers, Data):\n            headers = headers.data\n\n        if isinstance(body, Data):\n            body = body.data\n\n        bodies = [body] * len(urls)\n\n        urls = [self.add_query_params(url, query_params) for url in urls]\n\n        async with httpx.AsyncClient() as client:\n            results = await asyncio.gather(\n                *[self.make_request(client, method, u, headers, rec, timeout) for u, rec in zip(urls, bodies)]\n            )\n        self.status = results\n        return results\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "curl": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "curl",
+                "display_name": "Curl",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.",
+                "refresh_button": true,
+                "title_case": false,
+                "type": "str"
+              },
+              "headers": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": {},
+                "name": "headers",
+                "display_name": "Headers",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The headers to send with the request as a dictionary. This is populated when using the CURL field.",
+                "title_case": false,
+                "type": "NestedDict"
+              },
+              "method": {
+                "trace_as_metadata": true,
+                "options": [
+                  "GET",
+                  "POST",
+                  "PATCH",
+                  "PUT"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "GET",
+                "name": "method",
+                "display_name": "Method",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The HTTP method to use (GET, POST, PATCH, PUT).",
+                "title_case": false,
+                "type": "str"
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": 5,
+                "name": "timeout",
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The timeout to use for the request.",
+                "title_case": false,
+                "type": "int"
+              },
+              "urls": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "urls",
+                "display_name": "URLs",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter one or more URLs, separated by commas.",
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "This component allows you to make HTTP requests to one or more URLs. You can provide headers and body as either dictionaries or Data objects. Additionally, you can append query parameters to the URLs.\n\n**Note:** Check advanced options for more settings.",
+            "icon": "Globe",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "API Request",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "make_requests",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "urls",
+              "curl",
+              "method",
+              "headers",
+              "body",
+              "query_params",
+              "timeout"
+            ],
+            "beta": false,
+            "edited": false,
+            "official": false
+          },
+          "id": "APIRequest-RW5j1"
+        },
+        "id": "APIRequest-RW5j1",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "APIRequest": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "42b75032-92bc-4d4b-af07-5b907f995249",
+    "name": "API Request",
+    "description": "This component allows you to make HTTP requests to one or more URLs. You can provide headers and body as either dictionaries or Data objects. Additionally, you can append query parameters to the URLs.\n\n**Note:** Check advanced options for more settings.",
+    "is_component": true,
+    "liked_by_count": "35",
+    "downloads_count": "375",
+    "metadata": {
+      "APIRequest": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.8",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "APIRequest",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "query_params": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "query_params",
+                  "display_name": "Query Parameters",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The query parameters to append to the URL.",
+                  "title_case": false,
+                  "type": "other"
+                },
+                "body": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": {},
+                  "name": "body",
+                  "display_name": "Body",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.",
+                  "title_case": false,
+                  "type": "NestedDict"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import asyncio\nimport json\nfrom typing import Any, List, Optional\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\n\nimport httpx\nfrom loguru import logger\n\nfrom axiestudio.base.curl.parse import parse_context\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, NestedDictInput, Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\n\nclass APIRequestComponent(Component):\n    display_name = \"API Request\"\n    description = (\n        \"This component allows you to make HTTP requests to one or more URLs. \"\n        \"You can provide headers and body as either dictionaries or Data objects. \"\n        \"Additionally, you can append query parameters to the URLs.\\n\\n\"\n        \"**Note:** Check advanced options for more settings.\"\n    )\n    icon = \"Globe\"\n    name = \"APIRequest\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"urls\",\n            display_name=\"URLs\",\n            is_list=True,\n            info=\"Enter one or more URLs, separated by commas.\",\n        ),\n        MessageTextInput(\n            name=\"curl\",\n            display_name=\"Curl\",\n            info=\"Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.\",\n            advanced=False,\n            refresh_button=True,\n        ),\n        DropdownInput(\n            name=\"method\",\n            display_name=\"Method\",\n            options=[\"GET\", \"POST\", \"PATCH\", \"PUT\"],\n            value=\"GET\",\n            info=\"The HTTP method to use (GET, POST, PATCH, PUT).\",\n        ),\n        NestedDictInput(\n            name=\"headers\",\n            display_name=\"Headers\",\n            info=\"The headers to send with the request as a dictionary. This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        NestedDictInput(\n            name=\"body\",\n            display_name=\"Body\",\n            info=\"The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        DataInput(\n            name=\"query_params\",\n            display_name=\"Query Parameters\",\n            info=\"The query parameters to append to the URL.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            value=5,\n            info=\"The timeout to use for the request.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"make_requests\"),\n    ]\n\n    def parse_curl(self, curl: str, build_config: dotdict) -> dotdict:\n        try:\n            parsed = parse_context(curl)\n            build_config[\"urls\"][\"value\"] = [parsed.url]\n            build_config[\"method\"][\"value\"] = parsed.method.upper()\n            build_config[\"headers\"][\"value\"] = dict(parsed.headers)\n\n            if parsed.data:\n                try:\n                    json_data = json.loads(parsed.data)\n                    build_config[\"body\"][\"value\"] = json_data\n                except json.JSONDecodeError as e:\n                    logger.error(f\"Error decoding JSON data: {e}\")\n            else:\n                build_config[\"body\"][\"value\"] = {}\n        except Exception as exc:\n            logger.error(f\"Error parsing curl: {exc}\")\n            raise ValueError(f\"Error parsing curl: {exc}\")\n        return build_config\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\n        if field_name == \"curl\" and field_value:\n            build_config = self.parse_curl(field_value, build_config)\n        return build_config\n\n    async def make_request(\n        self,\n        client: httpx.AsyncClient,\n        method: str,\n        url: str,\n        headers: Optional[dict] = None,\n        body: Optional[dict] = None,\n        timeout: int = 5,\n    ) -> Data:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            raise ValueError(f\"Unsupported method: {method}\")\n\n        if isinstance(body, str) and body:\n            try:\n                body = json.loads(body)\n            except Exception as e:\n                logger.error(f\"Error decoding JSON data: {e}\")\n                body = None\n                raise ValueError(f\"Error decoding JSON data: {e}\")\n\n        data = body if body else None\n\n        try:\n            response = await client.request(method, url, headers=headers, json=data, timeout=timeout)\n            try:\n                result = response.json()\n            except Exception:\n                result = response.text\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except httpx.TimeoutException:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except Exception as exc:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    def add_query_params(self, url: str, params: dict) -> str:\n        url_parts = list(urlparse(url))\n        query = dict(parse_qsl(url_parts[4]))\n        query.update(params)\n        url_parts[4] = urlencode(query)\n        return urlunparse(url_parts)\n\n    async def make_requests(self) -> List[Data]:\n        method = self.method\n        urls = [url.strip() for url in self.urls if url.strip()]\n        curl = self.curl\n        headers = self.headers or {}\n        body = self.body or {}\n        timeout = self.timeout\n        query_params = self.query_params.data if self.query_params else {}\n\n        if curl:\n            self._build_config = self.parse_curl(curl, dotdict())\n\n        if isinstance(headers, Data):\n            headers = headers.data\n\n        if isinstance(body, Data):\n            body = body.data\n\n        bodies = [body] * len(urls)\n\n        urls = [self.add_query_params(url, query_params) for url in urls]\n\n        async with httpx.AsyncClient() as client:\n            results = await asyncio.gather(\n                *[self.make_request(client, method, u, headers, rec, timeout) for u, rec in zip(urls, bodies)]\n            )\n        self.status = results\n        return results\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "curl": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "curl",
+                  "display_name": "Curl",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.",
+                  "refresh_button": true,
+                  "title_case": false,
+                  "type": "str"
+                },
+                "headers": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": {},
+                  "name": "headers",
+                  "display_name": "Headers",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The headers to send with the request as a dictionary. This is populated when using the CURL field.",
+                  "title_case": false,
+                  "type": "NestedDict"
+                },
+                "method": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "GET",
+                    "POST",
+                    "PATCH",
+                    "PUT"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "GET",
+                  "name": "method",
+                  "display_name": "Method",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The HTTP method to use (GET, POST, PATCH, PUT).",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": 5,
+                  "name": "timeout",
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The timeout to use for the request.",
+                  "title_case": false,
+                  "type": "int"
+                },
+                "urls": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "urls",
+                  "display_name": "URLs",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter one or more URLs, separated by commas.",
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "This component allows you to make HTTP requests to one or more URLs. You can provide headers and body as either dictionaries or Data objects. Additionally, you can append query parameters to the URLs.\n\n**Note:** Check advanced options for more settings.",
+              "icon": "Globe",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "API Request",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "make_requests",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "urls",
+                "curl",
+                "method",
+                "headers",
+                "body",
+                "query_params",
+                "timeout"
+              ],
+              "beta": false,
+              "edited": false,
+              "official": false
+            },
+            "id": "APIRequest-RW5j1"
+          },
+          "id": "APIRequest-RW5j1",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-07-15T03:51:46.696Z",
+    "date_updated": "2024-07-15T03:51:46.733Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "45b4113c-b758-4c74-8d53-d559a160b7cd",
+    "user_created": {
+      "username": "muhammad-ashar123",
+      "first_name": "Muhammad",
+      "last_name": "Ashar Ishfaq",
+      "id": "45b4113c-b758-4c74-8d53-d559a160b7cd"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.809Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

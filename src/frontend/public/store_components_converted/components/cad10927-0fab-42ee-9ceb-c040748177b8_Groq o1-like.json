@@ -1,0 +1,409 @@
+{
+  "id": "cad10927-0fab-42ee-9ceb-c040748177b8",
+  "name": "Groq o1-like",
+  "description": "Uses Llama-3.1 70b on Groq to create o1-like reasoning chains. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "Victor",
+    "first_name": "VICTOR",
+    "last_name": "GOMES",
+    "id": "3e203c77-c087-4ccf-a0c6-07c619d760f1",
+    "full_name": "VICTOR GOMES"
+  },
+  "store_url": "https://www.langflow.store/store/component/cad10927-0fab-42ee-9ceb-c040748177b8",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-18T13:37:45.660Z",
+    "updated": "2024-09-18T13:37:45.686Z",
+    "downloaded": "2025-08-19T17:50:05.768Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.18.dev1",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "GroqReasoningChain",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\r\nfrom axiestudio.io import MessageTextInput, IntInput, FloatInput, Output, SecretStrInput\r\nfrom axiestudio.schema.message import Message\r\nimport groq\r\nimport json\r\nimport time\r\nfrom typing import Dict, Any\r\n\r\nclass GroqReasoningChain(Component):\r\n    display_name = \"Groq Reasoning Chain\"\r\n    description = \"Uses Llama-3.1 70b on Groq to create o1-like reasoning chains.\"\r\n    icon = \"Groq\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"prompt\",\r\n            display_name=\"User Query\",\r\n            info=\"The query to process through the reasoning chain.\",\r\n        ),\r\n        SecretStrInput(\r\n            name=\"groq_api_key\",\r\n            display_name=\"Groq API Key\",\r\n            info=\"API key for Groq. Keep this secret!\",\r\n        ),\r\n        IntInput(\r\n            name=\"max_tokens\",\r\n            display_name=\"Max Tokens\",\r\n            info=\"Maximum number of tokens for each API call.\",\r\n            value=300,\r\n        ),\r\n        FloatInput(\r\n            name=\"temperature\",\r\n            display_name=\"Temperature\",\r\n            info=\"Controls randomness in the output.\",\r\n            value=0.2,\r\n        ),\r\n        IntInput(\r\n            name=\"max_steps\",\r\n            display_name=\"Max Steps\",\r\n            info=\"Maximum number of reasoning steps.\",\r\n            value=25,\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Response\", name=\"response\", method=\"generate_response\"),\r\n    ]\r\n\r\n    def make_api_call(self, messages: list[Dict[str, str]], max_tokens: int, is_final_answer: bool = False) -> Dict[str, Any]:\r\n        client = groq.Groq(api_key=self.groq_api_key)\r\n        for attempt in range(3):\r\n            try:\r\n                response = client.chat.completions.create(\r\n                    model=\"llama-3.1-70b-versatile\",\r\n                    messages=messages,\r\n                    max_tokens=max_tokens,\r\n                    temperature=self.temperature,\r\n                    response_format={\"type\": \"json_object\"}\r\n                )\r\n                return json.loads(response.choices[0].message.content)\r\n            except Exception as e:\r\n                if attempt == 2:\r\n                    if is_final_answer:\r\n                        return {\"title\": \"Error\", \"content\": f\"Failed to generate final answer after 3 attempts. Error: {str(e)}\"}\r\n                    else:\r\n                        return {\"title\": \"Error\", \"content\": f\"Failed to generate step after 3 attempts. Error: {str(e)}\", \"next_action\": \"final_answer\"}\r\n                time.sleep(1)\r\n\r\n    def generate_response(self) -> Message:\r\n        messages = [\r\n            {\"role\": \"system\", \"content\": \"\"\"You are an expert AI assistant that explains your reasoning step by step. For each step, provide a title that describes what you're doing in that step, along with the content. Decide if you need another step or if you're ready to give the final answer. Respond in JSON format with 'title', 'content', and 'next_action' (either 'continue' or 'final_answer') keys. USE AS MANY REASONING STEPS AS POSSIBLE. AT LEAST 3. BE AWARE OF YOUR LIMITATIONS AS AN LLM AND WHAT YOU CAN AND CANNOT DO. IN YOUR REASONING, INCLUDE EXPLORATION OF ALTERNATIVE ANSWERS. CONSIDER YOU MAY BE WRONG, AND IF YOU ARE WRONG IN YOUR REASONING, WHERE IT WOULD BE. FULLY TEST ALL OTHER POSSIBILITIES. YOU CAN BE WRONG. WHEN YOU SAY YOU ARE RE-EXAMINING, ACTUALLY RE-EXAMINE, AND USE ANOTHER APPROACH TO DO SO. DO NOT JUST SAY YOU ARE RE-EXAMINING. USE AT LEAST 3 METHODS TO DERIVE THE ANSWER. USE BEST PRACTICES.\"\"\"},\r\n            {\"role\": \"user\", \"content\": self.prompt},\r\n            {\"role\": \"assistant\", \"content\": \"Thank you! I will now think step by step following my instructions, starting at the beginning after decomposing the problem.\"}\r\n        ]\r\n        \r\n        steps = []\r\n        step_count = 1\r\n        total_thinking_time = 0\r\n        \r\n        while True:\r\n            start_time = time.time()\r\n            step_data = self.make_api_call(messages, self.max_tokens)\r\n            end_time = time.time()\r\n            thinking_time = end_time - start_time\r\n            total_thinking_time += thinking_time\r\n            \r\n            steps.append(f\"Step {step_count}: {step_data['title']}\\n\\n{step_data['content']}\\n\")\r\n            \r\n            messages.append({\"role\": \"assistant\", \"content\": json.dumps(step_data)})\r\n            \r\n            if step_data['next_action'] == 'final_answer' or step_count > self.max_steps:\r\n                break\r\n            \r\n            step_count += 1\r\n\r\n        # Generate final answer\r\n        messages.append({\"role\": \"user\", \"content\": \"Please provide the final answer based on your reasoning above.\"})\r\n        \r\n        start_time = time.time()\r\n        final_data = self.make_api_call(messages, self.max_tokens, is_final_answer=True)\r\n        end_time = time.time()\r\n        thinking_time = end_time - start_time\r\n        total_thinking_time += thinking_time\r\n        \r\n        final_answer = final_data['content']\r\n\r\n        # Prepare the output\r\n        output = \"\\n\".join(steps)\r\n        output += f\"\\nFinal Answer\\n{final_answer}\\n\\n\"\r\n        output += f\"Total thinking time: {total_thinking_time:.2f} seconds\"\r\n\r\n        self.status = f\"Generated response with {len(steps)} steps in {total_thinking_time:.2f} seconds\"\r\n        \r\n        return Message(text=output)",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "groq_api_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "groq_api_key",
+                "value": "",
+                "display_name": "Groq API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "API key for Groq. Keep this secret!",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "max_steps": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_steps",
+                "value": 25,
+                "display_name": "Max Steps",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Maximum number of reasoning steps.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "max_tokens": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_tokens",
+                "value": 300,
+                "display_name": "Max Tokens",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Maximum number of tokens for each API call.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "prompt": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "prompt",
+                "value": "",
+                "display_name": "User Query",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The query to process through the reasoning chain.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "temperature": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "temperature",
+                "value": 0.2,
+                "display_name": "Temperature",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Controls randomness in the output.",
+                "title_case": false,
+                "type": "float",
+                "_input_type": "FloatInput"
+              }
+            },
+            "description": "Uses Llama-3.1 70b on Groq to create o1-like reasoning chains.",
+            "icon": "Groq",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Groq o1-like",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "response",
+                "display_name": "Response",
+                "method": "generate_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "prompt",
+              "groq_api_key",
+              "max_tokens",
+              "temperature",
+              "max_steps"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.18.dev1",
+            "official": false
+          },
+          "id": "CustomComponent-uvVBK"
+        },
+        "id": "CustomComponent-uvVBK",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "cad10927-0fab-42ee-9ceb-c040748177b8",
+    "name": "Groq o1-like",
+    "description": "Uses Llama-3.1 70b on Groq to create o1-like reasoning chains.",
+    "is_component": true,
+    "liked_by_count": "1",
+    "downloads_count": "13",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18.dev1",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "GroqReasoningChain",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\r\nfrom axiestudio.io import MessageTextInput, IntInput, FloatInput, Output, SecretStrInput\r\nfrom axiestudio.schema.message import Message\r\nimport groq\r\nimport json\r\nimport time\r\nfrom typing import Dict, Any\r\n\r\nclass GroqReasoningChain(Component):\r\n    display_name = \"Groq Reasoning Chain\"\r\n    description = \"Uses Llama-3.1 70b on Groq to create o1-like reasoning chains.\"\r\n    icon = \"Groq\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"prompt\",\r\n            display_name=\"User Query\",\r\n            info=\"The query to process through the reasoning chain.\",\r\n        ),\r\n        SecretStrInput(\r\n            name=\"groq_api_key\",\r\n            display_name=\"Groq API Key\",\r\n            info=\"API key for Groq. Keep this secret!\",\r\n        ),\r\n        IntInput(\r\n            name=\"max_tokens\",\r\n            display_name=\"Max Tokens\",\r\n            info=\"Maximum number of tokens for each API call.\",\r\n            value=300,\r\n        ),\r\n        FloatInput(\r\n            name=\"temperature\",\r\n            display_name=\"Temperature\",\r\n            info=\"Controls randomness in the output.\",\r\n            value=0.2,\r\n        ),\r\n        IntInput(\r\n            name=\"max_steps\",\r\n            display_name=\"Max Steps\",\r\n            info=\"Maximum number of reasoning steps.\",\r\n            value=25,\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Response\", name=\"response\", method=\"generate_response\"),\r\n    ]\r\n\r\n    def make_api_call(self, messages: list[Dict[str, str]], max_tokens: int, is_final_answer: bool = False) -> Dict[str, Any]:\r\n        client = groq.Groq(api_key=self.groq_api_key)\r\n        for attempt in range(3):\r\n            try:\r\n                response = client.chat.completions.create(\r\n                    model=\"llama-3.1-70b-versatile\",\r\n                    messages=messages,\r\n                    max_tokens=max_tokens,\r\n                    temperature=self.temperature,\r\n                    response_format={\"type\": \"json_object\"}\r\n                )\r\n                return json.loads(response.choices[0].message.content)\r\n            except Exception as e:\r\n                if attempt == 2:\r\n                    if is_final_answer:\r\n                        return {\"title\": \"Error\", \"content\": f\"Failed to generate final answer after 3 attempts. Error: {str(e)}\"}\r\n                    else:\r\n                        return {\"title\": \"Error\", \"content\": f\"Failed to generate step after 3 attempts. Error: {str(e)}\", \"next_action\": \"final_answer\"}\r\n                time.sleep(1)\r\n\r\n    def generate_response(self) -> Message:\r\n        messages = [\r\n            {\"role\": \"system\", \"content\": \"\"\"You are an expert AI assistant that explains your reasoning step by step. For each step, provide a title that describes what you're doing in that step, along with the content. Decide if you need another step or if you're ready to give the final answer. Respond in JSON format with 'title', 'content', and 'next_action' (either 'continue' or 'final_answer') keys. USE AS MANY REASONING STEPS AS POSSIBLE. AT LEAST 3. BE AWARE OF YOUR LIMITATIONS AS AN LLM AND WHAT YOU CAN AND CANNOT DO. IN YOUR REASONING, INCLUDE EXPLORATION OF ALTERNATIVE ANSWERS. CONSIDER YOU MAY BE WRONG, AND IF YOU ARE WRONG IN YOUR REASONING, WHERE IT WOULD BE. FULLY TEST ALL OTHER POSSIBILITIES. YOU CAN BE WRONG. WHEN YOU SAY YOU ARE RE-EXAMINING, ACTUALLY RE-EXAMINE, AND USE ANOTHER APPROACH TO DO SO. DO NOT JUST SAY YOU ARE RE-EXAMINING. USE AT LEAST 3 METHODS TO DERIVE THE ANSWER. USE BEST PRACTICES.\"\"\"},\r\n            {\"role\": \"user\", \"content\": self.prompt},\r\n            {\"role\": \"assistant\", \"content\": \"Thank you! I will now think step by step following my instructions, starting at the beginning after decomposing the problem.\"}\r\n        ]\r\n        \r\n        steps = []\r\n        step_count = 1\r\n        total_thinking_time = 0\r\n        \r\n        while True:\r\n            start_time = time.time()\r\n            step_data = self.make_api_call(messages, self.max_tokens)\r\n            end_time = time.time()\r\n            thinking_time = end_time - start_time\r\n            total_thinking_time += thinking_time\r\n            \r\n            steps.append(f\"Step {step_count}: {step_data['title']}\\n\\n{step_data['content']}\\n\")\r\n            \r\n            messages.append({\"role\": \"assistant\", \"content\": json.dumps(step_data)})\r\n            \r\n            if step_data['next_action'] == 'final_answer' or step_count > self.max_steps:\r\n                break\r\n            \r\n            step_count += 1\r\n\r\n        # Generate final answer\r\n        messages.append({\"role\": \"user\", \"content\": \"Please provide the final answer based on your reasoning above.\"})\r\n        \r\n        start_time = time.time()\r\n        final_data = self.make_api_call(messages, self.max_tokens, is_final_answer=True)\r\n        end_time = time.time()\r\n        thinking_time = end_time - start_time\r\n        total_thinking_time += thinking_time\r\n        \r\n        final_answer = final_data['content']\r\n\r\n        # Prepare the output\r\n        output = \"\\n\".join(steps)\r\n        output += f\"\\nFinal Answer\\n{final_answer}\\n\\n\"\r\n        output += f\"Total thinking time: {total_thinking_time:.2f} seconds\"\r\n\r\n        self.status = f\"Generated response with {len(steps)} steps in {total_thinking_time:.2f} seconds\"\r\n        \r\n        return Message(text=output)",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "groq_api_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "groq_api_key",
+                  "value": "",
+                  "display_name": "Groq API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "API key for Groq. Keep this secret!",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "max_steps": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_steps",
+                  "value": 25,
+                  "display_name": "Max Steps",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Maximum number of reasoning steps.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "max_tokens": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_tokens",
+                  "value": 300,
+                  "display_name": "Max Tokens",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Maximum number of tokens for each API call.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "prompt": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "prompt",
+                  "value": "",
+                  "display_name": "User Query",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The query to process through the reasoning chain.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "temperature": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "temperature",
+                  "value": 0.2,
+                  "display_name": "Temperature",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Controls randomness in the output.",
+                  "title_case": false,
+                  "type": "float",
+                  "_input_type": "FloatInput"
+                }
+              },
+              "description": "Uses Llama-3.1 70b on Groq to create o1-like reasoning chains.",
+              "icon": "Groq",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Groq o1-like",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "response",
+                  "display_name": "Response",
+                  "method": "generate_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "prompt",
+                "groq_api_key",
+                "max_tokens",
+                "temperature",
+                "max_steps"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.18.dev1",
+              "official": false
+            },
+            "id": "CustomComponent-uvVBK"
+          },
+          "id": "CustomComponent-uvVBK",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-18T13:37:45.660Z",
+    "date_updated": "2024-09-18T13:37:45.686Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "3e203c77-c087-4ccf-a0c6-07c619d760f1",
+    "user_created": {
+      "username": "Victor",
+      "first_name": "VICTOR",
+      "last_name": "GOMES",
+      "id": "3e203c77-c087-4ccf-a0c6-07c619d760f1"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.825Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

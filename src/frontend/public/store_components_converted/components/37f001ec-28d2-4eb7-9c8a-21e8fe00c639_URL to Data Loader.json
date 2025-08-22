@@ -1,0 +1,387 @@
+{
+  "id": "37f001ec-28d2-4eb7-9c8a-21e8fe00c639",
+  "name": "URL to Data Loader",
+  "description": "Downloads a file from a URL and converts into a Data object using the same mechanism as the File component. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "mieslep",
+    "first_name": "Phil",
+    "last_name": "Miesle",
+    "id": "9d20ffdb-ed66-469f-b1db-272eb675d093",
+    "full_name": "Phil Miesle"
+  },
+  "store_url": "https://www.langflow.store/store/component/37f001ec-28d2-4eb7-9c8a-21e8fe00c639",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-23T13:57:16.966Z",
+    "updated": "2024-09-24T08:54:02.577Z",
+    "downloaded": "2025-08-19T17:50:07.297Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "URLFileLoader",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import requests\r\nimport base64\r\nimport os\r\nimport tempfile\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.base.data.utils import parse_text_file_to_data\r\nfrom axiestudio.io import MessageTextInput, Output, DictInput\r\n\r\nclass URLFileLoader(Component):\r\n    display_name = \"URL to Data Loader\"\r\n    description = \"Downloads a file from a URL and converts into a Data object using the same mechanism as the File component.\"\r\n    icon = \"file-text\"\r\n    name = \"URLFileLoader\"\r\n\r\n    inputs = [\r\n        MessageTextInput(name=\"url\", display_name=\"URL to Fetch\", required=True, placeholder=\"Enter file URL here...\"),\r\n        MessageTextInput(name=\"filename\", display_name=\"Filename\", required=True, placeholder=\"Enter filename with extension...\"),\r\n        BoolInput(\r\n            name=\"silent_errors\",\r\n            display_name=\"Silent Errors\",\r\n            advanced=True,\r\n            info=\"If true, errors will not raise an exception.\",\r\n        ),\r\n        DictInput(\r\n            name=\"metadata\",\r\n            display_name=\"Additional Metadata\",\r\n            info=\"Metadata to add to the Data object\",\r\n            advanced=True,\r\n            is_list=True,\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Data\", name=\"data\", method=\"download_and_process_file\"),\r\n    ]\r\n\r\n    def download_file_from_url(self, url: str) -> bytes:\r\n        try:\r\n            # Fetch the content from the URL\r\n            response = requests.get(url)\r\n            response.raise_for_status()  # Raise an error for bad responses (e.g., 404, 500)\r\n            return response.content  # Return file content as bytes\r\n        except requests.RequestException as e:\r\n            raise ValueError(f\"Error fetching URL: {str(e)}\")\r\n    \r\n    def download_and_process_file(self) -> Data:\r\n        # Get URL and filename from inputs\r\n        url = self.url\r\n        filename_val = self.filename\r\n        \r\n        # Download the file content from the URL\r\n        file_content = self.download_file_from_url(url)\r\n\r\n        # Create a temporary directory to store the file\r\n        with tempfile.TemporaryDirectory() as tmpdirname:\r\n            temp_file_path = os.path.join(tmpdirname, filename_val)\r\n\r\n            # Write downloaded content to a temporary file\r\n            with open(temp_file_path, 'wb') as temp_file:\r\n                temp_file.write(file_content)\r\n\r\n            # Use the existing utility to parse the text file to Data\r\n            try:\r\n                data = parse_text_file_to_data(temp_file_path,silent_errors=self.silent_errors)\r\n            except Exception as e:\r\n                raise ValueError(f\"Failed to parse the file: {str(e)}\")\r\n\r\n            # Ensure file is deleted after processing if required\r\n            os.remove(temp_file_path)\r\n            \r\n            # Determine the source: use 'source' from metadata if it exists, otherwise use self.url\r\n            metadata_source = self.metadata.get(\"source\", self.url)\r\n    \r\n            # Merge metadata, ensuring 'source' uses metadata's value if it exists\r\n            merged_metadata = {**self.metadata, 'source': metadata_source}\r\n    \r\n            # Create a new Data object with the updated source and merged metadata\r\n            return_data = Data(\r\n                text=data.text, \r\n                filename=self.filename, \r\n                **merged_metadata  # Add all the additional metadata\r\n            )\r\n\r\n            self.status = return_data\r\n            return return_data\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "filename": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "Enter filename with extension...",
+                "show": true,
+                "name": "filename",
+                "value": "",
+                "display_name": "Filename",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "metadata": {
+                "trace_as_input": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "metadata",
+                "value": [
+                  {
+                    "": ""
+                  }
+                ],
+                "display_name": "Additional Metadata",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Metadata to add to the Data object",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput",
+                "load_from_db": false
+              },
+              "silent_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "silent_errors",
+                "value": false,
+                "display_name": "Silent Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, errors will not raise an exception.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "url": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "Enter file URL here...",
+                "show": true,
+                "name": "url",
+                "value": "",
+                "display_name": "URL to Fetch",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Downloads a file from a URL and converts into a Data object using the same mechanism as the File component.",
+            "icon": "file-text",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "URL to Data Loader",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "download_and_process_file",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "url",
+              "filename",
+              "silent_errors",
+              "metadata"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-2QDNr"
+        },
+        "id": "CustomComponent-2QDNr",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "37f001ec-28d2-4eb7-9c8a-21e8fe00c639",
+    "name": "URL to Data Loader",
+    "description": "Downloads a file from a URL and converts into a Data object using the same mechanism as the File component.",
+    "is_component": true,
+    "liked_by_count": "10",
+    "downloads_count": "71",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "URLFileLoader",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import requests\r\nimport base64\r\nimport os\r\nimport tempfile\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.base.data.utils import parse_text_file_to_data\r\nfrom axiestudio.io import MessageTextInput, Output, DictInput\r\n\r\nclass URLFileLoader(Component):\r\n    display_name = \"URL to Data Loader\"\r\n    description = \"Downloads a file from a URL and converts into a Data object using the same mechanism as the File component.\"\r\n    icon = \"file-text\"\r\n    name = \"URLFileLoader\"\r\n\r\n    inputs = [\r\n        MessageTextInput(name=\"url\", display_name=\"URL to Fetch\", required=True, placeholder=\"Enter file URL here...\"),\r\n        MessageTextInput(name=\"filename\", display_name=\"Filename\", required=True, placeholder=\"Enter filename with extension...\"),\r\n        BoolInput(\r\n            name=\"silent_errors\",\r\n            display_name=\"Silent Errors\",\r\n            advanced=True,\r\n            info=\"If true, errors will not raise an exception.\",\r\n        ),\r\n        DictInput(\r\n            name=\"metadata\",\r\n            display_name=\"Additional Metadata\",\r\n            info=\"Metadata to add to the Data object\",\r\n            advanced=True,\r\n            is_list=True,\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Data\", name=\"data\", method=\"download_and_process_file\"),\r\n    ]\r\n\r\n    def download_file_from_url(self, url: str) -> bytes:\r\n        try:\r\n            # Fetch the content from the URL\r\n            response = requests.get(url)\r\n            response.raise_for_status()  # Raise an error for bad responses (e.g., 404, 500)\r\n            return response.content  # Return file content as bytes\r\n        except requests.RequestException as e:\r\n            raise ValueError(f\"Error fetching URL: {str(e)}\")\r\n    \r\n    def download_and_process_file(self) -> Data:\r\n        # Get URL and filename from inputs\r\n        url = self.url\r\n        filename_val = self.filename\r\n        \r\n        # Download the file content from the URL\r\n        file_content = self.download_file_from_url(url)\r\n\r\n        # Create a temporary directory to store the file\r\n        with tempfile.TemporaryDirectory() as tmpdirname:\r\n            temp_file_path = os.path.join(tmpdirname, filename_val)\r\n\r\n            # Write downloaded content to a temporary file\r\n            with open(temp_file_path, 'wb') as temp_file:\r\n                temp_file.write(file_content)\r\n\r\n            # Use the existing utility to parse the text file to Data\r\n            try:\r\n                data = parse_text_file_to_data(temp_file_path,silent_errors=self.silent_errors)\r\n            except Exception as e:\r\n                raise ValueError(f\"Failed to parse the file: {str(e)}\")\r\n\r\n            # Ensure file is deleted after processing if required\r\n            os.remove(temp_file_path)\r\n            \r\n            # Determine the source: use 'source' from metadata if it exists, otherwise use self.url\r\n            metadata_source = self.metadata.get(\"source\", self.url)\r\n    \r\n            # Merge metadata, ensuring 'source' uses metadata's value if it exists\r\n            merged_metadata = {**self.metadata, 'source': metadata_source}\r\n    \r\n            # Create a new Data object with the updated source and merged metadata\r\n            return_data = Data(\r\n                text=data.text, \r\n                filename=self.filename, \r\n                **merged_metadata  # Add all the additional metadata\r\n            )\r\n\r\n            self.status = return_data\r\n            return return_data\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "filename": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "Enter filename with extension...",
+                  "show": true,
+                  "name": "filename",
+                  "value": "",
+                  "display_name": "Filename",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "metadata": {
+                  "trace_as_input": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "metadata",
+                  "value": [
+                    {
+                      "": ""
+                    }
+                  ],
+                  "display_name": "Additional Metadata",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Metadata to add to the Data object",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput",
+                  "load_from_db": false
+                },
+                "silent_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "silent_errors",
+                  "value": false,
+                  "display_name": "Silent Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, errors will not raise an exception.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "url": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "Enter file URL here...",
+                  "show": true,
+                  "name": "url",
+                  "value": "",
+                  "display_name": "URL to Fetch",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Downloads a file from a URL and converts into a Data object using the same mechanism as the File component.",
+              "icon": "file-text",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "URL to Data Loader",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "download_and_process_file",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "url",
+                "filename",
+                "silent_errors",
+                "metadata"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-2QDNr"
+          },
+          "id": "CustomComponent-2QDNr",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-23T13:57:16.966Z",
+    "date_updated": "2024-09-24T08:54:02.577Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "9d20ffdb-ed66-469f-b1db-272eb675d093",
+    "user_created": {
+      "username": "mieslep",
+      "first_name": "Phil",
+      "last_name": "Miesle",
+      "id": "9d20ffdb-ed66-469f-b1db-272eb675d093"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.617Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

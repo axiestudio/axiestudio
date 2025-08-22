@@ -1,0 +1,579 @@
+{
+  "id": "f1272d75-5a06-4887-83d0-0d8ed415ce67",
+  "name": "Hyperbolic",
+  "description": "Generate text using Hyperbolic Chat LLMs. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "raphaelchristi",
+    "first_name": "Raphael",
+    "last_name": "Christi",
+    "id": "2e0554c7-2ab5-4dd7-b9c1-6b5ed9f5b565",
+    "full_name": "Raphael Christi"
+  },
+  "store_url": "https://www.langflow.store/store/component/f1272d75-5a06-4887-83d0-0d8ed415ce67",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-06T20:01:35.799Z",
+    "updated": "2024-09-06T20:01:35.824Z",
+    "downloaded": "2025-08-19T17:50:05.150Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "HyperbolicModel",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Any, List, Mapping, Optional\nfrom pydantic.v1 import SecretStr\n\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.field_typing import LanguageModel\nfrom axiestudio.io import DropdownInput, FloatInput, IntInput, MessageTextInput, SecretStrInput\n\nclass HyperbolicModelComponent(LCModelComponent):\n    display_name = \"Hyperbolic\"\n    description = \"Generate text using Hyperbolic Chat LLMs.\"\n    icon = \"shell\"\n    name = \"HyperbolicModel\"\n\n    ALLOWED_MODELS = [\n        \"StableDiffusion\",\n        \"Monad\",\n        \"mattshumer/Reflection-Llama-3.1-70B\",\n        \"meta-llama/Meta-Llama-3.1-405B-FP8\",\n        \"Wifhat\",\n        \"meta-llama/Meta-Llama-3.1-405B-Instruct\",\n        \"NousResearch/Hermes-3-Llama-3.1-70B\",\n        \"meta-llama/Meta-Llama-3.1-405B\",\n        \"TTS\",\n        \"meta-llama/Meta-Llama-3.1-70B-Instruct\",\n        \"FLUX.1-dev\",\n        \"meta-llama/Meta-Llama-3-70B-Instruct\",\n        \"meta-llama/Meta-Llama-3.1-8B-Instruct\"\n    ]\n\n    inputs = LCModelComponent._base_inputs + [\n        IntInput(\n            name=\"max_tokens\",\n            display_name=\"Max Tokens\",\n            advanced=True,\n            value=512,\n            info=\"The maximum number of tokens to generate.\",\n        ),\n        DropdownInput(\n            name=\"model\",\n            display_name=\"Model Name\",\n            options=ALLOWED_MODELS,\n            info=\"The LLM model to be used\",\n            value=\"mattshumer/Reflection-Llama-3.1-70B\",\n        ),\n        SecretStrInput(\n            name=\"hyperbolic_api_key\",\n            display_name=\"Hyperbolic API Key\",\n            info=\"Your Hyperbolic API key.\",\n        ),\n        FloatInput(name=\"temperature\", display_name=\"Temperature\", value=0.7),\n        FloatInput(name=\"top_p\", display_name=\"Top P\", value=0.9, advanced=True),\n        MessageTextInput(\n            name=\"system_message\",\n            display_name=\"System Message\",\n            info=\"The system message to set the behavior of the model\",\n            value=\"You are a world-class AI system, capable of complex reasoning and reflection. Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags.\",\n        ),\n    ]\n\n    def build_model(self) -> LanguageModel:\n        import requests\n        from langchain.llms.base import LLM\n        from langchain.callbacks.manager import CallbackManagerForLLMRun\n\n        class HyperbolicLLM(LLM):\n            hyperbolic_api_key: str\n            model: str\n            max_tokens: int\n            temperature: float\n            top_p: float\n            system_message: str\n\n            @property\n            def _llm_type(self) -> str:\n                return \"hyperbolic\"\n\n            def _call(\n                self,\n                prompt: str,\n                stop: Optional[List[str]] = None,\n                run_manager: Optional[CallbackManagerForLLMRun] = None,\n                **kwargs: Any,\n            ) -> str:\n                url = \"https://api.hyperbolic.xyz/v1/chat/completions\"\n                headers = {\n                    \"Content-Type\": \"application/json\",\n                    \"Authorization\": f\"Bearer {self.hyperbolic_api_key}\"\n                }\n                data = {\n                    \"messages\": [\n                        {\n                            \"role\": \"system\",\n                            \"content\": self.system_message\n                        },\n                        {\n                            \"role\": \"user\",\n                            \"content\": prompt\n                        }\n                    ],\n                    \"model\": self.model,\n                    \"max_tokens\": self.max_tokens,\n                    \"temperature\": self.temperature,\n                    \"top_p\": self.top_p,\n                    \"stream\": False\n                }\n\n                try:\n                    response = requests.post(url, headers=headers, json=data)\n                    response.raise_for_status()\n                    result = response.json()\n                    return result['choices'][0]['message']['content']\n                except requests.exceptions.RequestException as e:\n                    error_message = f\"Error connecting to Hyperbolic API: {str(e)}\"\n                    if response.text:\n                        error_message += f\"\\nResponse: {response.text}\"\n                    raise ValueError(error_message)\n\n            @property\n            def _identifying_params(self) -> Mapping[str, Any]:\n                \"\"\"Get the identifying parameters.\"\"\"\n                return {\n                    \"model\": self.model,\n                    \"max_tokens\": self.max_tokens,\n                    \"temperature\": self.temperature,\n                    \"top_p\": self.top_p,\n                }\n\n        if self.model not in self.ALLOWED_MODELS:\n            raise ValueError(f\"Model {self.model} is not allowed. Allowed models are: {', '.join(self.ALLOWED_MODELS)}\")\n\n        try:\n            output = HyperbolicLLM(\n                hyperbolic_api_key=self.hyperbolic_api_key,\n                model=self.model,\n                max_tokens=self.max_tokens,\n                temperature=self.temperature,\n                top_p=self.top_p,\n                system_message=self.system_message,\n            )\n        except Exception as e:\n            raise ValueError(f\"Could not initialize Hyperbolic LLM: {str(e)}\") from e\n\n        return output\n\n    def _get_exception_message(self, exception: Exception) -> str | None:\n        if isinstance(exception, requests.exceptions.RequestException):\n            return f\"Error connecting to Hyperbolic API: {str(exception)}\"\n        return None",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "hyperbolic_api_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "hyperbolic_api_key",
+                "value": "",
+                "display_name": "Hyperbolic API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Your Hyperbolic API key.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageInput"
+              },
+              "max_tokens": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_tokens",
+                "value": 4096,
+                "display_name": "Max Tokens",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The maximum number of tokens to generate.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "model": {
+                "trace_as_metadata": true,
+                "options": [
+                  "StableDiffusion",
+                  "Monad",
+                  "mattshumer/Reflection-Llama-3.1-70B",
+                  "meta-llama/Meta-Llama-3.1-405B-FP8",
+                  "Wifhat",
+                  "meta-llama/Meta-Llama-3.1-405B-Instruct",
+                  "NousResearch/Hermes-3-Llama-3.1-70B",
+                  "meta-llama/Meta-Llama-3.1-405B",
+                  "TTS",
+                  "meta-llama/Meta-Llama-3.1-70B-Instruct",
+                  "FLUX.1-dev",
+                  "meta-llama/Meta-Llama-3-70B-Instruct",
+                  "meta-llama/Meta-Llama-3.1-8B-Instruct"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "model",
+                "value": "mattshumer/Reflection-Llama-3.1-70B",
+                "display_name": "Model Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The LLM model to be used",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "stream": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "stream",
+                "value": false,
+                "display_name": "Stream",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Stream the response from the model. Streaming works only in Chat.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "system_message": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "system_message",
+                "value": "You are a world-class AI system, capable of complex reasoning and reflection. Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags.",
+                "display_name": "System Message",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The system message to set the behavior of the model",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "temperature": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "temperature",
+                "value": 0.1,
+                "display_name": "Temperature",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "float",
+                "_input_type": "FloatInput",
+                "load_from_db": false
+              },
+              "top_p": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "top_p",
+                "value": 0.9,
+                "display_name": "Top P",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "float",
+                "_input_type": "FloatInput"
+              }
+            },
+            "description": "Generate text using Hyperbolic Chat LLMs.",
+            "icon": "shell",
+            "base_classes": [
+              "LanguageModel",
+              "Message"
+            ],
+            "display_name": "Hyperbolic",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text_output",
+                "display_name": "Text",
+                "method": "text_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "LanguageModel"
+                ],
+                "selected": "LanguageModel",
+                "name": "model_output",
+                "display_name": "Language Model",
+                "method": "build_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "system_message",
+              "stream",
+              "max_tokens",
+              "model",
+              "hyperbolic_api_key",
+              "temperature",
+              "top_p",
+              "system_message"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "AnthropicModel-rWqpG"
+        },
+        "id": "AnthropicModel-rWqpG",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "AnthropicModel": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "f1272d75-5a06-4887-83d0-0d8ed415ce67",
+    "name": "Hyperbolic",
+    "description": "Generate text using Hyperbolic Chat LLMs.",
+    "is_component": true,
+    "liked_by_count": "2",
+    "downloads_count": "10",
+    "metadata": {
+      "AnthropicModel": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "HyperbolicModel",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Any, List, Mapping, Optional\nfrom pydantic.v1 import SecretStr\n\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.field_typing import LanguageModel\nfrom axiestudio.io import DropdownInput, FloatInput, IntInput, MessageTextInput, SecretStrInput\n\nclass HyperbolicModelComponent(LCModelComponent):\n    display_name = \"Hyperbolic\"\n    description = \"Generate text using Hyperbolic Chat LLMs.\"\n    icon = \"shell\"\n    name = \"HyperbolicModel\"\n\n    ALLOWED_MODELS = [\n        \"StableDiffusion\",\n        \"Monad\",\n        \"mattshumer/Reflection-Llama-3.1-70B\",\n        \"meta-llama/Meta-Llama-3.1-405B-FP8\",\n        \"Wifhat\",\n        \"meta-llama/Meta-Llama-3.1-405B-Instruct\",\n        \"NousResearch/Hermes-3-Llama-3.1-70B\",\n        \"meta-llama/Meta-Llama-3.1-405B\",\n        \"TTS\",\n        \"meta-llama/Meta-Llama-3.1-70B-Instruct\",\n        \"FLUX.1-dev\",\n        \"meta-llama/Meta-Llama-3-70B-Instruct\",\n        \"meta-llama/Meta-Llama-3.1-8B-Instruct\"\n    ]\n\n    inputs = LCModelComponent._base_inputs + [\n        IntInput(\n            name=\"max_tokens\",\n            display_name=\"Max Tokens\",\n            advanced=True,\n            value=512,\n            info=\"The maximum number of tokens to generate.\",\n        ),\n        DropdownInput(\n            name=\"model\",\n            display_name=\"Model Name\",\n            options=ALLOWED_MODELS,\n            info=\"The LLM model to be used\",\n            value=\"mattshumer/Reflection-Llama-3.1-70B\",\n        ),\n        SecretStrInput(\n            name=\"hyperbolic_api_key\",\n            display_name=\"Hyperbolic API Key\",\n            info=\"Your Hyperbolic API key.\",\n        ),\n        FloatInput(name=\"temperature\", display_name=\"Temperature\", value=0.7),\n        FloatInput(name=\"top_p\", display_name=\"Top P\", value=0.9, advanced=True),\n        MessageTextInput(\n            name=\"system_message\",\n            display_name=\"System Message\",\n            info=\"The system message to set the behavior of the model\",\n            value=\"You are a world-class AI system, capable of complex reasoning and reflection. Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags.\",\n        ),\n    ]\n\n    def build_model(self) -> LanguageModel:\n        import requests\n        from langchain.llms.base import LLM\n        from langchain.callbacks.manager import CallbackManagerForLLMRun\n\n        class HyperbolicLLM(LLM):\n            hyperbolic_api_key: str\n            model: str\n            max_tokens: int\n            temperature: float\n            top_p: float\n            system_message: str\n\n            @property\n            def _llm_type(self) -> str:\n                return \"hyperbolic\"\n\n            def _call(\n                self,\n                prompt: str,\n                stop: Optional[List[str]] = None,\n                run_manager: Optional[CallbackManagerForLLMRun] = None,\n                **kwargs: Any,\n            ) -> str:\n                url = \"https://api.hyperbolic.xyz/v1/chat/completions\"\n                headers = {\n                    \"Content-Type\": \"application/json\",\n                    \"Authorization\": f\"Bearer {self.hyperbolic_api_key}\"\n                }\n                data = {\n                    \"messages\": [\n                        {\n                            \"role\": \"system\",\n                            \"content\": self.system_message\n                        },\n                        {\n                            \"role\": \"user\",\n                            \"content\": prompt\n                        }\n                    ],\n                    \"model\": self.model,\n                    \"max_tokens\": self.max_tokens,\n                    \"temperature\": self.temperature,\n                    \"top_p\": self.top_p,\n                    \"stream\": False\n                }\n\n                try:\n                    response = requests.post(url, headers=headers, json=data)\n                    response.raise_for_status()\n                    result = response.json()\n                    return result['choices'][0]['message']['content']\n                except requests.exceptions.RequestException as e:\n                    error_message = f\"Error connecting to Hyperbolic API: {str(e)}\"\n                    if response.text:\n                        error_message += f\"\\nResponse: {response.text}\"\n                    raise ValueError(error_message)\n\n            @property\n            def _identifying_params(self) -> Mapping[str, Any]:\n                \"\"\"Get the identifying parameters.\"\"\"\n                return {\n                    \"model\": self.model,\n                    \"max_tokens\": self.max_tokens,\n                    \"temperature\": self.temperature,\n                    \"top_p\": self.top_p,\n                }\n\n        if self.model not in self.ALLOWED_MODELS:\n            raise ValueError(f\"Model {self.model} is not allowed. Allowed models are: {', '.join(self.ALLOWED_MODELS)}\")\n\n        try:\n            output = HyperbolicLLM(\n                hyperbolic_api_key=self.hyperbolic_api_key,\n                model=self.model,\n                max_tokens=self.max_tokens,\n                temperature=self.temperature,\n                top_p=self.top_p,\n                system_message=self.system_message,\n            )\n        except Exception as e:\n            raise ValueError(f\"Could not initialize Hyperbolic LLM: {str(e)}\") from e\n\n        return output\n\n    def _get_exception_message(self, exception: Exception) -> str | None:\n        if isinstance(exception, requests.exceptions.RequestException):\n            return f\"Error connecting to Hyperbolic API: {str(exception)}\"\n        return None",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "hyperbolic_api_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "hyperbolic_api_key",
+                  "value": "",
+                  "display_name": "Hyperbolic API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Your Hyperbolic API key.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageInput"
+                },
+                "max_tokens": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_tokens",
+                  "value": 4096,
+                  "display_name": "Max Tokens",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The maximum number of tokens to generate.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "model": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "StableDiffusion",
+                    "Monad",
+                    "mattshumer/Reflection-Llama-3.1-70B",
+                    "meta-llama/Meta-Llama-3.1-405B-FP8",
+                    "Wifhat",
+                    "meta-llama/Meta-Llama-3.1-405B-Instruct",
+                    "NousResearch/Hermes-3-Llama-3.1-70B",
+                    "meta-llama/Meta-Llama-3.1-405B",
+                    "TTS",
+                    "meta-llama/Meta-Llama-3.1-70B-Instruct",
+                    "FLUX.1-dev",
+                    "meta-llama/Meta-Llama-3-70B-Instruct",
+                    "meta-llama/Meta-Llama-3.1-8B-Instruct"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "model",
+                  "value": "mattshumer/Reflection-Llama-3.1-70B",
+                  "display_name": "Model Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The LLM model to be used",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "stream": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "stream",
+                  "value": false,
+                  "display_name": "Stream",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Stream the response from the model. Streaming works only in Chat.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "system_message": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "system_message",
+                  "value": "You are a world-class AI system, capable of complex reasoning and reflection. Reason through the query inside <thinking> tags, and then provide your final response inside <output> tags. If you detect that you made a mistake in your reasoning at any point, correct yourself inside <reflection> tags.",
+                  "display_name": "System Message",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The system message to set the behavior of the model",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "temperature": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "temperature",
+                  "value": 0.1,
+                  "display_name": "Temperature",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "float",
+                  "_input_type": "FloatInput",
+                  "load_from_db": false
+                },
+                "top_p": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "top_p",
+                  "value": 0.9,
+                  "display_name": "Top P",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "float",
+                  "_input_type": "FloatInput"
+                }
+              },
+              "description": "Generate text using Hyperbolic Chat LLMs.",
+              "icon": "shell",
+              "base_classes": [
+                "LanguageModel",
+                "Message"
+              ],
+              "display_name": "Hyperbolic",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text_output",
+                  "display_name": "Text",
+                  "method": "text_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "LanguageModel"
+                  ],
+                  "selected": "LanguageModel",
+                  "name": "model_output",
+                  "display_name": "Language Model",
+                  "method": "build_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "system_message",
+                "stream",
+                "max_tokens",
+                "model",
+                "hyperbolic_api_key",
+                "temperature",
+                "top_p",
+                "system_message"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "AnthropicModel-rWqpG"
+          },
+          "id": "AnthropicModel-rWqpG",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-06T20:01:35.799Z",
+    "date_updated": "2024-09-06T20:01:35.824Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "2e0554c7-2ab5-4dd7-b9c1-6b5ed9f5b565",
+    "user_created": {
+      "username": "raphaelchristi",
+      "first_name": "Raphael",
+      "last_name": "Christi",
+      "id": "2e0554c7-2ab5-4dd7-b9c1-6b5ed9f5b565"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:12.519Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}
