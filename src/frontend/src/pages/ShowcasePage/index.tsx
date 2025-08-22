@@ -136,7 +136,15 @@ export default function ShowcasePage(): JSX.Element {
     if (!storeData) return [];
     const tagSet = new Set<string>();
     [...storeData.flows, ...storeData.components].forEach(item => {
-      item.tags.forEach(tag => tagSet.add(tag.tags_id.name));
+      // Handle items with tags safely
+      if (item.tags && Array.isArray(item.tags)) {
+        item.tags.forEach(tag => {
+          // Ensure tag has the expected structure
+          if (tag && tag.tags_id && tag.tags_id.name) {
+            tagSet.add(tag.tags_id.name);
+          }
+        });
+      }
     });
     return Array.from(tagSet).sort();
   }, [storeData]);
@@ -146,7 +154,10 @@ export default function ShowcasePage(): JSX.Element {
     if (!storeData) return [];
     const authorSet = new Set<string>();
     [...storeData.flows, ...storeData.components].forEach(item => {
-      authorSet.add(item.author.username);
+      // Handle items with author data safely
+      if (item.author && item.author.username) {
+        authorSet.add(item.author.username);
+      }
     });
     return Array.from(authorSet).sort();
   }, [storeData]);
@@ -170,8 +181,10 @@ export default function ShowcasePage(): JSX.Element {
       items = items.filter(item =>
         item.name.toLowerCase().includes(searchLower) ||
         item.description.toLowerCase().includes(searchLower) ||
-        item.author.username.toLowerCase().includes(searchLower) ||
-        item.tags.some(tag => tag.tags_id.name.toLowerCase().includes(searchLower)) ||
+        (item.author?.username && item.author.username.toLowerCase().includes(searchLower)) ||
+        (item.tags && Array.isArray(item.tags) && item.tags.some(tag =>
+          tag?.tags_id?.name && tag.tags_id.name.toLowerCase().includes(searchLower)
+        )) ||
         (item.technical?.last_tested_version && item.technical.last_tested_version.toLowerCase().includes(searchLower))
       );
     }
@@ -179,7 +192,9 @@ export default function ShowcasePage(): JSX.Element {
     // Apply tag filter
     if (selectedTags.length > 0) {
       items = items.filter(item =>
-        item.tags.some(tag => selectedTags.includes(tag.tags_id.name))
+        item.tags && Array.isArray(item.tags) && item.tags.some(tag =>
+          tag?.tags_id?.name && selectedTags.includes(tag.tags_id.name)
+        )
       );
     }
 
@@ -669,20 +684,22 @@ function ShowcaseCard({ item, onDownload, isDownloading }: ShowcaseCardProps) {
         </div>
 
         {/* Tags */}
-        {item.tags.length > 0 && (
+        {item.tags && Array.isArray(item.tags) && item.tags.length > 0 && (
           <div className="space-y-1">
             <div className="flex flex-wrap gap-1">
-              {item.tags.slice(0, 3).map((tag) => (
-                <Badge
-                  key={tag.tags_id.id}
-                  variant="outline"
-                  className="text-xs px-2 py-0.5 hover:bg-primary/10 transition-colors"
-                >
-                  {tag.tags_id.name}
-                </Badge>
-              ))}
+              {item.tags.slice(0, 3).map((tag, index) =>
+                tag?.tags_id?.name ? (
+                  <Badge
+                    key={tag.tags_id.id || `tag-${index}`}
+                    variant="outline"
+                    className="text-xs px-2 py-0.5 hover:bg-primary/10 transition-colors"
+                  >
+                    {tag.tags_id.name}
+                  </Badge>
+                ) : null
+              )}
               {item.tags.length > 3 && (
-                <ShadTooltip content={`${item.tags.length - 3} more tags: ${item.tags.slice(3).map(t => t.tags_id.name).join(', ')}`}>
+                <ShadTooltip content={`${item.tags.length - 3} more tags: ${item.tags.slice(3).filter(t => t?.tags_id?.name).map(t => t.tags_id.name).join(', ')}`}>
                   <Badge variant="outline" className="text-xs px-2 py-0.5">
                     +{item.tags.length - 3}
                   </Badge>

@@ -91,24 +91,172 @@ Deploy Axie Studio on your preferred cloud platform:
 - [Railway](./RAILWAY_ENV.md)
 - [Docker Hub](https://hub.docker.com/r/axiestudio/axiestudio)
 
-## 🗄️ Enhanced Database Management System
+## 🗄️ Automatic Database Management System
 
-AxieStudio features an **enterprise-grade auto-migration system** that automatically handles database schema updates and table creation.
+AxieStudio features an **enterprise-grade automatic database creation system** that automatically handles database schema updates and table creation **during application startup** with proper conditional logic (if/else statements).
 
-### **Auto-Table Creation System**
+### **🚀 Automatic Table Creation System**
 
-Our system automatically creates and manages database tables based on SQLModel definitions:
+The application **automatically creates and manages database tables** during deployment/startup:
+
+✅ **Automatic Table Creation** - Creates missing tables automatically during startup
+✅ **Conditional Logic** - Uses proper if/else statements to check table/column existence
+✅ **Schema Validation** - Ensures all required columns exist with proper types
+✅ **Error Handling** - Graceful handling of database issues without startup failure
+✅ **Multi-Database Support** - Works with PostgreSQL, MySQL, and SQLite
+✅ **Production Ready** - Safe for production deployments with zero downtime
+
+### **🔧 How It Works**
+
+The automatic system runs during application startup and:
+
+1. **Checks existing tables** - Uses conditional logic to detect missing tables
+2. **Creates missing tables** - Automatically creates required tables if they don't exist
+3. **Adds missing columns** - Ensures all email verification and security columns exist
+4. **Fixes schema issues** - Automatically resolves common schema mismatches
+5. **Removes problematic indexes** - Cleans up indexes that cause migration conflicts
+
+```python
+# Automatic conditional logic example from the codebase:
+if table_name not in existing_tables:
+    # Table doesn't exist - create it automatically
+    logger.info(f"🔧 Creating table '{table_name}'...")
+    await create_function(session)
+else:
+    # Table exists - verify columns
+    logger.info(f"✅ Table '{table_name}' already exists - checking columns...")
+```
+
+### **📊 Database Migration Scripts**
+
+For manual database management and troubleshooting:
 
 ```bash
 # Check database status
-python database_migration_script.py status
+python temp/database_migration_script.py status
 
 # Run enhanced migration
-python database_migration_script.py migrate
+python temp/database_migration_script.py migrate
+
+# Run comprehensive setup
+python temp/enhanced_auto_migration_manager.py
 
 # Show help
-python database_migration_script.py help
+python temp/database_migration_script.py help
 ```
+
+### **📋 Complete SQL Commands Reference**
+
+All SQL commands used by the automatic database system (for manual execution if needed):
+
+#### **🔧 Email Verification Columns**
+```sql
+-- Add email verification columns
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS email_verification_expires TIMESTAMP;
+
+-- Add 6-digit verification code columns (Enterprise)
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS verification_code VARCHAR(6);
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS verification_code_expires TIMESTAMP;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS verification_attempts INTEGER DEFAULT 0 NOT NULL;
+```
+
+#### **🔒 Security Enhancement Columns**
+```sql
+-- Add security tracking columns
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS login_attempts INTEGER DEFAULT 0;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS last_login_ip VARCHAR;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS failed_login_attempts INTEGER DEFAULT 0;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS last_failed_login TIMESTAMP;
+```
+
+#### **💳 Subscription Management Columns**
+```sql
+-- Add subscription columns
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS stripe_customer_id VARCHAR;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS subscription_status VARCHAR DEFAULT 'trial';
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS subscription_id VARCHAR;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS trial_start TIMESTAMP;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS trial_end TIMESTAMP;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS subscription_start TIMESTAMP;
+ALTER TABLE "user" ADD COLUMN IF NOT EXISTS subscription_end TIMESTAMP;
+```
+
+#### **🔧 Schema Fixes**
+```sql
+-- Fix verification_attempts column (make NOT NULL)
+UPDATE "user" SET verification_attempts = 0 WHERE verification_attempts IS NULL;
+ALTER TABLE "user" ALTER COLUMN verification_attempts SET NOT NULL;
+
+-- Remove problematic indexes
+DROP INDEX IF EXISTS ix_user_email_verification_token;
+DROP INDEX IF EXISTS ix_user_verification_code;
+```
+
+#### **📊 Verification Commands**
+```sql
+-- Check all email verification columns
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_name = 'user'
+AND column_name IN (
+    'email_verified', 'email_verification_token', 'email_verification_expires',
+    'verification_code', 'verification_code_expires', 'verification_attempts',
+    'login_attempts', 'locked_until', 'last_login_ip',
+    'password_changed_at', 'failed_login_attempts', 'last_failed_login'
+)
+ORDER BY column_name;
+
+-- Check table structure
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_name = 'user'
+ORDER BY ordinal_position;
+
+-- Verify indexes
+SELECT indexname FROM pg_indexes WHERE tablename = 'user';
+```
+
+### **🚀 Automatic Deployment System**
+
+The application includes an **automatic deployment system** that handles database setup during startup:
+
+#### **Startup Process:**
+1. **Application starts** → Automatic database initialization begins
+2. **Check database connection** → Verify database accessibility
+3. **Scan existing tables** → Use conditional logic to detect missing tables
+4. **Create missing tables** → Automatically create required tables if they don't exist
+5. **Add missing columns** → Ensure all email verification columns exist
+6. **Fix schema issues** → Resolve common schema mismatches automatically
+7. **Clean up indexes** → Remove problematic indexes that cause conflicts
+8. **Application ready** → Database is fully configured and ready
+
+#### **Conditional Logic Examples:**
+```python
+# Table creation logic
+if "user" not in existing_tables:
+    logger.info("🔧 Creating user table...")
+    create_user_table()
+else:
+    logger.info("✅ User table exists - checking columns...")
+
+# Column addition logic
+if column_name not in existing_columns:
+    logger.info(f"🔧 Adding missing column: {column_name}")
+    add_column(column_name, column_definition)
+else:
+    logger.debug(f"✅ Column '{column_name}' already exists")
+```
+
+#### **Production Safety:**
+- ✅ **Non-destructive** - Never drops or modifies existing data
+- ✅ **Idempotent** - Safe to run multiple times
+- ✅ **Rollback safe** - Uses transactions for atomic operations
+- ✅ **Error handling** - Graceful failure without breaking startup
+- ✅ **Logging** - Comprehensive logging of all operations
 
 ### **Database API Endpoints**
 

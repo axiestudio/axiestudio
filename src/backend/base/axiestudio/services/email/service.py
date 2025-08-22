@@ -25,10 +25,88 @@ class EmailSettings(BaseSettings):
 
 
 class EmailService:
-    """Simple email service using SMTP."""
-    
+    """
+    Enterprise-grade email service using SMTP.
+
+    Features:
+    - 6-digit verification codes (enterprise standard)
+    - Email verification links (legacy support)
+    - Password reset emails
+    - Comprehensive error handling
+    - Security best practices
+    - Both text and HTML email formats
+    """
+
     def __init__(self):
         self.settings = EmailSettings()
+        self._validate_configuration()
+
+    def _validate_configuration(self) -> None:
+        """Validate email configuration on startup."""
+        try:
+            if not self.settings.SMTP_HOST:
+                logger.warning("⚠️ SMTP_HOST not configured - email functionality will be limited")
+
+            if not self.settings.SMTP_USER or not self.settings.SMTP_PASSWORD:
+                logger.warning("⚠️ SMTP credentials not configured - emails will fail to send")
+                logger.info("🔧 Set AXIESTUDIO_EMAIL_SMTP_USER and AXIESTUDIO_EMAIL_SMTP_PASSWORD environment variables")
+
+            if not self.settings.FROM_EMAIL or "@" not in self.settings.FROM_EMAIL:
+                logger.warning(f"⚠️ Invalid FROM_EMAIL configured: {self.settings.FROM_EMAIL}")
+
+            logger.info(f"📧 Email service initialized - SMTP: {self.settings.SMTP_HOST}:{self.settings.SMTP_PORT}")
+            logger.info(f"📧 From: {self.settings.FROM_NAME} <{self.settings.FROM_EMAIL}>")
+
+        except Exception as e:
+            logger.error(f"❌ Email service configuration validation failed: {e}")
+
+    async def health_check(self) -> dict:
+        """
+        Perform email service health check.
+
+        Returns:
+            dict: Health status with configuration details
+        """
+        try:
+            health_status = {
+                "service": "email",
+                "status": "healthy",
+                "smtp_host": self.settings.SMTP_HOST,
+                "smtp_port": self.settings.SMTP_PORT,
+                "from_email": self.settings.FROM_EMAIL,
+                "credentials_configured": bool(self.settings.SMTP_USER and self.settings.SMTP_PASSWORD),
+                "issues": []
+            }
+
+            # Check configuration issues
+            if not self.settings.SMTP_USER or not self.settings.SMTP_PASSWORD:
+                health_status["issues"].append("SMTP credentials not configured")
+                health_status["status"] = "degraded"
+
+            if not self.settings.FROM_EMAIL or "@" not in self.settings.FROM_EMAIL:
+                health_status["issues"].append("Invalid FROM_EMAIL configuration")
+                health_status["status"] = "degraded"
+
+            # Test SMTP connection (optional - can be enabled for deeper health checks)
+            # This is commented out to avoid unnecessary connections during health checks
+            # try:
+            #     with smtplib.SMTP(self.settings.SMTP_HOST, self.settings.SMTP_PORT) as server:
+            #         server.starttls()
+            #         server.login(self.settings.SMTP_USER, self.settings.SMTP_PASSWORD)
+            #     health_status["smtp_connection"] = "successful"
+            # except Exception as e:
+            #     health_status["issues"].append(f"SMTP connection failed: {e}")
+            #     health_status["status"] = "unhealthy"
+
+            return health_status
+
+        except Exception as e:
+            logger.error(f"❌ Email service health check failed: {e}")
+            return {
+                "service": "email",
+                "status": "unhealthy",
+                "error": str(e)
+            }
     
     def generate_verification_token(self) -> str:
         """Generate a secure verification token."""
@@ -143,8 +221,39 @@ class EmailService:
             </html>
             """
 
-            # Send email
-            success = await self._send_email(email, subject, html_body)
+            # Create text version for email clients that don't support HTML
+            text_body = f"""
+AxieStudio - Email Verification
+
+Hello {username}!
+
+Your verification code is: {verification_code}
+
+⏰ This code expires in 10 minutes
+
+How to use this code:
+1. Return to the AxieStudio verification page
+2. Enter the 6-digit code above
+3. Click "Verify Account" to complete setup
+4. Start building amazing AI workflows!
+
+🔒 Security Notice: Never share this code with anyone. AxieStudio will never ask for your verification code via phone or email.
+
+What you'll get access to:
+🚀 AI Workflow Builder - Create powerful automation with drag-and-drop
+🤖 Multiple AI Models - OpenAI, Anthropic, Claude, and more
+📊 Real-time Dashboards - Monitor and visualize your results
+🏪 1,600+ Components - Ready-to-use flows and tools
+🤝 Team Collaboration - Share and work together seamlessly
+
+---
+AxieStudio - Building the future of AI workflows
+Visit us at: https://axiestudio.se
+Need help? Contact our support team - we're here to help!
+            """
+
+            # Send email with BOTH text and HTML versions (Enterprise standard)
+            success = await self._send_email(email, subject, text_body, html_body)
 
             if success:
                 logger.info(f"✅ Verification code email sent successfully to {email}")
@@ -448,32 +557,80 @@ class EmailService:
             return False
     
     async def _send_email(self, to_email: str, subject: str, text_body: str, html_body: str) -> bool:
-        """Send email using SMTP."""
+        """
+        Send email using SMTP with enterprise-level error handling and security.
+
+        This method provides:
+        - Comprehensive error handling
+        - Security best practices
+        - Detailed logging for debugging
+        - Support for both text and HTML email formats
+        """
         try:
-            # Create message
+            # Validate email settings
+            if not self.settings.SMTP_USER or not self.settings.SMTP_PASSWORD:
+                logger.error("❌ SMTP credentials not configured. Please set AXIESTUDIO_EMAIL_SMTP_USER and AXIESTUDIO_EMAIL_SMTP_PASSWORD")
+                return False
+
+            if not to_email or "@" not in to_email:
+                logger.error(f"❌ Invalid email address: {to_email}")
+                return False
+
+            logger.info(f"📧 Preparing to send email to {to_email}")
+
+            # Create message with proper headers
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
             msg['From'] = f"{self.settings.FROM_NAME} <{self.settings.FROM_EMAIL}>"
             msg['To'] = to_email
-            
-            # Add text and HTML parts
-            text_part = MIMEText(text_body, 'plain')
-            html_part = MIMEText(html_body, 'html')
-            
+            msg['X-Mailer'] = "AxieStudio Email Service v1.0"
+            msg['X-Priority'] = "3"  # Normal priority
+
+            # Add text and HTML parts (enterprise standard)
+            text_part = MIMEText(text_body, 'plain', 'utf-8')
+            html_part = MIMEText(html_body, 'html', 'utf-8')
+
             msg.attach(text_part)
             msg.attach(html_part)
-            
-            # Send email
+
+            logger.debug(f"📧 Connecting to SMTP server: {self.settings.SMTP_HOST}:{self.settings.SMTP_PORT}")
+
+            # Send email with comprehensive error handling
             with smtplib.SMTP(self.settings.SMTP_HOST, self.settings.SMTP_PORT) as server:
+                # Enable security
                 server.starttls()
+                logger.debug("🔒 TLS encryption enabled")
+
+                # Authenticate
                 server.login(self.settings.SMTP_USER, self.settings.SMTP_PASSWORD)
+                logger.debug("✅ SMTP authentication successful")
+
+                # Send message
                 server.send_message(msg)
-            
-            logger.info(f"Verification email sent successfully to {to_email}")
+                logger.info(f"✅ Email sent successfully to {to_email}")
+
             return True
-            
+
+        except smtplib.SMTPAuthenticationError as e:
+            logger.error(f"❌ SMTP Authentication failed: {e}")
+            logger.error("🔧 Please check your SMTP credentials (AXIESTUDIO_EMAIL_SMTP_USER and AXIESTUDIO_EMAIL_SMTP_PASSWORD)")
+            return False
+
+        except smtplib.SMTPRecipientsRefused as e:
+            logger.error(f"❌ Email address rejected by server: {to_email} - {e}")
+            return False
+
+        except smtplib.SMTPServerDisconnected as e:
+            logger.error(f"❌ SMTP server disconnected: {e}")
+            logger.error("🔧 Please check your SMTP server settings")
+            return False
+
+        except smtplib.SMTPException as e:
+            logger.error(f"❌ SMTP error occurred: {e}")
+            return False
+
         except Exception as e:
-            logger.error(f"Failed to send email to {to_email}: {e}")
+            logger.exception(f"❌ Unexpected error sending email to {to_email}: {e}")
             return False
 
 

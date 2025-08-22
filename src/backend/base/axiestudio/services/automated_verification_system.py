@@ -9,10 +9,24 @@ This system will:
 """
 
 import asyncio
-import sys
-from pathlib import Path
 from datetime import datetime, timezone, timedelta
-from typing import List
+
+
+def ensure_timezone_aware(dt: datetime | None) -> datetime | None:
+    """
+    Ensure a datetime is timezone-aware.
+
+    This fixes the common issue where database datetimes are stored as naive
+    but need to be compared with timezone-aware datetimes.
+    """
+    if dt is None:
+        return None
+
+    if dt.tzinfo is None:
+        # Assume naive datetimes are in UTC (database default)
+        return dt.replace(tzinfo=timezone.utc)
+
+    return dt
 
 async def automated_verification_monitor():
     """Monitor and fix email verification issues automatically."""
@@ -71,18 +85,23 @@ async def automated_verification_monitor():
             
             for user in expired_token_users:
                 # If token expired within last 7 days, auto-verify
-                if user.email_verification_expires and \
-                   user.email_verification_expires > (datetime.now(timezone.utc) - timedelta(days=7)):
-                    
-                    print(f"🔧 Auto-verifying user with recently expired token: {user.username}")
-                    user.email_verified = True
-                    user.is_active = True
-                    user.email_verification_token = None
-                    user.email_verification_expires = None
-                    user.updated_at = datetime.now(timezone.utc)
-                    fixed_count += 1
+                if user.email_verification_expires:
+                    # Ensure timezone-aware comparison
+                    user_expires = ensure_timezone_aware(user.email_verification_expires)
+                    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+
+                    if user_expires and user_expires > seven_days_ago:
+                        print(f"🔧 Auto-verifying user with recently expired token: {user.username}")
+                        user.email_verified = True
+                        user.is_active = True
+                        user.email_verification_token = None
+                        user.email_verification_expires = None
+                        user.updated_at = datetime.now(timezone.utc)
+                        fixed_count += 1
+                    else:
+                        print(f"⚠️  User {user.username} has very old expired token - needs manual review")
                 else:
-                    print(f"⚠️  User {user.username} has very old expired token - needs manual review")
+                    print(f"⚠️  User {user.username} has no expiration date - needs manual review")
             
             # 3. Fix verified but inactive users
             for user in verified_inactive_users:

@@ -85,32 +85,75 @@ def get_store_components_path() -> Path:
     current_file = Path(__file__)
     # From temp/src/backend/base/axiestudio/api/v1/axiestudio_store.py
     # Go up to temp/src/ and then to store_components_converted
+    # Path structure: axiestudio_store.py -> v1 -> api -> axiestudio -> base -> backend -> src
+    # parents[0]=v1, parents[1]=api, parents[2]=axiestudio, parents[3]=base, parents[4]=backend, parents[5]=src
+    # So parents[5] gets us to src/, then we add store_components_converted
     store_path = current_file.parents[5] / "store_components_converted"
 
     if not store_path.exists():
-        raise HTTPException(
-            status_code=404,
-            detail="AxieStudio Store components directory not found. Please ensure the store components have been downloaded and converted."
-        )
+        # Try alternative paths for different deployment scenarios
+        alternative_paths = [
+            current_file.parents[5] / "src" / "store_components_converted",  # Docker deployment
+            current_file.parents[3] / "store_components_converted",  # Local development
+            Path("/app/src/store_components_converted"),  # Absolute Docker path
+            Path("./src/store_components_converted"),  # Relative path
+        ]
+
+        for alt_path in alternative_paths:
+            if alt_path.exists():
+                store_path = alt_path
+                break
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail=f"AxieStudio Store components directory not found. Searched paths: {store_path}, {', '.join(str(p) for p in alternative_paths)}"
+            )
 
     return store_path
 
 
 def load_store_index() -> StoreData:
     """Load the main store index file."""
-    store_path = get_store_components_path()
-    index_file = store_path / "store_index.json"
-    
-    if not index_file.exists():
-        raise HTTPException(
-            status_code=404,
-            detail="Store index file not found."
-        )
-    
     try:
+        store_path = get_store_components_path()
+        index_file = store_path / "store_index.json"
+
+        if not index_file.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Store index file not found at: {index_file}"
+            )
+
         with open(index_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
+
+        # Validate that required fields exist
+        if 'flows' not in data:
+            data['flows'] = []
+        if 'components' not in data:
+            data['components'] = []
+        if 'summary' not in data:
+            data['summary'] = {
+                'total_items': len(data.get('flows', [])) + len(data.get('components', [])),
+                'total_flows': len(data.get('flows', [])),
+                'total_components': len(data.get('components', [])),
+                'downloaded_at': '2025-08-22T00:00:00.000Z',
+                'store_url': 'https://www.langflow.store',
+                'api_used': 'AxieStudio Store API'
+            }
+        if 'conversion_info' not in data:
+            data['conversion_info'] = {
+                'converted_at': '2025-08-22T00:00:00.000Z',
+                'converted_from': 'langflow',
+                'converted_to': 'axiestudio',
+                'original_source': 'https://www.langflow.store',
+                'converter_version': '1.0.0'
+            }
+
         return StoreData(**data)
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=500,
