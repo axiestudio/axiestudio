@@ -8,7 +8,7 @@ import { Loader2, Mail, Shield, ArrowLeft } from "lucide-react";
 import { useCustomNavigate } from "../../customization/hooks/use-custom-navigate";
 import { CustomLink } from "../../customization/components/custom-link";
 import { AuthContext } from "../../contexts/authContext";
-import { api } from "../../controllers/API";
+import { api } from "../../controllers/API/api";
 
 interface VerificationStep {
   step: 'email' | 'code' | 'success' | 'token-verify';

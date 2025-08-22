@@ -4,7 +4,7 @@ import { CustomLink } from "@/customization/components/custom-link";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import useAlertStore from "../../stores/alertStore";
-import { api } from "../../controllers/API";
+import { api } from "../../controllers/API/api";
 
 export default function ForgotPasswordPage(): JSX.Element {
   const [email, setEmail] = useState("");

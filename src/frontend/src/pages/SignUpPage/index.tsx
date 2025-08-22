@@ -12,7 +12,7 @@ import { Input } from "../../components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { Alert, AlertDescription } from "../../components/ui/alert";
 import { Loader2, Mail, Shield, ArrowLeft } from "lucide-react";
-import { api } from "../../controllers/API";
+import { api } from "../../controllers/API/api";
 import { AuthContext } from "../../contexts/authContext";
 import { SIGNUP_ERROR_ALERT } from "../../constants/alerts_constants";
 import {

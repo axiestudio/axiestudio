@@ -5,7 +5,7 @@ import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
 import { Button } from "../../components/ui/button";
 import useAlertStore from "../../stores/alertStore";
 import { AuthContext } from "../../contexts/authContext";
-import { api } from "../../controllers/API";
+import { api } from "../../controllers/API/api";
 
 export default function ResetPasswordPage(): JSX.Element {
   const [searchParams] = useSearchParams();
