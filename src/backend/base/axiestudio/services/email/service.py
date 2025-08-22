@@ -556,6 +556,14 @@ Visit us at: https://axiestudio.se
     async def _send_email(self, to_email: str, subject: str, text_body: str, html_body: str) -> bool:
         """Send email using SMTP with enterprise-level error handling and security."""
         try:
+            # Debug logging for email configuration
+            logger.info(f"📧 EMAIL DEBUG - Attempting to send email to: {to_email}")
+            logger.info(f"📧 EMAIL DEBUG - SMTP Host: {self.settings.SMTP_HOST}")
+            logger.info(f"📧 EMAIL DEBUG - SMTP Port: {self.settings.SMTP_PORT}")
+            logger.info(f"📧 EMAIL DEBUG - SMTP User: {self.settings.SMTP_USER}")
+            logger.info(f"📧 EMAIL DEBUG - From Email: {self.settings.FROM_EMAIL}")
+            logger.info(f"📧 EMAIL DEBUG - Email Enabled: {getattr(self.settings, 'EMAIL_ENABLED', True)}")
+
             # Validate email settings
             if not self.settings.SMTP_USER or not self.settings.SMTP_PASSWORD:
                 logger.error("SMTP credentials not configured. Please set AXIESTUDIO_EMAIL_SMTP_USER and AXIESTUDIO_EMAIL_SMTP_PASSWORD")
@@ -579,13 +587,22 @@ Visit us at: https://axiestudio.se
             msg.attach(text_part)
             msg.attach(html_part)
 
-            # Send email
+            # Send email with detailed debugging
+            logger.info(f"📧 SMTP CONFIG - Host: {self.settings.SMTP_HOST}:{self.settings.SMTP_PORT}")
+            logger.info(f"📧 SMTP CONFIG - User: {self.settings.SMTP_USER}")
+            logger.info(f"📧 SMTP CONFIG - From: {self.settings.FROM_EMAIL}")
+            logger.info(f"📧 SMTP CONFIG - To: {to_email}")
+            logger.info(f"📧 EMAIL DEBUG - Connecting to SMTP server...")
             with smtplib.SMTP(self.settings.SMTP_HOST, self.settings.SMTP_PORT) as server:
+                logger.info(f"📧 EMAIL DEBUG - Starting TLS...")
                 server.starttls()
+                logger.info(f"📧 EMAIL DEBUG - Logging in with user: {self.settings.SMTP_USER}")
                 server.login(self.settings.SMTP_USER, self.settings.SMTP_PASSWORD)
+                logger.info(f"📧 EMAIL DEBUG - Sending message...")
                 server.send_message(msg)
+                logger.info(f"📧 EMAIL DEBUG - Message sent to SMTP server successfully")
 
-            logger.info(f"Email sent successfully to {to_email}")
+            logger.info(f"✅ Email sent successfully to {to_email}")
             return True
 
         except smtplib.SMTPAuthenticationError as e:
