@@ -194,8 +194,18 @@ export default function EmailVerificationPage(): JSX.Element {
   const renderEmailStep = () => (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-4 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-          <Mail className="w-6 h-6 text-blue-600" />
+        <img
+          src="/logo192.png"
+          alt="Axie Studio logo"
+          className="mx-auto mb-4 w-12 h-12 rounded-full object-contain"
+          onError={(e) => {
+            // Fallback to text logo if image fails to load
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.nextElementSibling.style.display = 'flex';
+          }}
+        />
+        <div className="mx-auto mb-4 w-12 h-12 bg-primary text-primary-foreground rounded-full items-center justify-center font-bold text-sm hidden">
+          AS
         </div>
         <CardTitle className="text-2xl">Account Not Activated?</CardTitle>
         <CardDescription>
@@ -261,8 +271,18 @@ export default function EmailVerificationPage(): JSX.Element {
   const renderCodeStep = () => (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-4 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-          <Shield className="w-6 h-6 text-green-600" />
+        <img
+          src="/logo192.png"
+          alt="Axie Studio logo"
+          className="mx-auto mb-4 w-12 h-12 rounded-full object-contain"
+          onError={(e) => {
+            // Fallback to text logo if image fails to load
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.nextElementSibling.style.display = 'flex';
+          }}
+        />
+        <div className="mx-auto mb-4 w-12 h-12 bg-primary text-primary-foreground rounded-full items-center justify-center font-bold text-sm hidden">
+          AS
         </div>
         <CardTitle className="text-2xl">Enter Verification Code</CardTitle>
         <CardDescription>
@@ -346,8 +366,18 @@ export default function EmailVerificationPage(): JSX.Element {
   const renderSuccessStep = () => (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-4 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-          <Shield className="w-6 h-6 text-green-600" />
+        <img
+          src="/logo192.png"
+          alt="Axie Studio logo"
+          className="mx-auto mb-4 w-12 h-12 rounded-full object-contain"
+          onError={(e) => {
+            // Fallback to text logo if image fails to load
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.nextElementSibling.style.display = 'flex';
+          }}
+        />
+        <div className="mx-auto mb-4 w-12 h-12 bg-primary text-primary-foreground rounded-full items-center justify-center font-bold text-sm hidden">
+          AS
         </div>
         <CardTitle className="text-2xl text-green-600">Account Activated!</CardTitle>
         <CardDescription>
@@ -369,8 +399,18 @@ export default function EmailVerificationPage(): JSX.Element {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-black rounded-full flex items-center justify-center mb-4">
-            <span className="text-white font-bold text-xl">AX</span>
+          <img
+            src="/logo192.png"
+            alt="Axie Studio logo"
+            className="mx-auto w-16 h-16 rounded-full object-contain mb-4"
+            onError={(e) => {
+              // Fallback to text logo if image fails to load
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling.style.display = 'flex';
+            }}
+          />
+          <div className="mx-auto w-16 h-16 bg-primary text-primary-foreground rounded-full items-center justify-center mb-4 font-bold text-xl hidden">
+            AS
           </div>
           <h1 className="text-2xl font-bold text-gray-900">AxieStudio</h1>
           <p className="text-gray-600">Email Verification</p>

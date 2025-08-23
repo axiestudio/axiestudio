@@ -124,8 +124,18 @@ const ChangePasswordPage: React.FC<ChangePasswordPageProps> = () => {
         <div className="bg-white rounded-xl shadow-lg p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="mx-auto h-16 w-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mb-4">
-              <span className="text-white text-2xl font-bold">AX</span>
+            <img
+              src="/logo192.png"
+              alt="Axie Studio logo"
+              className="mx-auto h-16 w-16 rounded-xl object-contain mb-4"
+              onError={(e) => {
+                // Fallback to text logo if image fails to load
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling.style.display = 'flex';
+              }}
+            />
+            <div className="mx-auto h-16 w-16 bg-primary text-primary-foreground rounded-xl items-center justify-center mb-4 font-bold text-xl hidden">
+              AS
             </div>
             <h2 className="text-3xl font-bold text-gray-900">
               {isFromReset ? 'Set New Password' : 'Change Password'}

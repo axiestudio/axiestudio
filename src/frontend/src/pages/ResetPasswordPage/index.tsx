@@ -67,8 +67,18 @@ export default function ResetPasswordPage(): JSX.Element {
         <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-background to-muted/30">
           <div className="flex w-96 flex-col items-center justify-center gap-6 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-8 shadow-2xl">
             <div className="flex flex-col items-center gap-4">
-              <div className="h-12 w-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+              <img
+                src="/logo192.png"
+                alt="Axie Studio logo"
+                className="h-12 w-12 rounded-xl object-contain"
+                onError={(e) => {
+                  // Fallback to text logo if image fails to load
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                }}
+              />
+              <div className="h-12 w-12 bg-primary text-primary-foreground rounded-xl items-center justify-center font-bold text-lg hidden">
+                AS
               </div>
               <div className="text-center">
                 <h1 className="text-2xl font-light text-foreground tracking-tight">
@@ -91,8 +101,18 @@ export default function ResetPasswordPage(): JSX.Element {
         <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-background to-muted/30">
           <div className="flex w-96 flex-col items-center justify-center gap-6 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-8 shadow-2xl">
             <div className="flex flex-col items-center gap-4 text-center">
-              <div className="h-12 w-12 bg-green-500 text-white rounded-xl flex items-center justify-center">
-                ✓
+              <img
+                src="/logo192.png"
+                alt="Axie Studio logo"
+                className="h-12 w-12 rounded-xl object-contain"
+                onError={(e) => {
+                  // Fallback to text logo if image fails to load
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                }}
+              />
+              <div className="h-12 w-12 bg-primary text-primary-foreground rounded-xl items-center justify-center font-bold text-lg hidden">
+                AS
               </div>
               <div>
                 <h1 className="text-2xl font-light text-foreground tracking-tight">
@@ -140,8 +160,18 @@ export default function ResetPasswordPage(): JSX.Element {
         <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-background to-muted/30">
           <div className="flex w-96 flex-col items-center justify-center gap-6 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-8 shadow-2xl">
             <div className="flex flex-col items-center gap-4 text-center">
-              <div className="h-12 w-12 bg-red-500 text-white rounded-xl flex items-center justify-center">
-                ✕
+              <img
+                src="/logo192.png"
+                alt="Axie Studio logo"
+                className="h-12 w-12 rounded-xl object-contain"
+                onError={(e) => {
+                  // Fallback to text logo if image fails to load
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                }}
+              />
+              <div className="h-12 w-12 bg-primary text-primary-foreground rounded-xl items-center justify-center font-bold text-lg hidden">
+                AS
               </div>
               <div>
                 <h1 className="text-2xl font-light text-foreground tracking-tight">

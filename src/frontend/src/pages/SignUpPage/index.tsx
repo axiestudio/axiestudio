@@ -319,7 +319,7 @@ export default function SignUp(): JSX.Element {
       <div className="flex h-full w-full flex-col items-center justify-center bg-muted">
         <div className="flex w-72 flex-col items-center justify-center gap-2">
           <img
-            src="https://www.axiestudio.se/Axiestudiologo.jpg"
+            src="/logo192.png"
             alt="Axie Studio logo"
             className="mb-4 h-10 w-10 scale-[1.5] rounded"
             onError={(e) => {
