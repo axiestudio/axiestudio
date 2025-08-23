@@ -34,13 +34,13 @@ export default function ForgotPasswordPage(): JSX.Element {
       
       setIsSubmitted(true);
       setSuccessData({
-        title: "Password reset email sent! Check your inbox and follow the instructions to reset your password.",
+        title: "If you own that email, you will receive a temporary password.",
       });
       
     } catch (error: any) {
       setErrorData({
         title: "Error",
-        list: [error?.response?.data?.detail || "Failed to send reset email. Please try again."],
+        list: [error?.response?.data?.detail || "Failed to send temporary password. Please try again."],
       });
     } finally {
       setIsLoading(false);
@@ -61,7 +61,7 @@ export default function ForgotPasswordPage(): JSX.Element {
                   Check Your Email
                 </h1>
                 <p className="text-sm text-muted-foreground mt-2">
-                  We've sent password reset instructions to <strong>{email}</strong>
+                  If you own that email, you will receive a temporary password
                 </p>
               </div>
             </div>
@@ -69,9 +69,9 @@ export default function ForgotPasswordPage(): JSX.Element {
             <div className="w-full space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  📧 <strong>Check your email</strong> for a password reset link<br/>
-                  🔗 <strong>Click the link</strong> to be logged in automatically<br/>
-                  ⚙️ <strong>Go to Settings</strong> to change your password
+                  📧 <strong>Check your email</strong> for your temporary password<br/>
+                  🔑 <strong>Log in</strong> with your username and the temporary password<br/>
+                  ⚙️ <strong>You'll be prompted</strong> to create a new password after login
                 </p>
               </div>
               
@@ -106,15 +106,25 @@ export default function ForgotPasswordPage(): JSX.Element {
       <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-background to-muted/30">
         <div className="flex w-96 flex-col items-center justify-center gap-6 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-8 shadow-2xl">
           <div className="flex flex-col items-center gap-4">
-            <div className="h-12 w-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center font-bold text-lg">
-              🔑
+            <img
+              src="/logo192.png"
+              alt="Axie Studio logo"
+              className="h-12 w-12 rounded-xl object-contain"
+              onError={(e) => {
+                // Fallback to text logo if image fails to load
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling.style.display = 'flex';
+              }}
+            />
+            <div className="h-12 w-12 bg-primary text-primary-foreground rounded-xl items-center justify-center font-bold text-lg hidden">
+              AS
             </div>
             <div className="text-center">
               <h1 className="text-2xl font-light text-foreground tracking-tight">
                 Forgot Password?
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Enter your email and we'll send you a reset link
+                Enter your email and we'll send you a temporary password
               </p>
             </div>
           </div>
@@ -144,12 +154,12 @@ export default function ForgotPasswordPage(): JSX.Element {
             </Form.Field>
 
             <Form.Submit asChild>
-              <Button 
-                className="w-full h-11 mt-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium" 
+              <Button
+                className="w-full h-11 mt-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
                 type="submit"
                 disabled={isLoading}
               >
-                {isLoading ? "Sending..." : "Send Reset Link"}
+                {isLoading ? "Sending..." : "Send Temporary Password"}
               </Button>
             </Form.Submit>
 

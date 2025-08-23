@@ -454,12 +454,32 @@ async def authenticate_user(username: str, password: str, db: AsyncSession, clie
 
     # Verify password
     if verify_password(password, user.password):
+        # Check if this is a temporary password that has expired
+        if user.password_changed_at is None and user.email_verification_expires:
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+            if user.email_verification_expires < now:
+                # Temporary password has expired
+                logger.warning(f"Temporary password expired for user: {username} from IP: {client_ip}")
+                user.failed_login_attempts += 1
+                user.last_failed_login = now
+                await db.commit()
+                raise HTTPException(
+                    status_code=401,
+                    detail="Temporary password has expired. Please request a new password reset."
+                )
+
         # Successful login - reset failed attempts and update login info
         user.failed_login_attempts = 0
         user.last_failed_login = None
         user.locked_until = None
         user.last_login_ip = client_ip
         user.login_attempts += 1
+
+        # Check if user needs to change password (temporary password scenario)
+        if user.password_changed_at is None:
+            logger.info(f"User {username} logged in with temporary password, requires password change")
+            # We'll handle this in the login endpoint by returning a special flag
 
         logger.info(f"Successful login for user: {username} from IP: {client_ip}")
         await db.commit()

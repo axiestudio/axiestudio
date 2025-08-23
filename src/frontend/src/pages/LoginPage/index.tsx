@@ -1,5 +1,6 @@
 import * as Form from "@radix-ui/react-form";
 import { useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useLoginUser } from "@/controllers/API/queries/auth";
 import { CustomLink } from "@/customization/components/custom-link";
 import InputComponent from "../../components/core/parameterRenderComponent/components/inputComponent";
@@ -22,6 +23,7 @@ export default function LoginPage(): JSX.Element {
   const { password, username } = inputState;
   const { login } = useContext(AuthContext);
   const setErrorData = useAlertStore((state) => state.setErrorData);
+  const navigate = useNavigate();
 
   function handleInput({
     target: { name, value },
@@ -39,7 +41,16 @@ export default function LoginPage(): JSX.Element {
 
     mutate(user, {
       onSuccess: (data) => {
-        login(data.access_token, "login", data.refresh_token);
+        // Check if password change is required (temporary password scenario)
+        if (data.password_change_required) {
+          // Log the user in first
+          login(data.access_token, "login", data.refresh_token);
+          // Then redirect to change password page with a flag
+          navigate("/change-password?from_reset=true");
+        } else {
+          // Normal login flow
+          login(data.access_token, "login", data.refresh_token);
+        }
       },
       onError: (error) => {
         setErrorData({
@@ -67,7 +78,7 @@ export default function LoginPage(): JSX.Element {
         <div className="flex w-96 flex-col items-center justify-center gap-6 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-8 shadow-2xl">
           <div className="flex flex-col items-center gap-4">
             <img
-              src="https://scontent-arn2-1.xx.fbcdn.net/v/t39.30808-6/499498872_122132145854766980_5268724011023190696_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=u5dFev5AG-kQ7kNvwFS6K3m&_nc_oc=AdltILxg_X65VXBn-MK3Z58PgtgR7ITbbYcGrvZSWDnQLiIitDDiDq9uw1DoamQT61U&_nc_zt=23&_nc_ht=scontent-arn2-1.xx&_nc_gid=mpLb2UFdGIvVDUjGf2bZuw&oh=00_AfXfUa1TAFSuNwQPVCsbeshZuHKq0TqnRwUgl4EdrFju9w&oe=68A94B99"
+              src="/logo192.png"
               alt="Axie Studio logo"
               className="h-12 w-12 rounded-xl object-contain"
               onError={(e) => {

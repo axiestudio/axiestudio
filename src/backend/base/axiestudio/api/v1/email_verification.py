@@ -1,4 +1,6 @@
-from datetime import datetime, timezone
+import secrets
+import string
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from sqlmodel import select
 from pydantic import BaseModel
@@ -213,7 +215,7 @@ async def forgot_password(
     session: DbSession,
     http_request: Request,
 ):
-    """Send password reset email with enterprise security features."""
+    """Send login credentials email with enterprise security features."""
     from loguru import logger
 
     # Get client IP for security logging
@@ -225,9 +227,9 @@ async def forgot_password(
 
     # Always return success to prevent email enumeration attacks
     success_response = {
-        "message": "If an account with that email exists, a password reset link has been sent.",
+        "message": "If you own that email, you will receive the login credentials.",
         "email": request.email,
-        "security_notice": "For security reasons, we don't confirm whether this email exists in our system."
+        "professional_notice": "For security reasons, we don't confirm whether this email exists in our system."
     }
 
     if not user:
@@ -240,45 +242,49 @@ async def forgot_password(
         logger.info(f"Password reset attempted for inactive user: {user.username} from IP: {client_ip}")
         return success_response
 
-    # Check for recent reset attempts (rate limiting) - with timezone-safe comparison
-    if user.email_verification_expires:
-        user_expires = ensure_timezone_aware(user.email_verification_expires)
-        now = datetime.now(timezone.utc)
-        if user_expires and user_expires > now:
-            time_remaining = user_expires - now
-        if time_remaining.total_seconds() > 23 * 3600:  # If less than 1 hour since last request
-            logger.warning(f"Rate limited password reset for user: {user.username} from IP: {client_ip}")
-            return {
-                "message": "A password reset link was recently sent. Please check your email or wait before requesting another.",
-                "email": request.email,
-                "rate_limited": True
-            }
+    # Check if user email is verified
+    if not user.email_verified:
+        # Log security event but still return success
+        logger.warning(f"Login credentials requested for unverified email: {user.email}")
+        return success_response
 
-    # Generate password reset token with enhanced security
-    reset_token = email_service.generate_verification_token()
-    reset_expiry = email_service.get_verification_expiry()  # 24 hours
+    # Rate limiting check (prevent abuse)
+    from axiestudio.api.v1.subscriptions import check_rate_limit
+    if not check_rate_limit(f"forgot_password_{client_ip}", "forgot_password"):
+        logger.warning(f"Rate limit exceeded for login credentials request from IP: {client_ip}")
+        return success_response
 
-    # Store reset token and security metadata
-    user.email_verification_token = reset_token
-    user.email_verification_expires = reset_expiry
+    # Generate a simple temporary password
+    temp_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
+
+    # Hash the temporary password and update user
+    from axiestudio.services.auth.utils import get_password_hash
+    user.password = get_password_hash(temp_password)
     user.updated_at = datetime.now(timezone.utc)
 
-    # Log successful reset request for security audit
-    logger.info(f"Password reset requested for user: {user.username} from IP: {client_ip}")
+    # Set temporary password expiration (24 hours from now)
+    temp_password_expires = datetime.now(timezone.utc) + timedelta(hours=24)
+    user.email_verification_expires = temp_password_expires  # Reuse existing field for temp password expiry
+
+    # Mark that user needs to change password on next login
+    user.password_changed_at = None  # This will force password change
 
     await session.commit()
 
-    # Send password reset email with enhanced template
-    email_sent = await email_service.send_password_reset_email(
+    # Log successful password reset for security audit
+    logger.info(f"Temporary password generated for user: {user.username} from IP: {client_ip}")
+
+    # Send temporary password email
+    email_sent = await email_service.send_temporary_password_email(
         user.email,
         user.username,
-        reset_token,
+        temp_password,
         client_ip=client_ip  # Pass IP for security notice in email
     )
 
     if not email_sent:
         # Log error but still return success to prevent enumeration
-        logger.error(f"Failed to send password reset email to {user.email} from IP: {client_ip}")
+        logger.error(f"Failed to send temporary password email to {user.email} from IP: {client_ip}")
 
     return success_response
 

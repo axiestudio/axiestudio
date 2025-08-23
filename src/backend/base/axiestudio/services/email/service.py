@@ -553,6 +553,358 @@ Visit us at: https://axiestudio.se
             logger.error(f"Failed to send password reset email to {email}: {e}")
             return False
 
+    async def send_temporary_password_email(self, email: str, username: str, temp_password: str, client_ip: str = "unknown") -> bool:
+        """Send temporary password email with professional template."""
+        try:
+            subject = "Your AxieStudio Temporary Password"
+
+            html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your AxieStudio Temporary Password</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a202c;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+            background-color: #f7fafc;
+        }}
+        .email-container {{
+            background-color: #ffffff;
+            margin: 20px auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }}
+        .header {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }}
+        .logo {{
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }}
+        .content {{
+            padding: 40px;
+        }}
+        .password-box {{
+            background-color: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 24px 0;
+            text-align: center;
+        }}
+        .temp-password {{
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2d3748;
+            background-color: #ffffff;
+            padding: 16px;
+            border-radius: 6px;
+            border: 2px solid #4299e1;
+            margin: 16px 0;
+            letter-spacing: 2px;
+        }}
+        .login-button {{
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 20px 0;
+        }}
+        .warning-box {{
+            background-color: #fef5e7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px;
+            margin: 24px 0;
+            border-radius: 4px;
+        }}
+        .footer {{
+            background-color: #f7fafc;
+            padding: 30px;
+            text-align: center;
+            color: #718096;
+            font-size: 14px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">AS</div>
+            <h1>Password Reset</h1>
+            <p>Your temporary password is ready</p>
+        </div>
+
+        <div class="content">
+            <p>Hello <strong>{username}</strong>,</p>
+            <p>We've generated a temporary password for your AxieStudio account. Use this to log in:</p>
+
+            <div class="password-box">
+                <p style="margin: 0 0 8px 0; font-weight: 600; color: #4a5568;">Temporary Password (Valid for 24 hours)</p>
+                <div class="temp-password">{temp_password}</div>
+                <p style="margin: 8px 0 0 0; font-size: 14px; color: #718096;">Copy this password exactly as shown</p>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="https://flow.axiestudio.se/login" class="login-button">
+                    Login to AxieStudio
+                </a>
+            </div>
+
+            <div class="warning-box">
+                <p style="margin: 0; color: #92400e; font-weight: 500;"><strong>Important:</strong> This temporary password expires in 24 hours. You will be required to change it after logging in for security.</p>
+            </div>
+
+            <div style="background-color: #e6fffa; border-left: 4px solid #38b2ac; padding: 16px; margin: 24px 0; border-radius: 4px;">
+                <p style="margin: 0; color: #234e52; font-weight: 500;"><strong>Login Instructions:</strong></p>
+                <ol style="margin: 8px 0 0 0; color: #234e52;">
+                    <li>Go to the login page</li>
+                    <li>Enter your username: <strong>{username}</strong></li>
+                    <li>Enter the temporary password above</li>
+                    <li>You'll be prompted to create a new password</li>
+                </ol>
+            </div>
+
+            <div style="background-color: #fee2e2; border-left: 4px solid #dc2626; padding: 16px; margin: 24px 0; border-radius: 4px;">
+                <p style="margin: 0; color: #991b1b; font-weight: 500;"><strong>Security Notice:</strong> If you didn't request this password reset, please contact support immediately.</p>
+                <p style="margin: 8px 0 0 0; color: #991b1b; font-size: 12px;">Request originated from IP: {client_ip}</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>AxieStudio</strong> - Building the future of AI workflows</p>
+            <p>Visit us at <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+        </div>
+    </div>
+</body>
+</html>
+            """
+
+            text_body = f"""
+AxieStudio - Password Reset
+
+Hello {username},
+
+We've generated a temporary password for your AxieStudio account.
+
+Temporary Password (Valid for 24 hours): {temp_password}
+
+Login Instructions:
+1. Go to: https://flow.axiestudio.se/login
+2. Username: {username}
+3. Password: {temp_password}
+4. You'll be prompted to create a new password
+
+IMPORTANT: This temporary password expires in 24 hours. You will be required to change it after logging in for security.
+
+Security Notice: If you didn't request this password reset, please contact support immediately.
+Request originated from IP: {client_ip}
+
+---
+AxieStudio - Building the future of AI workflows
+Visit us at: https://axiestudio.se
+            """
+
+            return await self._send_email(email, subject, text_body, html_body)
+
+        except Exception as e:
+            logger.error(f"Failed to send temporary password email to {email}: {e}")
+            return False
+
+    async def send_login_credentials_email(self, email: str, username: str, client_ip: str = "unknown") -> bool:
+        """Send login credentials email with professional template."""
+        try:
+            subject = "Your AxieStudio Login Credentials"
+
+            html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your AxieStudio Login Credentials</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a202c;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+            background-color: #f7fafc;
+        }}
+        .email-container {{
+            background-color: #ffffff;
+            margin: 20px auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }}
+        .header {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }}
+        .logo {{
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }}
+        .content {{
+            padding: 40px;
+        }}
+        .credentials-box {{
+            background-color: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 24px 0;
+            text-align: center;
+        }}
+        .credential-item {{
+            margin: 16px 0;
+            padding: 12px;
+            background-color: #ffffff;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }}
+        .credential-label {{
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }}
+        .credential-value {{
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 16px;
+            color: #2d3748;
+            font-weight: 600;
+        }}
+        .login-button {{
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 20px 0;
+        }}
+        .footer {{
+            background-color: #f7fafc;
+            padding: 30px;
+            text-align: center;
+            color: #718096;
+            font-size: 14px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">AS</div>
+            <h1>Your Login Credentials</h1>
+            <p>Access your AxieStudio account</p>
+        </div>
+
+        <div class="content">
+            <p>Hello <strong>{username}</strong>,</p>
+            <p>As requested, here are your login credentials for AxieStudio:</p>
+
+            <div class="credentials-box">
+                <div class="credential-item">
+                    <div class="credential-label">Username</div>
+                    <div class="credential-value">{username}</div>
+                </div>
+                <div class="credential-item">
+                    <div class="credential-label">Email</div>
+                    <div class="credential-value">{email}</div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="https://flow.axiestudio.se/login" class="login-button">
+                    Login to AxieStudio
+                </a>
+            </div>
+
+            <div style="background-color: #e6fffa; border-left: 4px solid #38b2ac; padding: 16px; margin: 24px 0; border-radius: 4px;">
+                <p style="margin: 0; color: #234e52; font-weight: 500;"><strong>Security Note:</strong> Use your existing password to log in. If you've forgotten your password, you can change it in your account settings after logging in.</p>
+            </div>
+
+            <div style="background-color: #fee2e2; border-left: 4px solid #dc2626; padding: 16px; margin: 24px 0; border-radius: 4px;">
+                <p style="margin: 0; color: #991b1b; font-weight: 500;"><strong>Security Notice:</strong> If you didn't request these credentials, please ignore this email.</p>
+                <p style="margin: 8px 0 0 0; color: #991b1b; font-size: 12px;">Request originated from IP: {client_ip}</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>AxieStudio</strong> - Building the future of AI workflows</p>
+            <p>Visit us at <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+        </div>
+    </div>
+</body>
+</html>
+            """
+
+            text_body = f"""
+AxieStudio - Your Login Credentials
+
+Hello {username},
+
+As requested, here are your login credentials for AxieStudio:
+
+Username: {username}
+Email: {email}
+
+To log in, visit: https://flow.axiestudio.se/login
+
+SECURITY NOTE: Use your existing password to log in. If you've forgotten your password, you can change it in your account settings after logging in.
+
+Security Notice: If you didn't request these credentials, please ignore this email.
+Request originated from IP: {client_ip}
+
+---
+AxieStudio - Building the future of AI workflows
+Visit us at: https://axiestudio.se
+            """
+
+            return await self._send_email(email, subject, text_body, html_body)
+
+        except Exception as e:
+            logger.error(f"Failed to send login credentials email to {email}: {e}")
+            return False
+
     async def _send_email(self, to_email: str, subject: str, text_body: str, html_body: str) -> bool:
         """Send email using SMTP with enterprise-level error handling and security."""
         try:

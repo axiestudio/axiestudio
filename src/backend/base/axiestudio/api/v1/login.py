@@ -61,6 +61,9 @@ async def login_to_get_access_token(
         ) from exc
 
     if user:
+        # Check if user needs to change password (temporary password scenario)
+        password_change_required = user.password_changed_at is None
+
         # 🔐 ENTERPRISE: Update login tracking with IP and timestamp
         client_ip = request.client.host if request.client else "unknown"
         user.last_login_at = datetime.now(timezone.utc)
@@ -74,6 +77,11 @@ async def login_to_get_access_token(
         await db.refresh(user)
 
         tokens = await create_user_tokens(user_id=user.id, db=db, update_last_login=True)
+
+        # Add password change requirement to response
+        if password_change_required:
+            tokens["password_change_required"] = True
+            tokens["message"] = "Password change required. Please update your password."
         response.set_cookie(
             "refresh_token_as",
             tokens["refresh_token"],
@@ -262,6 +270,9 @@ async def change_password(
         current_user.password = new_password_hash
         current_user.password_changed_at = datetime.now(timezone.utc)  # CRITICAL: Track password change
         current_user.updated_at = datetime.now(timezone.utc)  # Update general timestamp
+
+        # Clear temporary password expiration (if this was a temp password change)
+        current_user.email_verification_expires = None
 
         # Reset any failed login attempts after successful password change
         current_user.failed_login_attempts = 0
