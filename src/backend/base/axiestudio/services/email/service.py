@@ -119,20 +119,7 @@ class EmailService:
             padding: 40px 40px 30px;
             text-align: center;
         }}
-        .logo {{
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            color: white;
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }}
+
         .header h1 {{
             color: white;
             margin: 0;
@@ -297,20 +284,7 @@ Visit us at: https://axiestudio.se
             padding: 40px 40px 30px;
             text-align: center;
         }}
-        .logo {{
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            color: white;
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }}
+
         .verify-button {{
             display: inline-block;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -335,7 +309,7 @@ Visit us at: https://axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AX</div>
+            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;">
             <h1>Email Verification</h1>
             <p>Welcome to AxieStudio</p>
         </div>
@@ -427,20 +401,7 @@ Visit us at: https://axiestudio.se
             padding: 40px 40px 30px;
             text-align: center;
         }}
-        .logo {{
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            color: white;
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }}
+
         .header h1 {{
             color: white;
             margin: 0;
@@ -588,18 +549,7 @@ Visit us at: https://axiestudio.se
             padding: 40px 20px;
             text-align: center;
         }}
-        .logo {{
-            width: 60px;
-            height: 60px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 24px;
-            font-weight: bold;
-        }}
+
         .content {{
             padding: 40px;
         }}
@@ -652,7 +602,7 @@ Visit us at: https://axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AS</div>
+            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;">
             <h1>Password Reset</h1>
             <p>Your temporary password is ready</p>
         </div>
@@ -768,18 +718,7 @@ Visit us at: https://axiestudio.se
             padding: 40px 20px;
             text-align: center;
         }}
-        .logo {{
-            width: 60px;
-            height: 60px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 24px;
-            font-weight: bold;
-        }}
+
         .content {{
             padding: 40px;
         }}
@@ -832,7 +771,7 @@ Visit us at: https://axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AS</div>
+            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;">
             <h1>Your Login Credentials</h1>
             <p>Access your AxieStudio account</p>
         </div>
@@ -909,12 +848,12 @@ Visit us at: https://axiestudio.se
         """Send email using SMTP with enterprise-level error handling and security."""
         try:
             # Debug logging for email configuration
-            logger.info(f"📧 EMAIL DEBUG - Attempting to send email to: {to_email}")
-            logger.info(f"📧 EMAIL DEBUG - SMTP Host: {self.settings.SMTP_HOST}")
-            logger.info(f"📧 EMAIL DEBUG - SMTP Port: {self.settings.SMTP_PORT}")
-            logger.info(f"📧 EMAIL DEBUG - SMTP User: {self.settings.SMTP_USER}")
-            logger.info(f"📧 EMAIL DEBUG - From Email: {self.settings.FROM_EMAIL}")
-            logger.info(f"📧 EMAIL DEBUG - Email Enabled: {getattr(self.settings, 'EMAIL_ENABLED', True)}")
+            logger.info(f"EMAIL DEBUG - Attempting to send email to: {to_email}")
+            logger.info(f"EMAIL DEBUG - SMTP Host: {self.settings.SMTP_HOST}")
+            logger.info(f"EMAIL DEBUG - SMTP Port: {self.settings.SMTP_PORT}")
+            logger.info(f"EMAIL DEBUG - SMTP User: {self.settings.SMTP_USER}")
+            logger.info(f"EMAIL DEBUG - From Email: {self.settings.FROM_EMAIL}")
+            logger.info(f"EMAIL DEBUG - Email Enabled: {getattr(self.settings, 'EMAIL_ENABLED', True)}")
 
             # Validate email settings
             if not self.settings.SMTP_USER or not self.settings.SMTP_PASSWORD:
@@ -940,21 +879,21 @@ Visit us at: https://axiestudio.se
             msg.attach(html_part)
 
             # Send email with detailed debugging
-            logger.info(f"📧 SMTP CONFIG - Host: {self.settings.SMTP_HOST}:{self.settings.SMTP_PORT}")
-            logger.info(f"📧 SMTP CONFIG - User: {self.settings.SMTP_USER}")
-            logger.info(f"📧 SMTP CONFIG - From: {self.settings.FROM_EMAIL}")
-            logger.info(f"📧 SMTP CONFIG - To: {to_email}")
-            logger.info(f"📧 EMAIL DEBUG - Connecting to SMTP server...")
+            logger.info(f"SMTP CONFIG - Host: {self.settings.SMTP_HOST}:{self.settings.SMTP_PORT}")
+            logger.info(f"SMTP CONFIG - User: {self.settings.SMTP_USER}")
+            logger.info(f"SMTP CONFIG - From: {self.settings.FROM_EMAIL}")
+            logger.info(f"SMTP CONFIG - To: {to_email}")
+            logger.info(f"EMAIL DEBUG - Connecting to SMTP server...")
             with smtplib.SMTP(self.settings.SMTP_HOST, self.settings.SMTP_PORT) as server:
-                logger.info(f"📧 EMAIL DEBUG - Starting TLS...")
+                logger.info(f"EMAIL DEBUG - Starting TLS...")
                 server.starttls()
-                logger.info(f"📧 EMAIL DEBUG - Logging in with user: {self.settings.SMTP_USER}")
+                logger.info(f"EMAIL DEBUG - Logging in with user: {self.settings.SMTP_USER}")
                 server.login(self.settings.SMTP_USER, self.settings.SMTP_PASSWORD)
-                logger.info(f"📧 EMAIL DEBUG - Sending message...")
+                logger.info(f"EMAIL DEBUG - Sending message...")
                 server.send_message(msg)
-                logger.info(f"📧 EMAIL DEBUG - Message sent to SMTP server successfully")
+                logger.info(f"EMAIL DEBUG - Message sent to SMTP server successfully")
 
-            logger.info(f"✅ Email sent successfully to {to_email}")
+            logger.info(f"Email sent successfully to {to_email}")
             return True
 
         except smtplib.SMTPAuthenticationError as e:

@@ -41,6 +41,27 @@ AUTO_LOGIN_ERROR = (
 )
 
 
+def ensure_timezone_aware(dt: datetime | None) -> datetime | None:
+    """
+    Ensure a datetime is timezone-aware for safe comparison.
+
+    This fixes the common issue where database datetimes are stored as naive
+    but need to be compared with timezone-aware datetimes.
+
+    Args:
+        dt: The datetime to check and potentially convert
+
+    Returns:
+        Timezone-aware datetime or None if input was None
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        # Database datetime is naive, assume it's UTC and make it timezone-aware
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 # Source: https://github.com/mrtolkien/fastapi_simple_security/blob/master/fastapi_simple_security/security_api_key.py
 async def api_key_security(
     query_param: Annotated[str, Security(api_key_query)],
@@ -456,9 +477,12 @@ async def authenticate_user(username: str, password: str, db: AsyncSession, clie
     if verify_password(password, user.password):
         # Check if this is a temporary password that has expired
         if user.password_changed_at is None and user.email_verification_expires:
-            from datetime import datetime, timezone
             now = datetime.now(timezone.utc)
-            if user.email_verification_expires < now:
+
+            # Ensure both datetimes are timezone-aware for proper comparison
+            expiry_time = ensure_timezone_aware(user.email_verification_expires)
+
+            if expiry_time and expiry_time < now:
                 # Temporary password has expired
                 logger.warning(f"Temporary password expired for user: {username} from IP: {client_ip}")
                 user.failed_login_attempts += 1
