@@ -223,6 +223,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: [get-version, setup]
     steps:
+      - name: Free up disk space
+        run: |
+          echo "Cleaning up disk space..."
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker system prune -af
+          sudo apt-get clean
+          df -h
+
       - name: Check out the code at a specific ref
         uses: actions/checkout@v4
         with:
@@ -231,10 +242,8 @@ jobs:
       - name: "Setup Environment"
         uses: astral-sh/setup-uv@v6
         with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          enable-cache: false
           python-version: ${{ env.PYTHON_VERSION }}
-          prune-cache: false
       - name: Install the project
         run: |
           release_type="${{ inputs.release_type || needs.get-version.outputs.release_type }}"
@@ -268,8 +277,7 @@ jobs:
           file: ${{ needs.setup.outputs.file }}
           tags: ${{ needs.setup.outputs.docker_tags }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=axiestudio/axiestudio:buildcache
-          cache-to: type=registry,ref=axiestudio/axiestudio:buildcache,mode=max
+          no-cache: true
 
 
 
@@ -346,10 +354,8 @@ jobs:
       - name: "Setup Environment"
         uses: astral-sh/setup-uv@v6
         with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          enable-cache: false
           python-version: ${{ matrix.python-version }}
-          prune-cache: false
 
       - name: Restart HuggingFace Spaces Build
         run: |
