@@ -1,0 +1,605 @@
+{
+  "id": "ac32c32f-7449-4e34-88c1-d8b50ec3bb39",
+  "name": "Neo4J Retriever",
+  "description": "Neo4j Retriever (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "tiagodavi",
+    "first_name": "",
+    "last_name": "",
+    "id": "48f264de-083c-46f7-a307-a8659a151afe",
+    "full_name": "tiagodavi"
+  },
+  "store_url": "https://www.langflow.store/store/component/ac32c32f-7449-4e34-88c1-d8b50ec3bb39",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-01T11:26:49.981Z",
+    "updated": "2024-08-01T11:26:50.065Z",
+    "downloaded": "2025-08-19T17:50:06.008Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.13",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "NEO4J",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.io import Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.message import Message\nfrom langchain_community.vectorstores import Neo4jVector\nfrom langchain_community.graphs import Neo4jGraph\nfrom langchain_openai import OpenAIEmbeddings\nfrom langchain.chains import RetrievalQAWithSourcesChain\nfrom langchain.prompts import PromptTemplate\nfrom langchain_openai import ChatOpenAI\nfrom typing import List\n\nclass Neo4jRetrieverComponent(Component):\n    display_name = \"NEO4J\"\n    description = \"Neo4j Retriever\"\n    icon = \"git-graph\"\n    name = \"NEO4J\"\n\n    inputs = [\n        MultilineInput(\n            name=\"context\",\n            display_name=\"Chat Memory\"\n        ),\n        MultilineInput(\n            name=\"question\",\n            display_name=\"Question\"\n        ),\n        DropdownInput(\n            name=\"openai_embedding_model\",\n            display_name=\"Embedding Model\",\n            advanced=False,\n            options=[\n                \"text-embedding-3-small\",\n            ],\n            value=\"text-embedding-3-small\",\n        ),\n        DropdownInput(\n            name=\"openai_base_model\",\n            display_name=\"Base Model\",\n            advanced=False,\n            options=[\n                \"gpt-3.5-turbo\",\n                \"gpt-4o-mini\",\n                \"gpt-4o-mini-2024-07-18\",\n            ],\n            value=\"gpt-4o-mini-2024-07-18\",\n        ),\n        StrInput(name=\"openai_endpoint\", display_name=\"OpenAI Embeddings Endpoint\"),\n        SecretStrInput(name=\"openai_api_key\", display_name=\"OpenAI API Key\", value=\"OPENAI_API_KEY\"),\n        StrInput(name=\"neo4j_uri\", display_name=\"NEO4J URI\"),\n        StrInput(name=\"neo4j_username\", display_name=\"NEO4J USERNAME\"),\n        StrInput(name=\"neo4j_password\", display_name=\"NEO4J PASSWORD\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Output\", name=\"output\", method=\"build_output\"),\n        Output(display_name=\"Search Results\", name=\"search_result\", method=\"build_search_result\"),\n    ]\n  \n    def prettychain(self, chain) -> str:\n        response = chain({\"question\": self.question.lower()}, return_only_outputs=True,)\n        return response['answer']\n    \n    def _build_prompt(self) -> PromptTemplate:\n        template = \"\"\"\n        <instrucoes>\n        Você é um assistente especializado em respostas precisas.\n        \n        Regra principal: A resposta deve ser completa e precisa.\n        \n        Regras Adicionais:\n        \n        1. Contexto: Utilize o campo Contexto abaixo como referência, não crie conteúdo fora deste escopo.\n        \n        2. Fidelidade ao Conteúdo: A resposta deve conter similaridade contextual com o texto original.\n        \n        3. Estilo e Tom: O estilo e o tom da resposta devem ser consistentes com os do texto original.\n        \n        4. Clareza e Concisão: A resposta deve ser clara, direta e concisa, evitando detalhes desnecessários.\n        \n        5. Coerência e Coesão: As frases e parágrafos da resposta devem fluir de maneira lógica e coerente.\n        \n        6. Português do Brasil: A resposta deve ser sempre em Português do Brasil.\n        </instrucoes>\n        \n        Contexto:\n        {summaries}\n        \n        Pergunta:\n        {question}\n        \n        Resposta:\n        \"\"\"\n        \n        return PromptTemplate(template=template)\n        \n    def _build_retriever(self, query):\n        VECTOR_INDEX_NAME = \"chunks_embedding\"\n        VECTOR_NODE_LABEL = \"Chunk\"\n        VECTOR_SOURCE_PROPERTY = \"text\"\n        \n        vector_store_window = Neo4jVector.from_existing_index(\n            embedding=OpenAIEmbeddings(openai_api_key=self.openai_api_key, model=self.openai_embedding_model),\n            url=self.neo4j_uri,\n            username=self.neo4j_username,\n            password=self.neo4j_password,\n            index_name=VECTOR_INDEX_NAME,\n            node_label=VECTOR_NODE_LABEL,\n            text_node_property=VECTOR_SOURCE_PROPERTY,\n            retrieval_query=query,\n        )\n        \n        return vector_store_window.as_retriever()\n        \n    def _build_chain(self, retriever):\n        prompt = self._build_prompt()\n    \n        chain_type_kwargs = {\"prompt\": prompt}\n        \n        chain = RetrievalQAWithSourcesChain.from_chain_type(\n            ChatOpenAI(temperature=0, api_key=self.openai_api_key, model=self.openai_base_model), \n            chain_type=\"stuff\",\n            chain_type_kwargs=chain_type_kwargs,\n            retriever=retriever\n        )\n        \n        return chain\n        \n    def build_search_result(self) -> List[Data]:\n        VECTOR_INDEX_NAME = \"chunks_embedding\"\n        \n        kg = Neo4jGraph(\n            url=self.neo4j_uri, \n            username=self.neo4j_username, \n            password=self.neo4j_password\n        )\n        \n        vector_search_query = \"\"\"\n        WITH genai.vector.encode(\n            $question, \n            \"OpenAI\", \n            {\n                token: $openAiApiKey, \n                endpoint: $openAiEndpoint,\n                model: $openAiModel\n            }) AS vector\n        CALL db.index.vector.queryNodes($index_name, $top_k, vector) yield node, score\n        RETURN score, node.text AS text\n        \"\"\"\n        \n        answers = kg.query(vector_search_query, \n                         params={\n                          \"question\": self.question.lower(), \n                          \"index_name\": VECTOR_INDEX_NAME, \n                          \"top_k\": 4,\n                          \"openAiApiKey\":self.openai_api_key, \n                          \"openAiEndpoint\": self.openai_endpoint,\n                          \"openAiModel\": self.openai_embedding_model\n                         })\n        \n        return [Data(text=answer[\"text\"], score=answer[\"score\"]) for answer in answers]\n        \n    def build_output(self) -> Message:\n        retrieval_query_window = \"\"\"\n        MATCH window=\n            (:Chunk)-[:NEXT*0..1]->(node)-[:NEXT*0..1]->(:Chunk)\n        WITH node, score, window as longestWindow \n            ORDER BY length(window) DESC LIMIT 1\n        WITH nodes(longestWindow) as chunkList, node, score\n            MATCH (chunk:Chunk)-[:BELONGS_TO]->(page:Page)\n            WHERE chunk IN chunkList\n        WITH DISTINCT page, node, score\n            RETURN apoc.text.join(collect(page.text), \" \\n \") AS text,\n                score,\n                node {.source} AS metadata\n        \"\"\"\n\n        retriever = self._build_retriever(retrieval_query_window)\n        chain = self._build_chain(retriever)\n        result = self.prettychain(chain)\n        \n        message = Message(\n            text=result\n        )\n        \n        return message\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "context": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "context",
+                "display_name": "Chat Memory",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "neo4j_password": {
+                "trace_as_metadata": true,
+                "load_from_db": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "NEO4J_PASS",
+                "name": "neo4j_password",
+                "display_name": "NEO4J PASSWORD",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "neo4j_uri": {
+                "trace_as_metadata": true,
+                "load_from_db": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "NEO4J_URI",
+                "name": "neo4j_uri",
+                "display_name": "NEO4J URI",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "neo4j_username": {
+                "trace_as_metadata": true,
+                "load_from_db": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "NEO4J_USER",
+                "name": "neo4j_username",
+                "display_name": "NEO4J USERNAME",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "openai_api_key": {
+                "load_from_db": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "openai_api_key",
+                "display_name": "OpenAI API Key",
+                "advanced": false,
+                "input_types": [],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "openai_base_model": {
+                "combobox": false,
+                "trace_as_metadata": true,
+                "options": [
+                  "gpt-3.5-turbo",
+                  "gpt-4o-mini",
+                  "gpt-4o-mini-2024-07-18"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "gpt-4o-mini-2024-07-18",
+                "name": "openai_base_model",
+                "display_name": "Base Model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "openai_embedding_model": {
+                "combobox": false,
+                "trace_as_metadata": true,
+                "options": [
+                  "text-embedding-3-small"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "text-embedding-3-small",
+                "name": "openai_embedding_model",
+                "display_name": "Embedding Model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "openai_endpoint": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "https://api.openai.com/v1/embeddings",
+                "name": "openai_endpoint",
+                "display_name": "OpenAI Embeddings Endpoint",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "question": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "question",
+                "display_name": "Question",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "Neo4j Retriever",
+            "icon": "git-graph",
+            "base_classes": [
+              "Data",
+              "Message"
+            ],
+            "display_name": "Neo4J Retriever",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "output",
+                "display_name": "Output",
+                "method": "build_output",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "search_result",
+                "display_name": "Search Results",
+                "method": "build_search_result",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "context",
+              "question",
+              "openai_embedding_model",
+              "openai_base_model",
+              "openai_endpoint",
+              "openai_api_key",
+              "neo4j_uri",
+              "neo4j_username",
+              "neo4j_password"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "NEO4J-JMEOm",
+          "description": "Knowledge Graphs for RAG.",
+          "display_name": "Neo4J"
+        },
+        "id": "NEO4J-JMEOm",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "NEO4J": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "ac32c32f-7449-4e34-88c1-d8b50ec3bb39",
+    "name": "Neo4J Retriever",
+    "description": "Neo4j Retriever",
+    "is_component": true,
+    "liked_by_count": "29",
+    "downloads_count": "296",
+    "metadata": {
+      "NEO4J": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.13",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "NEO4J",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.io import Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.message import Message\nfrom langchain_community.vectorstores import Neo4jVector\nfrom langchain_community.graphs import Neo4jGraph\nfrom langchain_openai import OpenAIEmbeddings\nfrom langchain.chains import RetrievalQAWithSourcesChain\nfrom langchain.prompts import PromptTemplate\nfrom langchain_openai import ChatOpenAI\nfrom typing import List\n\nclass Neo4jRetrieverComponent(Component):\n    display_name = \"NEO4J\"\n    description = \"Neo4j Retriever\"\n    icon = \"git-graph\"\n    name = \"NEO4J\"\n\n    inputs = [\n        MultilineInput(\n            name=\"context\",\n            display_name=\"Chat Memory\"\n        ),\n        MultilineInput(\n            name=\"question\",\n            display_name=\"Question\"\n        ),\n        DropdownInput(\n            name=\"openai_embedding_model\",\n            display_name=\"Embedding Model\",\n            advanced=False,\n            options=[\n                \"text-embedding-3-small\",\n            ],\n            value=\"text-embedding-3-small\",\n        ),\n        DropdownInput(\n            name=\"openai_base_model\",\n            display_name=\"Base Model\",\n            advanced=False,\n            options=[\n                \"gpt-3.5-turbo\",\n                \"gpt-4o-mini\",\n                \"gpt-4o-mini-2024-07-18\",\n            ],\n            value=\"gpt-4o-mini-2024-07-18\",\n        ),\n        StrInput(name=\"openai_endpoint\", display_name=\"OpenAI Embeddings Endpoint\"),\n        SecretStrInput(name=\"openai_api_key\", display_name=\"OpenAI API Key\", value=\"OPENAI_API_KEY\"),\n        StrInput(name=\"neo4j_uri\", display_name=\"NEO4J URI\"),\n        StrInput(name=\"neo4j_username\", display_name=\"NEO4J USERNAME\"),\n        StrInput(name=\"neo4j_password\", display_name=\"NEO4J PASSWORD\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Output\", name=\"output\", method=\"build_output\"),\n        Output(display_name=\"Search Results\", name=\"search_result\", method=\"build_search_result\"),\n    ]\n  \n    def prettychain(self, chain) -> str:\n        response = chain({\"question\": self.question.lower()}, return_only_outputs=True,)\n        return response['answer']\n    \n    def _build_prompt(self) -> PromptTemplate:\n        template = \"\"\"\n        <instrucoes>\n        Você é um assistente especializado em respostas precisas.\n        \n        Regra principal: A resposta deve ser completa e precisa.\n        \n        Regras Adicionais:\n        \n        1. Contexto: Utilize o campo Contexto abaixo como referência, não crie conteúdo fora deste escopo.\n        \n        2. Fidelidade ao Conteúdo: A resposta deve conter similaridade contextual com o texto original.\n        \n        3. Estilo e Tom: O estilo e o tom da resposta devem ser consistentes com os do texto original.\n        \n        4. Clareza e Concisão: A resposta deve ser clara, direta e concisa, evitando detalhes desnecessários.\n        \n        5. Coerência e Coesão: As frases e parágrafos da resposta devem fluir de maneira lógica e coerente.\n        \n        6. Português do Brasil: A resposta deve ser sempre em Português do Brasil.\n        </instrucoes>\n        \n        Contexto:\n        {summaries}\n        \n        Pergunta:\n        {question}\n        \n        Resposta:\n        \"\"\"\n        \n        return PromptTemplate(template=template)\n        \n    def _build_retriever(self, query):\n        VECTOR_INDEX_NAME = \"chunks_embedding\"\n        VECTOR_NODE_LABEL = \"Chunk\"\n        VECTOR_SOURCE_PROPERTY = \"text\"\n        \n        vector_store_window = Neo4jVector.from_existing_index(\n            embedding=OpenAIEmbeddings(openai_api_key=self.openai_api_key, model=self.openai_embedding_model),\n            url=self.neo4j_uri,\n            username=self.neo4j_username,\n            password=self.neo4j_password,\n            index_name=VECTOR_INDEX_NAME,\n            node_label=VECTOR_NODE_LABEL,\n            text_node_property=VECTOR_SOURCE_PROPERTY,\n            retrieval_query=query,\n        )\n        \n        return vector_store_window.as_retriever()\n        \n    def _build_chain(self, retriever):\n        prompt = self._build_prompt()\n    \n        chain_type_kwargs = {\"prompt\": prompt}\n        \n        chain = RetrievalQAWithSourcesChain.from_chain_type(\n            ChatOpenAI(temperature=0, api_key=self.openai_api_key, model=self.openai_base_model), \n            chain_type=\"stuff\",\n            chain_type_kwargs=chain_type_kwargs,\n            retriever=retriever\n        )\n        \n        return chain\n        \n    def build_search_result(self) -> List[Data]:\n        VECTOR_INDEX_NAME = \"chunks_embedding\"\n        \n        kg = Neo4jGraph(\n            url=self.neo4j_uri, \n            username=self.neo4j_username, \n            password=self.neo4j_password\n        )\n        \n        vector_search_query = \"\"\"\n        WITH genai.vector.encode(\n            $question, \n            \"OpenAI\", \n            {\n                token: $openAiApiKey, \n                endpoint: $openAiEndpoint,\n                model: $openAiModel\n            }) AS vector\n        CALL db.index.vector.queryNodes($index_name, $top_k, vector) yield node, score\n        RETURN score, node.text AS text\n        \"\"\"\n        \n        answers = kg.query(vector_search_query, \n                         params={\n                          \"question\": self.question.lower(), \n                          \"index_name\": VECTOR_INDEX_NAME, \n                          \"top_k\": 4,\n                          \"openAiApiKey\":self.openai_api_key, \n                          \"openAiEndpoint\": self.openai_endpoint,\n                          \"openAiModel\": self.openai_embedding_model\n                         })\n        \n        return [Data(text=answer[\"text\"], score=answer[\"score\"]) for answer in answers]\n        \n    def build_output(self) -> Message:\n        retrieval_query_window = \"\"\"\n        MATCH window=\n            (:Chunk)-[:NEXT*0..1]->(node)-[:NEXT*0..1]->(:Chunk)\n        WITH node, score, window as longestWindow \n            ORDER BY length(window) DESC LIMIT 1\n        WITH nodes(longestWindow) as chunkList, node, score\n            MATCH (chunk:Chunk)-[:BELONGS_TO]->(page:Page)\n            WHERE chunk IN chunkList\n        WITH DISTINCT page, node, score\n            RETURN apoc.text.join(collect(page.text), \" \\n \") AS text,\n                score,\n                node {.source} AS metadata\n        \"\"\"\n\n        retriever = self._build_retriever(retrieval_query_window)\n        chain = self._build_chain(retriever)\n        result = self.prettychain(chain)\n        \n        message = Message(\n            text=result\n        )\n        \n        return message\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "context": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "context",
+                  "display_name": "Chat Memory",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "neo4j_password": {
+                  "trace_as_metadata": true,
+                  "load_from_db": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "NEO4J_PASS",
+                  "name": "neo4j_password",
+                  "display_name": "NEO4J PASSWORD",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "neo4j_uri": {
+                  "trace_as_metadata": true,
+                  "load_from_db": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "NEO4J_URI",
+                  "name": "neo4j_uri",
+                  "display_name": "NEO4J URI",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "neo4j_username": {
+                  "trace_as_metadata": true,
+                  "load_from_db": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "NEO4J_USER",
+                  "name": "neo4j_username",
+                  "display_name": "NEO4J USERNAME",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "openai_api_key": {
+                  "load_from_db": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "openai_api_key",
+                  "display_name": "OpenAI API Key",
+                  "advanced": false,
+                  "input_types": [],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "openai_base_model": {
+                  "combobox": false,
+                  "trace_as_metadata": true,
+                  "options": [
+                    "gpt-3.5-turbo",
+                    "gpt-4o-mini",
+                    "gpt-4o-mini-2024-07-18"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "gpt-4o-mini-2024-07-18",
+                  "name": "openai_base_model",
+                  "display_name": "Base Model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "openai_embedding_model": {
+                  "combobox": false,
+                  "trace_as_metadata": true,
+                  "options": [
+                    "text-embedding-3-small"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "text-embedding-3-small",
+                  "name": "openai_embedding_model",
+                  "display_name": "Embedding Model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "openai_endpoint": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "https://api.openai.com/v1/embeddings",
+                  "name": "openai_endpoint",
+                  "display_name": "OpenAI Embeddings Endpoint",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "question": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "question",
+                  "display_name": "Question",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "Neo4j Retriever",
+              "icon": "git-graph",
+              "base_classes": [
+                "Data",
+                "Message"
+              ],
+              "display_name": "Neo4J Retriever",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "output",
+                  "display_name": "Output",
+                  "method": "build_output",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "search_result",
+                  "display_name": "Search Results",
+                  "method": "build_search_result",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "context",
+                "question",
+                "openai_embedding_model",
+                "openai_base_model",
+                "openai_endpoint",
+                "openai_api_key",
+                "neo4j_uri",
+                "neo4j_username",
+                "neo4j_password"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "NEO4J-JMEOm",
+            "description": "Knowledge Graphs for RAG.",
+            "display_name": "Neo4J"
+          },
+          "id": "NEO4J-JMEOm",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-01T11:26:49.981Z",
+    "date_updated": "2024-08-01T11:26:50.065Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "48f264de-083c-46f7-a307-a8659a151afe",
+    "user_created": {
+      "username": "tiagodavi",
+      "first_name": null,
+      "last_name": null,
+      "id": "48f264de-083c-46f7-a307-a8659a151afe"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.376Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

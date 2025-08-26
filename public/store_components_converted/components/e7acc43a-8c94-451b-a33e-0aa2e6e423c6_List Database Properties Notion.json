@@ -1,0 +1,333 @@
+{
+  "id": "e7acc43a-8c94-451b-a33e-0aa2e6e423c6",
+  "name": "List Database Properties [Notion]",
+  "description": "Retrieve properties of a Notion database. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "NamastexLabs",
+    "first_name": "Felipe",
+    "last_name": "Rosa",
+    "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "full_name": "Felipe Rosa"
+  },
+  "store_url": "https://www.langflow.store/store/component/e7acc43a-8c94-451b-a33e-0aa2e6e423c6",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-22T21:48:31.274Z",
+    "updated": "2024-08-22T21:48:31.295Z",
+    "downloaded": "2025-08-19T17:50:06.797Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "NotionDatabaseProperties",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import requests\r\nfrom typing import Optional, Dict, Union\r\nfrom pydantic import BaseModel, Field\r\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\r\nfrom axiestudio.inputs import SecretStrInput, StrInput\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.field_typing import Tool\r\nfrom langchain.tools import StructuredTool\r\n\r\nclass NotionDatabaseProperties(LCToolComponent):\r\n    display_name: str = \"List Database Properties [Notion]\"\r\n    description: str = \"Retrieve properties of a Notion database.\"\r\n    documentation: str = \"https://docs.axiestudio.org/integrations/notion/list-database-properties\"\r\n    icon = \"NotionDirectoryLoader\"\r\n    \r\n    inputs = [\r\n        StrInput(\r\n            name=\"database_id\",\r\n            display_name=\"Database ID\",\r\n            info=\"The ID of the Notion database.\",\r\n        ),\r\n        SecretStrInput(\r\n            name=\"notion_secret\",\r\n            display_name=\"Notion Secret\",\r\n            info=\"The Notion integration token.\",\r\n            required=True,\r\n        ),\r\n    ]\r\n\r\n    class NotionDatabasePropertiesSchema(BaseModel):\r\n        database_id: str = Field(..., description=\"The ID of the Notion database.\")\r\n\r\n    def run_model(self) -> Data:\r\n        result = self._fetch_database_properties(self.database_id)\r\n        if isinstance(result, str):\r\n            # An error occurred, return it as text\r\n            return Data(text=result)\r\n        else:\r\n            # Success, return the properties\r\n            return Data(text=str(result), data=result)\r\n\r\n    def build_tool(self) -> Tool:\r\n        return StructuredTool.from_function(\r\n            name=\"notion_database_properties\",\r\n            description=\"Retrieve properties of a Notion database. Input should include the database ID.\",\r\n            func=self._fetch_database_properties,\r\n            args_schema=self.NotionDatabasePropertiesSchema,\r\n        )\r\n\r\n    def _fetch_database_properties(self, database_id: str) -> Union[Dict, str]:\r\n        url = f\"https://api.notion.com/v1/databases/{database_id}\"\r\n        headers = {\r\n            \"Authorization\": f\"Bearer {self.notion_secret}\",\r\n            \"Notion-Version\": \"2022-06-28\",  # Use the latest supported version\r\n        }\r\n        try:\r\n            response = requests.get(url, headers=headers)\r\n            response.raise_for_status()\r\n            data = response.json()\r\n            properties = data.get(\"properties\", {})\r\n            return properties\r\n        except requests.exceptions.RequestException as e:\r\n            return f\"Error fetching Notion database properties: {str(e)}\"\r\n        except ValueError as e:\r\n            return f\"Error parsing Notion API response: {str(e)}\"\r\n        except Exception as e:\r\n            return f\"An unexpected error occurred: {str(e)}\"",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "database_id": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "database_id",
+                "value": "",
+                "display_name": "Database ID",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The ID of the Notion database.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "notion_secret": {
+                "load_from_db": true,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "notion_secret",
+                "value": "",
+                "display_name": "Notion Secret",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The Notion integration token.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              }
+            },
+            "description": "Retrieve properties of a Notion database.",
+            "icon": "NotionDirectoryLoader",
+            "base_classes": [
+              "Data",
+              "list",
+              "Sequence",
+              "Tool"
+            ],
+            "display_name": "List Database Properties [Notion]",
+            "documentation": "https://docs.axiestudio.org/integrations/notion/list-database-properties",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data",
+                  "list"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "hidden": true
+              },
+              {
+                "types": [
+                  "Tool",
+                  "Sequence"
+                ],
+                "selected": "Tool",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "database_id",
+              "notion_secret"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.15",
+            "official": false
+          },
+          "id": "NotionDatabaseProperties-wuchi"
+        },
+        "id": "NotionDatabaseProperties-wuchi",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "NotionDatabaseProperties": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "e7acc43a-8c94-451b-a33e-0aa2e6e423c6",
+    "name": "List Database Properties [Notion]",
+    "description": "Retrieve properties of a Notion database.",
+    "is_component": true,
+    "liked_by_count": "2",
+    "downloads_count": "25",
+    "metadata": {
+      "NotionDatabaseProperties": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "NotionDatabaseProperties",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import requests\r\nfrom typing import Optional, Dict, Union\r\nfrom pydantic import BaseModel, Field\r\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\r\nfrom axiestudio.inputs import SecretStrInput, StrInput\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.field_typing import Tool\r\nfrom langchain.tools import StructuredTool\r\n\r\nclass NotionDatabaseProperties(LCToolComponent):\r\n    display_name: str = \"List Database Properties [Notion]\"\r\n    description: str = \"Retrieve properties of a Notion database.\"\r\n    documentation: str = \"https://docs.axiestudio.org/integrations/notion/list-database-properties\"\r\n    icon = \"NotionDirectoryLoader\"\r\n    \r\n    inputs = [\r\n        StrInput(\r\n            name=\"database_id\",\r\n            display_name=\"Database ID\",\r\n            info=\"The ID of the Notion database.\",\r\n        ),\r\n        SecretStrInput(\r\n            name=\"notion_secret\",\r\n            display_name=\"Notion Secret\",\r\n            info=\"The Notion integration token.\",\r\n            required=True,\r\n        ),\r\n    ]\r\n\r\n    class NotionDatabasePropertiesSchema(BaseModel):\r\n        database_id: str = Field(..., description=\"The ID of the Notion database.\")\r\n\r\n    def run_model(self) -> Data:\r\n        result = self._fetch_database_properties(self.database_id)\r\n        if isinstance(result, str):\r\n            # An error occurred, return it as text\r\n            return Data(text=result)\r\n        else:\r\n            # Success, return the properties\r\n            return Data(text=str(result), data=result)\r\n\r\n    def build_tool(self) -> Tool:\r\n        return StructuredTool.from_function(\r\n            name=\"notion_database_properties\",\r\n            description=\"Retrieve properties of a Notion database. Input should include the database ID.\",\r\n            func=self._fetch_database_properties,\r\n            args_schema=self.NotionDatabasePropertiesSchema,\r\n        )\r\n\r\n    def _fetch_database_properties(self, database_id: str) -> Union[Dict, str]:\r\n        url = f\"https://api.notion.com/v1/databases/{database_id}\"\r\n        headers = {\r\n            \"Authorization\": f\"Bearer {self.notion_secret}\",\r\n            \"Notion-Version\": \"2022-06-28\",  # Use the latest supported version\r\n        }\r\n        try:\r\n            response = requests.get(url, headers=headers)\r\n            response.raise_for_status()\r\n            data = response.json()\r\n            properties = data.get(\"properties\", {})\r\n            return properties\r\n        except requests.exceptions.RequestException as e:\r\n            return f\"Error fetching Notion database properties: {str(e)}\"\r\n        except ValueError as e:\r\n            return f\"Error parsing Notion API response: {str(e)}\"\r\n        except Exception as e:\r\n            return f\"An unexpected error occurred: {str(e)}\"",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "database_id": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "database_id",
+                  "value": "",
+                  "display_name": "Database ID",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The ID of the Notion database.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "notion_secret": {
+                  "load_from_db": true,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "notion_secret",
+                  "value": "",
+                  "display_name": "Notion Secret",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The Notion integration token.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                }
+              },
+              "description": "Retrieve properties of a Notion database.",
+              "icon": "NotionDirectoryLoader",
+              "base_classes": [
+                "Data",
+                "list",
+                "Sequence",
+                "Tool"
+              ],
+              "display_name": "List Database Properties [Notion]",
+              "documentation": "https://docs.axiestudio.org/integrations/notion/list-database-properties",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data",
+                    "list"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "hidden": true
+                },
+                {
+                  "types": [
+                    "Tool",
+                    "Sequence"
+                  ],
+                  "selected": "Tool",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "database_id",
+                "notion_secret"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.15",
+              "official": false
+            },
+            "id": "NotionDatabaseProperties-wuchi"
+          },
+          "id": "NotionDatabaseProperties-wuchi",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-22T21:48:31.274Z",
+    "date_updated": "2024-08-22T21:48:31.295Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "user_created": {
+      "username": "NamastexLabs",
+      "first_name": "Felipe",
+      "last_name": "Rosa",
+      "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:12.355Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 12,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,2041 @@
+{
+  "id": "d717f7b0-909e-43ff-8001-e0c89ebcfad1",
+  "name": "WB - Youtube Transcript",
+  "description": "transcreve o conteúdo de um link de vídeo do youtube para o português (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "wagner",
+    "first_name": "Wagner",
+    "last_name": "Bittencourt",
+    "id": "00808143-7274-457d-a5b8-75c89231a3dd",
+    "full_name": "Wagner Bittencourt"
+  },
+  "store_url": "https://www.langflow.store/store/component/d717f7b0-909e-43ff-8001-e0c89ebcfad1",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-11T22:39:46.068Z",
+    "updated": "2024-09-11T22:39:46.106Z",
+    "downloaded": "2025-08-19T17:50:06.936Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "YouTubeAutoTranscriberComponent-OeJd2",
+        "type": "genericNode",
+        "position": {
+          "x": 250,
+          "y": 87.21875
+        },
+        "data": {
+          "type": "YouTubeAutoTranscriberComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\r\nfrom langchain.schema import Document\r\nfrom langchain.document_loaders import YoutubeLoader\r\nfrom axiestudio.inputs import MessageTextInput, DropdownInput\r\nfrom axiestudio.template import Output\r\nfrom langdetect import detect\r\n\r\nclass YouTubeAutoTranscriberComponent(Component):\r\n    display_name = \"YouTube Auto Transcriber\"\r\n    description = \"Detecta automaticamente o idioma de um vídeo do YouTube e transcreve seu conteúdo.\"\r\n    icon = \"youtube\"\r\n\r\n    # Adiciona os 10 principais códigos de idioma para seleção\r\n    language_options = [\r\n        (\"English\", \"en\"),\r\n        (\"Português\", \"pt\"),\r\n        (\"Español\", \"es\"),\r\n        (\"Français\", \"fr\"),\r\n        (\"Deutsch\", \"de\"),\r\n        (\"Italiano\", \"it\"),\r\n        (\"Nederlands\", \"nl\"),\r\n        (\"Русский\", \"ru\"),\r\n        (\"日本語\", \"ja\"),\r\n        (\"中文\", \"zh\")\r\n    ]\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"url\",\r\n            display_name=\"YouTube URL\",\r\n            info=\"URL do vídeo do YouTube.\"\r\n        ),\r\n        DropdownInput(\r\n            name=\"language\",\r\n            display_name=\"Idioma Preferido\",\r\n            options=[option[0] for option in language_options],\r\n            \r\n        ),\r\n        DropdownInput(\r\n            name=\"translation\",\r\n            display_name=\"Idioma de Tradução\",\r\n            options=[option[0] for option in language_options],\r\n            \r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Transcrição\", name=\"transcribed_document\", method=\"transcribe\"),\r\n        Output(display_name=\"Idioma Detectado\", name=\"detected_language\", method=\"get_detected_language\")\r\n    ]\r\n\r\n    def transcribe(self) -> Document:\r\n        if not hasattr(self, 'url') or not self.url:\r\n            raise ValueError(\"URL não foi fornecida ou está vazia. Certifique-se de preencher o campo corretamente.\")\r\n        \r\n        url = self.url\r\n        \r\n        # Converte o idioma selecionado para os códigos apropriados\r\n        language_code = self.language_options[[option[0] for option in self.language_options].index(self.language)][1]\r\n        translation_code = self.language_options[[option[0] for option in self.language_options].index(self.translation)][1]\r\n\r\n        self.detected_language = \"desconhecido\"  # Inicializa a variável de idioma\r\n\r\n        try:\r\n            loader = YoutubeLoader.from_youtube_url(\r\n                url, \r\n                add_video_info=True,\r\n                language=[language_code],  # Usa o idioma preferido\r\n                translation=translation_code  # Usa o idioma de tradução\r\n            )\r\n            documents = loader.load()\r\n\r\n            if documents and documents[0].page_content:\r\n                transcribed_text = documents[0].page_content\r\n                self.detected_language = detect(transcribed_text)\r\n                self.status = f\"Conteúdo transcrito de: {url} em {self.detected_language}\"\r\n                return Document(page_content=transcribed_text)\r\n            else:\r\n                self.status = \"Falha na transcrição ou nenhum conteúdo encontrado.\"\r\n                return Document(page_content=\"\")\r\n\r\n        except Exception as e:\r\n            self.status = f\"Erro ao tentar transcrever o vídeo: {e}\"\r\n            return Document(page_content=\"\")\r\n\r\n    def get_detected_language(self) -> str:\r\n        return self.detected_language\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "language": {
+                "trace_as_metadata": true,
+                "options": [
+                  "English",
+                  "Português",
+                  "Español",
+                  "Français",
+                  "Deutsch",
+                  "Italiano",
+                  "Nederlands",
+                  "Русский",
+                  "日本語",
+                  "中文"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "language",
+                "value": "Português",
+                "display_name": "Idioma Preferido",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "translation": {
+                "trace_as_metadata": true,
+                "options": [
+                  "English",
+                  "Português",
+                  "Español",
+                  "Français",
+                  "Deutsch",
+                  "Italiano",
+                  "Nederlands",
+                  "Русский",
+                  "日本語",
+                  "中文"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "translation",
+                "value": "Português",
+                "display_name": "Idioma de Tradução",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "url": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "url",
+                "value": "",
+                "display_name": "YouTube URL",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "URL do vídeo do YouTube.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Detecta automaticamente o idioma de um vídeo do YouTube e transcreve seu conteúdo.",
+            "icon": "youtube",
+            "base_classes": [
+              "Document",
+              "Text"
+            ],
+            "display_name": "WB - Trasncreve Video Youtube",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Document"
+                ],
+                "selected": "Document",
+                "name": "transcribed_document",
+                "display_name": "Transcrição",
+                "method": "transcribe",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Text"
+                ],
+                "selected": "Text",
+                "name": "detected_language",
+                "display_name": "Idioma Detectado",
+                "method": "get_detected_language",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "url",
+              "language",
+              "translation"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.16",
+            "official": false
+          },
+          "id": "YouTubeAutoTranscriberComponent-OeJd2"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 543,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 250,
+          "y": 87.21875
+        }
+      },
+      {
+        "id": "CharacterTextSplitter-Cjj77",
+        "type": "genericNode",
+        "position": {
+          "x": 748,
+          "y": 102.21875
+        },
+        "data": {
+          "type": "CharacterTextSplitter",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "data_input": {
+                "trace_as_metadata": true,
+                "list": false,
+                "trace_as_input": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "data_input",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Document",
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The texts to split.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "chunk_overlap": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "chunk_overlap",
+                "value": 200,
+                "display_name": "Chunk Overlap",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The amount of overlap between chunks.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "chunk_size": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "chunk_size",
+                "value": 1000,
+                "display_name": "Chunk Size",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The maximum length of each chunk.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Any\n\nfrom langchain_text_splitters import CharacterTextSplitter, TextSplitter\n\nfrom axiestudio.base.textsplitters.model import LCTextSplitterComponent\nfrom axiestudio.inputs import DataInput, IntInput, MessageTextInput\nfrom axiestudio.utils.util import unescape_string\n\n\nclass CharacterTextSplitterComponent(LCTextSplitterComponent):\n    display_name = \"CharacterTextSplitter\"\n    description = \"Split text by number of characters.\"\n    documentation = \"https://docs.axiestudio.org/components/text-splitters#charactertextsplitter\"\n    name = \"CharacterTextSplitter\"\n\n    inputs = [\n        IntInput(\n            name=\"chunk_size\",\n            display_name=\"Chunk Size\",\n            info=\"The maximum length of each chunk.\",\n            value=1000,\n        ),\n        IntInput(\n            name=\"chunk_overlap\",\n            display_name=\"Chunk Overlap\",\n            info=\"The amount of overlap between chunks.\",\n            value=200,\n        ),\n        DataInput(\n            name=\"data_input\",\n            display_name=\"Input\",\n            info=\"The texts to split.\",\n            input_types=[\"Document\", \"Data\"],\n        ),\n        MessageTextInput(\n            name=\"separator\",\n            display_name=\"Separator\",\n            info='The characters to split on.\\nIf left empty defaults to \"\\\\n\\\\n\".',\n        ),\n    ]\n\n    def get_data_input(self) -> Any:\n        return self.data_input\n\n    def build_text_splitter(self) -> TextSplitter:\n        if self.separator:\n            separator = unescape_string(self.separator)\n        else:\n            separator = \"\\n\\n\"\n        return CharacterTextSplitter(\n            chunk_overlap=self.chunk_overlap,\n            chunk_size=self.chunk_size,\n            separator=separator,\n        )\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "separator": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "separator",
+                "value": "",
+                "display_name": "Separator",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The characters to split on.\nIf left empty defaults to \"\\n\\n\".",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Split text by number of characters.",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "CharacterTextSplitter",
+            "documentation": "https://docs.axiestudio.org/components/text-splitters#charactertextsplitter",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "split_data",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "chunk_size",
+              "chunk_overlap",
+              "data_input",
+              "separator"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.16"
+          },
+          "id": "CharacterTextSplitter-Cjj77"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 518,
+        "positionAbsolute": {
+          "x": 748,
+          "y": 102.21875
+        },
+        "dragging": false
+      },
+      {
+        "id": "ChatOutput-4qTFv",
+        "type": "genericNode",
+        "position": {
+          "x": 1721,
+          "y": 232.21875
+        },
+        "data": {
+          "type": "ChatOutput",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, MessageTextInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_NAME_AI, MESSAGE_SENDER_USER, MESSAGE_SENDER_AI\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Playground.\"\n    icon = \"ChatOutput\"\n    name = \"ChatOutput\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Message to be passed as output.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_AI,\n            advanced=True,\n            info=\"Type of sender.\",\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_AI,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"data_template\",\n            display_name=\"Data Template\",\n            value=\"{text}\",\n            advanced=True,\n            info=\"Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n\n    def message_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n        )\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "data_template": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "data_template",
+                "value": "{text}",
+                "display_name": "Data Template",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Message to be passed as output.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "sender": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender",
+                "value": "Machine",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Type of sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "sender_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender_name",
+                "value": "AI",
+                "display_name": "Sender Name",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Name of the sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "session_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "session_id",
+                "value": "",
+                "display_name": "Session ID",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "should_store_message": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "should_store_message",
+                "value": true,
+                "display_name": "Store Messages",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Store the message in the history.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Display a chat message in the Playground.",
+            "icon": "ChatOutput",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Chat Output",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "message",
+                "display_name": "Message",
+                "method": "message_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "should_store_message",
+              "sender",
+              "sender_name",
+              "session_id",
+              "data_template"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.16"
+          },
+          "id": "ChatOutput-4qTFv"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 298,
+        "positionAbsolute": {
+          "x": 1721,
+          "y": 232.21875
+        },
+        "dragging": false
+      },
+      {
+        "id": "ParseData-X85mu",
+        "type": "genericNode",
+        "position": {
+          "x": 1217,
+          "y": 252.21875
+        },
+        "data": {
+          "type": "ParseData",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "data": {
+                "trace_as_metadata": true,
+                "list": false,
+                "trace_as_input": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "data",
+                "value": "",
+                "display_name": "Data",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The data to convert to text.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.helpers.data import data_to_text\nfrom axiestudio.io import DataInput, MultilineInput, Output, StrInput\nfrom axiestudio.schema.message import Message\n\n\nclass ParseDataComponent(Component):\n    display_name = \"Parse Data\"\n    description = \"Convert Data into plain text following a specified template.\"\n    icon = \"braces\"\n    name = \"ParseData\"\n\n    inputs = [\n        DataInput(name=\"data\", display_name=\"Data\", info=\"The data to convert to text.\"),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.\",\n            value=\"{text}\",\n        ),\n        StrInput(name=\"sep\", display_name=\"Separator\", advanced=True, value=\"\\n\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"parse_data\"),\n    ]\n\n    def parse_data(self) -> Message:\n        data = self.data if isinstance(self.data, list) else [self.data]\n        template = self.template\n\n        result_string = data_to_text(template, data, sep=self.sep)\n        self.status = result_string\n        return Message(text=result_string)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "sep": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sep",
+                "value": "\n",
+                "display_name": "Separator",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "template": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "template",
+                "value": "{text}",
+                "display_name": "Template",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "Convert Data into plain text following a specified template.",
+            "icon": "braces",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Parse Data",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text",
+                "display_name": "Text",
+                "method": "parse_data",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "data",
+              "template",
+              "sep"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.16"
+          },
+          "id": "ParseData-X85mu"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 374
+      },
+      {
+        "id": "ChatInput-bvDAs",
+        "type": "genericNode",
+        "position": {
+          "x": -231.7625955047863,
+          "y": 205.20836400716428
+        },
+        "data": {
+          "type": "ChatInput",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "files": {
+                "trace_as_metadata": true,
+                "file_path": "",
+                "fileTypes": [
+                  "txt",
+                  "md",
+                  "mdx",
+                  "csv",
+                  "json",
+                  "yaml",
+                  "yml",
+                  "xml",
+                  "html",
+                  "htm",
+                  "pdf",
+                  "docx",
+                  "py",
+                  "sh",
+                  "sql",
+                  "js",
+                  "ts",
+                  "tsx",
+                  "jpg",
+                  "jpeg",
+                  "png",
+                  "bmp",
+                  "image"
+                ],
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "files",
+                "value": "",
+                "display_name": "Files",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Files to be sent with the message.",
+                "title_case": false,
+                "type": "file",
+                "_input_type": "FileInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.data.utils import IMG_FILE_TYPES, TEXT_FILE_TYPES\nfrom axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, FileInput, MessageTextInput, MultilineInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_USER, MESSAGE_SENDER_NAME_USER\n\n\nclass ChatInput(ChatComponent):\n    display_name = \"Chat Input\"\n    description = \"Get chat inputs from the Playground.\"\n    icon = \"ChatInput\"\n    name = \"ChatInput\"\n\n    inputs = [\n        MultilineInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            value=\"\",\n            info=\"Message to be passed as input.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_USER,\n            info=\"Type of sender.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_USER,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        FileInput(\n            name=\"files\",\n            display_name=\"Files\",\n            file_types=TEXT_FILE_TYPES + IMG_FILE_TYPES,\n            info=\"Files to be sent with the message.\",\n            advanced=True,\n            is_list=True,\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n\n    def message_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n            files=self.files,\n        )\n\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "https://www.youtube.com/watch?v=q6QLGS306d0&t=45s",
+                "display_name": "Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Message to be passed as input.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "sender": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender",
+                "value": "User",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Type of sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "sender_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender_name",
+                "value": "User",
+                "display_name": "Sender Name",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Name of the sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "session_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "session_id",
+                "value": "",
+                "display_name": "Session ID",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "should_store_message": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "should_store_message",
+                "value": true,
+                "display_name": "Store Messages",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Store the message in the history.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Get chat inputs from the Playground.",
+            "icon": "ChatInput",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Chat Input",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "message",
+                "display_name": "Message",
+                "method": "message_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "should_store_message",
+              "sender",
+              "sender_name",
+              "session_id",
+              "files"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.16"
+          },
+          "id": "ChatInput-bvDAs"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 298
+      }
+    ],
+    "edges": [
+      {
+        "source": "YouTubeAutoTranscriberComponent-OeJd2",
+        "sourceHandle": "{œdataTypeœ:œYouTubeAutoTranscriberComponentœ,œidœ:œYouTubeAutoTranscriberComponent-OeJd2œ,œnameœ:œtranscribed_documentœ,œoutput_typesœ:[œDocumentœ]}",
+        "target": "CharacterTextSplitter-Cjj77",
+        "targetHandle": "{œfieldNameœ:œdata_inputœ,œidœ:œCharacterTextSplitter-Cjj77œ,œinputTypesœ:[œDocumentœ,œDataœ],œtypeœ:œotherœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "data_input",
+            "id": "CharacterTextSplitter-Cjj77",
+            "inputTypes": [
+              "Document",
+              "Data"
+            ],
+            "type": "other"
+          },
+          "sourceHandle": {
+            "dataType": "YouTubeAutoTranscriberComponent",
+            "id": "YouTubeAutoTranscriberComponent-OeJd2",
+            "name": "transcribed_document",
+            "output_types": [
+              "Document"
+            ]
+          }
+        },
+        "id": "reactflow__edge-YouTubeAutoTranscriberComponent-OeJd2{œdataTypeœ:œYouTubeAutoTranscriberComponentœ,œidœ:œYouTubeAutoTranscriberComponent-OeJd2œ,œnameœ:œtranscribed_documentœ,œoutput_typesœ:[œDocumentœ]}-CharacterTextSplitter-Cjj77{œfieldNameœ:œdata_inputœ,œidœ:œCharacterTextSplitter-Cjj77œ,œinputTypesœ:[œDocumentœ,œDataœ],œtypeœ:œotherœ}"
+      },
+      {
+        "source": "CharacterTextSplitter-Cjj77",
+        "sourceHandle": "{œdataTypeœ:œCharacterTextSplitterœ,œidœ:œCharacterTextSplitter-Cjj77œ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}",
+        "target": "ParseData-X85mu",
+        "targetHandle": "{œfieldNameœ:œdataœ,œidœ:œParseData-X85muœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "data",
+            "id": "ParseData-X85mu",
+            "inputTypes": [
+              "Data"
+            ],
+            "type": "other"
+          },
+          "sourceHandle": {
+            "dataType": "CharacterTextSplitter",
+            "id": "CharacterTextSplitter-Cjj77",
+            "name": "data",
+            "output_types": [
+              "Data"
+            ]
+          }
+        },
+        "id": "reactflow__edge-CharacterTextSplitter-Cjj77{œdataTypeœ:œCharacterTextSplitterœ,œidœ:œCharacterTextSplitter-Cjj77œ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}-ParseData-X85mu{œfieldNameœ:œdataœ,œidœ:œParseData-X85muœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}"
+      },
+      {
+        "source": "ParseData-X85mu",
+        "sourceHandle": "{œdataTypeœ:œParseDataœ,œidœ:œParseData-X85muœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "ChatOutput-4qTFv",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-4qTFvœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "ChatOutput-4qTFv",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "ParseData",
+            "id": "ParseData-X85mu",
+            "name": "text",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-ParseData-X85mu{œdataTypeœ:œParseDataœ,œidœ:œParseData-X85muœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-4qTFv{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-4qTFvœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+      },
+      {
+        "source": "ChatInput-bvDAs",
+        "sourceHandle": "{œdataTypeœ:œChatInputœ,œidœ:œChatInput-bvDAsœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "YouTubeAutoTranscriberComponent-OeJd2",
+        "targetHandle": "{œfieldNameœ:œurlœ,œidœ:œYouTubeAutoTranscriberComponent-OeJd2œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "url",
+            "id": "YouTubeAutoTranscriberComponent-OeJd2",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "ChatInput",
+            "id": "ChatInput-bvDAs",
+            "name": "message",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-ChatInput-bvDAs{œdataTypeœ:œChatInputœ,œidœ:œChatInput-bvDAsœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-YouTubeAutoTranscriberComponent-OeJd2{œfieldNameœ:œurlœ,œidœ:œYouTubeAutoTranscriberComponent-OeJd2œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+      }
+    ],
+    "viewport": {
+      "x": 406.76105806766344,
+      "y": 118.57449312048709,
+      "zoom": 0.8705505632961239
+    }
+  },
+  "metadata": {
+    "YouTubeAutoTranscriberComponent": {
+      "count": 1
+    },
+    "CharacterTextSplitter": {
+      "count": 1
+    },
+    "ChatOutput": {
+      "count": 1
+    },
+    "ParseData": {
+      "count": 1
+    },
+    "ChatInput": {
+      "count": 1
+    },
+    "total": 5
+  },
+  "original": {
+    "id": "d717f7b0-909e-43ff-8001-e0c89ebcfad1",
+    "name": "WB - Youtube Transcript",
+    "description": "transcreve o conteúdo de um link de vídeo do youtube para o português",
+    "is_component": false,
+    "liked_by_count": "4",
+    "downloads_count": "42",
+    "metadata": {
+      "YouTubeAutoTranscriberComponent": {
+        "count": 1
+      },
+      "CharacterTextSplitter": {
+        "count": 1
+      },
+      "ChatOutput": {
+        "count": 1
+      },
+      "ParseData": {
+        "count": 1
+      },
+      "ChatInput": {
+        "count": 1
+      },
+      "total": 5
+    },
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "YouTubeAutoTranscriberComponent-OeJd2",
+          "type": "genericNode",
+          "position": {
+            "x": 250,
+            "y": 87.21875
+          },
+          "data": {
+            "type": "YouTubeAutoTranscriberComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\r\nfrom langchain.schema import Document\r\nfrom langchain.document_loaders import YoutubeLoader\r\nfrom axiestudio.inputs import MessageTextInput, DropdownInput\r\nfrom axiestudio.template import Output\r\nfrom langdetect import detect\r\n\r\nclass YouTubeAutoTranscriberComponent(Component):\r\n    display_name = \"YouTube Auto Transcriber\"\r\n    description = \"Detecta automaticamente o idioma de um vídeo do YouTube e transcreve seu conteúdo.\"\r\n    icon = \"youtube\"\r\n\r\n    # Adiciona os 10 principais códigos de idioma para seleção\r\n    language_options = [\r\n        (\"English\", \"en\"),\r\n        (\"Português\", \"pt\"),\r\n        (\"Español\", \"es\"),\r\n        (\"Français\", \"fr\"),\r\n        (\"Deutsch\", \"de\"),\r\n        (\"Italiano\", \"it\"),\r\n        (\"Nederlands\", \"nl\"),\r\n        (\"Русский\", \"ru\"),\r\n        (\"日本語\", \"ja\"),\r\n        (\"中文\", \"zh\")\r\n    ]\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"url\",\r\n            display_name=\"YouTube URL\",\r\n            info=\"URL do vídeo do YouTube.\"\r\n        ),\r\n        DropdownInput(\r\n            name=\"language\",\r\n            display_name=\"Idioma Preferido\",\r\n            options=[option[0] for option in language_options],\r\n            \r\n        ),\r\n        DropdownInput(\r\n            name=\"translation\",\r\n            display_name=\"Idioma de Tradução\",\r\n            options=[option[0] for option in language_options],\r\n            \r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Transcrição\", name=\"transcribed_document\", method=\"transcribe\"),\r\n        Output(display_name=\"Idioma Detectado\", name=\"detected_language\", method=\"get_detected_language\")\r\n    ]\r\n\r\n    def transcribe(self) -> Document:\r\n        if not hasattr(self, 'url') or not self.url:\r\n            raise ValueError(\"URL não foi fornecida ou está vazia. Certifique-se de preencher o campo corretamente.\")\r\n        \r\n        url = self.url\r\n        \r\n        # Converte o idioma selecionado para os códigos apropriados\r\n        language_code = self.language_options[[option[0] for option in self.language_options].index(self.language)][1]\r\n        translation_code = self.language_options[[option[0] for option in self.language_options].index(self.translation)][1]\r\n\r\n        self.detected_language = \"desconhecido\"  # Inicializa a variável de idioma\r\n\r\n        try:\r\n            loader = YoutubeLoader.from_youtube_url(\r\n                url, \r\n                add_video_info=True,\r\n                language=[language_code],  # Usa o idioma preferido\r\n                translation=translation_code  # Usa o idioma de tradução\r\n            )\r\n            documents = loader.load()\r\n\r\n            if documents and documents[0].page_content:\r\n                transcribed_text = documents[0].page_content\r\n                self.detected_language = detect(transcribed_text)\r\n                self.status = f\"Conteúdo transcrito de: {url} em {self.detected_language}\"\r\n                return Document(page_content=transcribed_text)\r\n            else:\r\n                self.status = \"Falha na transcrição ou nenhum conteúdo encontrado.\"\r\n                return Document(page_content=\"\")\r\n\r\n        except Exception as e:\r\n            self.status = f\"Erro ao tentar transcrever o vídeo: {e}\"\r\n            return Document(page_content=\"\")\r\n\r\n    def get_detected_language(self) -> str:\r\n        return self.detected_language\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "language": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "English",
+                    "Português",
+                    "Español",
+                    "Français",
+                    "Deutsch",
+                    "Italiano",
+                    "Nederlands",
+                    "Русский",
+                    "日本語",
+                    "中文"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "language",
+                  "value": "Português",
+                  "display_name": "Idioma Preferido",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "translation": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "English",
+                    "Português",
+                    "Español",
+                    "Français",
+                    "Deutsch",
+                    "Italiano",
+                    "Nederlands",
+                    "Русский",
+                    "日本語",
+                    "中文"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "translation",
+                  "value": "Português",
+                  "display_name": "Idioma de Tradução",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "url": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "url",
+                  "value": "",
+                  "display_name": "YouTube URL",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "URL do vídeo do YouTube.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Detecta automaticamente o idioma de um vídeo do YouTube e transcreve seu conteúdo.",
+              "icon": "youtube",
+              "base_classes": [
+                "Document",
+                "Text"
+              ],
+              "display_name": "WB - Trasncreve Video Youtube",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Document"
+                  ],
+                  "selected": "Document",
+                  "name": "transcribed_document",
+                  "display_name": "Transcrição",
+                  "method": "transcribe",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Text"
+                  ],
+                  "selected": "Text",
+                  "name": "detected_language",
+                  "display_name": "Idioma Detectado",
+                  "method": "get_detected_language",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "url",
+                "language",
+                "translation"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.16",
+              "official": false
+            },
+            "id": "YouTubeAutoTranscriberComponent-OeJd2"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 543,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": 250,
+            "y": 87.21875
+          }
+        },
+        {
+          "id": "CharacterTextSplitter-Cjj77",
+          "type": "genericNode",
+          "position": {
+            "x": 748,
+            "y": 102.21875
+          },
+          "data": {
+            "type": "CharacterTextSplitter",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "data_input": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "trace_as_input": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "data_input",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Document",
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The texts to split.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "chunk_overlap": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "chunk_overlap",
+                  "value": 200,
+                  "display_name": "Chunk Overlap",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The amount of overlap between chunks.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "chunk_size": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "chunk_size",
+                  "value": 1000,
+                  "display_name": "Chunk Size",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The maximum length of each chunk.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Any\n\nfrom langchain_text_splitters import CharacterTextSplitter, TextSplitter\n\nfrom axiestudio.base.textsplitters.model import LCTextSplitterComponent\nfrom axiestudio.inputs import DataInput, IntInput, MessageTextInput\nfrom axiestudio.utils.util import unescape_string\n\n\nclass CharacterTextSplitterComponent(LCTextSplitterComponent):\n    display_name = \"CharacterTextSplitter\"\n    description = \"Split text by number of characters.\"\n    documentation = \"https://docs.axiestudio.org/components/text-splitters#charactertextsplitter\"\n    name = \"CharacterTextSplitter\"\n\n    inputs = [\n        IntInput(\n            name=\"chunk_size\",\n            display_name=\"Chunk Size\",\n            info=\"The maximum length of each chunk.\",\n            value=1000,\n        ),\n        IntInput(\n            name=\"chunk_overlap\",\n            display_name=\"Chunk Overlap\",\n            info=\"The amount of overlap between chunks.\",\n            value=200,\n        ),\n        DataInput(\n            name=\"data_input\",\n            display_name=\"Input\",\n            info=\"The texts to split.\",\n            input_types=[\"Document\", \"Data\"],\n        ),\n        MessageTextInput(\n            name=\"separator\",\n            display_name=\"Separator\",\n            info='The characters to split on.\\nIf left empty defaults to \"\\\\n\\\\n\".',\n        ),\n    ]\n\n    def get_data_input(self) -> Any:\n        return self.data_input\n\n    def build_text_splitter(self) -> TextSplitter:\n        if self.separator:\n            separator = unescape_string(self.separator)\n        else:\n            separator = \"\\n\\n\"\n        return CharacterTextSplitter(\n            chunk_overlap=self.chunk_overlap,\n            chunk_size=self.chunk_size,\n            separator=separator,\n        )\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "separator": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "separator",
+                  "value": "",
+                  "display_name": "Separator",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The characters to split on.\nIf left empty defaults to \"\\n\\n\".",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Split text by number of characters.",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "CharacterTextSplitter",
+              "documentation": "https://docs.axiestudio.org/components/text-splitters#charactertextsplitter",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "split_data",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "chunk_size",
+                "chunk_overlap",
+                "data_input",
+                "separator"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.16"
+            },
+            "id": "CharacterTextSplitter-Cjj77"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 518,
+          "positionAbsolute": {
+            "x": 748,
+            "y": 102.21875
+          },
+          "dragging": false
+        },
+        {
+          "id": "ChatOutput-4qTFv",
+          "type": "genericNode",
+          "position": {
+            "x": 1721,
+            "y": 232.21875
+          },
+          "data": {
+            "type": "ChatOutput",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, MessageTextInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_NAME_AI, MESSAGE_SENDER_USER, MESSAGE_SENDER_AI\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Playground.\"\n    icon = \"ChatOutput\"\n    name = \"ChatOutput\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Message to be passed as output.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_AI,\n            advanced=True,\n            info=\"Type of sender.\",\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_AI,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"data_template\",\n            display_name=\"Data Template\",\n            value=\"{text}\",\n            advanced=True,\n            info=\"Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n\n    def message_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n        )\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "data_template": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "data_template",
+                  "value": "{text}",
+                  "display_name": "Data Template",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Message to be passed as output.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "sender": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Machine",
+                    "User"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender",
+                  "value": "Machine",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Type of sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "sender_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender_name",
+                  "value": "AI",
+                  "display_name": "Sender Name",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Name of the sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "session_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "session_id",
+                  "value": "",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "should_store_message": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "should_store_message",
+                  "value": true,
+                  "display_name": "Store Messages",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Store the message in the history.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Display a chat message in the Playground.",
+              "icon": "ChatOutput",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Chat Output",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "message",
+                  "display_name": "Message",
+                  "method": "message_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "should_store_message",
+                "sender",
+                "sender_name",
+                "session_id",
+                "data_template"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.16"
+            },
+            "id": "ChatOutput-4qTFv"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 298,
+          "positionAbsolute": {
+            "x": 1721,
+            "y": 232.21875
+          },
+          "dragging": false
+        },
+        {
+          "id": "ParseData-X85mu",
+          "type": "genericNode",
+          "position": {
+            "x": 1217,
+            "y": 252.21875
+          },
+          "data": {
+            "type": "ParseData",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "data": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "trace_as_input": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "data",
+                  "value": "",
+                  "display_name": "Data",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The data to convert to text.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.helpers.data import data_to_text\nfrom axiestudio.io import DataInput, MultilineInput, Output, StrInput\nfrom axiestudio.schema.message import Message\n\n\nclass ParseDataComponent(Component):\n    display_name = \"Parse Data\"\n    description = \"Convert Data into plain text following a specified template.\"\n    icon = \"braces\"\n    name = \"ParseData\"\n\n    inputs = [\n        DataInput(name=\"data\", display_name=\"Data\", info=\"The data to convert to text.\"),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.\",\n            value=\"{text}\",\n        ),\n        StrInput(name=\"sep\", display_name=\"Separator\", advanced=True, value=\"\\n\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"parse_data\"),\n    ]\n\n    def parse_data(self) -> Message:\n        data = self.data if isinstance(self.data, list) else [self.data]\n        template = self.template\n\n        result_string = data_to_text(template, data, sep=self.sep)\n        self.status = result_string\n        return Message(text=result_string)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "sep": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sep",
+                  "value": "\n",
+                  "display_name": "Separator",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "template": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "template",
+                  "value": "{text}",
+                  "display_name": "Template",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "Convert Data into plain text following a specified template.",
+              "icon": "braces",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Parse Data",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text",
+                  "display_name": "Text",
+                  "method": "parse_data",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "data",
+                "template",
+                "sep"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.16"
+            },
+            "id": "ParseData-X85mu"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 374
+        },
+        {
+          "id": "ChatInput-bvDAs",
+          "type": "genericNode",
+          "position": {
+            "x": -231.7625955047863,
+            "y": 205.20836400716428
+          },
+          "data": {
+            "type": "ChatInput",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "files": {
+                  "trace_as_metadata": true,
+                  "file_path": "",
+                  "fileTypes": [
+                    "txt",
+                    "md",
+                    "mdx",
+                    "csv",
+                    "json",
+                    "yaml",
+                    "yml",
+                    "xml",
+                    "html",
+                    "htm",
+                    "pdf",
+                    "docx",
+                    "py",
+                    "sh",
+                    "sql",
+                    "js",
+                    "ts",
+                    "tsx",
+                    "jpg",
+                    "jpeg",
+                    "png",
+                    "bmp",
+                    "image"
+                  ],
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "files",
+                  "value": "",
+                  "display_name": "Files",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Files to be sent with the message.",
+                  "title_case": false,
+                  "type": "file",
+                  "_input_type": "FileInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.data.utils import IMG_FILE_TYPES, TEXT_FILE_TYPES\nfrom axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, FileInput, MessageTextInput, MultilineInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_USER, MESSAGE_SENDER_NAME_USER\n\n\nclass ChatInput(ChatComponent):\n    display_name = \"Chat Input\"\n    description = \"Get chat inputs from the Playground.\"\n    icon = \"ChatInput\"\n    name = \"ChatInput\"\n\n    inputs = [\n        MultilineInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            value=\"\",\n            info=\"Message to be passed as input.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_USER,\n            info=\"Type of sender.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_USER,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        FileInput(\n            name=\"files\",\n            display_name=\"Files\",\n            file_types=TEXT_FILE_TYPES + IMG_FILE_TYPES,\n            info=\"Files to be sent with the message.\",\n            advanced=True,\n            is_list=True,\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n\n    def message_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n            files=self.files,\n        )\n\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "https://www.youtube.com/watch?v=q6QLGS306d0&t=45s",
+                  "display_name": "Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Message to be passed as input.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "sender": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Machine",
+                    "User"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender",
+                  "value": "User",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Type of sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "sender_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender_name",
+                  "value": "User",
+                  "display_name": "Sender Name",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Name of the sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "session_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "session_id",
+                  "value": "",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "should_store_message": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "should_store_message",
+                  "value": true,
+                  "display_name": "Store Messages",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Store the message in the history.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Get chat inputs from the Playground.",
+              "icon": "ChatInput",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Chat Input",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "message",
+                  "display_name": "Message",
+                  "method": "message_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "should_store_message",
+                "sender",
+                "sender_name",
+                "session_id",
+                "files"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.16"
+            },
+            "id": "ChatInput-bvDAs"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 298
+        }
+      ],
+      "edges": [
+        {
+          "source": "YouTubeAutoTranscriberComponent-OeJd2",
+          "sourceHandle": "{œdataTypeœ:œYouTubeAutoTranscriberComponentœ,œidœ:œYouTubeAutoTranscriberComponent-OeJd2œ,œnameœ:œtranscribed_documentœ,œoutput_typesœ:[œDocumentœ]}",
+          "target": "CharacterTextSplitter-Cjj77",
+          "targetHandle": "{œfieldNameœ:œdata_inputœ,œidœ:œCharacterTextSplitter-Cjj77œ,œinputTypesœ:[œDocumentœ,œDataœ],œtypeœ:œotherœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "data_input",
+              "id": "CharacterTextSplitter-Cjj77",
+              "inputTypes": [
+                "Document",
+                "Data"
+              ],
+              "type": "other"
+            },
+            "sourceHandle": {
+              "dataType": "YouTubeAutoTranscriberComponent",
+              "id": "YouTubeAutoTranscriberComponent-OeJd2",
+              "name": "transcribed_document",
+              "output_types": [
+                "Document"
+              ]
+            }
+          },
+          "id": "reactflow__edge-YouTubeAutoTranscriberComponent-OeJd2{œdataTypeœ:œYouTubeAutoTranscriberComponentœ,œidœ:œYouTubeAutoTranscriberComponent-OeJd2œ,œnameœ:œtranscribed_documentœ,œoutput_typesœ:[œDocumentœ]}-CharacterTextSplitter-Cjj77{œfieldNameœ:œdata_inputœ,œidœ:œCharacterTextSplitter-Cjj77œ,œinputTypesœ:[œDocumentœ,œDataœ],œtypeœ:œotherœ}"
+        },
+        {
+          "source": "CharacterTextSplitter-Cjj77",
+          "sourceHandle": "{œdataTypeœ:œCharacterTextSplitterœ,œidœ:œCharacterTextSplitter-Cjj77œ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}",
+          "target": "ParseData-X85mu",
+          "targetHandle": "{œfieldNameœ:œdataœ,œidœ:œParseData-X85muœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "data",
+              "id": "ParseData-X85mu",
+              "inputTypes": [
+                "Data"
+              ],
+              "type": "other"
+            },
+            "sourceHandle": {
+              "dataType": "CharacterTextSplitter",
+              "id": "CharacterTextSplitter-Cjj77",
+              "name": "data",
+              "output_types": [
+                "Data"
+              ]
+            }
+          },
+          "id": "reactflow__edge-CharacterTextSplitter-Cjj77{œdataTypeœ:œCharacterTextSplitterœ,œidœ:œCharacterTextSplitter-Cjj77œ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}-ParseData-X85mu{œfieldNameœ:œdataœ,œidœ:œParseData-X85muœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}"
+        },
+        {
+          "source": "ParseData-X85mu",
+          "sourceHandle": "{œdataTypeœ:œParseDataœ,œidœ:œParseData-X85muœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "ChatOutput-4qTFv",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-4qTFvœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "ChatOutput-4qTFv",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "ParseData",
+              "id": "ParseData-X85mu",
+              "name": "text",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-ParseData-X85mu{œdataTypeœ:œParseDataœ,œidœ:œParseData-X85muœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-4qTFv{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-4qTFvœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+        },
+        {
+          "source": "ChatInput-bvDAs",
+          "sourceHandle": "{œdataTypeœ:œChatInputœ,œidœ:œChatInput-bvDAsœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "YouTubeAutoTranscriberComponent-OeJd2",
+          "targetHandle": "{œfieldNameœ:œurlœ,œidœ:œYouTubeAutoTranscriberComponent-OeJd2œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "url",
+              "id": "YouTubeAutoTranscriberComponent-OeJd2",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "ChatInput",
+              "id": "ChatInput-bvDAs",
+              "name": "message",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-ChatInput-bvDAs{œdataTypeœ:œChatInputœ,œidœ:œChatInput-bvDAsœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-YouTubeAutoTranscriberComponent-OeJd2{œfieldNameœ:œurlœ,œidœ:œYouTubeAutoTranscriberComponent-OeJd2œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+        }
+      ],
+      "viewport": {
+        "x": 406.76105806766344,
+        "y": 118.57449312048709,
+        "zoom": 0.8705505632961239
+      }
+    },
+    "date_created": "2024-09-11T22:39:46.068Z",
+    "date_updated": "2024-09-11T22:39:46.106Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "00808143-7274-457d-a5b8-75c89231a3dd",
+    "user_created": {
+      "username": "wagner",
+      "first_name": "Wagner",
+      "last_name": "Bittencourt",
+      "id": "00808143-7274-457d-a5b8-75c89231a3dd"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:06.283Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 50,
+    "converter_version": "1.0.0"
+  }
+}

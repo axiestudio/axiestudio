@@ -1,0 +1,409 @@
+{
+  "id": "2c741ff3-a257-4f0c-abca-d0846f2750dc",
+  "name": "Search [Notion]",
+  "description": "Searches all pages and databases that have been shared with an integration. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "NamastexLabs",
+    "first_name": "Felipe",
+    "last_name": "Rosa",
+    "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "full_name": "Felipe Rosa"
+  },
+  "store_url": "https://www.langflow.store/store/component/2c741ff3-a257-4f0c-abca-d0846f2750dc",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-05-23T21:00:38.995Z",
+    "updated": "2024-05-23T21:00:39.029Z",
+    "downloaded": "2025-08-19T17:50:04.944Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import requests\r\nfrom typing import Dict, Any, List\r\nfrom axiestudio.custom import CustomComponent\r\nfrom axiestudio.schema import Record\r\n\r\nclass NotionSearch(CustomComponent):\r\n    display_name = \"Search Notion\"\r\n    description = (\r\n        \"Searches all pages and databases that have been shared with an integration.\"\r\n    )\r\n    documentation: str = \"https://docs.axiestudio.org/integrations/notion/search\"\r\n    icon = \"NotionDirectoryLoader\"\r\n\r\n    field_order = [\r\n        \"notion_secret\",\r\n        \"query\",\r\n        \"filter_value\",\r\n        \"sort_direction\",\r\n    ]\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"notion_secret\": {\r\n                \"display_name\": \"Notion Secret\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The Notion integration token.\",\r\n                \"password\": True,\r\n            },\r\n            \"query\": {\r\n                \"display_name\": \"Search Query\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The text that the API compares page and database titles against.\",\r\n            },\r\n            \"filter_value\": {\r\n                \"display_name\": \"Filter Type\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"Limits the results to either only pages or only databases.\",\r\n                \"options\": [\"page\", \"database\"],\r\n                \"default_value\": \"page\",\r\n            },\r\n            \"sort_direction\": {\r\n                \"display_name\": \"Sort Direction\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The direction to sort the results.\",\r\n                \"options\": [\"ascending\", \"descending\"],\r\n                \"default_value\": \"descending\",\r\n            },\r\n        }\r\n\r\n    def build(\r\n        self,\r\n        notion_secret: str,\r\n        query: str = \"\",\r\n        filter_value: str = \"page\",\r\n        sort_direction: str = \"descending\",\r\n    ) -> List[Record]:\r\n        try:\r\n            url = \"https://api.notion.com/v1/search\"\r\n            headers = {\r\n                \"Authorization\": f\"Bearer {notion_secret}\",\r\n                \"Content-Type\": \"application/json\",\r\n                \"Notion-Version\": \"2022-06-28\",\r\n            }\r\n\r\n            data = {\r\n                \"query\": query,\r\n                \"filter\": {\r\n                    \"value\": filter_value,\r\n                    \"property\": \"object\"\r\n                },\r\n                \"sort\":{\r\n                  \"direction\": sort_direction,\r\n                  \"timestamp\": \"last_edited_time\"\r\n                }\r\n            }\r\n\r\n            response = requests.post(url, headers=headers, json=data)\r\n            response.raise_for_status()\r\n\r\n            results = response.json()\r\n            records = []\r\n            combined_text = f\"Results found: {len(results['results'])}\\n\\n\"\r\n            for result in results['results']:\r\n                result_data = {\r\n                    'id': result['id'],\r\n                    'type': result['object'],\r\n                    'last_edited_time': result['last_edited_time'],\r\n                }\r\n                \r\n                if result['object'] == 'page':\r\n                    result_data['title_or_url'] = result['url']\r\n                    text = f\"id: {result['id']}\\ntitle_or_url: {result['url']}\\n\"\r\n                elif result['object'] == 'database':\r\n                    if 'title' in result and isinstance(result['title'], list) and len(result['title']) > 0:\r\n                        result_data['title_or_url'] = result['title'][0]['plain_text']\r\n                        text = f\"id: {result['id']}\\ntitle_or_url: {result['title'][0]['plain_text']}\\n\"\r\n                    else:\r\n                        result_data['title_or_url'] = \"N/A\"\r\n                        text = f\"id: {result['id']}\\ntitle_or_url: N/A\\n\"\r\n\r\n                text += f\"type: {result['object']}\\nlast_edited_time: {result['last_edited_time']}\\n\\n\"\r\n                combined_text += text\r\n                records.append(Record(text=text, data=result_data))\r\n            \r\n            self.status = combined_text\r\n            return records\r\n\r\n        except Exception as e:\r\n            self.status = f\"An error occurred: {str(e)}\"\r\n            return [Record(text=self.status, data=[])]",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "filter_value": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "database",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "page",
+                  "database"
+                ],
+                "name": "filter_value",
+                "display_name": "Filter Type",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Limits the results to either only pages or only databases.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "notion_secret": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "notion_secret",
+                "display_name": "Notion Secret",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The Notion integration token.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "query": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "query",
+                "display_name": "Search Query",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The text that the API compares page and database titles against.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "sort_direction": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "descending",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "ascending",
+                  "descending"
+                ],
+                "name": "sort_direction",
+                "display_name": "Sort Direction",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The direction to sort the results.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Searches all pages and databases that have been shared with an integration.",
+            "icon": "NotionDirectoryLoader",
+            "base_classes": [
+              "Record"
+            ],
+            "display_name": "Search [Notion]",
+            "documentation": "https://docs.axiestudio.org/integrations/notion/search",
+            "custom_fields": {
+              "notion_secret": null,
+              "query": null,
+              "filter_value": null,
+              "sort_direction": null
+            },
+            "output_types": [
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "notion_secret",
+              "query",
+              "filter_value",
+              "sort_direction"
+            ],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-ZcsA9",
+          "description": "Searches all pages and databases that have been shared with an integration.",
+          "display_name": "Search [Notion]"
+        },
+        "id": "CustomComponent-ZcsA9",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "2c741ff3-a257-4f0c-abca-d0846f2750dc",
+    "name": "Search [Notion]",
+    "description": "Searches all pages and databases that have been shared with an integration.",
+    "is_component": true,
+    "liked_by_count": "20",
+    "downloads_count": "99",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import requests\r\nfrom typing import Dict, Any, List\r\nfrom axiestudio.custom import CustomComponent\r\nfrom axiestudio.schema import Record\r\n\r\nclass NotionSearch(CustomComponent):\r\n    display_name = \"Search Notion\"\r\n    description = (\r\n        \"Searches all pages and databases that have been shared with an integration.\"\r\n    )\r\n    documentation: str = \"https://docs.axiestudio.org/integrations/notion/search\"\r\n    icon = \"NotionDirectoryLoader\"\r\n\r\n    field_order = [\r\n        \"notion_secret\",\r\n        \"query\",\r\n        \"filter_value\",\r\n        \"sort_direction\",\r\n    ]\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"notion_secret\": {\r\n                \"display_name\": \"Notion Secret\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The Notion integration token.\",\r\n                \"password\": True,\r\n            },\r\n            \"query\": {\r\n                \"display_name\": \"Search Query\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The text that the API compares page and database titles against.\",\r\n            },\r\n            \"filter_value\": {\r\n                \"display_name\": \"Filter Type\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"Limits the results to either only pages or only databases.\",\r\n                \"options\": [\"page\", \"database\"],\r\n                \"default_value\": \"page\",\r\n            },\r\n            \"sort_direction\": {\r\n                \"display_name\": \"Sort Direction\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The direction to sort the results.\",\r\n                \"options\": [\"ascending\", \"descending\"],\r\n                \"default_value\": \"descending\",\r\n            },\r\n        }\r\n\r\n    def build(\r\n        self,\r\n        notion_secret: str,\r\n        query: str = \"\",\r\n        filter_value: str = \"page\",\r\n        sort_direction: str = \"descending\",\r\n    ) -> List[Record]:\r\n        try:\r\n            url = \"https://api.notion.com/v1/search\"\r\n            headers = {\r\n                \"Authorization\": f\"Bearer {notion_secret}\",\r\n                \"Content-Type\": \"application/json\",\r\n                \"Notion-Version\": \"2022-06-28\",\r\n            }\r\n\r\n            data = {\r\n                \"query\": query,\r\n                \"filter\": {\r\n                    \"value\": filter_value,\r\n                    \"property\": \"object\"\r\n                },\r\n                \"sort\":{\r\n                  \"direction\": sort_direction,\r\n                  \"timestamp\": \"last_edited_time\"\r\n                }\r\n            }\r\n\r\n            response = requests.post(url, headers=headers, json=data)\r\n            response.raise_for_status()\r\n\r\n            results = response.json()\r\n            records = []\r\n            combined_text = f\"Results found: {len(results['results'])}\\n\\n\"\r\n            for result in results['results']:\r\n                result_data = {\r\n                    'id': result['id'],\r\n                    'type': result['object'],\r\n                    'last_edited_time': result['last_edited_time'],\r\n                }\r\n                \r\n                if result['object'] == 'page':\r\n                    result_data['title_or_url'] = result['url']\r\n                    text = f\"id: {result['id']}\\ntitle_or_url: {result['url']}\\n\"\r\n                elif result['object'] == 'database':\r\n                    if 'title' in result and isinstance(result['title'], list) and len(result['title']) > 0:\r\n                        result_data['title_or_url'] = result['title'][0]['plain_text']\r\n                        text = f\"id: {result['id']}\\ntitle_or_url: {result['title'][0]['plain_text']}\\n\"\r\n                    else:\r\n                        result_data['title_or_url'] = \"N/A\"\r\n                        text = f\"id: {result['id']}\\ntitle_or_url: N/A\\n\"\r\n\r\n                text += f\"type: {result['object']}\\nlast_edited_time: {result['last_edited_time']}\\n\\n\"\r\n                combined_text += text\r\n                records.append(Record(text=text, data=result_data))\r\n            \r\n            self.status = combined_text\r\n            return records\r\n\r\n        except Exception as e:\r\n            self.status = f\"An error occurred: {str(e)}\"\r\n            return [Record(text=self.status, data=[])]",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "filter_value": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "database",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "page",
+                    "database"
+                  ],
+                  "name": "filter_value",
+                  "display_name": "Filter Type",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Limits the results to either only pages or only databases.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "notion_secret": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "notion_secret",
+                  "display_name": "Notion Secret",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The Notion integration token.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "query": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "query",
+                  "display_name": "Search Query",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The text that the API compares page and database titles against.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "sort_direction": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "descending",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "ascending",
+                    "descending"
+                  ],
+                  "name": "sort_direction",
+                  "display_name": "Sort Direction",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The direction to sort the results.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Searches all pages and databases that have been shared with an integration.",
+              "icon": "NotionDirectoryLoader",
+              "base_classes": [
+                "Record"
+              ],
+              "display_name": "Search [Notion]",
+              "documentation": "https://docs.axiestudio.org/integrations/notion/search",
+              "custom_fields": {
+                "notion_secret": null,
+                "query": null,
+                "filter_value": null,
+                "sort_direction": null
+              },
+              "output_types": [
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "notion_secret",
+                "query",
+                "filter_value",
+                "sort_direction"
+              ],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-ZcsA9",
+            "description": "Searches all pages and databases that have been shared with an integration.",
+            "display_name": "Search [Notion]"
+          },
+          "id": "CustomComponent-ZcsA9",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-05-23T21:00:38.995Z",
+    "date_updated": "2024-05-23T21:00:39.029Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "user_created": {
+      "username": "NamastexLabs",
+      "first_name": "Felipe",
+      "last_name": "Rosa",
+      "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.415Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

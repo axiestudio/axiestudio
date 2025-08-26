@@ -1,0 +1,1093 @@
+{
+  "id": "504724e9-098a-47a6-a761-53f7897129b3",
+  "name": "JohnDoe",
+  "description": "",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "Zod12",
+    "first_name": "General",
+    "last_name": "Zod",
+    "id": "c076bce5-81d3-4b8b-a6a3-dee007e34c3d",
+    "full_name": "General Zod"
+  },
+  "store_url": "https://www.langflow.store/store/component/504724e9-098a-47a6-a761-53f7897129b3",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-09T08:20:21.399Z",
+    "updated": "2024-07-09T08:20:21.431Z",
+    "downloaded": "2025-08-19T17:50:06.781Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.7",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "APIRequest-wiiXT",
+        "type": "genericNode",
+        "position": {
+          "x": 134,
+          "y": 208.20000076293945
+        },
+        "data": {
+          "type": "APIRequest",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "query_params": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "query_params",
+                "display_name": "Query Parameters",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The query parameters to append to the URL.",
+                "title_case": false,
+                "type": "other"
+              },
+              "body": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": {},
+                "name": "body",
+                "display_name": "Body",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.",
+                "title_case": false,
+                "type": "NestedDict"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import asyncio\nimport json\nfrom typing import Any, List, Optional\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\n\nimport httpx\nfrom loguru import logger\n\nfrom axiestudio.base.curl.parse import parse_context\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, NestedDictInput, Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\n\nclass APIRequestComponent(Component):\n    display_name = \"API Request\"\n    description = (\n        \"This component allows you to make HTTP requests to one or more URLs. \"\n        \"You can provide headers and body as either dictionaries or Data objects. \"\n        \"Additionally, you can append query parameters to the URLs.\\n\\n\"\n        \"**Note:** Check advanced options for more settings.\"\n    )\n    icon = \"Globe\"\n    name = \"APIRequest\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"urls\",\n            display_name=\"URLs\",\n            is_list=True,\n            info=\"Enter one or more URLs, separated by commas.\",\n        ),\n        MessageTextInput(\n            name=\"curl\",\n            display_name=\"Curl\",\n            info=\"Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.\",\n            advanced=False,\n            refresh_button=True,\n        ),\n        DropdownInput(\n            name=\"method\",\n            display_name=\"Method\",\n            options=[\"GET\", \"POST\", \"PATCH\", \"PUT\"],\n            value=\"GET\",\n            info=\"The HTTP method to use (GET, POST, PATCH, PUT).\",\n        ),\n        NestedDictInput(\n            name=\"headers\",\n            display_name=\"Headers\",\n            info=\"The headers to send with the request as a dictionary. This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        NestedDictInput(\n            name=\"body\",\n            display_name=\"Body\",\n            info=\"The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        DataInput(\n            name=\"query_params\",\n            display_name=\"Query Parameters\",\n            info=\"The query parameters to append to the URL.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            value=5,\n            info=\"The timeout to use for the request.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"make_requests\"),\n    ]\n\n    def parse_curl(self, curl: str, build_config: dotdict) -> dotdict:\n        try:\n            parsed = parse_context(curl)\n            build_config[\"urls\"][\"value\"] = [parsed.url]\n            build_config[\"method\"][\"value\"] = parsed.method.upper()\n            build_config[\"headers\"][\"value\"] = dict(parsed.headers)\n\n            if parsed.data:\n                try:\n                    json_data = json.loads(parsed.data)\n                    build_config[\"body\"][\"value\"] = json_data\n                except json.JSONDecodeError as e:\n                    logger.error(f\"Error decoding JSON data: {e}\")\n            else:\n                build_config[\"body\"][\"value\"] = {}\n        except Exception as exc:\n            logger.error(f\"Error parsing curl: {exc}\")\n            raise ValueError(f\"Error parsing curl: {exc}\")\n        return build_config\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\n        if field_name == \"curl\" and field_value:\n            build_config = self.parse_curl(field_value, build_config)\n        return build_config\n\n    async def make_request(\n        self,\n        client: httpx.AsyncClient,\n        method: str,\n        url: str,\n        headers: Optional[dict] = None,\n        body: Optional[dict] = None,\n        timeout: int = 5,\n    ) -> Data:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            raise ValueError(f\"Unsupported method: {method}\")\n\n        if isinstance(body, str) and body:\n            try:\n                body = json.loads(body)\n            except Exception as e:\n                logger.error(f\"Error decoding JSON data: {e}\")\n                body = None\n                raise ValueError(f\"Error decoding JSON data: {e}\")\n\n        data = body if body else None\n\n        try:\n            response = await client.request(method, url, headers=headers, json=data, timeout=timeout)\n            try:\n                result = response.json()\n            except Exception:\n                result = response.text\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except httpx.TimeoutException:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except Exception as exc:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    def add_query_params(self, url: str, params: dict) -> str:\n        url_parts = list(urlparse(url))\n        query = dict(parse_qsl(url_parts[4]))\n        query.update(params)\n        url_parts[4] = urlencode(query)\n        return urlunparse(url_parts)\n\n    async def make_requests(self) -> List[Data]:\n        method = self.method\n        urls = [url.strip() for url in self.urls if url.strip()]\n        curl = self.curl\n        headers = self.headers or {}\n        body = self.body or {}\n        timeout = self.timeout\n        query_params = self.query_params.data if self.query_params else {}\n\n        if curl:\n            self._build_config = self.parse_curl(curl, dotdict())\n\n        if isinstance(headers, Data):\n            headers = headers.data\n\n        if isinstance(body, Data):\n            body = body.data\n\n        bodies = [body] * len(urls)\n\n        urls = [self.add_query_params(url, query_params) for url in urls]\n\n        async with httpx.AsyncClient() as client:\n            results = await asyncio.gather(\n                *[self.make_request(client, method, u, headers, rec, timeout) for u, rec in zip(urls, bodies)]\n            )\n        self.status = results\n        return results\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "curl": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "curl",
+                "display_name": "Curl",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.",
+                "refresh_button": true,
+                "title_case": false,
+                "type": "str"
+              },
+              "headers": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": {},
+                "name": "headers",
+                "display_name": "Headers",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The headers to send with the request as a dictionary. This is populated when using the CURL field.",
+                "title_case": false,
+                "type": "NestedDict"
+              },
+              "method": {
+                "trace_as_metadata": true,
+                "options": [
+                  "GET",
+                  "POST",
+                  "PATCH",
+                  "PUT"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "GET",
+                "name": "method",
+                "display_name": "Method",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The HTTP method to use (GET, POST, PATCH, PUT).",
+                "title_case": false,
+                "type": "str"
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": 5,
+                "name": "timeout",
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The timeout to use for the request.",
+                "title_case": false,
+                "type": "int"
+              },
+              "urls": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "urls",
+                "display_name": "URLs",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter one or more URLs, separated by commas.",
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "This component allows you to make HTTP requests to one or more URLs. You can provide headers and body as either dictionaries or Data objects. Additionally, you can append query parameters to the URLs.\n\n**Note:** Check advanced options for more settings.",
+            "icon": "Globe",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "API Request",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "make_requests",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "urls",
+              "curl",
+              "method",
+              "headers",
+              "body",
+              "query_params",
+              "timeout"
+            ],
+            "beta": false,
+            "edited": false
+          },
+          "id": "APIRequest-wiiXT"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 1022
+      },
+      {
+        "id": "Directory-mDWxF",
+        "type": "genericNode",
+        "position": {
+          "x": 113,
+          "y": 85.20000076293945
+        },
+        "data": {
+          "type": "Directory",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List\n\nfrom axiestudio.base.data.utils import parallel_load_data, parse_text_file_to_data, retrieve_file_paths\nfrom axiestudio.custom import Component\nfrom axiestudio.io import BoolInput, IntInput, MessageTextInput\nfrom axiestudio.schema import Data\nfrom axiestudio.template import Output\n\n\nclass DirectoryComponent(Component):\n    display_name = \"Directory\"\n    description = \"Recursively load files from a directory.\"\n    icon = \"folder\"\n    name = \"Directory\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"path\",\n            display_name=\"Path\",\n            info=\"Path to the directory to load files from.\",\n        ),\n        MessageTextInput(\n            name=\"types\",\n            display_name=\"Types\",\n            info=\"File types to load. Leave empty to load all types.\",\n            is_list=True,\n        ),\n        IntInput(\n            name=\"depth\",\n            display_name=\"Depth\",\n            info=\"Depth to search for files.\",\n            value=0,\n        ),\n        IntInput(\n            name=\"max_concurrency\",\n            display_name=\"Max Concurrency\",\n            advanced=True,\n            info=\"Maximum concurrency for loading files.\",\n            value=2,\n        ),\n        BoolInput(\n            name=\"load_hidden\",\n            display_name=\"Load Hidden\",\n            advanced=True,\n            info=\"If true, hidden files will be loaded.\",\n        ),\n        BoolInput(\n            name=\"recursive\",\n            display_name=\"Recursive\",\n            advanced=True,\n            info=\"If true, the search will be recursive.\",\n        ),\n        BoolInput(\n            name=\"silent_errors\",\n            display_name=\"Silent Errors\",\n            advanced=True,\n            info=\"If true, errors will not raise an exception.\",\n        ),\n        BoolInput(\n            name=\"use_multithreading\",\n            display_name=\"Use Multithreading\",\n            advanced=True,\n            info=\"If true, multithreading will be used.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"load_directory\"),\n    ]\n\n    def load_directory(self) -> List[Data]:\n        path = self.path\n        types = self.types or []  # self.types is already a list due to is_list=True\n        depth = self.depth\n        max_concurrency = self.max_concurrency\n        load_hidden = self.load_hidden\n        recursive = self.recursive\n        silent_errors = self.silent_errors\n        use_multithreading = self.use_multithreading\n\n        resolved_path = self.resolve_path(path)\n        file_paths = retrieve_file_paths(resolved_path, load_hidden, recursive, depth)\n\n        if types:\n            file_paths = [fp for fp in file_paths if any(fp.endswith(ext) for ext in types)]\n\n        loaded_data = []\n\n        if use_multithreading:\n            loaded_data = parallel_load_data(file_paths, silent_errors, max_concurrency)\n        else:\n            loaded_data = [parse_text_file_to_data(file_path, silent_errors) for file_path in file_paths]\n        loaded_data = list(filter(None, loaded_data))\n        self.status = loaded_data\n        return loaded_data  # type: ignore\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "depth": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": 0,
+                "name": "depth",
+                "display_name": "Depth",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Depth to search for files.",
+                "title_case": false,
+                "type": "int"
+              },
+              "load_hidden": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "load_hidden",
+                "display_name": "Load Hidden",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, hidden files will be loaded.",
+                "title_case": false,
+                "type": "bool"
+              },
+              "max_concurrency": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": 2,
+                "name": "max_concurrency",
+                "display_name": "Max Concurrency",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Maximum concurrency for loading files.",
+                "title_case": false,
+                "type": "int"
+              },
+              "path": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "path",
+                "display_name": "Path",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Path to the directory to load files from.",
+                "title_case": false,
+                "type": "str"
+              },
+              "recursive": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "recursive",
+                "display_name": "Recursive",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, the search will be recursive.",
+                "title_case": false,
+                "type": "bool"
+              },
+              "silent_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "silent_errors",
+                "display_name": "Silent Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, errors will not raise an exception.",
+                "title_case": false,
+                "type": "bool"
+              },
+              "types": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "types",
+                "display_name": "Types",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "File types to load. Leave empty to load all types.",
+                "title_case": false,
+                "type": "str"
+              },
+              "use_multithreading": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "use_multithreading",
+                "display_name": "Use Multithreading",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, multithreading will be used.",
+                "title_case": false,
+                "type": "bool"
+              }
+            },
+            "description": "Recursively load files from a directory.",
+            "icon": "folder",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Directory",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "load_directory",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "path",
+              "types",
+              "depth",
+              "max_concurrency",
+              "load_hidden",
+              "recursive",
+              "silent_errors",
+              "use_multithreading"
+            ],
+            "beta": false,
+            "edited": false
+          },
+          "id": "Directory-mDWxF"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 487
+      },
+      {
+        "id": "Prompt-buyuc",
+        "type": "genericNode",
+        "position": {
+          "x": 131,
+          "y": 34.20000076293945
+        },
+        "data": {
+          "type": "Prompt",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.prompts.api_utils import process_prompt_template\nfrom axiestudio.custom import Component\nfrom axiestudio.io import Output, PromptInput\nfrom axiestudio.schema.message import Message\nfrom axiestudio.template.utils import update_template_values\n\n\nclass PromptComponent(Component):\n    display_name: str = \"Prompt\"\n    description: str = \"Create a prompt template with dynamic variables.\"\n    icon = \"prompts\"\n    trace_type = \"prompt\"\n    name = \"Prompt\"\n\n    inputs = [\n        PromptInput(name=\"template\", display_name=\"Template\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Prompt Message\", name=\"prompt\", method=\"build_prompt\"),\n    ]\n\n    async def build_prompt(\n        self,\n    ) -> Message:\n        prompt = await Message.from_template_and_variables(**self._attributes)\n        self.status = prompt.text\n        return prompt\n\n    def post_code_processing(self, new_build_config: dict, current_build_config: dict):\n        \"\"\"\n        This function is called after the code validation is done.\n        \"\"\"\n        frontend_node = super().post_code_processing(new_build_config, current_build_config)\n        template = frontend_node[\"template\"][\"template\"][\"value\"]\n        _ = process_prompt_template(\n            template=template,\n            name=\"template\",\n            custom_fields=frontend_node[\"custom_fields\"],\n            frontend_node_template=frontend_node[\"template\"],\n        )\n        # Now that template is updated, we need to grab any values that were set in the current_build_config\n        # and update the frontend_node with those values\n        update_template_values(new_template=frontend_node, previous_template=current_build_config[\"template\"])\n        return frontend_node\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "template": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "template",
+                "display_name": "Template",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "prompt"
+              }
+            },
+            "description": "Create a prompt template with dynamic variables.",
+            "icon": "prompts",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Prompt",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "prompt",
+                "display_name": "Prompt Message",
+                "method": "build_prompt",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "template"
+            ],
+            "beta": false,
+            "edited": false
+          },
+          "id": "Prompt-buyuc"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 328
+      }
+    ],
+    "edges": [],
+    "viewport": {
+      "x": -101,
+      "y": -25,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "APIRequest": {
+      "count": 1
+    },
+    "Directory": {
+      "count": 1
+    },
+    "Prompt": {
+      "count": 1
+    },
+    "total": 3
+  },
+  "original": {
+    "id": "504724e9-098a-47a6-a761-53f7897129b3",
+    "name": "JohnDoe",
+    "description": "",
+    "is_component": false,
+    "liked_by_count": "0",
+    "downloads_count": "0",
+    "metadata": {
+      "APIRequest": {
+        "count": 1
+      },
+      "Directory": {
+        "count": 1
+      },
+      "Prompt": {
+        "count": 1
+      },
+      "total": 3
+    },
+    "last_tested_version": "1.0.7",
+    "private": true,
+    "data": {
+      "nodes": [
+        {
+          "id": "APIRequest-wiiXT",
+          "type": "genericNode",
+          "position": {
+            "x": 134,
+            "y": 208.20000076293945
+          },
+          "data": {
+            "type": "APIRequest",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "query_params": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "query_params",
+                  "display_name": "Query Parameters",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The query parameters to append to the URL.",
+                  "title_case": false,
+                  "type": "other"
+                },
+                "body": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": {},
+                  "name": "body",
+                  "display_name": "Body",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.",
+                  "title_case": false,
+                  "type": "NestedDict"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import asyncio\nimport json\nfrom typing import Any, List, Optional\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\n\nimport httpx\nfrom loguru import logger\n\nfrom axiestudio.base.curl.parse import parse_context\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, NestedDictInput, Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\n\nclass APIRequestComponent(Component):\n    display_name = \"API Request\"\n    description = (\n        \"This component allows you to make HTTP requests to one or more URLs. \"\n        \"You can provide headers and body as either dictionaries or Data objects. \"\n        \"Additionally, you can append query parameters to the URLs.\\n\\n\"\n        \"**Note:** Check advanced options for more settings.\"\n    )\n    icon = \"Globe\"\n    name = \"APIRequest\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"urls\",\n            display_name=\"URLs\",\n            is_list=True,\n            info=\"Enter one or more URLs, separated by commas.\",\n        ),\n        MessageTextInput(\n            name=\"curl\",\n            display_name=\"Curl\",\n            info=\"Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.\",\n            advanced=False,\n            refresh_button=True,\n        ),\n        DropdownInput(\n            name=\"method\",\n            display_name=\"Method\",\n            options=[\"GET\", \"POST\", \"PATCH\", \"PUT\"],\n            value=\"GET\",\n            info=\"The HTTP method to use (GET, POST, PATCH, PUT).\",\n        ),\n        NestedDictInput(\n            name=\"headers\",\n            display_name=\"Headers\",\n            info=\"The headers to send with the request as a dictionary. This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        NestedDictInput(\n            name=\"body\",\n            display_name=\"Body\",\n            info=\"The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        DataInput(\n            name=\"query_params\",\n            display_name=\"Query Parameters\",\n            info=\"The query parameters to append to the URL.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            value=5,\n            info=\"The timeout to use for the request.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"make_requests\"),\n    ]\n\n    def parse_curl(self, curl: str, build_config: dotdict) -> dotdict:\n        try:\n            parsed = parse_context(curl)\n            build_config[\"urls\"][\"value\"] = [parsed.url]\n            build_config[\"method\"][\"value\"] = parsed.method.upper()\n            build_config[\"headers\"][\"value\"] = dict(parsed.headers)\n\n            if parsed.data:\n                try:\n                    json_data = json.loads(parsed.data)\n                    build_config[\"body\"][\"value\"] = json_data\n                except json.JSONDecodeError as e:\n                    logger.error(f\"Error decoding JSON data: {e}\")\n            else:\n                build_config[\"body\"][\"value\"] = {}\n        except Exception as exc:\n            logger.error(f\"Error parsing curl: {exc}\")\n            raise ValueError(f\"Error parsing curl: {exc}\")\n        return build_config\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\n        if field_name == \"curl\" and field_value:\n            build_config = self.parse_curl(field_value, build_config)\n        return build_config\n\n    async def make_request(\n        self,\n        client: httpx.AsyncClient,\n        method: str,\n        url: str,\n        headers: Optional[dict] = None,\n        body: Optional[dict] = None,\n        timeout: int = 5,\n    ) -> Data:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            raise ValueError(f\"Unsupported method: {method}\")\n\n        if isinstance(body, str) and body:\n            try:\n                body = json.loads(body)\n            except Exception as e:\n                logger.error(f\"Error decoding JSON data: {e}\")\n                body = None\n                raise ValueError(f\"Error decoding JSON data: {e}\")\n\n        data = body if body else None\n\n        try:\n            response = await client.request(method, url, headers=headers, json=data, timeout=timeout)\n            try:\n                result = response.json()\n            except Exception:\n                result = response.text\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except httpx.TimeoutException:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except Exception as exc:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    def add_query_params(self, url: str, params: dict) -> str:\n        url_parts = list(urlparse(url))\n        query = dict(parse_qsl(url_parts[4]))\n        query.update(params)\n        url_parts[4] = urlencode(query)\n        return urlunparse(url_parts)\n\n    async def make_requests(self) -> List[Data]:\n        method = self.method\n        urls = [url.strip() for url in self.urls if url.strip()]\n        curl = self.curl\n        headers = self.headers or {}\n        body = self.body or {}\n        timeout = self.timeout\n        query_params = self.query_params.data if self.query_params else {}\n\n        if curl:\n            self._build_config = self.parse_curl(curl, dotdict())\n\n        if isinstance(headers, Data):\n            headers = headers.data\n\n        if isinstance(body, Data):\n            body = body.data\n\n        bodies = [body] * len(urls)\n\n        urls = [self.add_query_params(url, query_params) for url in urls]\n\n        async with httpx.AsyncClient() as client:\n            results = await asyncio.gather(\n                *[self.make_request(client, method, u, headers, rec, timeout) for u, rec in zip(urls, bodies)]\n            )\n        self.status = results\n        return results\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "curl": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "curl",
+                  "display_name": "Curl",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.",
+                  "refresh_button": true,
+                  "title_case": false,
+                  "type": "str"
+                },
+                "headers": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": {},
+                  "name": "headers",
+                  "display_name": "Headers",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The headers to send with the request as a dictionary. This is populated when using the CURL field.",
+                  "title_case": false,
+                  "type": "NestedDict"
+                },
+                "method": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "GET",
+                    "POST",
+                    "PATCH",
+                    "PUT"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "GET",
+                  "name": "method",
+                  "display_name": "Method",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The HTTP method to use (GET, POST, PATCH, PUT).",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": 5,
+                  "name": "timeout",
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The timeout to use for the request.",
+                  "title_case": false,
+                  "type": "int"
+                },
+                "urls": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "urls",
+                  "display_name": "URLs",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter one or more URLs, separated by commas.",
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "This component allows you to make HTTP requests to one or more URLs. You can provide headers and body as either dictionaries or Data objects. Additionally, you can append query parameters to the URLs.\n\n**Note:** Check advanced options for more settings.",
+              "icon": "Globe",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "API Request",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "make_requests",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "urls",
+                "curl",
+                "method",
+                "headers",
+                "body",
+                "query_params",
+                "timeout"
+              ],
+              "beta": false,
+              "edited": false
+            },
+            "id": "APIRequest-wiiXT"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 1022
+        },
+        {
+          "id": "Directory-mDWxF",
+          "type": "genericNode",
+          "position": {
+            "x": 113,
+            "y": 85.20000076293945
+          },
+          "data": {
+            "type": "Directory",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List\n\nfrom axiestudio.base.data.utils import parallel_load_data, parse_text_file_to_data, retrieve_file_paths\nfrom axiestudio.custom import Component\nfrom axiestudio.io import BoolInput, IntInput, MessageTextInput\nfrom axiestudio.schema import Data\nfrom axiestudio.template import Output\n\n\nclass DirectoryComponent(Component):\n    display_name = \"Directory\"\n    description = \"Recursively load files from a directory.\"\n    icon = \"folder\"\n    name = \"Directory\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"path\",\n            display_name=\"Path\",\n            info=\"Path to the directory to load files from.\",\n        ),\n        MessageTextInput(\n            name=\"types\",\n            display_name=\"Types\",\n            info=\"File types to load. Leave empty to load all types.\",\n            is_list=True,\n        ),\n        IntInput(\n            name=\"depth\",\n            display_name=\"Depth\",\n            info=\"Depth to search for files.\",\n            value=0,\n        ),\n        IntInput(\n            name=\"max_concurrency\",\n            display_name=\"Max Concurrency\",\n            advanced=True,\n            info=\"Maximum concurrency for loading files.\",\n            value=2,\n        ),\n        BoolInput(\n            name=\"load_hidden\",\n            display_name=\"Load Hidden\",\n            advanced=True,\n            info=\"If true, hidden files will be loaded.\",\n        ),\n        BoolInput(\n            name=\"recursive\",\n            display_name=\"Recursive\",\n            advanced=True,\n            info=\"If true, the search will be recursive.\",\n        ),\n        BoolInput(\n            name=\"silent_errors\",\n            display_name=\"Silent Errors\",\n            advanced=True,\n            info=\"If true, errors will not raise an exception.\",\n        ),\n        BoolInput(\n            name=\"use_multithreading\",\n            display_name=\"Use Multithreading\",\n            advanced=True,\n            info=\"If true, multithreading will be used.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"load_directory\"),\n    ]\n\n    def load_directory(self) -> List[Data]:\n        path = self.path\n        types = self.types or []  # self.types is already a list due to is_list=True\n        depth = self.depth\n        max_concurrency = self.max_concurrency\n        load_hidden = self.load_hidden\n        recursive = self.recursive\n        silent_errors = self.silent_errors\n        use_multithreading = self.use_multithreading\n\n        resolved_path = self.resolve_path(path)\n        file_paths = retrieve_file_paths(resolved_path, load_hidden, recursive, depth)\n\n        if types:\n            file_paths = [fp for fp in file_paths if any(fp.endswith(ext) for ext in types)]\n\n        loaded_data = []\n\n        if use_multithreading:\n            loaded_data = parallel_load_data(file_paths, silent_errors, max_concurrency)\n        else:\n            loaded_data = [parse_text_file_to_data(file_path, silent_errors) for file_path in file_paths]\n        loaded_data = list(filter(None, loaded_data))\n        self.status = loaded_data\n        return loaded_data  # type: ignore\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "depth": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": 0,
+                  "name": "depth",
+                  "display_name": "Depth",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Depth to search for files.",
+                  "title_case": false,
+                  "type": "int"
+                },
+                "load_hidden": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "load_hidden",
+                  "display_name": "Load Hidden",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, hidden files will be loaded.",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "max_concurrency": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": 2,
+                  "name": "max_concurrency",
+                  "display_name": "Max Concurrency",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Maximum concurrency for loading files.",
+                  "title_case": false,
+                  "type": "int"
+                },
+                "path": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "path",
+                  "display_name": "Path",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Path to the directory to load files from.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "recursive": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "recursive",
+                  "display_name": "Recursive",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, the search will be recursive.",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "silent_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "silent_errors",
+                  "display_name": "Silent Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, errors will not raise an exception.",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "types": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "types",
+                  "display_name": "Types",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "File types to load. Leave empty to load all types.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "use_multithreading": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "use_multithreading",
+                  "display_name": "Use Multithreading",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, multithreading will be used.",
+                  "title_case": false,
+                  "type": "bool"
+                }
+              },
+              "description": "Recursively load files from a directory.",
+              "icon": "folder",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Directory",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "load_directory",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "path",
+                "types",
+                "depth",
+                "max_concurrency",
+                "load_hidden",
+                "recursive",
+                "silent_errors",
+                "use_multithreading"
+              ],
+              "beta": false,
+              "edited": false
+            },
+            "id": "Directory-mDWxF"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 487
+        },
+        {
+          "id": "Prompt-buyuc",
+          "type": "genericNode",
+          "position": {
+            "x": 131,
+            "y": 34.20000076293945
+          },
+          "data": {
+            "type": "Prompt",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.prompts.api_utils import process_prompt_template\nfrom axiestudio.custom import Component\nfrom axiestudio.io import Output, PromptInput\nfrom axiestudio.schema.message import Message\nfrom axiestudio.template.utils import update_template_values\n\n\nclass PromptComponent(Component):\n    display_name: str = \"Prompt\"\n    description: str = \"Create a prompt template with dynamic variables.\"\n    icon = \"prompts\"\n    trace_type = \"prompt\"\n    name = \"Prompt\"\n\n    inputs = [\n        PromptInput(name=\"template\", display_name=\"Template\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Prompt Message\", name=\"prompt\", method=\"build_prompt\"),\n    ]\n\n    async def build_prompt(\n        self,\n    ) -> Message:\n        prompt = await Message.from_template_and_variables(**self._attributes)\n        self.status = prompt.text\n        return prompt\n\n    def post_code_processing(self, new_build_config: dict, current_build_config: dict):\n        \"\"\"\n        This function is called after the code validation is done.\n        \"\"\"\n        frontend_node = super().post_code_processing(new_build_config, current_build_config)\n        template = frontend_node[\"template\"][\"template\"][\"value\"]\n        _ = process_prompt_template(\n            template=template,\n            name=\"template\",\n            custom_fields=frontend_node[\"custom_fields\"],\n            frontend_node_template=frontend_node[\"template\"],\n        )\n        # Now that template is updated, we need to grab any values that were set in the current_build_config\n        # and update the frontend_node with those values\n        update_template_values(new_template=frontend_node, previous_template=current_build_config[\"template\"])\n        return frontend_node\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "template": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "template",
+                  "display_name": "Template",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "prompt"
+                }
+              },
+              "description": "Create a prompt template with dynamic variables.",
+              "icon": "prompts",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Prompt",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "prompt",
+                  "display_name": "Prompt Message",
+                  "method": "build_prompt",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "template"
+              ],
+              "beta": false,
+              "edited": false
+            },
+            "id": "Prompt-buyuc"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 328
+        }
+      ],
+      "edges": [],
+      "viewport": {
+        "x": -101,
+        "y": -25,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-07-09T08:20:21.399Z",
+    "date_updated": "2024-07-09T08:20:21.431Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "c076bce5-81d3-4b8b-a6a3-dee007e34c3d",
+    "user_created": {
+      "username": "Zod12",
+      "first_name": "General",
+      "last_name": "Zod",
+      "id": "c076bce5-81d3-4b8b-a6a3-dee007e34c3d"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:57.826Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 30,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,569 @@
+{
+  "id": "e4d421aa-b1e6-417a-a4a7-027d14b110a7",
+  "name": "Retrieve Rewriter Chain",
+  "description": "The Retrieval Rewriter Chain is a methodology that rewrites user queries while consulting external tools, optimizing them for more accurate and relevant results by refining the input based on specific parameters and conditions. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "misbah",
+    "first_name": "Menlo Park Lab",
+    "last_name": "Lab",
+    "id": "8ca3c638-244a-4d41-ae61-bc145776bd63",
+    "full_name": "Menlo Park Lab Lab"
+  },
+  "store_url": "https://www.langflow.store/store/component/e4d421aa-b1e6-417a-a4a7-027d14b110a7",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-19T19:08:03.212Z",
+    "updated": "2024-09-19T19:08:03.280Z",
+    "downloaded": "2025-08-19T17:50:07.175Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Retrieve Rewriter Chain",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "llm": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "llm",
+                "value": "",
+                "display_name": "Language Model",
+                "advanced": false,
+                "input_types": [
+                  "LanguageModel"
+                ],
+                "dynamic": false,
+                "info": "An LLM Model Object (It can be found in any LLM Component).",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "tools": {
+                "trace_as_metadata": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "tools",
+                "value": "",
+                "display_name": "Tools",
+                "advanced": false,
+                "input_types": [
+                  "Tool",
+                  "BaseTool"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput",
+                "load_from_db": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.pydantic_v1 import BaseModel\nfrom langchain_core.runnables import RunnablePassthrough\nfrom axiestudio.base.agents.agent import LCToolsAgentComponent\nfrom langchain_core.runnables.base import RunnableSequence\n\nclass RewriteRetrieveRead(LCToolsAgentComponent):\n    display_name = \"Retireval Rewriter Chain\"\n    description = \"The Retrieval Rewriter Chain is a methodology that rewrites user queries while consulting external tools, optimizing them for more accurate and relevant results by refining the input based on specific parameters and conditions.\"\n    documentation: str = \"https://github.com/langchain-ai/langchain/tree/master/templates/rewrite-retrieve-read\"\n    icon = \"LangChain\"\n    name = \"Retrieve Rewriter Chain\"\n\n    inputs = LCToolsAgentComponent._base_inputs + [\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True, info=\"An LLM Model Object (It can be found in any LLM Component).\"),\n        MultilineInput(name=\"prompt_system\", display_name=\"Prompt System Retireval\", value=\"Answer the users question based only on the following context:\\n<context>\\n{context}\\n</context>\\n\\nQuestion: {question}\\n\", info=\"A prompt template to structure the answer.\"),\n        MultilineInput(name=\"prompt_system_revisor\", display_name=\"Prompt System Revisor\", value=\"Improve my query making it better for searching. End the query with '**'. Question: {x} Answer:\", info=\"A refine querying that intends to improve the user query.\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"output_text\", method=\"build_chain_ans\"),\n        Output(display_name=\"Chain\", name=\"output_chain\", method=\"build_chain\"),\n    ]\n\n    def build_chain_ans(self) -> Message:\n        template = self.prompt_system\n        prompt = ChatPromptTemplate.from_template(template)\n        \n        model = self.llm\n        \n        def retriever(query):\n            retrieval_info = []\n            for tool in self.tools:\n                retrieval_info.append(tool.run(query))\n            return str(retrieval_info)\n\n        template = self.prompt_system_revisor\n        rewrite_prompt = ChatPromptTemplate.from_template(template)\n        \n        chain = (\n            {\"context\": retriever, \"question\": RunnablePassthrough()}\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n        \n        def _parse(text):\n            return text.strip(\"**\")\n        \n        \n        rewriter = rewrite_prompt | self.llm | StrOutputParser() | _parse\n        \n        rewrite_retrieve_read_chain = (\n            {\n                \"context\": {\"x\": RunnablePassthrough()} | rewriter | retriever,\n                \"question\": RunnablePassthrough(),\n            }\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n\n        \n        output = rewrite_retrieve_read_chain.invoke(self.input_value)\n        \n        return Message(text = output)\n        \n    def build_chain(self) -> RunnableSequence:\n        template = self.prompt_system\n        prompt = ChatPromptTemplate.from_template(template)\n        \n        model = self.llm\n        \n        def retriever(query):\n            retrieval_info = []\n            for tool in self.tools:\n                retrieval_info.append(tool.run(query))\n            return str(retrieval_info)\n\n        template = self.prompt_system_revisor\n        rewrite_prompt = ChatPromptTemplate.from_template(template)\n        \n        chain = (\n            {\"context\": retriever, \"question\": RunnablePassthrough()}\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n        \n        def _parse(text):\n            return text.strip(\"**\")\n        \n        \n        rewriter = rewrite_prompt | self.llm | StrOutputParser() | _parse\n        \n        rewrite_retrieve_read_chain = (\n            {\n                \"context\": {\"x\": RunnablePassthrough()} | rewriter | retriever,\n                \"question\": RunnablePassthrough(),\n            }\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n\n        self.status = str(rewrite_retrieve_read_chain)\n        return rewrite_retrieve_read_chain\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "handle_parsing_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "handle_parsing_errors",
+                "value": true,
+                "display_name": "Handle Parse Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "max_iterations": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_iterations",
+                "value": 15,
+                "display_name": "Max Iterations",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "prompt_system": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "prompt_system",
+                "value": "Answer the users question based only on the following context:\n\n<context>\n{context}\n</context>\n\nQuestion: {question}",
+                "display_name": "Prompt System Retireval",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "A prompt template to structure the answer.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "prompt_system_revisor": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "prompt_system_revisor",
+                "value": "Improve my query making it better for searching. End the query with '**'. \n\nQuestion: {x}\nAnswer:",
+                "display_name": "Prompt System Revisor",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "A refine querying that intends to improve the user query.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "verbose": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "verbose",
+                "value": true,
+                "display_name": "Verbose",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "The Retrieval Rewriter Chain is a methodology that rewrites user queries while consulting external tools, optimizing them for more accurate and relevant results by refining the input based on specific parameters and conditions.",
+            "icon": "LangChain",
+            "base_classes": [
+              "Message",
+              "RunnableSequence"
+            ],
+            "display_name": "Retrieve Rewriter Chain",
+            "documentation": "https://github.com/langchain-ai/langchain/tree/master/templates/rewrite-retrieve-read",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "output_text",
+                "display_name": "Text",
+                "method": "build_chain_ans",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "RunnableSequence"
+                ],
+                "selected": "RunnableSequence",
+                "name": "output_chain",
+                "display_name": "Chain",
+                "method": "build_chain",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "handle_parsing_errors",
+              "verbose",
+              "max_iterations",
+              "tools",
+              "llm",
+              "prompt_system",
+              "prompt_system_revisor"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.16",
+            "official": false
+          },
+          "id": "Retrieve Rewriter Chain-g7TiX"
+        },
+        "id": "Retrieve Rewriter Chain-g7TiX",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Retrieve Rewriter Chain": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "e4d421aa-b1e6-417a-a4a7-027d14b110a7",
+    "name": "Retrieve Rewriter Chain",
+    "description": "The Retrieval Rewriter Chain is a methodology that rewrites user queries while consulting external tools, optimizing them for more accurate and relevant results by refining the input based on specific parameters and conditions.",
+    "is_component": true,
+    "liked_by_count": "14",
+    "downloads_count": "77",
+    "metadata": {
+      "Retrieve Rewriter Chain": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Retrieve Rewriter Chain",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "llm": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "llm",
+                  "value": "",
+                  "display_name": "Language Model",
+                  "advanced": false,
+                  "input_types": [
+                    "LanguageModel"
+                  ],
+                  "dynamic": false,
+                  "info": "An LLM Model Object (It can be found in any LLM Component).",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "tools": {
+                  "trace_as_metadata": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "tools",
+                  "value": "",
+                  "display_name": "Tools",
+                  "advanced": false,
+                  "input_types": [
+                    "Tool",
+                    "BaseTool"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput",
+                  "load_from_db": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.pydantic_v1 import BaseModel\nfrom langchain_core.runnables import RunnablePassthrough\nfrom axiestudio.base.agents.agent import LCToolsAgentComponent\nfrom langchain_core.runnables.base import RunnableSequence\n\nclass RewriteRetrieveRead(LCToolsAgentComponent):\n    display_name = \"Retireval Rewriter Chain\"\n    description = \"The Retrieval Rewriter Chain is a methodology that rewrites user queries while consulting external tools, optimizing them for more accurate and relevant results by refining the input based on specific parameters and conditions.\"\n    documentation: str = \"https://github.com/langchain-ai/langchain/tree/master/templates/rewrite-retrieve-read\"\n    icon = \"LangChain\"\n    name = \"Retrieve Rewriter Chain\"\n\n    inputs = LCToolsAgentComponent._base_inputs + [\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True, info=\"An LLM Model Object (It can be found in any LLM Component).\"),\n        MultilineInput(name=\"prompt_system\", display_name=\"Prompt System Retireval\", value=\"Answer the users question based only on the following context:\\n<context>\\n{context}\\n</context>\\n\\nQuestion: {question}\\n\", info=\"A prompt template to structure the answer.\"),\n        MultilineInput(name=\"prompt_system_revisor\", display_name=\"Prompt System Revisor\", value=\"Improve my query making it better for searching. End the query with '**'. Question: {x} Answer:\", info=\"A refine querying that intends to improve the user query.\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"output_text\", method=\"build_chain_ans\"),\n        Output(display_name=\"Chain\", name=\"output_chain\", method=\"build_chain\"),\n    ]\n\n    def build_chain_ans(self) -> Message:\n        template = self.prompt_system\n        prompt = ChatPromptTemplate.from_template(template)\n        \n        model = self.llm\n        \n        def retriever(query):\n            retrieval_info = []\n            for tool in self.tools:\n                retrieval_info.append(tool.run(query))\n            return str(retrieval_info)\n\n        template = self.prompt_system_revisor\n        rewrite_prompt = ChatPromptTemplate.from_template(template)\n        \n        chain = (\n            {\"context\": retriever, \"question\": RunnablePassthrough()}\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n        \n        def _parse(text):\n            return text.strip(\"**\")\n        \n        \n        rewriter = rewrite_prompt | self.llm | StrOutputParser() | _parse\n        \n        rewrite_retrieve_read_chain = (\n            {\n                \"context\": {\"x\": RunnablePassthrough()} | rewriter | retriever,\n                \"question\": RunnablePassthrough(),\n            }\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n\n        \n        output = rewrite_retrieve_read_chain.invoke(self.input_value)\n        \n        return Message(text = output)\n        \n    def build_chain(self) -> RunnableSequence:\n        template = self.prompt_system\n        prompt = ChatPromptTemplate.from_template(template)\n        \n        model = self.llm\n        \n        def retriever(query):\n            retrieval_info = []\n            for tool in self.tools:\n                retrieval_info.append(tool.run(query))\n            return str(retrieval_info)\n\n        template = self.prompt_system_revisor\n        rewrite_prompt = ChatPromptTemplate.from_template(template)\n        \n        chain = (\n            {\"context\": retriever, \"question\": RunnablePassthrough()}\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n        \n        def _parse(text):\n            return text.strip(\"**\")\n        \n        \n        rewriter = rewrite_prompt | self.llm | StrOutputParser() | _parse\n        \n        rewrite_retrieve_read_chain = (\n            {\n                \"context\": {\"x\": RunnablePassthrough()} | rewriter | retriever,\n                \"question\": RunnablePassthrough(),\n            }\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n\n        self.status = str(rewrite_retrieve_read_chain)\n        return rewrite_retrieve_read_chain\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "handle_parsing_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "handle_parsing_errors",
+                  "value": true,
+                  "display_name": "Handle Parse Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "max_iterations": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_iterations",
+                  "value": 15,
+                  "display_name": "Max Iterations",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "prompt_system": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "prompt_system",
+                  "value": "Answer the users question based only on the following context:\n\n<context>\n{context}\n</context>\n\nQuestion: {question}",
+                  "display_name": "Prompt System Retireval",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "A prompt template to structure the answer.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "prompt_system_revisor": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "prompt_system_revisor",
+                  "value": "Improve my query making it better for searching. End the query with '**'. \n\nQuestion: {x}\nAnswer:",
+                  "display_name": "Prompt System Revisor",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "A refine querying that intends to improve the user query.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "verbose": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "verbose",
+                  "value": true,
+                  "display_name": "Verbose",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "The Retrieval Rewriter Chain is a methodology that rewrites user queries while consulting external tools, optimizing them for more accurate and relevant results by refining the input based on specific parameters and conditions.",
+              "icon": "LangChain",
+              "base_classes": [
+                "Message",
+                "RunnableSequence"
+              ],
+              "display_name": "Retrieve Rewriter Chain",
+              "documentation": "https://github.com/langchain-ai/langchain/tree/master/templates/rewrite-retrieve-read",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "output_text",
+                  "display_name": "Text",
+                  "method": "build_chain_ans",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "RunnableSequence"
+                  ],
+                  "selected": "RunnableSequence",
+                  "name": "output_chain",
+                  "display_name": "Chain",
+                  "method": "build_chain",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "handle_parsing_errors",
+                "verbose",
+                "max_iterations",
+                "tools",
+                "llm",
+                "prompt_system",
+                "prompt_system_revisor"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.16",
+              "official": false
+            },
+            "id": "Retrieve Rewriter Chain-g7TiX"
+          },
+          "id": "Retrieve Rewriter Chain-g7TiX",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-19T19:08:03.212Z",
+    "date_updated": "2024-09-19T19:08:03.280Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "8ca3c638-244a-4d41-ae61-bc145776bd63",
+    "user_created": {
+      "username": "misbah",
+      "first_name": "Menlo Park Lab",
+      "last_name": "Lab",
+      "id": "8ca3c638-244a-4d41-ae61-bc145776bd63"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:12.281Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 2,
+    "converter_version": "1.0.0"
+  }
+}

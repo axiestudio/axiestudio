@@ -1,0 +1,639 @@
+{
+  "id": "3c97a7d9-cfc0-486e-9954-5c41e1b987db",
+  "name": "MongoDB Message Reader",
+  "description": "Retrieves chat messages from MongoDB based on session ID. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "oaklight",
+    "first_name": "Peng",
+    "last_name": "Ding",
+    "id": "a2e8c50e-0f99-48ab-9186-96d917ba655e",
+    "full_name": "Peng Ding"
+  },
+  "store_url": "https://www.langflow.store/store/component/3c97a7d9-cfc0-486e-9954-5c41e1b987db",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-05-19T23:23:55.300Z",
+    "updated": "2024-05-19T23:45:58.173Z",
+    "downloaded": "2025-08-19T17:50:04.947Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Memory",
+        "id": "e660a9ea-35fb-4587-bfbd-13dba4c556d1"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.0a33",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "collection_name": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "collection_name",
+                "display_name": "Collection Name",
+                "advanced": false,
+                "input_types": [
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "The name of the MongoDB collection.",
+                "load_from_db": false,
+                "title_case": false,
+                "value": ""
+              },
+              "connection_string": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "connection_string",
+                "display_name": "MongoDB Connection String",
+                "advanced": false,
+                "input_types": [
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "The connection string to connect to MongoDB.",
+                "load_from_db": false,
+                "title_case": false,
+                "value": ""
+              },
+              "database_name": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "database_name",
+                "display_name": "Database Name",
+                "advanced": false,
+                "input_types": [
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "The name of the MongoDB database.",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "message_history"
+              },
+              "sender": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "Machine and User",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Machine",
+                  "User",
+                  "Machine and User"
+                ],
+                "name": "sender",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "sender_name": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "sender_name",
+                "display_name": "Sender Name",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "session_id": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "session_id",
+                "display_name": "Session ID",
+                "advanced": false,
+                "input_types": [
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "The session ID of the chat history.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import cast, Dict, List, Optional\n\nfrom axiestudio.base.memory.memory import BaseMemoryComponent\nfrom axiestudio.field_typing import Text\nfrom axiestudio.helpers.record import records_to_text\nfrom axiestudio.schema.schema import Record\nfrom pymongo import MongoClient\nfrom pymongo.collection import Collection\n\n\nclass MongoDBMessageReaderComponent(BaseMemoryComponent):\n    display_name = \"MongoDB Memory Reader\"\n    description = \"Retrieves chat messages from MongoDB based on session ID.\"\n    icon = \"history\"\n\n    def build_config(self) -> Dict:\n        return {\n            \"connection_string\": {\n                \"display_name\": \"MongoDB Connection String\",\n                \"info\": \"The connection string to connect to MongoDB.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"database_name\": {\n                \"display_name\": \"Database Name\",\n                \"info\": \"The name of the MongoDB database.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"collection_name\": {\n                \"display_name\": \"Collection Name\",\n                \"info\": \"The name of the MongoDB collection.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"session_id\": {\n                \"display_name\": \"Session ID\",\n                \"info\": \"The session ID of the chat history.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"order\": {\n                \"options\": [\"Ascending\", \"Descending\"],\n                \"display_name\": \"Order\",\n                \"info\": \"Order of the messages.\",\n                \"advanced\": True,\n            },\n            \"n_messages\": {\n                \"display_name\": \"Number of Messages\",\n                \"info\": \"The number of messages to retrieve.\",\n            },\n            \"sender_name\": {\n                \"display_name\": \"Sender Name\",\n                \"advanced\": True,\n            },\n            \"sender\": {\n                \"options\": [\"Machine\", \"User\", \"Machine and User\"],\n                \"display_name\": \"Sender Type\",\n                \"advanced\": True,\n            },\n            \"record_template\": {\n                \"display_name\": \"Record Template\",\n                \"multiline\": True,\n                \"info\": \"Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.\",\n                \"advanced\": True,\n            },\n        }\n\n    def get_messages(\n        self,\n        memory: Collection,\n        **kwargs,\n    ) -> List[Record]:\n        \"\"\"\n        Retrieves messages from MongoDB for the given session ID and other parameters.\n        \"\"\"\n        # memory: Collection = cast(Collection, kwargs.get(\"memory\"))\n        # if not memory:\n        #     raise ValueError(\"pymongo.collection.Collection object is required.\")\n\n        session_id = kwargs.get(\"session_id\")\n        n_messages = kwargs.get(\"n_messages\")\n        sender_name = kwargs.get(\"sender_name\")\n        sender = kwargs.get(\"sender\")\n        order = kwargs.get(\"order\")\n\n        query = {\"session_id\": session_id}\n\n        if sender_name:\n            query[\"sender_name\"] = sender_name\n\n        if sender == \"Machine and User\":\n            query[\"sender\"] = {\"$in\": [\"User\", \"Machine\"]}\n        else:\n            query[\"sender\"] = sender\n\n        cursor = memory.find(query)\n\n        if order == \"Ascending\":\n            cursor.sort(\"timestamp\", 1)\n        elif order == \"Descending\":\n            cursor.sort(\"timestamp\", -1)\n\n        cursor.limit(n_messages)\n\n        records = []\n        for document in cursor:\n            record_data = {\n                \"sender_name\": document[\"sender_name\"],\n                \"text\": document[\"text\"],\n                \"timestamp\": document[\"timestamp\"],\n            }\n            records.append(record_data)\n\n        return [Record(data=record_data) for record_data in records]\n\n    def build(\n        self,\n        connection_string: Text,\n        database_name: Text,\n        collection_name: Text,\n        session_id: Text = None,\n        sender_name: Optional[Text] = None,\n        sender: Optional[Text] = \"Machine and User\",\n        n_messages: int = 5,\n        order: Optional[str] = \"Descending\",\n        record_template: Optional[str] = \"{sender_name}: {text}\",\n    ) -> Text:\n\n        client = MongoClient(connection_string)\n        memory = client[database_name][collection_name]  # pymongo.collection.Collection\n        messages = self.get_messages(\n            memory=memory,\n            session_id=session_id,\n            n_messages=n_messages,\n            sender_name=sender_name,\n            sender=sender,\n            order=order,\n        )\n        messages_str = records_to_text(template=record_template or \"\", records=messages)\n        self.status = messages_str\n        return messages_str\n\n\n# Example usage:\n# reader = MongoDBMemoryReader('mongodb_connection_string', 'database_name', 'collection_name')\n# messages = reader.get_messages(session_id='123456', n_messages=10)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "n_messages": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 5,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "n_messages",
+                "display_name": "Number of Messages",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The number of messages to retrieve.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "order": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "Descending",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Ascending",
+                  "Descending"
+                ],
+                "name": "order",
+                "display_name": "Order",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Order of the messages.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "record_template": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "{sender_name}: {text}",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "record_template",
+                "display_name": "Record Template",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Retrieves chat messages from MongoDB based on session ID.",
+            "icon": "history",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "MongoDB Message Reader",
+            "documentation": "",
+            "custom_fields": {
+              "connection_string": null,
+              "database_name": null,
+              "collection_name": null,
+              "session_id": null,
+              "sender_name": null,
+              "sender": null,
+              "n_messages": null,
+              "order": null,
+              "record_template": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": true,
+            "official": false
+          },
+          "id": "CustomComponent-x4RnT",
+          "description": "Retrieves chat messages from MongoDB based on session ID.",
+          "display_name": "MongoDB Message Reader"
+        },
+        "id": "CustomComponent-x4RnT",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "3c97a7d9-cfc0-486e-9954-5c41e1b987db",
+    "name": "MongoDB Message Reader",
+    "description": "Retrieves chat messages from MongoDB based on session ID.",
+    "is_component": true,
+    "liked_by_count": "16",
+    "downloads_count": "145",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.0a33",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "collection_name": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "collection_name",
+                  "display_name": "Collection Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "The name of the MongoDB collection.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": ""
+                },
+                "connection_string": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "connection_string",
+                  "display_name": "MongoDB Connection String",
+                  "advanced": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "The connection string to connect to MongoDB.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": ""
+                },
+                "database_name": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "database_name",
+                  "display_name": "Database Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "The name of the MongoDB database.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "message_history"
+                },
+                "sender": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "Machine and User",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Machine",
+                    "User",
+                    "Machine and User"
+                  ],
+                  "name": "sender",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "sender_name": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "sender_name",
+                  "display_name": "Sender Name",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "session_id": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "session_id",
+                  "display_name": "Session ID",
+                  "advanced": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "The session ID of the chat history.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import cast, Dict, List, Optional\n\nfrom axiestudio.base.memory.memory import BaseMemoryComponent\nfrom axiestudio.field_typing import Text\nfrom axiestudio.helpers.record import records_to_text\nfrom axiestudio.schema.schema import Record\nfrom pymongo import MongoClient\nfrom pymongo.collection import Collection\n\n\nclass MongoDBMessageReaderComponent(BaseMemoryComponent):\n    display_name = \"MongoDB Memory Reader\"\n    description = \"Retrieves chat messages from MongoDB based on session ID.\"\n    icon = \"history\"\n\n    def build_config(self) -> Dict:\n        return {\n            \"connection_string\": {\n                \"display_name\": \"MongoDB Connection String\",\n                \"info\": \"The connection string to connect to MongoDB.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"database_name\": {\n                \"display_name\": \"Database Name\",\n                \"info\": \"The name of the MongoDB database.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"collection_name\": {\n                \"display_name\": \"Collection Name\",\n                \"info\": \"The name of the MongoDB collection.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"session_id\": {\n                \"display_name\": \"Session ID\",\n                \"info\": \"The session ID of the chat history.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"order\": {\n                \"options\": [\"Ascending\", \"Descending\"],\n                \"display_name\": \"Order\",\n                \"info\": \"Order of the messages.\",\n                \"advanced\": True,\n            },\n            \"n_messages\": {\n                \"display_name\": \"Number of Messages\",\n                \"info\": \"The number of messages to retrieve.\",\n            },\n            \"sender_name\": {\n                \"display_name\": \"Sender Name\",\n                \"advanced\": True,\n            },\n            \"sender\": {\n                \"options\": [\"Machine\", \"User\", \"Machine and User\"],\n                \"display_name\": \"Sender Type\",\n                \"advanced\": True,\n            },\n            \"record_template\": {\n                \"display_name\": \"Record Template\",\n                \"multiline\": True,\n                \"info\": \"Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.\",\n                \"advanced\": True,\n            },\n        }\n\n    def get_messages(\n        self,\n        memory: Collection,\n        **kwargs,\n    ) -> List[Record]:\n        \"\"\"\n        Retrieves messages from MongoDB for the given session ID and other parameters.\n        \"\"\"\n        # memory: Collection = cast(Collection, kwargs.get(\"memory\"))\n        # if not memory:\n        #     raise ValueError(\"pymongo.collection.Collection object is required.\")\n\n        session_id = kwargs.get(\"session_id\")\n        n_messages = kwargs.get(\"n_messages\")\n        sender_name = kwargs.get(\"sender_name\")\n        sender = kwargs.get(\"sender\")\n        order = kwargs.get(\"order\")\n\n        query = {\"session_id\": session_id}\n\n        if sender_name:\n            query[\"sender_name\"] = sender_name\n\n        if sender == \"Machine and User\":\n            query[\"sender\"] = {\"$in\": [\"User\", \"Machine\"]}\n        else:\n            query[\"sender\"] = sender\n\n        cursor = memory.find(query)\n\n        if order == \"Ascending\":\n            cursor.sort(\"timestamp\", 1)\n        elif order == \"Descending\":\n            cursor.sort(\"timestamp\", -1)\n\n        cursor.limit(n_messages)\n\n        records = []\n        for document in cursor:\n            record_data = {\n                \"sender_name\": document[\"sender_name\"],\n                \"text\": document[\"text\"],\n                \"timestamp\": document[\"timestamp\"],\n            }\n            records.append(record_data)\n\n        return [Record(data=record_data) for record_data in records]\n\n    def build(\n        self,\n        connection_string: Text,\n        database_name: Text,\n        collection_name: Text,\n        session_id: Text = None,\n        sender_name: Optional[Text] = None,\n        sender: Optional[Text] = \"Machine and User\",\n        n_messages: int = 5,\n        order: Optional[str] = \"Descending\",\n        record_template: Optional[str] = \"{sender_name}: {text}\",\n    ) -> Text:\n\n        client = MongoClient(connection_string)\n        memory = client[database_name][collection_name]  # pymongo.collection.Collection\n        messages = self.get_messages(\n            memory=memory,\n            session_id=session_id,\n            n_messages=n_messages,\n            sender_name=sender_name,\n            sender=sender,\n            order=order,\n        )\n        messages_str = records_to_text(template=record_template or \"\", records=messages)\n        self.status = messages_str\n        return messages_str\n\n\n# Example usage:\n# reader = MongoDBMemoryReader('mongodb_connection_string', 'database_name', 'collection_name')\n# messages = reader.get_messages(session_id='123456', n_messages=10)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "n_messages": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 5,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "n_messages",
+                  "display_name": "Number of Messages",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The number of messages to retrieve.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "order": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "Descending",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Ascending",
+                    "Descending"
+                  ],
+                  "name": "order",
+                  "display_name": "Order",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Order of the messages.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "record_template": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "{sender_name}: {text}",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "record_template",
+                  "display_name": "Record Template",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Retrieves chat messages from MongoDB based on session ID.",
+              "icon": "history",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "MongoDB Message Reader",
+              "documentation": "",
+              "custom_fields": {
+                "connection_string": null,
+                "database_name": null,
+                "collection_name": null,
+                "session_id": null,
+                "sender_name": null,
+                "sender": null,
+                "n_messages": null,
+                "order": null,
+                "record_template": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": true,
+              "official": false
+            },
+            "id": "CustomComponent-x4RnT",
+            "description": "Retrieves chat messages from MongoDB based on session ID.",
+            "display_name": "MongoDB Message Reader"
+          },
+          "id": "CustomComponent-x4RnT",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-05-19T23:23:55.300Z",
+    "date_updated": "2024-05-19T23:45:58.173Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "a2e8c50e-0f99-48ab-9186-96d917ba655e",
+    "user_created": {
+      "username": "oaklight",
+      "first_name": "Peng",
+      "last_name": "Ding",
+      "id": "a2e8c50e-0f99-48ab-9186-96d917ba655e"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Memory",
+          "id": "e660a9ea-35fb-4587-bfbd-13dba4c556d1"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.726Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

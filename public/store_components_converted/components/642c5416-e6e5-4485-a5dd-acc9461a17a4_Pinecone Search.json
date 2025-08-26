@@ -1,0 +1,709 @@
+{
+  "id": "642c5416-e6e5-4485-a5dd-acc9461a17a4",
+  "name": "Pinecone Search",
+  "description": "Search a Pinecone Vector Store for similar documents. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "2abet",
+    "first_name": "Akinyemi",
+    "last_name": "Arabambi",
+    "id": "8f83aa89-ee88-46ee-bfd7-902070c00190",
+    "full_name": "Akinyemi Arabambi"
+  },
+  "store_url": "https://www.langflow.store/store/component/642c5416-e6e5-4485-a5dd-acc9461a17a4",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-15T11:05:03.978Z",
+    "updated": "2024-08-15T11:05:04.026Z",
+    "downloaded": "2025-08-19T17:50:05.705Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "0.6.19",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "PineconeSearch",
+          "node": {
+            "template": {
+              "embedding": {
+                "type": "Embeddings",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "embedding",
+                "display_name": "Embedding",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Input",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List, Optional\n\nfrom langchain_pinecone._utilities import DistanceStrategy\n\nfrom axiestudio.components.vectorstores.base.model import LCVectorStoreComponent\nfrom axiestudio.components.vectorstores.Pinecone import PineconeComponent\nfrom axiestudio.field_typing import Embeddings, Text\nfrom axiestudio.field_typing.constants import NestedDict\nfrom axiestudio.schema import Record\n\n\nclass PineconeSearchComponent(PineconeComponent, LCVectorStoreComponent):\n    display_name = \"Pinecone Search\"\n    description = \"Search a Pinecone Vector Store for similar documents.\"\n    icon = \"Pinecone\"\n    field_order = [\"index_name\", \"namespace\", \"distance_strategy\", \"pinecone_api_key\", \"input_value\", \"embedding\"]\n\n    def build_config(self):\n        distance_options = [e.value.title().replace(\"_\", \" \") for e in DistanceStrategy]\n        distance_value = distance_options[0]\n        return {\n            \"search_type\": {\n                \"display_name\": \"Search Type\",\n                \"options\": [\"Similarity\", \"MMR\"],\n            },\n            \"input_value\": {\"display_name\": \"Input\"},\n            \"embedding\": {\"display_name\": \"Embedding\"},\n            \"index_name\": {\"display_name\": \"Index Name\"},\n            \"namespace\": {\"display_name\": \"Namespace\", \"info\": \"Namespace for the index.\"},\n            \"distance_strategy\": {\n                \"display_name\": \"Distance Strategy\",\n                # get values from enum\n                # and make them title case for display\n                \"options\": distance_options,\n                \"advanced\": True,\n                \"value\": distance_value,\n            },\n            \"pinecone_api_key\": {\n                \"display_name\": \"Pinecone API Key\",\n                \"default\": \"\",\n                \"password\": True,\n            },\n            \"pool_threads\": {\n                \"display_name\": \"Pool Threads\",\n                \"default\": 1,\n                \"advanced\": True,\n            },\n            \"number_of_results\": {\n                \"display_name\": \"Number of Results\",\n                \"info\": \"Number of results to return.\",\n                \"advanced\": True,\n            },\n            \"text_key\": {\n                \"display_name\": \"Text Key\",\n                \"info\": \"Key in the record to use as text.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(  # type: ignore[override]\n        self,\n        input_value: Text,\n        embedding: Embeddings,\n        distance_strategy: str,\n        text_key: str = \"text\",\n        number_of_results: int = 4,\n        pool_threads: int = 4,\n        index_name: Optional[str] = None,\n        pinecone_api_key: Optional[str] = None,\n        namespace: Optional[str] = \"default\",\n        search_type: str = \"similarity\",\n        search_kwargs: Optional[NestedDict] = None,\n    ) -> List[Record]:  # type: ignore[override]\n        vector_store = super().build(\n            embedding=embedding,\n            distance_strategy=distance_strategy,\n            inputs=[],\n            text_key=text_key,\n            pool_threads=pool_threads,\n            index_name=index_name,\n            pinecone_api_key=pinecone_api_key,\n            namespace=namespace,\n        )\n        if not vector_store:\n            raise ValueError(\"Failed to load the Pinecone index.\")\n        if search_kwargs is None:\n            search_kwargs = {}\n\n        return self.search_with_vector_store(\n            vector_store=vector_store,\n            input_value=input_value,\n            search_type=search_type,\n            k=number_of_results,\n            **search_kwargs,\n        )\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "distance_strategy": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "Euclidean Distance",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Euclidean Distance",
+                  "Max Inner Product",
+                  "Cosine"
+                ],
+                "name": "distance_strategy",
+                "display_name": "Distance Strategy",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "index_name": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "index_name",
+                "display_name": "Index Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "axiestudio"
+              },
+              "namespace": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "default",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "namespace",
+                "display_name": "Namespace",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Namespace for the index.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "number_of_results": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 4,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "number_of_results",
+                "display_name": "Number of Results",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Number of results to return.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "pinecone_api_key": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "pinecone_api_key",
+                "display_name": "Pinecone API Key",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "pool_threads": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 4,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "pool_threads",
+                "display_name": "Pool Threads",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "search_kwargs": {
+                "type": "NestedDict",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "search_kwargs",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "value": {
+                  "yourkey": "value"
+                }
+              },
+              "search_type": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "similarity",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Similarity",
+                  "MMR"
+                ],
+                "name": "search_type",
+                "display_name": "Search Type",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "text_key": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "text",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "text_key",
+                "display_name": "Text Key",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Key in the record to use as text.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Search a Pinecone Vector Store for similar documents.",
+            "icon": "Pinecone",
+            "base_classes": [
+              "Record"
+            ],
+            "display_name": "Pinecone Search",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null,
+              "embedding": null,
+              "distance_strategy": null,
+              "text_key": null,
+              "number_of_results": null,
+              "pool_threads": null,
+              "index_name": null,
+              "pinecone_api_key": null,
+              "namespace": null,
+              "search_type": null,
+              "search_kwargs": null
+            },
+            "output_types": [
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "index_name",
+              "namespace",
+              "distance_strategy",
+              "pinecone_api_key",
+              "input_value",
+              "embedding"
+            ],
+            "beta": false,
+            "official": false
+          },
+          "id": "PineconeSearch-2khPq"
+        },
+        "id": "PineconeSearch-2khPq",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "PineconeSearch": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "642c5416-e6e5-4485-a5dd-acc9461a17a4",
+    "name": "Pinecone Search",
+    "description": "Search a Pinecone Vector Store for similar documents.",
+    "is_component": true,
+    "liked_by_count": "5",
+    "downloads_count": "48",
+    "metadata": {
+      "PineconeSearch": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "0.6.19",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "PineconeSearch",
+            "node": {
+              "template": {
+                "embedding": {
+                  "type": "Embeddings",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "embedding",
+                  "display_name": "Embedding",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List, Optional\n\nfrom langchain_pinecone._utilities import DistanceStrategy\n\nfrom axiestudio.components.vectorstores.base.model import LCVectorStoreComponent\nfrom axiestudio.components.vectorstores.Pinecone import PineconeComponent\nfrom axiestudio.field_typing import Embeddings, Text\nfrom axiestudio.field_typing.constants import NestedDict\nfrom axiestudio.schema import Record\n\n\nclass PineconeSearchComponent(PineconeComponent, LCVectorStoreComponent):\n    display_name = \"Pinecone Search\"\n    description = \"Search a Pinecone Vector Store for similar documents.\"\n    icon = \"Pinecone\"\n    field_order = [\"index_name\", \"namespace\", \"distance_strategy\", \"pinecone_api_key\", \"input_value\", \"embedding\"]\n\n    def build_config(self):\n        distance_options = [e.value.title().replace(\"_\", \" \") for e in DistanceStrategy]\n        distance_value = distance_options[0]\n        return {\n            \"search_type\": {\n                \"display_name\": \"Search Type\",\n                \"options\": [\"Similarity\", \"MMR\"],\n            },\n            \"input_value\": {\"display_name\": \"Input\"},\n            \"embedding\": {\"display_name\": \"Embedding\"},\n            \"index_name\": {\"display_name\": \"Index Name\"},\n            \"namespace\": {\"display_name\": \"Namespace\", \"info\": \"Namespace for the index.\"},\n            \"distance_strategy\": {\n                \"display_name\": \"Distance Strategy\",\n                # get values from enum\n                # and make them title case for display\n                \"options\": distance_options,\n                \"advanced\": True,\n                \"value\": distance_value,\n            },\n            \"pinecone_api_key\": {\n                \"display_name\": \"Pinecone API Key\",\n                \"default\": \"\",\n                \"password\": True,\n            },\n            \"pool_threads\": {\n                \"display_name\": \"Pool Threads\",\n                \"default\": 1,\n                \"advanced\": True,\n            },\n            \"number_of_results\": {\n                \"display_name\": \"Number of Results\",\n                \"info\": \"Number of results to return.\",\n                \"advanced\": True,\n            },\n            \"text_key\": {\n                \"display_name\": \"Text Key\",\n                \"info\": \"Key in the record to use as text.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(  # type: ignore[override]\n        self,\n        input_value: Text,\n        embedding: Embeddings,\n        distance_strategy: str,\n        text_key: str = \"text\",\n        number_of_results: int = 4,\n        pool_threads: int = 4,\n        index_name: Optional[str] = None,\n        pinecone_api_key: Optional[str] = None,\n        namespace: Optional[str] = \"default\",\n        search_type: str = \"similarity\",\n        search_kwargs: Optional[NestedDict] = None,\n    ) -> List[Record]:  # type: ignore[override]\n        vector_store = super().build(\n            embedding=embedding,\n            distance_strategy=distance_strategy,\n            inputs=[],\n            text_key=text_key,\n            pool_threads=pool_threads,\n            index_name=index_name,\n            pinecone_api_key=pinecone_api_key,\n            namespace=namespace,\n        )\n        if not vector_store:\n            raise ValueError(\"Failed to load the Pinecone index.\")\n        if search_kwargs is None:\n            search_kwargs = {}\n\n        return self.search_with_vector_store(\n            vector_store=vector_store,\n            input_value=input_value,\n            search_type=search_type,\n            k=number_of_results,\n            **search_kwargs,\n        )\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "distance_strategy": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "Euclidean Distance",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Euclidean Distance",
+                    "Max Inner Product",
+                    "Cosine"
+                  ],
+                  "name": "distance_strategy",
+                  "display_name": "Distance Strategy",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "index_name": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "index_name",
+                  "display_name": "Index Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "axiestudio"
+                },
+                "namespace": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "default",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "namespace",
+                  "display_name": "Namespace",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Namespace for the index.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "number_of_results": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 4,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "number_of_results",
+                  "display_name": "Number of Results",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Number of results to return.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "pinecone_api_key": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "pinecone_api_key",
+                  "display_name": "Pinecone API Key",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "pool_threads": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 4,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "pool_threads",
+                  "display_name": "Pool Threads",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "search_kwargs": {
+                  "type": "NestedDict",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "search_kwargs",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": {
+                    "yourkey": "value"
+                  }
+                },
+                "search_type": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "similarity",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Similarity",
+                    "MMR"
+                  ],
+                  "name": "search_type",
+                  "display_name": "Search Type",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "text_key": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "text",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "text_key",
+                  "display_name": "Text Key",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Key in the record to use as text.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Search a Pinecone Vector Store for similar documents.",
+              "icon": "Pinecone",
+              "base_classes": [
+                "Record"
+              ],
+              "display_name": "Pinecone Search",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null,
+                "embedding": null,
+                "distance_strategy": null,
+                "text_key": null,
+                "number_of_results": null,
+                "pool_threads": null,
+                "index_name": null,
+                "pinecone_api_key": null,
+                "namespace": null,
+                "search_type": null,
+                "search_kwargs": null
+              },
+              "output_types": [
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "index_name",
+                "namespace",
+                "distance_strategy",
+                "pinecone_api_key",
+                "input_value",
+                "embedding"
+              ],
+              "beta": false,
+              "official": false
+            },
+            "id": "PineconeSearch-2khPq"
+          },
+          "id": "PineconeSearch-2khPq",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-15T11:05:03.978Z",
+    "date_updated": "2024-08-15T11:05:04.026Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "8f83aa89-ee88-46ee-bfd7-902070c00190",
+    "user_created": {
+      "username": "2abet",
+      "first_name": "Akinyemi",
+      "last_name": "Arabambi",
+      "id": "8f83aa89-ee88-46ee-bfd7-902070c00190"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.360Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 12,
+    "converter_version": "1.0.0"
+  }
+}

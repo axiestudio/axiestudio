@@ -1,0 +1,393 @@
+{
+  "id": "e654acd6-8f71-4cef-b025-caa124f18abe",
+  "name": "Text Conditional Router",
+  "description": "Route messages based on text conditions, with boolean validation support. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "MarceloSMiranda",
+    "first_name": "Marcelo",
+    "last_name": "Miranda",
+    "id": "0bfa5b3f-b077-4257-b45f-4c8adcfc64bc",
+    "full_name": "Marcelo Miranda"
+  },
+  "store_url": "https://www.langflow.store/store/component/e654acd6-8f71-4cef-b025-caa124f18abe",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-11-01T19:22:16.291Z",
+    "updated": "2024-11-01T19:22:16.328Z",
+    "downloaded": "2025-08-19T17:50:07.680Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "MessageRouteSplitter",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Any, Optional\r\n\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import MessageTextInput, DropdownInput, Output\r\nfrom axiestudio.schema import Data, dotdict\r\nfrom axiestudio.schema.message import Message\r\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI\r\n\r\n\r\nclass MessageRouteSplitter(Component):\r\n    \"\"\"\r\n    MessageRouteSplitter - Version 1.0\r\n    Created by Claude (Anthropic) - GitHub: anthropics\r\n    \r\n    A component that routes messages based on conditional text matching.\r\n    It splits the message flow into two paths (true/false) based on\r\n    text content evaluation using various comparison operators.\r\n    \"\"\"\r\n    \r\n    display_name = \"Message Route Splitter\"\r\n    description = \"Route messages based on text conditions, with boolean validation support.\"\r\n    icon = \"split\"\r\n    color = \"#87CEEB\"\r\n    beta = False\r\n    version = \"1.0\"\r\n    name = \"MessageRouteSplitter\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"text_input\",\r\n            display_name=\"Text Input\",\r\n            info=\"The text to process\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"operator\",\r\n            display_name=\"Comparison Operator\",\r\n            options=[\"equals\", \"not equals\", \"contains\", \"starts with\", \"ends with\", \"boolean validator\"],\r\n            info=\"The operator to apply for comparing the values. 'boolean validator' treats the value as a boolean.\",\r\n            value=\"equals\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"compare_value\",\r\n            display_name=\"Compare Value\",\r\n            info=\"The value to compare against (not used for boolean validator)\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"True Output\", name=\"true_output\", method=\"get_true_output\"),\r\n        Output(display_name=\"False Output\", name=\"false_output\", method=\"get_false_output\"),\r\n    ]\r\n\r\n    def compare_values(self, text_value: str, compare_value: str, operator: str) -> bool:\r\n        if operator == \"equals\":\r\n            return text_value == compare_value\r\n        if operator == \"not equals\":\r\n            return text_value != compare_value\r\n        if operator == \"contains\":\r\n            return compare_value in text_value\r\n        if operator == \"starts with\":\r\n            return text_value.startswith(compare_value)\r\n        if operator == \"ends with\":\r\n            return text_value.endswith(compare_value)\r\n        if operator == \"boolean validator\":\r\n            return self.parse_boolean(text_value)\r\n        return False\r\n\r\n    def parse_boolean(self, value):\r\n        if isinstance(value, bool):\r\n            return value\r\n        if isinstance(value, str):\r\n            return value.lower() in [\"true\", \"1\", \"yes\", \"y\", \"on\"]\r\n        return bool(value)\r\n\r\n    def evaluate_condition(self) -> bool:\r\n        if not self.text_input:\r\n            return False\r\n\r\n        text_value = str(self.text_input)\r\n        operator = self.operator\r\n\r\n        if operator == \"boolean validator\":\r\n            return self.parse_boolean(text_value)\r\n        else:\r\n            compare_value = self.compare_value\r\n            return self.compare_values(text_value, compare_value, operator)\r\n\r\n    def create_data(self, text: str) -> Data:\r\n        return Data(data={\"text\": text})\r\n\r\n    def get_true_output(self) -> Optional[Data]:\r\n        condition_met = self.evaluate_condition()\r\n        if condition_met:\r\n            return self.create_data(str(self.text_input))\r\n        return None\r\n\r\n    def get_false_output(self) -> Optional[Data]:\r\n        condition_met = self.evaluate_condition()\r\n        if not condition_met:\r\n            return self.create_data(str(self.text_input))\r\n        return None\r\n\r\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\r\n        if field_name == \"operator\":\r\n            if field_value == \"boolean validator\":\r\n                build_config[\"compare_value\"][\"show\"] = False\r\n                build_config[\"compare_value\"][\"advanced\"] = True\r\n                build_config[\"compare_value\"][\"value\"] = None\r\n            else:\r\n                build_config[\"compare_value\"][\"show\"] = True\r\n                build_config[\"compare_value\"][\"advanced\"] = False\r\n\r\n        return build_config",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "compare_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "compare_value",
+                "value": "MENU",
+                "display_name": "Compare Value",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The value to compare against (not used for boolean validator)",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "operator": {
+                "trace_as_metadata": true,
+                "options": [
+                  "equals",
+                  "not equals",
+                  "contains",
+                  "starts with",
+                  "ends with",
+                  "boolean validator"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "operator",
+                "value": "contains",
+                "display_name": "Comparison Operator",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The operator to apply for comparing the values. 'boolean validator' treats the value as a boolean.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput",
+                "load_from_db": false
+              },
+              "text_input": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "text_input",
+                "value": "",
+                "display_name": "Text Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The text to process",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Route messages based on text conditions, with boolean validation support.",
+            "icon": "split",
+            "base_classes": [
+              "Data",
+              "NoneType"
+            ],
+            "display_name": "Text Conditional Router",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data",
+                  "NoneType"
+                ],
+                "selected": "Data",
+                "name": "true_output",
+                "display_name": "True Output",
+                "method": "get_true_output",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Data",
+                  "NoneType"
+                ],
+                "selected": "Data",
+                "name": "false_output",
+                "display_name": "False Output",
+                "method": "get_false_output",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "text_input",
+              "operator",
+              "compare_value"
+            ],
+            "beta": false,
+            "edited": true,
+            "metadata": {},
+            "lf_version": "1.0.19.post2",
+            "official": false
+          },
+          "id": "MessageRouteSplitter-6W68w"
+        },
+        "id": "MessageRouteSplitter-6W68w",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "MessageRouteSplitter": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "e654acd6-8f71-4cef-b025-caa124f18abe",
+    "name": "Text Conditional Router",
+    "description": "Route messages based on text conditions, with boolean validation support.",
+    "is_component": true,
+    "liked_by_count": "3",
+    "downloads_count": "143",
+    "metadata": {
+      "MessageRouteSplitter": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "MessageRouteSplitter",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Any, Optional\r\n\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import MessageTextInput, DropdownInput, Output\r\nfrom axiestudio.schema import Data, dotdict\r\nfrom axiestudio.schema.message import Message\r\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI\r\n\r\n\r\nclass MessageRouteSplitter(Component):\r\n    \"\"\"\r\n    MessageRouteSplitter - Version 1.0\r\n    Created by Claude (Anthropic) - GitHub: anthropics\r\n    \r\n    A component that routes messages based on conditional text matching.\r\n    It splits the message flow into two paths (true/false) based on\r\n    text content evaluation using various comparison operators.\r\n    \"\"\"\r\n    \r\n    display_name = \"Message Route Splitter\"\r\n    description = \"Route messages based on text conditions, with boolean validation support.\"\r\n    icon = \"split\"\r\n    color = \"#87CEEB\"\r\n    beta = False\r\n    version = \"1.0\"\r\n    name = \"MessageRouteSplitter\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"text_input\",\r\n            display_name=\"Text Input\",\r\n            info=\"The text to process\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"operator\",\r\n            display_name=\"Comparison Operator\",\r\n            options=[\"equals\", \"not equals\", \"contains\", \"starts with\", \"ends with\", \"boolean validator\"],\r\n            info=\"The operator to apply for comparing the values. 'boolean validator' treats the value as a boolean.\",\r\n            value=\"equals\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"compare_value\",\r\n            display_name=\"Compare Value\",\r\n            info=\"The value to compare against (not used for boolean validator)\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"True Output\", name=\"true_output\", method=\"get_true_output\"),\r\n        Output(display_name=\"False Output\", name=\"false_output\", method=\"get_false_output\"),\r\n    ]\r\n\r\n    def compare_values(self, text_value: str, compare_value: str, operator: str) -> bool:\r\n        if operator == \"equals\":\r\n            return text_value == compare_value\r\n        if operator == \"not equals\":\r\n            return text_value != compare_value\r\n        if operator == \"contains\":\r\n            return compare_value in text_value\r\n        if operator == \"starts with\":\r\n            return text_value.startswith(compare_value)\r\n        if operator == \"ends with\":\r\n            return text_value.endswith(compare_value)\r\n        if operator == \"boolean validator\":\r\n            return self.parse_boolean(text_value)\r\n        return False\r\n\r\n    def parse_boolean(self, value):\r\n        if isinstance(value, bool):\r\n            return value\r\n        if isinstance(value, str):\r\n            return value.lower() in [\"true\", \"1\", \"yes\", \"y\", \"on\"]\r\n        return bool(value)\r\n\r\n    def evaluate_condition(self) -> bool:\r\n        if not self.text_input:\r\n            return False\r\n\r\n        text_value = str(self.text_input)\r\n        operator = self.operator\r\n\r\n        if operator == \"boolean validator\":\r\n            return self.parse_boolean(text_value)\r\n        else:\r\n            compare_value = self.compare_value\r\n            return self.compare_values(text_value, compare_value, operator)\r\n\r\n    def create_data(self, text: str) -> Data:\r\n        return Data(data={\"text\": text})\r\n\r\n    def get_true_output(self) -> Optional[Data]:\r\n        condition_met = self.evaluate_condition()\r\n        if condition_met:\r\n            return self.create_data(str(self.text_input))\r\n        return None\r\n\r\n    def get_false_output(self) -> Optional[Data]:\r\n        condition_met = self.evaluate_condition()\r\n        if not condition_met:\r\n            return self.create_data(str(self.text_input))\r\n        return None\r\n\r\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\r\n        if field_name == \"operator\":\r\n            if field_value == \"boolean validator\":\r\n                build_config[\"compare_value\"][\"show\"] = False\r\n                build_config[\"compare_value\"][\"advanced\"] = True\r\n                build_config[\"compare_value\"][\"value\"] = None\r\n            else:\r\n                build_config[\"compare_value\"][\"show\"] = True\r\n                build_config[\"compare_value\"][\"advanced\"] = False\r\n\r\n        return build_config",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "compare_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "compare_value",
+                  "value": "MENU",
+                  "display_name": "Compare Value",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The value to compare against (not used for boolean validator)",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "operator": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "equals",
+                    "not equals",
+                    "contains",
+                    "starts with",
+                    "ends with",
+                    "boolean validator"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "operator",
+                  "value": "contains",
+                  "display_name": "Comparison Operator",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The operator to apply for comparing the values. 'boolean validator' treats the value as a boolean.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput",
+                  "load_from_db": false
+                },
+                "text_input": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "text_input",
+                  "value": "",
+                  "display_name": "Text Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The text to process",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Route messages based on text conditions, with boolean validation support.",
+              "icon": "split",
+              "base_classes": [
+                "Data",
+                "NoneType"
+              ],
+              "display_name": "Text Conditional Router",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data",
+                    "NoneType"
+                  ],
+                  "selected": "Data",
+                  "name": "true_output",
+                  "display_name": "True Output",
+                  "method": "get_true_output",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Data",
+                    "NoneType"
+                  ],
+                  "selected": "Data",
+                  "name": "false_output",
+                  "display_name": "False Output",
+                  "method": "get_false_output",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "text_input",
+                "operator",
+                "compare_value"
+              ],
+              "beta": false,
+              "edited": true,
+              "metadata": {},
+              "lf_version": "1.0.19.post2",
+              "official": false
+            },
+            "id": "MessageRouteSplitter-6W68w"
+          },
+          "id": "MessageRouteSplitter-6W68w",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-11-01T19:22:16.291Z",
+    "date_updated": "2024-11-01T19:22:16.328Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "0bfa5b3f-b077-4257-b45f-4c8adcfc64bc",
+    "user_created": {
+      "username": "MarceloSMiranda",
+      "first_name": "Marcelo",
+      "last_name": "Miranda",
+      "id": "0bfa5b3f-b077-4257-b45f-4c8adcfc64bc"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:12.318Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

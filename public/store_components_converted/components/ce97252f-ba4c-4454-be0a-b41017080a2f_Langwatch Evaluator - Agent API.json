@@ -1,0 +1,485 @@
+{
+  "id": "ce97252f-ba4c-4454-be0a-b41017080a2f",
+  "name": "Langwatch Evaluator - Agent API",
+  "description": "Evaluates a question-answer pair using LangWatch and provides a public trace URL. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "NamastexLabs",
+    "first_name": "Felipe",
+    "last_name": "Rosa",
+    "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "full_name": "Felipe Rosa"
+  },
+  "store_url": "https://www.langflow.store/store/component/ce97252f-ba4c-4454-be0a-b41017080a2f",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-18T21:05:42.494Z",
+    "updated": "2024-08-21T20:47:55.602Z",
+    "downloaded": "2025-08-19T17:50:06.795Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "LangWatchEvaluatorComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "answer": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "answer",
+                "value": "",
+                "display_name": "Chat Output",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The generated answer to be evaluated.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import re\r\nimport requests\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.inputs import MessageTextInput\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.template import Output\r\nimport os\r\nimport json\r\nfrom datetime import datetime, timezone\r\nimport logging\r\n\r\nclass LangWatchEvaluatorComponent(Component):\r\n    display_name = \"Langwatch Evaluator - Agent API\"\r\n    description = \"Evaluates a question-answer pair using LangWatch and provides a public trace URL.\"\r\n    icon = \"view\"\r\n\r\n    inputs = [\r\n        MessageTextInput(name=\"question\", display_name=\"Chat Input\", info=\"The question to be evaluated.\"),\r\n        MessageTextInput(name=\"answer\", display_name=\"Chat Output\", info=\"The generated answer to be evaluated.\"),\r\n        MessageTextInput(name=\"user_email\", display_name=\"User Email\", info=\"The user ID for the trace metadata.\", advanced=True),\r\n        MessageTextInput(name=\"user_name\", display_name=\"Participant Name\", info=\"Full name for identification in the trace metadata.\", advanced=True),\r\n        MessageTextInput(name=\"user_cpf\", display_name=\"Participant CPF\", info=\"CPF for identification in for the trace metadata.\", advanced=True),\r\n        MessageTextInput(name=\"question_id\", display_name=\"Question ID\", info=\"The question ID for the trace metadata.\", advanced=True),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Trace Info\", name=\"trace_url\", method=\"evaluate\"),\r\n    ]\r\n\r\n    def __init__(self, *args, **kwargs):\r\n        super().__init__(*args, **kwargs)\r\n        self.api_key = \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0aW1lc3RhbXAiOjE3MjI2Mjc0NjM1MTMsInJhbmQiOjAuNjE5NzU0NDkyMjY5NzM0LCJpYXQiOjE3MjI2Mjc0NjN9._7Qb9ezb1Lk9KB8DNkwWivHestRwdkqxC15VgWxTXTg\"\r\n        self.api_endpoint = \"https://app.langwatch.ai/api/collector\"\r\n        self.share_endpoint = \"https://app.langwatch.ai/api/trace/{}/share\"\r\n        self.logger = logging.getLogger(__name__)\r\n\r\n    async def evaluate(self) -> Data:\r\n        question = self.question\r\n        answer = self.answer\r\n        user_email = self.user_email or \"\"\r\n        question_id = self.question_id or \"\"\r\n        user_name = self.user_name or \"\"\r\n        user_cpf = self.user_cpf or \"\"\r\n\r\n        if user_email and not self.validate_email(user_email):\r\n            raise ValueError(f\"Invalid email address: {user_email}\")\r\n\r\n        if user_cpf and not self.validate_cpf(user_cpf):\r\n            raise ValueError(f\"Invalid CPF: {user_cpf}\")\r\n\r\n        flow_trace_id = self.get_flow_trace_id()\r\n\r\n        trace_id = self.generate_trace_id()\r\n        span_id = self.generate_span_id()\r\n\r\n        payload = {\r\n            \"trace_id\": trace_id,\r\n            \"spans\": [\r\n                {\r\n                    \"type\": \"rag\",\r\n                    \"span_id\": span_id,\r\n                    \"name\": \"LangWatch Evaluator\",\r\n                    \"input\": {\r\n                        \"type\": \"chat_messages\",\r\n                        \"value\": [\r\n                            {\r\n                                \"role\": \"user\",\r\n                                \"content\": question\r\n                            }\r\n                        ]\r\n                    },\r\n                    \"output\": {\r\n                        \"type\": \"chat_messages\",\r\n                        \"value\": [\r\n                            {\r\n                                \"role\": \"assistant\",\r\n                                \"content\": answer\r\n                            }\r\n                        ]\r\n                    },\r\n                    \"timestamps\": {\r\n                        \"started_at\": self.get_current_timestamp(),\r\n                        \"finished_at\": self.get_current_timestamp()\r\n                    }\r\n                }\r\n            ],\r\n            \"metadata\": {\r\n                \"user_id\": user_email,\r\n                \"question_id\": question_id,\r\n                \"user_name\": user_name,\r\n                \"user_cpf\": user_cpf\r\n            }\r\n        }\r\n        # Log LangWatch metadata\r\n        self.logger.info(\"LANGWATCH METADATA\", extra={\r\n            \"trace_id\": trace_id,\r\n            \"span_id\": span_id,\r\n            \"flow_trace_id\": flow_trace_id,\r\n            \"user_id\": user_email,\r\n            \"question_id\": question_id,\r\n            \"user_name\": user_name,\r\n            \"user_cpf\": user_cpf\r\n        })\r\n        response = self.send_to_langwatch(payload)\r\n\r\n        if response.status_code != 200:\r\n            raise Exception(f\"Failed to send data to LangWatch: {response.text}\")\r\n\r\n        # Create public path\r\n        public_path = self.create_public_path(trace_id)\r\n\r\n        if public_path:\r\n            message = Data(trace_url=f\"https://app.langwatch.ai{public_path}\", flow_trace_id=flow_trace_id, eval_trace_id=trace_id)\r\n            self.status = message\r\n            return message\r\n        else:\r\n            raise Exception(\"Failed to create public path for the trace\")\r\n\r\n    def get_flow_trace_id(self):\r\n        try:\r\n            if hasattr(self, 'tracing_service'):\r\n                langwatch_tracer = self.tracing_service._tracers.get('langwatch')\r\n                if langwatch_tracer and langwatch_tracer.trace:\r\n                    return langwatch_tracer.trace.trace_id\r\n        except Exception as e:\r\n            self.logger.warning(f\"Error retrieving flow trace ID: {str(e)}\")\r\n        return None\r\n\r\n    def send_to_langwatch(self, payload):\r\n        headers = {\r\n            \"X-Auth-Token\": self.api_key,\r\n            \"Content-Type\": \"application/json\"\r\n        }\r\n        return requests.post(self.api_endpoint, headers=headers, data=json.dumps(payload))\r\n\r\n    def create_public_path(self, trace_id):\r\n        headers = {\r\n            \"X-Auth-Token\": self.api_key,\r\n            \"Content-Type\": \"application/json\"\r\n        }\r\n        response = requests.post(self.share_endpoint.format(trace_id), headers=headers)\r\n        if response.status_code == 200:\r\n            return response.json().get(\"path\")\r\n        return None\r\n\r\n    def generate_trace_id(self):\r\n        return f\"trace-{self.generate_id()}\"\r\n\r\n    def generate_span_id(self):\r\n        return f\"span-{self.generate_id()}\"\r\n\r\n    def generate_id(self):\r\n        return os.urandom(16).hex()\r\n\r\n    def get_current_timestamp(self):\r\n        return int(datetime.now(timezone.utc).timestamp() * 1000)\r\n\r\n    def validate_email(self, email):\r\n        pattern = r'^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$'\r\n        return re.match(pattern, email) is not None\r\n\r\n    def validate_cpf(self, cpf):\r\n        if not re.match(r'^(?!(\\d)\\1{10})\\d{9}[\\d]{2}$', cpf):\r\n            return False\r\n\r\n        total = sum(int(cpf[i]) * (10 - i) for i in range(9))\r\n        check1 = (total * 10 % 11) % 10\r\n\r\n        total = sum(int(cpf[i]) * (11 - i) for i in range(10))\r\n        check2 = (total * 10 % 11) % 10\r\n\r\n        return cpf[-2:] == f\"{check1}{check2}\"",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "question": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "question",
+                "value": "",
+                "display_name": "Chat Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The question to be evaluated.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "question_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "question_id",
+                "value": "",
+                "display_name": "Question ID",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The question ID for the trace metadata.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "user_cpf": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "user_cpf",
+                "value": "",
+                "display_name": "Participant CPF",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "CPF for identification in for the trace metadata.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "user_email": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "user_email",
+                "value": "",
+                "display_name": "User Email",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The user ID for the trace metadata.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "user_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "user_name",
+                "value": "",
+                "display_name": "Participant Name",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Full name for identification in the trace metadata.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Evaluates a question-answer pair using LangWatch and provides a public trace URL.",
+            "icon": "view",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Langwatch Evaluator - Agent API",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "trace_url",
+                "display_name": "Trace Info",
+                "method": "evaluate",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "question",
+              "answer",
+              "user_email",
+              "user_name",
+              "user_cpf",
+              "question_id"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "LangWatchEvaluatorComponent-kefUQ"
+        },
+        "id": "LangWatchEvaluatorComponent-kefUQ",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "LangWatchEvaluatorComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "ce97252f-ba4c-4454-be0a-b41017080a2f",
+    "name": "Langwatch Evaluator - Agent API",
+    "description": "Evaluates a question-answer pair using LangWatch and provides a public trace URL.",
+    "is_component": true,
+    "liked_by_count": "5",
+    "downloads_count": "60",
+    "metadata": {
+      "LangWatchEvaluatorComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "LangWatchEvaluatorComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "answer": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "answer",
+                  "value": "",
+                  "display_name": "Chat Output",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The generated answer to be evaluated.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import re\r\nimport requests\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.inputs import MessageTextInput\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.template import Output\r\nimport os\r\nimport json\r\nfrom datetime import datetime, timezone\r\nimport logging\r\n\r\nclass LangWatchEvaluatorComponent(Component):\r\n    display_name = \"Langwatch Evaluator - Agent API\"\r\n    description = \"Evaluates a question-answer pair using LangWatch and provides a public trace URL.\"\r\n    icon = \"view\"\r\n\r\n    inputs = [\r\n        MessageTextInput(name=\"question\", display_name=\"Chat Input\", info=\"The question to be evaluated.\"),\r\n        MessageTextInput(name=\"answer\", display_name=\"Chat Output\", info=\"The generated answer to be evaluated.\"),\r\n        MessageTextInput(name=\"user_email\", display_name=\"User Email\", info=\"The user ID for the trace metadata.\", advanced=True),\r\n        MessageTextInput(name=\"user_name\", display_name=\"Participant Name\", info=\"Full name for identification in the trace metadata.\", advanced=True),\r\n        MessageTextInput(name=\"user_cpf\", display_name=\"Participant CPF\", info=\"CPF for identification in for the trace metadata.\", advanced=True),\r\n        MessageTextInput(name=\"question_id\", display_name=\"Question ID\", info=\"The question ID for the trace metadata.\", advanced=True),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Trace Info\", name=\"trace_url\", method=\"evaluate\"),\r\n    ]\r\n\r\n    def __init__(self, *args, **kwargs):\r\n        super().__init__(*args, **kwargs)\r\n        self.api_key = \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0aW1lc3RhbXAiOjE3MjI2Mjc0NjM1MTMsInJhbmQiOjAuNjE5NzU0NDkyMjY5NzM0LCJpYXQiOjE3MjI2Mjc0NjN9._7Qb9ezb1Lk9KB8DNkwWivHestRwdkqxC15VgWxTXTg\"\r\n        self.api_endpoint = \"https://app.langwatch.ai/api/collector\"\r\n        self.share_endpoint = \"https://app.langwatch.ai/api/trace/{}/share\"\r\n        self.logger = logging.getLogger(__name__)\r\n\r\n    async def evaluate(self) -> Data:\r\n        question = self.question\r\n        answer = self.answer\r\n        user_email = self.user_email or \"\"\r\n        question_id = self.question_id or \"\"\r\n        user_name = self.user_name or \"\"\r\n        user_cpf = self.user_cpf or \"\"\r\n\r\n        if user_email and not self.validate_email(user_email):\r\n            raise ValueError(f\"Invalid email address: {user_email}\")\r\n\r\n        if user_cpf and not self.validate_cpf(user_cpf):\r\n            raise ValueError(f\"Invalid CPF: {user_cpf}\")\r\n\r\n        flow_trace_id = self.get_flow_trace_id()\r\n\r\n        trace_id = self.generate_trace_id()\r\n        span_id = self.generate_span_id()\r\n\r\n        payload = {\r\n            \"trace_id\": trace_id,\r\n            \"spans\": [\r\n                {\r\n                    \"type\": \"rag\",\r\n                    \"span_id\": span_id,\r\n                    \"name\": \"LangWatch Evaluator\",\r\n                    \"input\": {\r\n                        \"type\": \"chat_messages\",\r\n                        \"value\": [\r\n                            {\r\n                                \"role\": \"user\",\r\n                                \"content\": question\r\n                            }\r\n                        ]\r\n                    },\r\n                    \"output\": {\r\n                        \"type\": \"chat_messages\",\r\n                        \"value\": [\r\n                            {\r\n                                \"role\": \"assistant\",\r\n                                \"content\": answer\r\n                            }\r\n                        ]\r\n                    },\r\n                    \"timestamps\": {\r\n                        \"started_at\": self.get_current_timestamp(),\r\n                        \"finished_at\": self.get_current_timestamp()\r\n                    }\r\n                }\r\n            ],\r\n            \"metadata\": {\r\n                \"user_id\": user_email,\r\n                \"question_id\": question_id,\r\n                \"user_name\": user_name,\r\n                \"user_cpf\": user_cpf\r\n            }\r\n        }\r\n        # Log LangWatch metadata\r\n        self.logger.info(\"LANGWATCH METADATA\", extra={\r\n            \"trace_id\": trace_id,\r\n            \"span_id\": span_id,\r\n            \"flow_trace_id\": flow_trace_id,\r\n            \"user_id\": user_email,\r\n            \"question_id\": question_id,\r\n            \"user_name\": user_name,\r\n            \"user_cpf\": user_cpf\r\n        })\r\n        response = self.send_to_langwatch(payload)\r\n\r\n        if response.status_code != 200:\r\n            raise Exception(f\"Failed to send data to LangWatch: {response.text}\")\r\n\r\n        # Create public path\r\n        public_path = self.create_public_path(trace_id)\r\n\r\n        if public_path:\r\n            message = Data(trace_url=f\"https://app.langwatch.ai{public_path}\", flow_trace_id=flow_trace_id, eval_trace_id=trace_id)\r\n            self.status = message\r\n            return message\r\n        else:\r\n            raise Exception(\"Failed to create public path for the trace\")\r\n\r\n    def get_flow_trace_id(self):\r\n        try:\r\n            if hasattr(self, 'tracing_service'):\r\n                langwatch_tracer = self.tracing_service._tracers.get('langwatch')\r\n                if langwatch_tracer and langwatch_tracer.trace:\r\n                    return langwatch_tracer.trace.trace_id\r\n        except Exception as e:\r\n            self.logger.warning(f\"Error retrieving flow trace ID: {str(e)}\")\r\n        return None\r\n\r\n    def send_to_langwatch(self, payload):\r\n        headers = {\r\n            \"X-Auth-Token\": self.api_key,\r\n            \"Content-Type\": \"application/json\"\r\n        }\r\n        return requests.post(self.api_endpoint, headers=headers, data=json.dumps(payload))\r\n\r\n    def create_public_path(self, trace_id):\r\n        headers = {\r\n            \"X-Auth-Token\": self.api_key,\r\n            \"Content-Type\": \"application/json\"\r\n        }\r\n        response = requests.post(self.share_endpoint.format(trace_id), headers=headers)\r\n        if response.status_code == 200:\r\n            return response.json().get(\"path\")\r\n        return None\r\n\r\n    def generate_trace_id(self):\r\n        return f\"trace-{self.generate_id()}\"\r\n\r\n    def generate_span_id(self):\r\n        return f\"span-{self.generate_id()}\"\r\n\r\n    def generate_id(self):\r\n        return os.urandom(16).hex()\r\n\r\n    def get_current_timestamp(self):\r\n        return int(datetime.now(timezone.utc).timestamp() * 1000)\r\n\r\n    def validate_email(self, email):\r\n        pattern = r'^[\\w\\.-]+@[\\w\\.-]+\\.\\w+$'\r\n        return re.match(pattern, email) is not None\r\n\r\n    def validate_cpf(self, cpf):\r\n        if not re.match(r'^(?!(\\d)\\1{10})\\d{9}[\\d]{2}$', cpf):\r\n            return False\r\n\r\n        total = sum(int(cpf[i]) * (10 - i) for i in range(9))\r\n        check1 = (total * 10 % 11) % 10\r\n\r\n        total = sum(int(cpf[i]) * (11 - i) for i in range(10))\r\n        check2 = (total * 10 % 11) % 10\r\n\r\n        return cpf[-2:] == f\"{check1}{check2}\"",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "question": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "question",
+                  "value": "",
+                  "display_name": "Chat Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The question to be evaluated.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "question_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "question_id",
+                  "value": "",
+                  "display_name": "Question ID",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The question ID for the trace metadata.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "user_cpf": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "user_cpf",
+                  "value": "",
+                  "display_name": "Participant CPF",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "CPF for identification in for the trace metadata.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "user_email": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "user_email",
+                  "value": "",
+                  "display_name": "User Email",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The user ID for the trace metadata.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "user_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "user_name",
+                  "value": "",
+                  "display_name": "Participant Name",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Full name for identification in the trace metadata.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Evaluates a question-answer pair using LangWatch and provides a public trace URL.",
+              "icon": "view",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Langwatch Evaluator - Agent API",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "trace_url",
+                  "display_name": "Trace Info",
+                  "method": "evaluate",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "question",
+                "answer",
+                "user_email",
+                "user_name",
+                "user_cpf",
+                "question_id"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "LangWatchEvaluatorComponent-kefUQ"
+          },
+          "id": "LangWatchEvaluatorComponent-kefUQ",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-18T21:05:42.494Z",
+    "date_updated": "2024-08-21T20:47:55.602Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "user_created": {
+      "username": "NamastexLabs",
+      "first_name": "Felipe",
+      "last_name": "Rosa",
+      "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.914Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

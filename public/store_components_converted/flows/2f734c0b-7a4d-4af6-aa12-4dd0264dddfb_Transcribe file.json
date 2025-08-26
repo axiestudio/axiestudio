@@ -1,0 +1,1129 @@
+{
+  "id": "2f734c0b-7a4d-4af6-aa12-4dd0264dddfb",
+  "name": "Transcribe file",
+  "description": "  (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "imrane",
+    "first_name": "Benmansour",
+    "last_name": "Imrane",
+    "id": "0c7b8b93-9f2b-49ca-b558-263d7b1ed727",
+    "full_name": "Benmansour Imrane"
+  },
+  "store_url": "https://www.langflow.store/store/component/2f734c0b-7a4d-4af6-aa12-4dd0264dddfb",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-09T04:49:20.366Z",
+    "updated": "2024-09-09T04:49:20.409Z",
+    "downloaded": "2025-08-19T17:50:04.984Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.17",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "APIRequest-9e9M0",
+        "type": "genericNode",
+        "position": {
+          "x": -320.38209093854346,
+          "y": -1032.912394482911
+        },
+        "data": {
+          "type": "APIRequest",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "query_params": {
+                "trace_as_metadata": true,
+                "list": false,
+                "trace_as_input": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "query_params",
+                "value": "",
+                "display_name": "Query Parameters",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The query parameters to append to the URL.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "body": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "body",
+                "value": {
+                  "lang": "fr",
+                  "output": "srt",
+                  "audio_file_path": "\\\\Freebox_Server\\Expansion\\Vidéos\\SERIES\\Rick & Morty\\Rick.And.Morty S07 FR\\vid2.mp3",
+                  "data": {
+                    "lang": "fr",
+                    "output": "srt",
+                    "audio_file_path": "\\\\Freebox_Server\\Expansion\\Vidéos\\SERIES\\Rick & Morty\\Rick.And.Morty S07 FR\\vid2.mp3"
+                  }
+                },
+                "display_name": "Body",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.",
+                "title_case": false,
+                "type": "NestedDict",
+                "_input_type": "NestedDictInput",
+                "load_from_db": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import asyncio\nimport json\nfrom typing import Any, List, Optional\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\n\nimport httpx\nfrom loguru import logger\n\nfrom axiestudio.base.curl.parse import parse_context\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, NestedDictInput, Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\n\nclass APIRequestComponent(Component):\n    display_name = \"API Request\"\n    description = (\n        \"This component allows you to make HTTP requests to one or more URLs. \"\n        \"You can provide headers and body as either dictionaries or Data objects. \"\n        \"Additionally, you can append query parameters to the URLs.\\n\\n\"\n        \"**Note:** Check advanced options for more settings.\"\n    )\n    icon = \"Globe\"\n    name = \"APIRequest\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"urls\",\n            display_name=\"URLs\",\n            is_list=True,\n            info=\"Enter one or more URLs, separated by commas.\",\n        ),\n        MessageTextInput(\n            name=\"curl\",\n            display_name=\"Curl\",\n            info=\"Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.\",\n            advanced=False,\n            refresh_button=True,\n        ),\n        DropdownInput(\n            name=\"method\",\n            display_name=\"Method\",\n            options=[\"GET\", \"POST\", \"PATCH\", \"PUT\"],\n            value=\"GET\",\n            info=\"The HTTP method to use (GET, POST, PATCH, PUT).\",\n        ),\n        NestedDictInput(\n            name=\"headers\",\n            display_name=\"Headers\",\n            info=\"The headers to send with the request as a dictionary. This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        NestedDictInput(\n            name=\"body\",\n            display_name=\"Body\",\n            info=\"The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        DataInput(\n            name=\"query_params\",\n            display_name=\"Query Parameters\",\n            info=\"The query parameters to append to the URL.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            value=5,\n            info=\"The timeout to use for the request.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"make_requests\"),\n    ]\n\n    def parse_curl(self, curl: str, build_config: dotdict) -> dotdict:\n        try:\n            parsed = parse_context(curl)\n            build_config[\"urls\"][\"value\"] = [parsed.url]\n            build_config[\"method\"][\"value\"] = parsed.method.upper()\n            build_config[\"headers\"][\"value\"] = dict(parsed.headers)\n\n            if parsed.data:\n                try:\n                    json_data = json.loads(parsed.data)\n                    build_config[\"body\"][\"value\"] = json_data\n                except json.JSONDecodeError as e:\n                    logger.error(f\"Error decoding JSON data: {e}\")\n            else:\n                build_config[\"body\"][\"value\"] = {}\n        except Exception as exc:\n            logger.error(f\"Error parsing curl: {exc}\")\n            raise ValueError(f\"Error parsing curl: {exc}\")\n        return build_config\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\n        if field_name == \"curl\" and field_value:\n            build_config = self.parse_curl(field_value, build_config)\n        return build_config\n\n    async def make_request(\n        self,\n        client: httpx.AsyncClient,\n        method: str,\n        url: str,\n        headers: Optional[dict] = None,\n        body: Optional[dict] = None,\n        timeout: int = 5,\n    ) -> Data:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            raise ValueError(f\"Unsupported method: {method}\")\n\n        if isinstance(body, str) and body:\n            try:\n                body = json.loads(body)\n            except Exception as e:\n                logger.error(f\"Error decoding JSON data: {e}\")\n                body = None\n                raise ValueError(f\"Error decoding JSON data: {e}\")\n\n        data = body if body else None\n\n        try:\n            response = await client.request(method, url, headers=headers, json=data, timeout=timeout)\n            try:\n                result = response.json()\n            except Exception:\n                result = response.text\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except httpx.TimeoutException:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except Exception as exc:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    def add_query_params(self, url: str, params: dict) -> str:\n        url_parts = list(urlparse(url))\n        query = dict(parse_qsl(url_parts[4]))\n        query.update(params)\n        url_parts[4] = urlencode(query)\n        return urlunparse(url_parts)\n\n    async def make_requests(self) -> List[Data]:\n        method = self.method\n        urls = [url.strip() for url in self.urls if url.strip()]\n        curl = self.curl\n        headers = self.headers\n        body = self.body or {}\n        timeout = self.timeout\n        query_params = self.query_params.data if self.query_params else {}\n\n        if curl:\n            self._build_config = self.parse_curl(curl, dotdict())\n\n        if isinstance(headers, Data):\n            headers = headers.data\n\n        if isinstance(body, Data):\n            body = body.data\n\n        bodies = [body] * len(urls)\n\n        urls = [self.add_query_params(url, query_params) for url in urls]\n\n        async with httpx.AsyncClient() as client:\n            results = await asyncio.gather(\n                *[self.make_request(client, method, u, headers, rec, timeout) for u, rec in zip(urls, bodies)]\n            )\n        self.status = results\n        return results\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "curl": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "curl",
+                "value": "",
+                "display_name": "Curl",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.",
+                "refresh_button": true,
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "headers": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "headers",
+                "value": {},
+                "display_name": "Headers",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The headers to send with the request as a dictionary. This is populated when using the CURL field.",
+                "title_case": false,
+                "type": "NestedDict",
+                "_input_type": "NestedDictInput"
+              },
+              "method": {
+                "trace_as_metadata": true,
+                "options": [
+                  "GET",
+                  "POST",
+                  "PATCH",
+                  "PUT"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "method",
+                "value": "POST",
+                "display_name": "Method",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The HTTP method to use (GET, POST, PATCH, PUT).",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput",
+                "load_from_db": false
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "timeout",
+                "value": 300,
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The timeout to use for the request.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "urls": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "urls",
+                "value": [
+                  "http://192.168.1.17:5000/asr"
+                ],
+                "display_name": "URLs",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter one or more URLs, separated by commas.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "This component allows you to make HTTP requests to one or more URLs. You can provide headers and body as either dictionaries or Data objects. Additionally, you can append query parameters to the URLs.\n\n**Note:** Check advanced options for more settings.",
+            "icon": "Globe",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "API Request",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "make_requests",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "urls",
+              "curl",
+              "method",
+              "headers",
+              "body",
+              "query_params",
+              "timeout"
+            ],
+            "beta": false,
+            "edited": true
+          },
+          "id": "APIRequest-9e9M0"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 984,
+        "positionAbsolute": {
+          "x": -320.38209093854346,
+          "y": -1032.912394482911
+        },
+        "dragging": false
+      },
+      {
+        "id": "TextOutput-yoj7g",
+        "type": "genericNode",
+        "position": {
+          "x": 770.698519512066,
+          "y": -344.7576452728749
+        },
+        "data": {
+          "type": "TextOutput",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.io.text import TextComponent\nfrom axiestudio.io import MessageTextInput, Output\nfrom axiestudio.schema.message import Message\n\n\nclass TextOutputComponent(TextComponent):\n    display_name = \"Text Output\"\n    description = \"Display a text output in the Playground.\"\n    icon = \"type\"\n    name = \"TextOutput\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Text to be passed as output.\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"text_response\"),\n    ]\n\n    def text_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n        )\n        self.status = self.input_value\n        return message\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Text to be passed as output.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Display a text output in the Playground.",
+            "icon": "type",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Text Output",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text",
+                "display_name": "Text",
+                "method": "text_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.17"
+          },
+          "id": "TextOutput-yoj7g"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 297,
+        "positionAbsolute": {
+          "x": 770.698519512066,
+          "y": -344.7576452728749
+        },
+        "dragging": false
+      },
+      {
+        "id": "ParseData-Ikg2x",
+        "type": "genericNode",
+        "position": {
+          "x": 355.68057346773537,
+          "y": -408.0170376907026
+        },
+        "data": {
+          "type": "ParseData",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "data": {
+                "trace_as_metadata": true,
+                "list": false,
+                "trace_as_input": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "data",
+                "value": "",
+                "display_name": "Data",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The data to convert to text.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.helpers.data import data_to_text\nfrom axiestudio.io import DataInput, MultilineInput, Output, StrInput\nfrom axiestudio.schema.message import Message\n\n\nclass ParseDataComponent(Component):\n    display_name = \"Parse Data\"\n    description = \"Convert Data into plain text following a specified template.\"\n    icon = \"braces\"\n    name = \"ParseData\"\n\n    inputs = [\n        DataInput(name=\"data\", display_name=\"Data\", info=\"The data to convert to text.\"),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.\",\n            value=\"{text}\",\n        ),\n        StrInput(name=\"sep\", display_name=\"Separator\", advanced=True, value=\"\\n\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"parse_data\"),\n    ]\n\n    def parse_data(self) -> Message:\n        data = self.data if isinstance(self.data, list) else [self.data]\n        template = self.template\n\n        result_string = data_to_text(template, data, sep=self.sep)\n        self.status = result_string\n        return Message(text=result_string)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "sep": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sep",
+                "value": "\n",
+                "display_name": "Separator",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "template": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "template",
+                "value": "{result}",
+                "display_name": "Template",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "Convert Data into plain text following a specified template.",
+            "icon": "braces",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Parse Data",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text",
+                "display_name": "Text",
+                "method": "parse_data",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "data",
+              "template",
+              "sep"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.17"
+          },
+          "id": "ParseData-Ikg2x"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 373,
+        "dragging": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "APIRequest-9e9M0",
+        "sourceHandle": "{œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-9e9M0œ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}",
+        "target": "ParseData-Ikg2x",
+        "targetHandle": "{œfieldNameœ:œdataœ,œidœ:œParseData-Ikg2xœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "data",
+            "id": "ParseData-Ikg2x",
+            "inputTypes": [
+              "Data"
+            ],
+            "type": "other"
+          },
+          "sourceHandle": {
+            "dataType": "APIRequest",
+            "id": "APIRequest-9e9M0",
+            "name": "data",
+            "output_types": [
+              "Data"
+            ]
+          }
+        },
+        "id": "reactflow__edge-APIRequest-9e9M0{œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-9e9M0œ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}-ParseData-Ikg2x{œfieldNameœ:œdataœ,œidœ:œParseData-Ikg2xœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "className": ""
+      },
+      {
+        "source": "ParseData-Ikg2x",
+        "sourceHandle": "{œdataTypeœ:œParseDataœ,œidœ:œParseData-Ikg2xœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "TextOutput-yoj7g",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œTextOutput-yoj7gœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "TextOutput-yoj7g",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "ParseData",
+            "id": "ParseData-Ikg2x",
+            "name": "text",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-ParseData-Ikg2x{œdataTypeœ:œParseDataœ,œidœ:œParseData-Ikg2xœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}-TextOutput-yoj7g{œfieldNameœ:œinput_valueœ,œidœ:œTextOutput-yoj7gœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "className": ""
+      }
+    ],
+    "viewport": {
+      "x": 590.684145860376,
+      "y": 613.1273525624542,
+      "zoom": 0.5325205519930327
+    }
+  },
+  "metadata": {
+    "APIRequest": {
+      "count": 1
+    },
+    "TextOutput": {
+      "count": 1
+    },
+    "ParseData": {
+      "count": 1
+    },
+    "total": 3
+  },
+  "original": {
+    "id": "2f734c0b-7a4d-4af6-aa12-4dd0264dddfb",
+    "name": "Transcribe file",
+    "description": " ",
+    "is_component": false,
+    "liked_by_count": "0",
+    "downloads_count": "0",
+    "metadata": {
+      "APIRequest": {
+        "count": 1
+      },
+      "TextOutput": {
+        "count": 1
+      },
+      "ParseData": {
+        "count": 1
+      },
+      "total": 3
+    },
+    "last_tested_version": "1.0.17",
+    "private": true,
+    "data": {
+      "nodes": [
+        {
+          "id": "APIRequest-9e9M0",
+          "type": "genericNode",
+          "position": {
+            "x": -320.38209093854346,
+            "y": -1032.912394482911
+          },
+          "data": {
+            "type": "APIRequest",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "query_params": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "trace_as_input": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "query_params",
+                  "value": "",
+                  "display_name": "Query Parameters",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The query parameters to append to the URL.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "body": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "body",
+                  "value": {
+                    "lang": "fr",
+                    "output": "srt",
+                    "audio_file_path": "\\\\Freebox_Server\\Expansion\\Vidéos\\SERIES\\Rick & Morty\\Rick.And.Morty S07 FR\\vid2.mp3",
+                    "data": {
+                      "lang": "fr",
+                      "output": "srt",
+                      "audio_file_path": "\\\\Freebox_Server\\Expansion\\Vidéos\\SERIES\\Rick & Morty\\Rick.And.Morty S07 FR\\vid2.mp3"
+                    }
+                  },
+                  "display_name": "Body",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.",
+                  "title_case": false,
+                  "type": "NestedDict",
+                  "_input_type": "NestedDictInput",
+                  "load_from_db": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import asyncio\nimport json\nfrom typing import Any, List, Optional\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\n\nimport httpx\nfrom loguru import logger\n\nfrom axiestudio.base.curl.parse import parse_context\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, NestedDictInput, Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\n\nclass APIRequestComponent(Component):\n    display_name = \"API Request\"\n    description = (\n        \"This component allows you to make HTTP requests to one or more URLs. \"\n        \"You can provide headers and body as either dictionaries or Data objects. \"\n        \"Additionally, you can append query parameters to the URLs.\\n\\n\"\n        \"**Note:** Check advanced options for more settings.\"\n    )\n    icon = \"Globe\"\n    name = \"APIRequest\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"urls\",\n            display_name=\"URLs\",\n            is_list=True,\n            info=\"Enter one or more URLs, separated by commas.\",\n        ),\n        MessageTextInput(\n            name=\"curl\",\n            display_name=\"Curl\",\n            info=\"Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.\",\n            advanced=False,\n            refresh_button=True,\n        ),\n        DropdownInput(\n            name=\"method\",\n            display_name=\"Method\",\n            options=[\"GET\", \"POST\", \"PATCH\", \"PUT\"],\n            value=\"GET\",\n            info=\"The HTTP method to use (GET, POST, PATCH, PUT).\",\n        ),\n        NestedDictInput(\n            name=\"headers\",\n            display_name=\"Headers\",\n            info=\"The headers to send with the request as a dictionary. This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        NestedDictInput(\n            name=\"body\",\n            display_name=\"Body\",\n            info=\"The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        DataInput(\n            name=\"query_params\",\n            display_name=\"Query Parameters\",\n            info=\"The query parameters to append to the URL.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            value=5,\n            info=\"The timeout to use for the request.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"make_requests\"),\n    ]\n\n    def parse_curl(self, curl: str, build_config: dotdict) -> dotdict:\n        try:\n            parsed = parse_context(curl)\n            build_config[\"urls\"][\"value\"] = [parsed.url]\n            build_config[\"method\"][\"value\"] = parsed.method.upper()\n            build_config[\"headers\"][\"value\"] = dict(parsed.headers)\n\n            if parsed.data:\n                try:\n                    json_data = json.loads(parsed.data)\n                    build_config[\"body\"][\"value\"] = json_data\n                except json.JSONDecodeError as e:\n                    logger.error(f\"Error decoding JSON data: {e}\")\n            else:\n                build_config[\"body\"][\"value\"] = {}\n        except Exception as exc:\n            logger.error(f\"Error parsing curl: {exc}\")\n            raise ValueError(f\"Error parsing curl: {exc}\")\n        return build_config\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\n        if field_name == \"curl\" and field_value:\n            build_config = self.parse_curl(field_value, build_config)\n        return build_config\n\n    async def make_request(\n        self,\n        client: httpx.AsyncClient,\n        method: str,\n        url: str,\n        headers: Optional[dict] = None,\n        body: Optional[dict] = None,\n        timeout: int = 5,\n    ) -> Data:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            raise ValueError(f\"Unsupported method: {method}\")\n\n        if isinstance(body, str) and body:\n            try:\n                body = json.loads(body)\n            except Exception as e:\n                logger.error(f\"Error decoding JSON data: {e}\")\n                body = None\n                raise ValueError(f\"Error decoding JSON data: {e}\")\n\n        data = body if body else None\n\n        try:\n            response = await client.request(method, url, headers=headers, json=data, timeout=timeout)\n            try:\n                result = response.json()\n            except Exception:\n                result = response.text\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except httpx.TimeoutException:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except Exception as exc:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    def add_query_params(self, url: str, params: dict) -> str:\n        url_parts = list(urlparse(url))\n        query = dict(parse_qsl(url_parts[4]))\n        query.update(params)\n        url_parts[4] = urlencode(query)\n        return urlunparse(url_parts)\n\n    async def make_requests(self) -> List[Data]:\n        method = self.method\n        urls = [url.strip() for url in self.urls if url.strip()]\n        curl = self.curl\n        headers = self.headers\n        body = self.body or {}\n        timeout = self.timeout\n        query_params = self.query_params.data if self.query_params else {}\n\n        if curl:\n            self._build_config = self.parse_curl(curl, dotdict())\n\n        if isinstance(headers, Data):\n            headers = headers.data\n\n        if isinstance(body, Data):\n            body = body.data\n\n        bodies = [body] * len(urls)\n\n        urls = [self.add_query_params(url, query_params) for url in urls]\n\n        async with httpx.AsyncClient() as client:\n            results = await asyncio.gather(\n                *[self.make_request(client, method, u, headers, rec, timeout) for u, rec in zip(urls, bodies)]\n            )\n        self.status = results\n        return results\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "curl": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "curl",
+                  "value": "",
+                  "display_name": "Curl",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.",
+                  "refresh_button": true,
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "headers": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "headers",
+                  "value": {},
+                  "display_name": "Headers",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The headers to send with the request as a dictionary. This is populated when using the CURL field.",
+                  "title_case": false,
+                  "type": "NestedDict",
+                  "_input_type": "NestedDictInput"
+                },
+                "method": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "GET",
+                    "POST",
+                    "PATCH",
+                    "PUT"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "method",
+                  "value": "POST",
+                  "display_name": "Method",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The HTTP method to use (GET, POST, PATCH, PUT).",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput",
+                  "load_from_db": false
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "timeout",
+                  "value": 300,
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The timeout to use for the request.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "urls": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "urls",
+                  "value": [
+                    "http://192.168.1.17:5000/asr"
+                  ],
+                  "display_name": "URLs",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter one or more URLs, separated by commas.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "This component allows you to make HTTP requests to one or more URLs. You can provide headers and body as either dictionaries or Data objects. Additionally, you can append query parameters to the URLs.\n\n**Note:** Check advanced options for more settings.",
+              "icon": "Globe",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "API Request",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "make_requests",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "urls",
+                "curl",
+                "method",
+                "headers",
+                "body",
+                "query_params",
+                "timeout"
+              ],
+              "beta": false,
+              "edited": true
+            },
+            "id": "APIRequest-9e9M0"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 984,
+          "positionAbsolute": {
+            "x": -320.38209093854346,
+            "y": -1032.912394482911
+          },
+          "dragging": false
+        },
+        {
+          "id": "TextOutput-yoj7g",
+          "type": "genericNode",
+          "position": {
+            "x": 770.698519512066,
+            "y": -344.7576452728749
+          },
+          "data": {
+            "type": "TextOutput",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.io.text import TextComponent\nfrom axiestudio.io import MessageTextInput, Output\nfrom axiestudio.schema.message import Message\n\n\nclass TextOutputComponent(TextComponent):\n    display_name = \"Text Output\"\n    description = \"Display a text output in the Playground.\"\n    icon = \"type\"\n    name = \"TextOutput\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Text to be passed as output.\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"text_response\"),\n    ]\n\n    def text_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n        )\n        self.status = self.input_value\n        return message\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Text to be passed as output.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Display a text output in the Playground.",
+              "icon": "type",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Text Output",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text",
+                  "display_name": "Text",
+                  "method": "text_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.17"
+            },
+            "id": "TextOutput-yoj7g"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 297,
+          "positionAbsolute": {
+            "x": 770.698519512066,
+            "y": -344.7576452728749
+          },
+          "dragging": false
+        },
+        {
+          "id": "ParseData-Ikg2x",
+          "type": "genericNode",
+          "position": {
+            "x": 355.68057346773537,
+            "y": -408.0170376907026
+          },
+          "data": {
+            "type": "ParseData",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "data": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "trace_as_input": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "data",
+                  "value": "",
+                  "display_name": "Data",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The data to convert to text.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.helpers.data import data_to_text\nfrom axiestudio.io import DataInput, MultilineInput, Output, StrInput\nfrom axiestudio.schema.message import Message\n\n\nclass ParseDataComponent(Component):\n    display_name = \"Parse Data\"\n    description = \"Convert Data into plain text following a specified template.\"\n    icon = \"braces\"\n    name = \"ParseData\"\n\n    inputs = [\n        DataInput(name=\"data\", display_name=\"Data\", info=\"The data to convert to text.\"),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.\",\n            value=\"{text}\",\n        ),\n        StrInput(name=\"sep\", display_name=\"Separator\", advanced=True, value=\"\\n\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"parse_data\"),\n    ]\n\n    def parse_data(self) -> Message:\n        data = self.data if isinstance(self.data, list) else [self.data]\n        template = self.template\n\n        result_string = data_to_text(template, data, sep=self.sep)\n        self.status = result_string\n        return Message(text=result_string)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "sep": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sep",
+                  "value": "\n",
+                  "display_name": "Separator",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "template": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "template",
+                  "value": "{result}",
+                  "display_name": "Template",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "Convert Data into plain text following a specified template.",
+              "icon": "braces",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Parse Data",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text",
+                  "display_name": "Text",
+                  "method": "parse_data",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "data",
+                "template",
+                "sep"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.17"
+            },
+            "id": "ParseData-Ikg2x"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 373,
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "source": "APIRequest-9e9M0",
+          "sourceHandle": "{œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-9e9M0œ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}",
+          "target": "ParseData-Ikg2x",
+          "targetHandle": "{œfieldNameœ:œdataœ,œidœ:œParseData-Ikg2xœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "data",
+              "id": "ParseData-Ikg2x",
+              "inputTypes": [
+                "Data"
+              ],
+              "type": "other"
+            },
+            "sourceHandle": {
+              "dataType": "APIRequest",
+              "id": "APIRequest-9e9M0",
+              "name": "data",
+              "output_types": [
+                "Data"
+              ]
+            }
+          },
+          "id": "reactflow__edge-APIRequest-9e9M0{œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-9e9M0œ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}-ParseData-Ikg2x{œfieldNameœ:œdataœ,œidœ:œParseData-Ikg2xœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "className": ""
+        },
+        {
+          "source": "ParseData-Ikg2x",
+          "sourceHandle": "{œdataTypeœ:œParseDataœ,œidœ:œParseData-Ikg2xœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "TextOutput-yoj7g",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œTextOutput-yoj7gœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "TextOutput-yoj7g",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "ParseData",
+              "id": "ParseData-Ikg2x",
+              "name": "text",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-ParseData-Ikg2x{œdataTypeœ:œParseDataœ,œidœ:œParseData-Ikg2xœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}-TextOutput-yoj7g{œfieldNameœ:œinput_valueœ,œidœ:œTextOutput-yoj7gœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "className": ""
+        }
+      ],
+      "viewport": {
+        "x": 590.684145860376,
+        "y": 613.1273525624542,
+        "zoom": 0.5325205519930327
+      }
+    },
+    "date_created": "2024-09-09T04:49:20.366Z",
+    "date_updated": "2024-09-09T04:49:20.409Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "0c7b8b93-9f2b-49ca-b558-263d7b1ed727",
+    "user_created": {
+      "username": "imrane",
+      "first_name": "Benmansour",
+      "last_name": "Imrane",
+      "id": "0c7b8b93-9f2b-49ca-b558-263d7b1ed727"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:55.871Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 24,
+    "converter_version": "1.0.0"
+  }
+}

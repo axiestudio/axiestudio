@@ -1,0 +1,527 @@
+{
+  "id": "20c829b3-2388-4885-adb6-3b2962a9c0ae",
+  "name": "XML Agent",
+  "description": "Agent that uses tools formatting instructions as xml to the Language Model. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "misbah",
+    "first_name": "Menlo Park Lab",
+    "last_name": "Lab",
+    "id": "8ca3c638-244a-4d41-ae61-bc145776bd63",
+    "full_name": "Menlo Park Lab Lab"
+  },
+  "store_url": "https://www.langflow.store/store/component/20c829b3-2388-4885-adb6-3b2962a9c0ae",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-29T23:52:14.073Z",
+    "updated": "2024-08-29T23:52:14.097Z",
+    "downloaded": "2025-08-19T17:50:06.362Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "XMLAgent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "llm": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "llm",
+                "value": "",
+                "display_name": "Language Model",
+                "advanced": false,
+                "input_types": [
+                  "LanguageModel"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "tools": {
+                "trace_as_metadata": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "tools",
+                "value": "",
+                "display_name": "Tools",
+                "advanced": false,
+                "input_types": [
+                  "Tool",
+                  "BaseTool"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput",
+                "load_from_db": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langchain.agents import create_xml_agent\nfrom langchain_core.prompts import ChatPromptTemplate, PromptTemplate, HumanMessagePromptTemplate\nfrom axiestudio.io import MessageTextInput, Output\nfrom axiestudio.base.agents.agent import LCToolsAgentComponent\nfrom axiestudio.inputs import MultilineInput\nfrom axiestudio.inputs.inputs import HandleInput\nfrom axiestudio.field_typing import AgentExecutor\n\n\nclass XMLAgentComponent(LCToolsAgentComponent):\n    display_name: str = \"XML Agent\"\n    description: str = \"Agent that uses tools formatting instructions as xml to the Language Model.\"\n    icon = \"LangChain\"\n    name = \"XMLAgent\"\n\n    inputs = LCToolsAgentComponent._base_inputs + [\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True),\n        MessageTextInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Text to be passed as input and extract info from the XML Agent.\",\n        ),\n    \n        MultilineInput(\n            name=\"prompt_value\",\n            display_name=\"Prompt\",\n            value=\"\"\"You are a helpful assistant. Help the user answer any questions.\n            You have access to the following tools:\n            {tools}\n            \n            Remember to always format your entire response in valid XML, including your reasoning and final answer.\n            \n            In order to use a tool, you can use <tool></tool> and <tool_input></tool_input> tags. You will then get back a response in the form <observation></observation>\n            \n            For example, if you have a tool called 'search' that could run a google search, in order to search for the weather in SF you would respond:\n            <thought>I need to find out the current weather in San Francisco. I'll use the search tool for this.</thought>\n            <tool>search</tool><tool_input>weather in SF</tool_input>\n            <observation>64 degrees</observation>\n            \n            Use <thought></thought> tags to show your reasoning before using a tool or giving a final answer.\n            \n            When you are done, respond with a final answer between <final_answer></final_answer>. For example:\n            <thought>Now that I have the weather information, I can provide a final answer.</thought>\n            <final_answer>The weather in SF is 64 degrees</final_answer>\n            \n            Ensure all your tags are properly closed and nested. Your entire response should be valid XML.\n            \n            Begin!\n            Question: {input}\n            {agent_scratchpad}\"\"\",\n            advanced=True\n        ),\n    ]\n    \n    outputs = [\n        Output(display_name=\"Response\", name=\"response\", method=\"build_agent_response\"),\n        Output(display_name=\"Agent\", name=\"agent\", method=\"build_agent\"),\n    ] \n    \n    def build_agent_response(self) -> Message:\n        try:\n            if('{input}' not in self.prompt_value):\n                raise Exception(\"Error {input} variable must be present at the prompt template.\")\n            messages = [\n                HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=[\"input\"], template=self.prompt_value))\n            ]\n            prompt = ChatPromptTemplate.from_messages(messages)\n            agent = create_xml_agent(self.llm, self.tools, prompt)\n            agent_executor = AgentExecutor(agent=agent, tools=self.tools)\n            agent_output = agent_executor.invoke({\"input\": str(self.input_value)})\n            # print(Message(text=agent_output['output']))\n            return Message(text=agent_output['output'])\n        except Exception as e:\n            raise Exception(f\"Error while trying to build XML Agent Response: {str(e)}\")\n    \n    def build_agent(self) -> Union[AgentExecutor, Agent]:\n        try:\n            if('{input}' not in self.prompt_value):\n                raise Exception(\"Error {input} variable must be present at the prompt template.\")\n            messages = [\n                HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=[\"input\"], template=self.prompt_value))\n            ]\n            prompt = ChatPromptTemplate.from_messages(messages)\n            agent = create_xml_agent(self.llm, self.tools, prompt)\n            agent_executor = AgentExecutor(agent=agent, tools=self.tools)\n            self.status = str(agent_executor)\n            return agent_executor\n            \n        except Exception as e:\n            raise Exception(f\"Error while trying to build XML Agent Executort: {str(e)}\")\n       ",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "handle_parsing_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "handle_parsing_errors",
+                "value": true,
+                "display_name": "Handle Parse Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Text to be passed as input and extract info from the XML Agent.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "max_iterations": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_iterations",
+                "value": 1,
+                "display_name": "Max Iterations",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "prompt_value": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "prompt_value",
+                "value": "You are a helpful assistant. Help the user answer any questions.\nYou have access to the following tools:\n{tools}\n\nRemember to always format your entire response in valid XML, including your reasoning and final answer.\n\nIn order to use a tool, you can use <tool></tool> and <tool_input></tool_input> tags. You will then get back a response in the form <observation></observation>\n\nFor example, if you have a tool called 'search' that could run a google search, in order to search for the weather in SF you would respond:\n<thought>I need to find out the current weather in San Francisco. I'll use the search tool for this.</thought>\n<tool>search</tool><tool_input>weather in SF</tool_input>\n<observation>64 degrees</observation>\n\nUse <thought></thought> tags to show your reasoning before using a tool or giving a final answer.\n\nWhen you are done, respond with a final answer between <final_answer></final_answer>. For example:\n<thought>Now that I have the weather information, I can provide a final answer.</thought>\n<final_answer>The weather in SF is 64 degrees</final_answer>\n\nEnsure all your tags are properly closed and nested. Your entire response should be valid XML.\n\nBegin!\nQuestion: {input}\n{agent_scratchpad}",
+                "display_name": "Prompt",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "verbose": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "verbose",
+                "value": true,
+                "display_name": "Verbose",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Agent that uses tools formatting instructions as xml to the Language Model.",
+            "icon": "LangChain",
+            "base_classes": [
+              "Agent",
+              "AgentExecutor",
+              "Message"
+            ],
+            "display_name": "XML Agent",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "response",
+                "display_name": "Response",
+                "method": "build_agent_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Agent",
+                  "AgentExecutor"
+                ],
+                "selected": "Agent",
+                "name": "agent",
+                "display_name": "Agent",
+                "method": "build_agent",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "handle_parsing_errors",
+              "verbose",
+              "max_iterations",
+              "tools",
+              "llm",
+              "input_value",
+              "prompt_value"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "XMLAgent-OfUPY"
+        },
+        "id": "XMLAgent-OfUPY",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "XMLAgent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "20c829b3-2388-4885-adb6-3b2962a9c0ae",
+    "name": "XML Agent",
+    "description": "Agent that uses tools formatting instructions as xml to the Language Model.",
+    "is_component": true,
+    "liked_by_count": "3",
+    "downloads_count": "29",
+    "metadata": {
+      "XMLAgent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "XMLAgent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "llm": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "llm",
+                  "value": "",
+                  "display_name": "Language Model",
+                  "advanced": false,
+                  "input_types": [
+                    "LanguageModel"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "tools": {
+                  "trace_as_metadata": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "tools",
+                  "value": "",
+                  "display_name": "Tools",
+                  "advanced": false,
+                  "input_types": [
+                    "Tool",
+                    "BaseTool"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput",
+                  "load_from_db": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from langchain.agents import create_xml_agent\nfrom langchain_core.prompts import ChatPromptTemplate, PromptTemplate, HumanMessagePromptTemplate\nfrom axiestudio.io import MessageTextInput, Output\nfrom axiestudio.base.agents.agent import LCToolsAgentComponent\nfrom axiestudio.inputs import MultilineInput\nfrom axiestudio.inputs.inputs import HandleInput\nfrom axiestudio.field_typing import AgentExecutor\n\n\nclass XMLAgentComponent(LCToolsAgentComponent):\n    display_name: str = \"XML Agent\"\n    description: str = \"Agent that uses tools formatting instructions as xml to the Language Model.\"\n    icon = \"LangChain\"\n    name = \"XMLAgent\"\n\n    inputs = LCToolsAgentComponent._base_inputs + [\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True),\n        MessageTextInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Text to be passed as input and extract info from the XML Agent.\",\n        ),\n    \n        MultilineInput(\n            name=\"prompt_value\",\n            display_name=\"Prompt\",\n            value=\"\"\"You are a helpful assistant. Help the user answer any questions.\n            You have access to the following tools:\n            {tools}\n            \n            Remember to always format your entire response in valid XML, including your reasoning and final answer.\n            \n            In order to use a tool, you can use <tool></tool> and <tool_input></tool_input> tags. You will then get back a response in the form <observation></observation>\n            \n            For example, if you have a tool called 'search' that could run a google search, in order to search for the weather in SF you would respond:\n            <thought>I need to find out the current weather in San Francisco. I'll use the search tool for this.</thought>\n            <tool>search</tool><tool_input>weather in SF</tool_input>\n            <observation>64 degrees</observation>\n            \n            Use <thought></thought> tags to show your reasoning before using a tool or giving a final answer.\n            \n            When you are done, respond with a final answer between <final_answer></final_answer>. For example:\n            <thought>Now that I have the weather information, I can provide a final answer.</thought>\n            <final_answer>The weather in SF is 64 degrees</final_answer>\n            \n            Ensure all your tags are properly closed and nested. Your entire response should be valid XML.\n            \n            Begin!\n            Question: {input}\n            {agent_scratchpad}\"\"\",\n            advanced=True\n        ),\n    ]\n    \n    outputs = [\n        Output(display_name=\"Response\", name=\"response\", method=\"build_agent_response\"),\n        Output(display_name=\"Agent\", name=\"agent\", method=\"build_agent\"),\n    ] \n    \n    def build_agent_response(self) -> Message:\n        try:\n            if('{input}' not in self.prompt_value):\n                raise Exception(\"Error {input} variable must be present at the prompt template.\")\n            messages = [\n                HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=[\"input\"], template=self.prompt_value))\n            ]\n            prompt = ChatPromptTemplate.from_messages(messages)\n            agent = create_xml_agent(self.llm, self.tools, prompt)\n            agent_executor = AgentExecutor(agent=agent, tools=self.tools)\n            agent_output = agent_executor.invoke({\"input\": str(self.input_value)})\n            # print(Message(text=agent_output['output']))\n            return Message(text=agent_output['output'])\n        except Exception as e:\n            raise Exception(f\"Error while trying to build XML Agent Response: {str(e)}\")\n    \n    def build_agent(self) -> Union[AgentExecutor, Agent]:\n        try:\n            if('{input}' not in self.prompt_value):\n                raise Exception(\"Error {input} variable must be present at the prompt template.\")\n            messages = [\n                HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=[\"input\"], template=self.prompt_value))\n            ]\n            prompt = ChatPromptTemplate.from_messages(messages)\n            agent = create_xml_agent(self.llm, self.tools, prompt)\n            agent_executor = AgentExecutor(agent=agent, tools=self.tools)\n            self.status = str(agent_executor)\n            return agent_executor\n            \n        except Exception as e:\n            raise Exception(f\"Error while trying to build XML Agent Executort: {str(e)}\")\n       ",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "handle_parsing_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "handle_parsing_errors",
+                  "value": true,
+                  "display_name": "Handle Parse Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Text to be passed as input and extract info from the XML Agent.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "max_iterations": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_iterations",
+                  "value": 1,
+                  "display_name": "Max Iterations",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "prompt_value": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "prompt_value",
+                  "value": "You are a helpful assistant. Help the user answer any questions.\nYou have access to the following tools:\n{tools}\n\nRemember to always format your entire response in valid XML, including your reasoning and final answer.\n\nIn order to use a tool, you can use <tool></tool> and <tool_input></tool_input> tags. You will then get back a response in the form <observation></observation>\n\nFor example, if you have a tool called 'search' that could run a google search, in order to search for the weather in SF you would respond:\n<thought>I need to find out the current weather in San Francisco. I'll use the search tool for this.</thought>\n<tool>search</tool><tool_input>weather in SF</tool_input>\n<observation>64 degrees</observation>\n\nUse <thought></thought> tags to show your reasoning before using a tool or giving a final answer.\n\nWhen you are done, respond with a final answer between <final_answer></final_answer>. For example:\n<thought>Now that I have the weather information, I can provide a final answer.</thought>\n<final_answer>The weather in SF is 64 degrees</final_answer>\n\nEnsure all your tags are properly closed and nested. Your entire response should be valid XML.\n\nBegin!\nQuestion: {input}\n{agent_scratchpad}",
+                  "display_name": "Prompt",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "verbose": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "verbose",
+                  "value": true,
+                  "display_name": "Verbose",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Agent that uses tools formatting instructions as xml to the Language Model.",
+              "icon": "LangChain",
+              "base_classes": [
+                "Agent",
+                "AgentExecutor",
+                "Message"
+              ],
+              "display_name": "XML Agent",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "response",
+                  "display_name": "Response",
+                  "method": "build_agent_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Agent",
+                    "AgentExecutor"
+                  ],
+                  "selected": "Agent",
+                  "name": "agent",
+                  "display_name": "Agent",
+                  "method": "build_agent",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "handle_parsing_errors",
+                "verbose",
+                "max_iterations",
+                "tools",
+                "llm",
+                "input_value",
+                "prompt_value"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "XMLAgent-OfUPY"
+          },
+          "id": "XMLAgent-OfUPY",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-29T23:52:14.073Z",
+    "date_updated": "2024-08-29T23:52:14.097Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "8ca3c638-244a-4d41-ae61-bc145776bd63",
+    "user_created": {
+      "username": "misbah",
+      "first_name": "Menlo Park Lab",
+      "last_name": "Lab",
+      "id": "8ca3c638-244a-4d41-ae61-bc145776bd63"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.221Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

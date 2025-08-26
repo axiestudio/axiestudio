@@ -1,0 +1,285 @@
+{
+  "id": "7e1522bd-1896-441b-b192-41c10ee0b442",
+  "name": "Yahoo Finance Ticker Tool",
+  "description": "Retrieves stock data for a specific ticker or a list of tickers using Yahoo Finance. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "img",
+    "first_name": "Ricardo",
+    "last_name": "Fortes",
+    "id": "344be9ce-dcfd-4e42-9abe-0e77ffe6d6b0",
+    "full_name": "Ricardo Fortes"
+  },
+  "store_url": "https://www.langflow.store/store/component/7e1522bd-1896-441b-b192-41c10ee0b442",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-12T09:23:16.545Z",
+    "updated": "2024-08-12T09:23:16.569Z",
+    "downloaded": "2025-08-19T17:50:06.653Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "YahooFinanceAPI",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Union, List\r\nfrom langchain_core.tools import Tool\r\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\r\nfrom axiestudio.inputs import MessageTextInput\r\nfrom axiestudio.schema import Data\r\n\r\nclass YahooFinanceAPIComponent(LCToolComponent):\r\n    display_name = \"Yahoo Finance Stock Data\"\r\n    description = \"Retrieves stock data for a specific ticker or a list of tickers using Yahoo Finance.\"\r\n    name = \"YahooFinanceAPI\"\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"ticker\",\r\n        ),\r\n    ]\r\n\r\n    #def run_model(self, ticker: str) -> Union[Data, List[Data]]:\r\n    def run_model(self, ticker: Optional[str] = None) -> Union[Data, List[Data]]:\r\n        if ticker is None:\r\n            ticker = self.ticker  # Use self.ticker if no ticker is provided\r\n\r\n        if not ticker:\r\n            raise ValueError(\"No ticker provided and self.ticker is empty.\")\r\n            \r\n        # Ensure yfinance is available\r\n        wrapper = self._build_wrapper()\r\n        \r\n        tickers = ticker.split(\",\")  # Split input if it's a list of tickers\r\n        tickers = [t.strip() for t in tickers]  # Clean up any extra spaces\r\n        \r\n        stock_data = []\r\n        for t in tickers:\r\n            stock_info = wrapper.Ticker(t).info\r\n            result_local = {\r\n                \"ticker\": t,\r\n                \"current_price\": stock_info.get(\"currentPrice\", \"N/A\"),\r\n                \"market_cap\": stock_info.get(\"marketCap\", \"N/A\"),\r\n                \"52_week_high\": stock_info.get(\"fiftyTwoWeekHigh\", \"N/A\"),\r\n                \"52_week_low\": stock_info.get(\"fiftyTwoWeekLow\", \"N/A\"),\r\n            }\r\n            stock_data.append(result_local)\r\n        \r\n        data = [Data(data=result, text=\"{}, {}, {}\".format(result[\"ticker\"], result[\"current_price\"], result[\"market_cap\"])) for result in stock_data]\r\n        self.status = data  # Only if required; otherwise, you can omit this.\r\n        \r\n        print(\"data\", data)\r\n        \r\n        return data\r\n\r\n    def build_tool(self) -> Tool:\r\n        return Tool(\r\n            name=\"yahoo_finance\",\r\n            description=\"Retrieve stock data for a specific ticker or a list of tickers using Yahoo Finance.\",\r\n            func=self.run_model,  # Use a lambda to pass the ticker argument\r\n        )\r\n\r\n    def _build_wrapper(self):\r\n        try:\r\n            import yfinance as yf  # Attempt to import yfinance\r\n        except ImportError:\r\n            raise ImportError(\"Please install yfinance to use YahooFinanceAPIComponent.\")\r\n        return yf\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "ticker": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "ticker",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Retrieves stock data for a specific ticker or a list of tickers using Yahoo Finance.",
+            "base_classes": [
+              "Data",
+              "Tool"
+            ],
+            "display_name": "Yahoo Finance Ticker Tool",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "ticker"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-ShvBu"
+        },
+        "id": "CustomComponent-ShvBu",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "7e1522bd-1896-441b-b192-41c10ee0b442",
+    "name": "Yahoo Finance Ticker Tool",
+    "description": "Retrieves stock data for a specific ticker or a list of tickers using Yahoo Finance.",
+    "is_component": true,
+    "liked_by_count": "26",
+    "downloads_count": "132",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "YahooFinanceAPI",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Union, List\r\nfrom langchain_core.tools import Tool\r\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\r\nfrom axiestudio.inputs import MessageTextInput\r\nfrom axiestudio.schema import Data\r\n\r\nclass YahooFinanceAPIComponent(LCToolComponent):\r\n    display_name = \"Yahoo Finance Stock Data\"\r\n    description = \"Retrieves stock data for a specific ticker or a list of tickers using Yahoo Finance.\"\r\n    name = \"YahooFinanceAPI\"\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"ticker\",\r\n        ),\r\n    ]\r\n\r\n    #def run_model(self, ticker: str) -> Union[Data, List[Data]]:\r\n    def run_model(self, ticker: Optional[str] = None) -> Union[Data, List[Data]]:\r\n        if ticker is None:\r\n            ticker = self.ticker  # Use self.ticker if no ticker is provided\r\n\r\n        if not ticker:\r\n            raise ValueError(\"No ticker provided and self.ticker is empty.\")\r\n            \r\n        # Ensure yfinance is available\r\n        wrapper = self._build_wrapper()\r\n        \r\n        tickers = ticker.split(\",\")  # Split input if it's a list of tickers\r\n        tickers = [t.strip() for t in tickers]  # Clean up any extra spaces\r\n        \r\n        stock_data = []\r\n        for t in tickers:\r\n            stock_info = wrapper.Ticker(t).info\r\n            result_local = {\r\n                \"ticker\": t,\r\n                \"current_price\": stock_info.get(\"currentPrice\", \"N/A\"),\r\n                \"market_cap\": stock_info.get(\"marketCap\", \"N/A\"),\r\n                \"52_week_high\": stock_info.get(\"fiftyTwoWeekHigh\", \"N/A\"),\r\n                \"52_week_low\": stock_info.get(\"fiftyTwoWeekLow\", \"N/A\"),\r\n            }\r\n            stock_data.append(result_local)\r\n        \r\n        data = [Data(data=result, text=\"{}, {}, {}\".format(result[\"ticker\"], result[\"current_price\"], result[\"market_cap\"])) for result in stock_data]\r\n        self.status = data  # Only if required; otherwise, you can omit this.\r\n        \r\n        print(\"data\", data)\r\n        \r\n        return data\r\n\r\n    def build_tool(self) -> Tool:\r\n        return Tool(\r\n            name=\"yahoo_finance\",\r\n            description=\"Retrieve stock data for a specific ticker or a list of tickers using Yahoo Finance.\",\r\n            func=self.run_model,  # Use a lambda to pass the ticker argument\r\n        )\r\n\r\n    def _build_wrapper(self):\r\n        try:\r\n            import yfinance as yf  # Attempt to import yfinance\r\n        except ImportError:\r\n            raise ImportError(\"Please install yfinance to use YahooFinanceAPIComponent.\")\r\n        return yf\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "ticker": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "ticker",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Retrieves stock data for a specific ticker or a list of tickers using Yahoo Finance.",
+              "base_classes": [
+                "Data",
+                "Tool"
+              ],
+              "display_name": "Yahoo Finance Ticker Tool",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "ticker"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-ShvBu"
+          },
+          "id": "CustomComponent-ShvBu",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-12T09:23:16.545Z",
+    "date_updated": "2024-08-12T09:23:16.569Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "344be9ce-dcfd-4e42-9abe-0e77ffe6d6b0",
+    "user_created": {
+      "username": "img",
+      "first_name": "Ricardo",
+      "last_name": "Fortes",
+      "id": "344be9ce-dcfd-4e42-9abe-0e77ffe6d6b0"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.779Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

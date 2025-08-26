@@ -1,0 +1,2163 @@
+{
+  "id": "627b8c9d-193d-4c58-9436-6fa1db797ce2",
+  "name": "Untitled document (1)",
+  "description": "Your Passport to Linguistic Landscapes. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "arthurbunny",
+    "first_name": "Alex",
+    "last_name": "Wong",
+    "id": "822ae1ec-9224-4ae3-8a37-4156b755b050",
+    "full_name": "Alex Wong"
+  },
+  "store_url": "https://www.langflow.store/store/component/627b8c9d-193d-4c58-9436-6fa1db797ce2",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-11-09T05:53:02.287Z",
+    "updated": "2024-11-09T05:53:02.432Z",
+    "downloaded": "2025-08-19T17:50:07.507Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "APIRequest-V5wzi",
+        "type": "genericNode",
+        "position": {
+          "x": 166,
+          "y": 43.59375
+        },
+        "data": {
+          "type": "APIRequest",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "query_params": {
+                "trace_as_metadata": true,
+                "list": false,
+                "trace_as_input": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "query_params",
+                "value": "",
+                "display_name": "Query Parameters",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The query parameters to append to the URL.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "body": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "body",
+                "value": {},
+                "display_name": "Body",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.",
+                "title_case": false,
+                "type": "NestedDict",
+                "_input_type": "NestedDictInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import asyncio\nimport json\nfrom typing import Any\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\n\nimport httpx\nfrom loguru import logger\n\nfrom axiestudio.base.curl.parse import parse_context\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, NestedDictInput, Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\n\nclass APIRequestComponent(Component):\n    display_name = \"API Request\"\n    description = (\n        \"This component allows you to make HTTP requests to one or more URLs. \"\n        \"You can provide headers and body as either dictionaries or Data objects. \"\n        \"Additionally, you can append query parameters to the URLs.\\n\\n\"\n        \"**Note:** Check advanced options for more settings.\"\n    )\n    icon = \"Globe\"\n    name = \"APIRequest\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"urls\",\n            display_name=\"URLs\",\n            is_list=True,\n            info=\"Enter one or more URLs, separated by commas.\",\n        ),\n        MessageTextInput(\n            name=\"curl\",\n            display_name=\"Curl\",\n            info=\"Paste a curl command to populate the fields. \"\n            \"This will fill in the dictionary fields for headers and body.\",\n            advanced=False,\n            refresh_button=True,\n        ),\n        DropdownInput(\n            name=\"method\",\n            display_name=\"Method\",\n            options=[\"GET\", \"POST\", \"PATCH\", \"PUT\"],\n            value=\"GET\",\n            info=\"The HTTP method to use (GET, POST, PATCH, PUT).\",\n        ),\n        NestedDictInput(\n            name=\"headers\",\n            display_name=\"Headers\",\n            info=\"The headers to send with the request as a dictionary. This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        NestedDictInput(\n            name=\"body\",\n            display_name=\"Body\",\n            info=\"The body to send with the request as a dictionary (for POST, PATCH, PUT). \"\n            \"This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        DataInput(\n            name=\"query_params\",\n            display_name=\"Query Parameters\",\n            info=\"The query parameters to append to the URL.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            value=5,\n            info=\"The timeout to use for the request.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"make_requests\"),\n    ]\n\n    def parse_curl(self, curl: str, build_config: dotdict) -> dotdict:\n        try:\n            parsed = parse_context(curl)\n            build_config[\"urls\"][\"value\"] = [parsed.url]\n            build_config[\"method\"][\"value\"] = parsed.method.upper()\n            build_config[\"headers\"][\"value\"] = dict(parsed.headers)\n\n            if parsed.data:\n                try:\n                    json_data = json.loads(parsed.data)\n                    build_config[\"body\"][\"value\"] = json_data\n                except json.JSONDecodeError:\n                    logger.exception(\"Error decoding JSON data\")\n            else:\n                build_config[\"body\"][\"value\"] = {}\n        except Exception as exc:\n            msg = f\"Error parsing curl: {exc}\"\n            logger.exception(msg)\n            raise ValueError(msg) from exc\n        return build_config\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\n        if field_name == \"curl\" and field_value:\n            build_config = self.parse_curl(field_value, build_config)\n        return build_config\n\n    async def make_request(\n        self,\n        client: httpx.AsyncClient,\n        method: str,\n        url: str,\n        headers: dict | None = None,\n        body: dict | None = None,\n        timeout: int = 5,\n    ) -> Data:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            msg = f\"Unsupported method: {method}\"\n            raise ValueError(msg)\n\n        if isinstance(body, str) and body:\n            try:\n                body = json.loads(body)\n            except Exception as e:\n                msg = f\"Error decoding JSON data: {e}\"\n                logger.exception(msg)\n                body = None\n                raise ValueError(msg) from e\n\n        data = body or None\n\n        try:\n            response = await client.request(method, url, headers=headers, json=data, timeout=timeout)\n            try:\n                result = response.json()\n            except Exception:  # noqa: BLE001\n                logger.opt(exception=True).debug(\"Error decoding JSON response\")\n                result = response.text\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except httpx.TimeoutException:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except Exception as exc:  # noqa: BLE001\n            logger.opt(exception=True).debug(f\"Error making request to {url}\")\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    def add_query_params(self, url: str, params: dict) -> str:\n        url_parts = list(urlparse(url))\n        query = dict(parse_qsl(url_parts[4]))\n        query.update(params)\n        url_parts[4] = urlencode(query)\n        return urlunparse(url_parts)\n\n    async def make_requests(self) -> list[Data]:\n        method = self.method\n        urls = [url.strip() for url in self.urls if url.strip()]\n        curl = self.curl\n        headers = self.headers or {}\n        body = self.body or {}\n        timeout = self.timeout\n        query_params = self.query_params.data if self.query_params else {}\n\n        if curl:\n            self._build_config = self.parse_curl(curl, dotdict())\n\n        if isinstance(headers, Data):\n            headers = headers.data\n\n        if isinstance(body, Data):\n            body = body.data\n\n        bodies = [body] * len(urls)\n\n        urls = [self.add_query_params(url, query_params) for url in urls]\n\n        async with httpx.AsyncClient() as client:\n            results = await asyncio.gather(\n                *[\n                    self.make_request(client, method, u, headers, rec, timeout)\n                    for u, rec in zip(urls, bodies, strict=True)\n                ]\n            )\n        self.status = results\n        return results\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "curl": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "curl",
+                "value": "",
+                "display_name": "Curl",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.",
+                "refresh_button": true,
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "headers": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "headers",
+                "value": {},
+                "display_name": "Headers",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The headers to send with the request as a dictionary. This is populated when using the CURL field.",
+                "title_case": false,
+                "type": "NestedDict",
+                "_input_type": "NestedDictInput"
+              },
+              "method": {
+                "trace_as_metadata": true,
+                "options": [
+                  "GET",
+                  "POST",
+                  "PATCH",
+                  "PUT"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "method",
+                "value": "POST",
+                "display_name": "Method",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The HTTP method to use (GET, POST, PATCH, PUT).",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "timeout",
+                "value": 300,
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The timeout to use for the request.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "urls": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "urls",
+                "value": [
+                  "http://localhost:7861/sdapi/v1/txt2img"
+                ],
+                "display_name": "URLs",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter one or more URLs, separated by commas.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "This component allows you to make HTTP requests to one or more URLs. You can provide headers and body as either dictionaries or Data objects. Additionally, you can append query parameters to the URLs.\n\n**Note:** Check advanced options for more settings.",
+            "icon": "Globe",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "API Request",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "make_requests",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "urls",
+              "curl",
+              "method",
+              "headers",
+              "body",
+              "query_params",
+              "timeout"
+            ],
+            "beta": false,
+            "edited": false,
+            "metadata": {},
+            "lf_version": "1.0.19.post2"
+          },
+          "id": "APIRequest-V5wzi"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 883,
+        "positionAbsolute": {
+          "x": 166,
+          "y": 43.59375
+        },
+        "dragging": false
+      },
+      {
+        "id": "CreateData-cFYly",
+        "type": "genericNode",
+        "position": {
+          "x": -546.7405985966714,
+          "y": 38.947665878414114
+        },
+        "data": {
+          "type": "CreateData",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Any\n\nfrom axiestudio.custom import Component\nfrom axiestudio.field_typing.range_spec import RangeSpec\nfrom axiestudio.inputs.inputs import BoolInput, DictInput, IntInput, MessageTextInput\nfrom axiestudio.io import Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\n\nclass CreateDataComponent(Component):\n    display_name: str = \"Create Data\"\n    description: str = \"Dynamically create a Data with a specified number of fields.\"\n    name: str = \"CreateData\"\n    MAX_FIELDS = 15  # Define a constant for maximum number of fields\n\n    inputs = [\n        IntInput(\n            name=\"number_of_fields\",\n            display_name=\"Number of Fields\",\n            info=\"Number of fields to be added to the record.\",\n            real_time_refresh=True,\n            value=1,\n            range_spec=RangeSpec(min=1, max=MAX_FIELDS, step=1, step_type=\"int\"),\n        ),\n        MessageTextInput(\n            name=\"text_key\",\n            display_name=\"Text Key\",\n            info=\"Key that identifies the field to be used as the text content.\",\n            advanced=True,\n        ),\n        BoolInput(\n            name=\"text_key_validator\",\n            display_name=\"Text Key Validator\",\n            advanced=True,\n            info=\"If enabled, checks if the given 'Text Key' is present in the given 'Data'.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"build_data\"),\n    ]\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\n        if field_name == \"number_of_fields\":\n            default_keys = [\"code\", \"_type\", \"number_of_fields\", \"text_key\", \"text_key_validator\"]\n            try:\n                field_value_int = int(field_value)\n            except ValueError:\n                return build_config\n            existing_fields = {}\n            if field_value_int > self.MAX_FIELDS:\n                build_config[\"number_of_fields\"][\"value\"] = self.MAX_FIELDS\n                msg = (\n                    f\"Number of fields cannot exceed {self.MAX_FIELDS}. \"\n                    \"Please adjust the number of fields to be within the allowed limit.\"\n                )\n                raise ValueError(msg)\n            if len(build_config) > len(default_keys):\n                # back up the existing template fields\n                for key in build_config.copy():\n                    if key not in default_keys:\n                        existing_fields[key] = build_config.pop(key)\n\n            for i in range(1, field_value_int + 1):\n                key = f\"field_{i}_key\"\n                if key in existing_fields:\n                    field = existing_fields[key]\n                    build_config[key] = field\n                else:\n                    field = DictInput(\n                        display_name=f\"Field {i}\",\n                        name=key,\n                        info=f\"Key for field {i}.\",\n                        input_types=[\"Text\", \"Data\"],\n                    )\n                    build_config[field.name] = field.to_dict()\n\n            build_config[\"number_of_fields\"][\"value\"] = field_value_int\n        return build_config\n\n    async def build_data(self) -> Data:\n        data = self.get_data()\n        return_data = Data(data=data, text_key=self.text_key)\n        self.status = return_data\n        if self.text_key_validator:\n            self.validate_text_key()\n        return return_data\n\n    def get_data(self):\n        \"\"\"Function to get the Data from the attributes.\"\"\"\n        data = {}\n        for value_dict in self._attributes.values():\n            if isinstance(value_dict, dict):\n                # Check if the value of the value_dict is a Data\n                _value_dict = {\n                    key: value.get_text() if isinstance(value, Data) else value for key, value in value_dict.items()\n                }\n                data.update(_value_dict)\n        return data\n\n    def validate_text_key(self):\n        \"\"\"This function validates that the Text Key is one of the keys in the Data.\"\"\"\n        data_keys = self.get_data().keys()\n        if self.text_key not in data_keys and self.text_key != \"\":\n            formatted_data_keys = \", \".join(data_keys)\n            msg = f\"Text Key: '{self.text_key}' not found in the Data keys: '{formatted_data_keys}'\"\n            raise ValueError(msg)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "number_of_fields": {
+                "trace_as_metadata": true,
+                "range_spec": {
+                  "step_type": "int",
+                  "min": 1,
+                  "max": 15,
+                  "step": 1
+                },
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "number_of_fields",
+                "value": 10,
+                "display_name": "Number of Fields",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Number of fields to be added to the record.",
+                "real_time_refresh": true,
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "text_key": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "text_key",
+                "value": "",
+                "display_name": "Text Key",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Key that identifies the field to be used as the text content.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "text_key_validator": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "text_key_validator",
+                "value": false,
+                "display_name": "Text Key Validator",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If enabled, checks if the given 'Text Key' is present in the given 'Data'.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "field_1_key": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "field_1_key",
+                "value": {
+                  "prompt": "kity on grass"
+                },
+                "display_name": "Field 1",
+                "advanced": false,
+                "input_types": [
+                  "Text",
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Key for field 1.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "field_2_key": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "field_2_key",
+                "value": {},
+                "display_name": "Field 2",
+                "advanced": false,
+                "input_types": [
+                  "Text",
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Key for field 2.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "field_3_key": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "field_3_key",
+                "value": {},
+                "display_name": "Field 3",
+                "advanced": false,
+                "input_types": [
+                  "Text",
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Key for field 3.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "field_4_key": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "field_4_key",
+                "value": {},
+                "display_name": "Field 4",
+                "advanced": false,
+                "input_types": [
+                  "Text",
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Key for field 4.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "field_5_key": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "field_5_key",
+                "value": {},
+                "display_name": "Field 5",
+                "advanced": false,
+                "input_types": [
+                  "Text",
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Key for field 5.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "field_6_key": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "field_6_key",
+                "value": {},
+                "display_name": "Field 6",
+                "advanced": false,
+                "input_types": [
+                  "Text",
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Key for field 6.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "field_7_key": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "field_7_key",
+                "value": {},
+                "display_name": "Field 7",
+                "advanced": false,
+                "input_types": [
+                  "Text",
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Key for field 7.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "field_8_key": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "field_8_key",
+                "value": {},
+                "display_name": "Field 8",
+                "advanced": false,
+                "input_types": [
+                  "Text",
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Key for field 8.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "field_9_key": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "field_9_key",
+                "value": {},
+                "display_name": "Field 9",
+                "advanced": false,
+                "input_types": [
+                  "Text",
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Key for field 9.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "field_10_key": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "field_10_key",
+                "value": {
+                  "negative_prompt": ""
+                },
+                "display_name": "Field 10",
+                "advanced": false,
+                "input_types": [
+                  "Text",
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Key for field 10.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              }
+            },
+            "description": "Dynamically create a Data with a specified number of fields.",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Create Payload",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "build_data",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "number_of_fields",
+              "text_key",
+              "text_key_validator"
+            ],
+            "beta": false,
+            "edited": false,
+            "metadata": {},
+            "lf_version": "1.0.19.post2"
+          },
+          "id": "CreateData-cFYly"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 1165,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": -546.7405985966714,
+          "y": 38.947665878414114
+        }
+      },
+      {
+        "id": "ChatOutput-pnVic",
+        "type": "genericNode",
+        "position": {
+          "x": 1221.68522476366,
+          "y": 462.15474713328183
+        },
+        "data": {
+          "type": "ChatOutput",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "files": {
+                "trace_as_metadata": true,
+                "file_path": "",
+                "fileTypes": [
+                  "txt",
+                  "md",
+                  "mdx",
+                  "csv",
+                  "json",
+                  "yaml",
+                  "yml",
+                  "xml",
+                  "html",
+                  "htm",
+                  "pdf",
+                  "docx",
+                  "py",
+                  "sh",
+                  "sql",
+                  "js",
+                  "ts",
+                  "tsx",
+                  "jpg",
+                  "jpeg",
+                  "png",
+                  "bmp",
+                  "image"
+                ],
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "files",
+                "value": "",
+                "display_name": "Files",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Files to be sent with the message.",
+                "title_case": false,
+                "type": "file",
+                "_input_type": "FileInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, MessageTextInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI, MESSAGE_SENDER_USER\n\nfrom axiestudio.schema.image import Image, is_image_file\n\nimport base64\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Playground.\"\n    icon = \"ChatOutput\"\n    name = \"ChatOutput\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Message to be passed as output.\",\n        ),\n        MessageTextInput(\n            name=\"file_path\",\n            display_name=\"File path\",\n            info=\"File path\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_AI,\n            advanced=True,\n            info=\"Type of sender.\",\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_AI,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        FileInput(\n            name=\"files\",\n            display_name=\"Files\",\n            file_types=TEXT_FILE_TYPES + IMG_FILE_TYPES,\n            info=\"Files to be sent with the message.\",\n            is_list=True,\n        )\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n    \n    class CustomImage(Image):\n        image_data: str | None\n        def to_base64(self):\n            if self.image_data:\n                # return base64.b64decode(self.image_data).decode(\"utf-8\")\n                return self.image_data\n                \n            raise ValueError(\"Image data is not set\")\n            \n    class CustomMessage(Message):\n        def model_post_init(self, __context: Any) -> None:\n            new_files: list[Any] = []\n            print(self.files)\n            for file in self.files or []:\n                print(is_image_file(file))\n                if is_image_file(file):\n                    new_files.append(Image(path=file))\n                else:\n                    new_files.append(file)\n            self.files = new_files\n            if \"timestamp\" not in self.data:\n                self.data[\"timestamp\"] = self.timestamp\n\n    def message_response(self) -> Message:\n        if self.file_path:\n            self.files.append(self.file_path)\n\n        message = Message(\n            text=\"\",\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n            files=self.files,\n        )\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "file_path": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "file_path",
+                "value": "",
+                "display_name": "File path",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "File path",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Message to be passed as output.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "sender": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender",
+                "value": "Machine",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Type of sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "sender_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender_name",
+                "value": "AI",
+                "display_name": "Sender Name",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Name of the sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "session_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "session_id",
+                "value": "testing",
+                "display_name": "Session ID",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "should_store_message": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "should_store_message",
+                "value": true,
+                "display_name": "Store Messages",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Store the message in the history.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Display a chat message in the Playground.",
+            "icon": "ChatOutput",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Chat Output",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "message",
+                "display_name": "Message",
+                "method": "message_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "file_path",
+              "should_store_message",
+              "sender",
+              "sender_name",
+              "session_id",
+              "files"
+            ],
+            "beta": false,
+            "edited": true,
+            "metadata": {},
+            "lf_version": "1.0.19.post2"
+          },
+          "id": "ChatOutput-pnVic"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 461,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 1221.68522476366,
+          "y": 462.15474713328183
+        }
+      },
+      {
+        "id": "SaveDataToImageFile-6NTxt",
+        "type": "genericNode",
+        "position": {
+          "x": 728.5703588363699,
+          "y": 455.9121175215703
+        },
+        "data": {
+          "type": "SaveDataToImageFile",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "data": {
+                "trace_as_metadata": true,
+                "list": true,
+                "trace_as_input": true,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "data",
+                "value": "",
+                "display_name": "Image Data",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The Data object or list of Data objects to be saved as Image.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import json\r\nimport os\r\nfrom pathlib import Path\r\nfrom typing import Any, Dict, List, Union\r\n\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import DataInput, MessageTextInput, Output\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.schema.message import Message\r\nfrom loguru import logger \r\n\r\nfrom axiestudio.base.data.utils import IMG_FILE_TYPES\r\nimport base64\r\n\r\nclass SaveDataToImageFile(Component):\r\n    display_name = \"Save Data to Image\"\r\n    description = \"Saves a Data object or a list of Data objects into a Image file.\"\r\n    icon = \"Save\"\r\n\r\n    inputs = [\r\n        DataInput(\r\n            name=\"data\",\r\n            display_name=\"Image Data\",\r\n            info=\"The Data object or list of Data objects to be saved as Image.\",\r\n            is_list=True,\r\n            required=True\r\n        ),\r\n        MessageTextInput(\r\n            name=\"file_name\",\r\n            display_name=\"File Name\",\r\n            info=\"The name of the file to save the Image data (without extension).\",\r\n            required=True\r\n        ),\r\n        MessageTextInput(\r\n            name=\"extension\",\r\n            display_name=\"Extension\",\r\n            value=\"jpg\",\r\n            info=\"The extension of the file to save the Image data\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"File Path\", name=\"file_path\", method=\"save_data_to_image\"),\r\n    ]\r\n\r\n    def save_data_to_image(self) -> Message:\r\n        if not isinstance(self.data, (Data, list)):\r\n            raise ValueError(\"Input must be a Data object or a list of Data objects\")\r\n\r\n        if not self.file_name:\r\n            raise ValueError(\"File name must be provided\")\r\n            \r\n        name, ext = os.path.splitext(self.file_name)\r\n        ext = ext.lstrip('.')\r\n        if not ext:\r\n            ext = self.extension if self.extension else \"png\"\r\n        \r\n        if not ext.lower() in IMG_FILE_TYPES:\r\n            raise ValueError(\"Unsupported image type\")\r\n            \r\n        file_name = f\"{name}.{ext}\"\r\n        template = \"{data[result][images][0]}\" # maybe consider making it input\r\n        img_data = data_to_text(template, self.data)\r\n\r\n        try:\r\n            # Create the file path\r\n            file_path = Path(file_name).resolve()\r\n        #     logger.debug(f\"Data to save: {data_to_save}\")\r\n            \r\n            # Write the data to the Image file\r\n            with open(file_path, 'wb') as fh:\r\n                fh.write(base64.b64decode(img_data))\r\n        #         json.dump(data_to_save, json_file, indent=2, ensure_ascii=False)\r\n\r\n            success_message = f\"Data successfully saved to {file_path}\"\r\n            self.status = success_message\r\n            return Message(text=str(file_path))\r\n\r\n        except Exception as e:\r\n            error_message = f\"Error saving data to {ext} file: {str(e)}\"\r\n            self.status = error_message\r\n            raise RuntimeError(error_message)\r\n        return Message()",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "extension": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "extension",
+                "value": "png",
+                "display_name": "Extension",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The extension of the file to save the Image data",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "file_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "file_name",
+                "value": "testing",
+                "display_name": "File Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The name of the file to save the Image data (without extension).",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Saves a Data object or a list of Data objects into a Image file.",
+            "icon": "Save",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Save Data to Image",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "file_path",
+                "display_name": "File Path",
+                "method": "save_data_to_image",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "data",
+              "file_name",
+              "extension"
+            ],
+            "beta": false,
+            "edited": true,
+            "metadata": {},
+            "lf_version": "1.0.19.post2"
+          },
+          "id": "SaveDataToImageFile-6NTxt"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 439,
+        "positionAbsolute": {
+          "x": 728.5703588363699,
+          "y": 455.9121175215703
+        },
+        "dragging": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "CreateData-cFYly",
+        "sourceHandle": "{œdataTypeœ:œCreateDataœ,œidœ:œCreateData-cFYlyœ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}",
+        "target": "APIRequest-V5wzi",
+        "targetHandle": "{œfieldNameœ:œbodyœ,œidœ:œAPIRequest-V5wziœ,œinputTypesœ:[œDataœ],œtypeœ:œNestedDictœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "body",
+            "id": "APIRequest-V5wzi",
+            "inputTypes": [
+              "Data"
+            ],
+            "type": "NestedDict"
+          },
+          "sourceHandle": {
+            "dataType": "CreateData",
+            "id": "CreateData-cFYly",
+            "name": "data",
+            "output_types": [
+              "Data"
+            ]
+          }
+        },
+        "id": "reactflow__edge-CreateData-cFYly{œdataTypeœ:œCreateDataœ,œidœ:œCreateData-cFYlyœ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}-APIRequest-V5wzi{œfieldNameœ:œbodyœ,œidœ:œAPIRequest-V5wziœ,œinputTypesœ:[œDataœ],œtypeœ:œNestedDictœ}",
+        "animated": false,
+        "className": ""
+      },
+      {
+        "source": "APIRequest-V5wzi",
+        "sourceHandle": "{œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-V5wziœ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}",
+        "target": "SaveDataToImageFile-6NTxt",
+        "targetHandle": "{œfieldNameœ:œdataœ,œidœ:œSaveDataToImageFile-6NTxtœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "data",
+            "id": "SaveDataToImageFile-6NTxt",
+            "inputTypes": [
+              "Data"
+            ],
+            "type": "other"
+          },
+          "sourceHandle": {
+            "dataType": "APIRequest",
+            "id": "APIRequest-V5wzi",
+            "name": "data",
+            "output_types": [
+              "Data"
+            ]
+          }
+        },
+        "id": "reactflow__edge-APIRequest-V5wzi{œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-V5wziœ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}-SaveDataToImageFile-6NTxt{œfieldNameœ:œdataœ,œidœ:œSaveDataToImageFile-6NTxtœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "animated": false,
+        "className": ""
+      },
+      {
+        "source": "SaveDataToImageFile-6NTxt",
+        "sourceHandle": "{œdataTypeœ:œSaveDataToImageFileœ,œidœ:œSaveDataToImageFile-6NTxtœ,œnameœ:œfile_pathœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "ChatOutput-pnVic",
+        "targetHandle": "{œfieldNameœ:œfile_pathœ,œidœ:œChatOutput-pnVicœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "file_path",
+            "id": "ChatOutput-pnVic",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "SaveDataToImageFile",
+            "id": "SaveDataToImageFile-6NTxt",
+            "name": "file_path",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-SaveDataToImageFile-6NTxt{œdataTypeœ:œSaveDataToImageFileœ,œidœ:œSaveDataToImageFile-6NTxtœ,œnameœ:œfile_pathœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-pnVic{œfieldNameœ:œfile_pathœ,œidœ:œChatOutput-pnVicœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "className": ""
+      }
+    ],
+    "viewport": {
+      "x": 298.820133085645,
+      "y": 50.08164670041606,
+      "zoom": 0.3275178348908874
+    }
+  },
+  "metadata": {
+    "APIRequest": {
+      "count": 1
+    },
+    "CreateData": {
+      "count": 1
+    },
+    "ChatOutput": {
+      "count": 1
+    },
+    "SaveDataToImageFile": {
+      "count": 1
+    },
+    "total": 4
+  },
+  "original": {
+    "id": "627b8c9d-193d-4c58-9436-6fa1db797ce2",
+    "name": "Untitled document (1)",
+    "description": "Your Passport to Linguistic Landscapes.",
+    "is_component": false,
+    "liked_by_count": "0",
+    "downloads_count": "2",
+    "metadata": {
+      "APIRequest": {
+        "count": 1
+      },
+      "CreateData": {
+        "count": 1
+      },
+      "ChatOutput": {
+        "count": 1
+      },
+      "SaveDataToImageFile": {
+        "count": 1
+      },
+      "total": 4
+    },
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "APIRequest-V5wzi",
+          "type": "genericNode",
+          "position": {
+            "x": 166,
+            "y": 43.59375
+          },
+          "data": {
+            "type": "APIRequest",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "query_params": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "trace_as_input": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "query_params",
+                  "value": "",
+                  "display_name": "Query Parameters",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The query parameters to append to the URL.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "body": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "body",
+                  "value": {},
+                  "display_name": "Body",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.",
+                  "title_case": false,
+                  "type": "NestedDict",
+                  "_input_type": "NestedDictInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import asyncio\nimport json\nfrom typing import Any\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\n\nimport httpx\nfrom loguru import logger\n\nfrom axiestudio.base.curl.parse import parse_context\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, NestedDictInput, Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\n\nclass APIRequestComponent(Component):\n    display_name = \"API Request\"\n    description = (\n        \"This component allows you to make HTTP requests to one or more URLs. \"\n        \"You can provide headers and body as either dictionaries or Data objects. \"\n        \"Additionally, you can append query parameters to the URLs.\\n\\n\"\n        \"**Note:** Check advanced options for more settings.\"\n    )\n    icon = \"Globe\"\n    name = \"APIRequest\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"urls\",\n            display_name=\"URLs\",\n            is_list=True,\n            info=\"Enter one or more URLs, separated by commas.\",\n        ),\n        MessageTextInput(\n            name=\"curl\",\n            display_name=\"Curl\",\n            info=\"Paste a curl command to populate the fields. \"\n            \"This will fill in the dictionary fields for headers and body.\",\n            advanced=False,\n            refresh_button=True,\n        ),\n        DropdownInput(\n            name=\"method\",\n            display_name=\"Method\",\n            options=[\"GET\", \"POST\", \"PATCH\", \"PUT\"],\n            value=\"GET\",\n            info=\"The HTTP method to use (GET, POST, PATCH, PUT).\",\n        ),\n        NestedDictInput(\n            name=\"headers\",\n            display_name=\"Headers\",\n            info=\"The headers to send with the request as a dictionary. This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        NestedDictInput(\n            name=\"body\",\n            display_name=\"Body\",\n            info=\"The body to send with the request as a dictionary (for POST, PATCH, PUT). \"\n            \"This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        DataInput(\n            name=\"query_params\",\n            display_name=\"Query Parameters\",\n            info=\"The query parameters to append to the URL.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            value=5,\n            info=\"The timeout to use for the request.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"make_requests\"),\n    ]\n\n    def parse_curl(self, curl: str, build_config: dotdict) -> dotdict:\n        try:\n            parsed = parse_context(curl)\n            build_config[\"urls\"][\"value\"] = [parsed.url]\n            build_config[\"method\"][\"value\"] = parsed.method.upper()\n            build_config[\"headers\"][\"value\"] = dict(parsed.headers)\n\n            if parsed.data:\n                try:\n                    json_data = json.loads(parsed.data)\n                    build_config[\"body\"][\"value\"] = json_data\n                except json.JSONDecodeError:\n                    logger.exception(\"Error decoding JSON data\")\n            else:\n                build_config[\"body\"][\"value\"] = {}\n        except Exception as exc:\n            msg = f\"Error parsing curl: {exc}\"\n            logger.exception(msg)\n            raise ValueError(msg) from exc\n        return build_config\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\n        if field_name == \"curl\" and field_value:\n            build_config = self.parse_curl(field_value, build_config)\n        return build_config\n\n    async def make_request(\n        self,\n        client: httpx.AsyncClient,\n        method: str,\n        url: str,\n        headers: dict | None = None,\n        body: dict | None = None,\n        timeout: int = 5,\n    ) -> Data:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            msg = f\"Unsupported method: {method}\"\n            raise ValueError(msg)\n\n        if isinstance(body, str) and body:\n            try:\n                body = json.loads(body)\n            except Exception as e:\n                msg = f\"Error decoding JSON data: {e}\"\n                logger.exception(msg)\n                body = None\n                raise ValueError(msg) from e\n\n        data = body or None\n\n        try:\n            response = await client.request(method, url, headers=headers, json=data, timeout=timeout)\n            try:\n                result = response.json()\n            except Exception:  # noqa: BLE001\n                logger.opt(exception=True).debug(\"Error decoding JSON response\")\n                result = response.text\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except httpx.TimeoutException:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except Exception as exc:  # noqa: BLE001\n            logger.opt(exception=True).debug(f\"Error making request to {url}\")\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    def add_query_params(self, url: str, params: dict) -> str:\n        url_parts = list(urlparse(url))\n        query = dict(parse_qsl(url_parts[4]))\n        query.update(params)\n        url_parts[4] = urlencode(query)\n        return urlunparse(url_parts)\n\n    async def make_requests(self) -> list[Data]:\n        method = self.method\n        urls = [url.strip() for url in self.urls if url.strip()]\n        curl = self.curl\n        headers = self.headers or {}\n        body = self.body or {}\n        timeout = self.timeout\n        query_params = self.query_params.data if self.query_params else {}\n\n        if curl:\n            self._build_config = self.parse_curl(curl, dotdict())\n\n        if isinstance(headers, Data):\n            headers = headers.data\n\n        if isinstance(body, Data):\n            body = body.data\n\n        bodies = [body] * len(urls)\n\n        urls = [self.add_query_params(url, query_params) for url in urls]\n\n        async with httpx.AsyncClient() as client:\n            results = await asyncio.gather(\n                *[\n                    self.make_request(client, method, u, headers, rec, timeout)\n                    for u, rec in zip(urls, bodies, strict=True)\n                ]\n            )\n        self.status = results\n        return results\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "curl": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "curl",
+                  "value": "",
+                  "display_name": "Curl",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.",
+                  "refresh_button": true,
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "headers": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "headers",
+                  "value": {},
+                  "display_name": "Headers",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The headers to send with the request as a dictionary. This is populated when using the CURL field.",
+                  "title_case": false,
+                  "type": "NestedDict",
+                  "_input_type": "NestedDictInput"
+                },
+                "method": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "GET",
+                    "POST",
+                    "PATCH",
+                    "PUT"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "method",
+                  "value": "POST",
+                  "display_name": "Method",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The HTTP method to use (GET, POST, PATCH, PUT).",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "timeout",
+                  "value": 300,
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The timeout to use for the request.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "urls": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "urls",
+                  "value": [
+                    "http://localhost:7861/sdapi/v1/txt2img"
+                  ],
+                  "display_name": "URLs",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter one or more URLs, separated by commas.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "This component allows you to make HTTP requests to one or more URLs. You can provide headers and body as either dictionaries or Data objects. Additionally, you can append query parameters to the URLs.\n\n**Note:** Check advanced options for more settings.",
+              "icon": "Globe",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "API Request",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "make_requests",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "urls",
+                "curl",
+                "method",
+                "headers",
+                "body",
+                "query_params",
+                "timeout"
+              ],
+              "beta": false,
+              "edited": false,
+              "metadata": {},
+              "lf_version": "1.0.19.post2"
+            },
+            "id": "APIRequest-V5wzi"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 883,
+          "positionAbsolute": {
+            "x": 166,
+            "y": 43.59375
+          },
+          "dragging": false
+        },
+        {
+          "id": "CreateData-cFYly",
+          "type": "genericNode",
+          "position": {
+            "x": -546.7405985966714,
+            "y": 38.947665878414114
+          },
+          "data": {
+            "type": "CreateData",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Any\n\nfrom axiestudio.custom import Component\nfrom axiestudio.field_typing.range_spec import RangeSpec\nfrom axiestudio.inputs.inputs import BoolInput, DictInput, IntInput, MessageTextInput\nfrom axiestudio.io import Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\n\nclass CreateDataComponent(Component):\n    display_name: str = \"Create Data\"\n    description: str = \"Dynamically create a Data with a specified number of fields.\"\n    name: str = \"CreateData\"\n    MAX_FIELDS = 15  # Define a constant for maximum number of fields\n\n    inputs = [\n        IntInput(\n            name=\"number_of_fields\",\n            display_name=\"Number of Fields\",\n            info=\"Number of fields to be added to the record.\",\n            real_time_refresh=True,\n            value=1,\n            range_spec=RangeSpec(min=1, max=MAX_FIELDS, step=1, step_type=\"int\"),\n        ),\n        MessageTextInput(\n            name=\"text_key\",\n            display_name=\"Text Key\",\n            info=\"Key that identifies the field to be used as the text content.\",\n            advanced=True,\n        ),\n        BoolInput(\n            name=\"text_key_validator\",\n            display_name=\"Text Key Validator\",\n            advanced=True,\n            info=\"If enabled, checks if the given 'Text Key' is present in the given 'Data'.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"build_data\"),\n    ]\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\n        if field_name == \"number_of_fields\":\n            default_keys = [\"code\", \"_type\", \"number_of_fields\", \"text_key\", \"text_key_validator\"]\n            try:\n                field_value_int = int(field_value)\n            except ValueError:\n                return build_config\n            existing_fields = {}\n            if field_value_int > self.MAX_FIELDS:\n                build_config[\"number_of_fields\"][\"value\"] = self.MAX_FIELDS\n                msg = (\n                    f\"Number of fields cannot exceed {self.MAX_FIELDS}. \"\n                    \"Please adjust the number of fields to be within the allowed limit.\"\n                )\n                raise ValueError(msg)\n            if len(build_config) > len(default_keys):\n                # back up the existing template fields\n                for key in build_config.copy():\n                    if key not in default_keys:\n                        existing_fields[key] = build_config.pop(key)\n\n            for i in range(1, field_value_int + 1):\n                key = f\"field_{i}_key\"\n                if key in existing_fields:\n                    field = existing_fields[key]\n                    build_config[key] = field\n                else:\n                    field = DictInput(\n                        display_name=f\"Field {i}\",\n                        name=key,\n                        info=f\"Key for field {i}.\",\n                        input_types=[\"Text\", \"Data\"],\n                    )\n                    build_config[field.name] = field.to_dict()\n\n            build_config[\"number_of_fields\"][\"value\"] = field_value_int\n        return build_config\n\n    async def build_data(self) -> Data:\n        data = self.get_data()\n        return_data = Data(data=data, text_key=self.text_key)\n        self.status = return_data\n        if self.text_key_validator:\n            self.validate_text_key()\n        return return_data\n\n    def get_data(self):\n        \"\"\"Function to get the Data from the attributes.\"\"\"\n        data = {}\n        for value_dict in self._attributes.values():\n            if isinstance(value_dict, dict):\n                # Check if the value of the value_dict is a Data\n                _value_dict = {\n                    key: value.get_text() if isinstance(value, Data) else value for key, value in value_dict.items()\n                }\n                data.update(_value_dict)\n        return data\n\n    def validate_text_key(self):\n        \"\"\"This function validates that the Text Key is one of the keys in the Data.\"\"\"\n        data_keys = self.get_data().keys()\n        if self.text_key not in data_keys and self.text_key != \"\":\n            formatted_data_keys = \", \".join(data_keys)\n            msg = f\"Text Key: '{self.text_key}' not found in the Data keys: '{formatted_data_keys}'\"\n            raise ValueError(msg)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "number_of_fields": {
+                  "trace_as_metadata": true,
+                  "range_spec": {
+                    "step_type": "int",
+                    "min": 1,
+                    "max": 15,
+                    "step": 1
+                  },
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "number_of_fields",
+                  "value": 10,
+                  "display_name": "Number of Fields",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Number of fields to be added to the record.",
+                  "real_time_refresh": true,
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "text_key": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "text_key",
+                  "value": "",
+                  "display_name": "Text Key",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Key that identifies the field to be used as the text content.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "text_key_validator": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "text_key_validator",
+                  "value": false,
+                  "display_name": "Text Key Validator",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If enabled, checks if the given 'Text Key' is present in the given 'Data'.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "field_1_key": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "field_1_key",
+                  "value": {
+                    "prompt": "kity on grass"
+                  },
+                  "display_name": "Field 1",
+                  "advanced": false,
+                  "input_types": [
+                    "Text",
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Key for field 1.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "field_2_key": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "field_2_key",
+                  "value": {},
+                  "display_name": "Field 2",
+                  "advanced": false,
+                  "input_types": [
+                    "Text",
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Key for field 2.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "field_3_key": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "field_3_key",
+                  "value": {},
+                  "display_name": "Field 3",
+                  "advanced": false,
+                  "input_types": [
+                    "Text",
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Key for field 3.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "field_4_key": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "field_4_key",
+                  "value": {},
+                  "display_name": "Field 4",
+                  "advanced": false,
+                  "input_types": [
+                    "Text",
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Key for field 4.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "field_5_key": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "field_5_key",
+                  "value": {},
+                  "display_name": "Field 5",
+                  "advanced": false,
+                  "input_types": [
+                    "Text",
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Key for field 5.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "field_6_key": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "field_6_key",
+                  "value": {},
+                  "display_name": "Field 6",
+                  "advanced": false,
+                  "input_types": [
+                    "Text",
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Key for field 6.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "field_7_key": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "field_7_key",
+                  "value": {},
+                  "display_name": "Field 7",
+                  "advanced": false,
+                  "input_types": [
+                    "Text",
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Key for field 7.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "field_8_key": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "field_8_key",
+                  "value": {},
+                  "display_name": "Field 8",
+                  "advanced": false,
+                  "input_types": [
+                    "Text",
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Key for field 8.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "field_9_key": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "field_9_key",
+                  "value": {},
+                  "display_name": "Field 9",
+                  "advanced": false,
+                  "input_types": [
+                    "Text",
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Key for field 9.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "field_10_key": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "field_10_key",
+                  "value": {
+                    "negative_prompt": ""
+                  },
+                  "display_name": "Field 10",
+                  "advanced": false,
+                  "input_types": [
+                    "Text",
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Key for field 10.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                }
+              },
+              "description": "Dynamically create a Data with a specified number of fields.",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Create Payload",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "build_data",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "number_of_fields",
+                "text_key",
+                "text_key_validator"
+              ],
+              "beta": false,
+              "edited": false,
+              "metadata": {},
+              "lf_version": "1.0.19.post2"
+            },
+            "id": "CreateData-cFYly"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 1165,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": -546.7405985966714,
+            "y": 38.947665878414114
+          }
+        },
+        {
+          "id": "ChatOutput-pnVic",
+          "type": "genericNode",
+          "position": {
+            "x": 1221.68522476366,
+            "y": 462.15474713328183
+          },
+          "data": {
+            "type": "ChatOutput",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "files": {
+                  "trace_as_metadata": true,
+                  "file_path": "",
+                  "fileTypes": [
+                    "txt",
+                    "md",
+                    "mdx",
+                    "csv",
+                    "json",
+                    "yaml",
+                    "yml",
+                    "xml",
+                    "html",
+                    "htm",
+                    "pdf",
+                    "docx",
+                    "py",
+                    "sh",
+                    "sql",
+                    "js",
+                    "ts",
+                    "tsx",
+                    "jpg",
+                    "jpeg",
+                    "png",
+                    "bmp",
+                    "image"
+                  ],
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "files",
+                  "value": "",
+                  "display_name": "Files",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Files to be sent with the message.",
+                  "title_case": false,
+                  "type": "file",
+                  "_input_type": "FileInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, MessageTextInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI, MESSAGE_SENDER_USER\n\nfrom axiestudio.schema.image import Image, is_image_file\n\nimport base64\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Playground.\"\n    icon = \"ChatOutput\"\n    name = \"ChatOutput\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Message to be passed as output.\",\n        ),\n        MessageTextInput(\n            name=\"file_path\",\n            display_name=\"File path\",\n            info=\"File path\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_AI,\n            advanced=True,\n            info=\"Type of sender.\",\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_AI,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        FileInput(\n            name=\"files\",\n            display_name=\"Files\",\n            file_types=TEXT_FILE_TYPES + IMG_FILE_TYPES,\n            info=\"Files to be sent with the message.\",\n            is_list=True,\n        )\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n    \n    class CustomImage(Image):\n        image_data: str | None\n        def to_base64(self):\n            if self.image_data:\n                # return base64.b64decode(self.image_data).decode(\"utf-8\")\n                return self.image_data\n                \n            raise ValueError(\"Image data is not set\")\n            \n    class CustomMessage(Message):\n        def model_post_init(self, __context: Any) -> None:\n            new_files: list[Any] = []\n            print(self.files)\n            for file in self.files or []:\n                print(is_image_file(file))\n                if is_image_file(file):\n                    new_files.append(Image(path=file))\n                else:\n                    new_files.append(file)\n            self.files = new_files\n            if \"timestamp\" not in self.data:\n                self.data[\"timestamp\"] = self.timestamp\n\n    def message_response(self) -> Message:\n        if self.file_path:\n            self.files.append(self.file_path)\n\n        message = Message(\n            text=\"\",\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n            files=self.files,\n        )\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "file_path": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "file_path",
+                  "value": "",
+                  "display_name": "File path",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "File path",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Message to be passed as output.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "sender": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Machine",
+                    "User"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender",
+                  "value": "Machine",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Type of sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "sender_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender_name",
+                  "value": "AI",
+                  "display_name": "Sender Name",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Name of the sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "session_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "session_id",
+                  "value": "testing",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "should_store_message": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "should_store_message",
+                  "value": true,
+                  "display_name": "Store Messages",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Store the message in the history.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Display a chat message in the Playground.",
+              "icon": "ChatOutput",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Chat Output",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "message",
+                  "display_name": "Message",
+                  "method": "message_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "file_path",
+                "should_store_message",
+                "sender",
+                "sender_name",
+                "session_id",
+                "files"
+              ],
+              "beta": false,
+              "edited": true,
+              "metadata": {},
+              "lf_version": "1.0.19.post2"
+            },
+            "id": "ChatOutput-pnVic"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 461,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": 1221.68522476366,
+            "y": 462.15474713328183
+          }
+        },
+        {
+          "id": "SaveDataToImageFile-6NTxt",
+          "type": "genericNode",
+          "position": {
+            "x": 728.5703588363699,
+            "y": 455.9121175215703
+          },
+          "data": {
+            "type": "SaveDataToImageFile",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "data": {
+                  "trace_as_metadata": true,
+                  "list": true,
+                  "trace_as_input": true,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "data",
+                  "value": "",
+                  "display_name": "Image Data",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The Data object or list of Data objects to be saved as Image.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import json\r\nimport os\r\nfrom pathlib import Path\r\nfrom typing import Any, Dict, List, Union\r\n\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import DataInput, MessageTextInput, Output\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.schema.message import Message\r\nfrom loguru import logger \r\n\r\nfrom axiestudio.base.data.utils import IMG_FILE_TYPES\r\nimport base64\r\n\r\nclass SaveDataToImageFile(Component):\r\n    display_name = \"Save Data to Image\"\r\n    description = \"Saves a Data object or a list of Data objects into a Image file.\"\r\n    icon = \"Save\"\r\n\r\n    inputs = [\r\n        DataInput(\r\n            name=\"data\",\r\n            display_name=\"Image Data\",\r\n            info=\"The Data object or list of Data objects to be saved as Image.\",\r\n            is_list=True,\r\n            required=True\r\n        ),\r\n        MessageTextInput(\r\n            name=\"file_name\",\r\n            display_name=\"File Name\",\r\n            info=\"The name of the file to save the Image data (without extension).\",\r\n            required=True\r\n        ),\r\n        MessageTextInput(\r\n            name=\"extension\",\r\n            display_name=\"Extension\",\r\n            value=\"jpg\",\r\n            info=\"The extension of the file to save the Image data\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"File Path\", name=\"file_path\", method=\"save_data_to_image\"),\r\n    ]\r\n\r\n    def save_data_to_image(self) -> Message:\r\n        if not isinstance(self.data, (Data, list)):\r\n            raise ValueError(\"Input must be a Data object or a list of Data objects\")\r\n\r\n        if not self.file_name:\r\n            raise ValueError(\"File name must be provided\")\r\n            \r\n        name, ext = os.path.splitext(self.file_name)\r\n        ext = ext.lstrip('.')\r\n        if not ext:\r\n            ext = self.extension if self.extension else \"png\"\r\n        \r\n        if not ext.lower() in IMG_FILE_TYPES:\r\n            raise ValueError(\"Unsupported image type\")\r\n            \r\n        file_name = f\"{name}.{ext}\"\r\n        template = \"{data[result][images][0]}\" # maybe consider making it input\r\n        img_data = data_to_text(template, self.data)\r\n\r\n        try:\r\n            # Create the file path\r\n            file_path = Path(file_name).resolve()\r\n        #     logger.debug(f\"Data to save: {data_to_save}\")\r\n            \r\n            # Write the data to the Image file\r\n            with open(file_path, 'wb') as fh:\r\n                fh.write(base64.b64decode(img_data))\r\n        #         json.dump(data_to_save, json_file, indent=2, ensure_ascii=False)\r\n\r\n            success_message = f\"Data successfully saved to {file_path}\"\r\n            self.status = success_message\r\n            return Message(text=str(file_path))\r\n\r\n        except Exception as e:\r\n            error_message = f\"Error saving data to {ext} file: {str(e)}\"\r\n            self.status = error_message\r\n            raise RuntimeError(error_message)\r\n        return Message()",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "extension": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "extension",
+                  "value": "png",
+                  "display_name": "Extension",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The extension of the file to save the Image data",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "file_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "file_name",
+                  "value": "testing",
+                  "display_name": "File Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The name of the file to save the Image data (without extension).",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Saves a Data object or a list of Data objects into a Image file.",
+              "icon": "Save",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Save Data to Image",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "file_path",
+                  "display_name": "File Path",
+                  "method": "save_data_to_image",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "data",
+                "file_name",
+                "extension"
+              ],
+              "beta": false,
+              "edited": true,
+              "metadata": {},
+              "lf_version": "1.0.19.post2"
+            },
+            "id": "SaveDataToImageFile-6NTxt"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 439,
+          "positionAbsolute": {
+            "x": 728.5703588363699,
+            "y": 455.9121175215703
+          },
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "source": "CreateData-cFYly",
+          "sourceHandle": "{œdataTypeœ:œCreateDataœ,œidœ:œCreateData-cFYlyœ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}",
+          "target": "APIRequest-V5wzi",
+          "targetHandle": "{œfieldNameœ:œbodyœ,œidœ:œAPIRequest-V5wziœ,œinputTypesœ:[œDataœ],œtypeœ:œNestedDictœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "body",
+              "id": "APIRequest-V5wzi",
+              "inputTypes": [
+                "Data"
+              ],
+              "type": "NestedDict"
+            },
+            "sourceHandle": {
+              "dataType": "CreateData",
+              "id": "CreateData-cFYly",
+              "name": "data",
+              "output_types": [
+                "Data"
+              ]
+            }
+          },
+          "id": "reactflow__edge-CreateData-cFYly{œdataTypeœ:œCreateDataœ,œidœ:œCreateData-cFYlyœ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}-APIRequest-V5wzi{œfieldNameœ:œbodyœ,œidœ:œAPIRequest-V5wziœ,œinputTypesœ:[œDataœ],œtypeœ:œNestedDictœ}",
+          "animated": false,
+          "className": ""
+        },
+        {
+          "source": "APIRequest-V5wzi",
+          "sourceHandle": "{œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-V5wziœ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}",
+          "target": "SaveDataToImageFile-6NTxt",
+          "targetHandle": "{œfieldNameœ:œdataœ,œidœ:œSaveDataToImageFile-6NTxtœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "data",
+              "id": "SaveDataToImageFile-6NTxt",
+              "inputTypes": [
+                "Data"
+              ],
+              "type": "other"
+            },
+            "sourceHandle": {
+              "dataType": "APIRequest",
+              "id": "APIRequest-V5wzi",
+              "name": "data",
+              "output_types": [
+                "Data"
+              ]
+            }
+          },
+          "id": "reactflow__edge-APIRequest-V5wzi{œdataTypeœ:œAPIRequestœ,œidœ:œAPIRequest-V5wziœ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}-SaveDataToImageFile-6NTxt{œfieldNameœ:œdataœ,œidœ:œSaveDataToImageFile-6NTxtœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "animated": false,
+          "className": ""
+        },
+        {
+          "source": "SaveDataToImageFile-6NTxt",
+          "sourceHandle": "{œdataTypeœ:œSaveDataToImageFileœ,œidœ:œSaveDataToImageFile-6NTxtœ,œnameœ:œfile_pathœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "ChatOutput-pnVic",
+          "targetHandle": "{œfieldNameœ:œfile_pathœ,œidœ:œChatOutput-pnVicœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "file_path",
+              "id": "ChatOutput-pnVic",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "SaveDataToImageFile",
+              "id": "SaveDataToImageFile-6NTxt",
+              "name": "file_path",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-SaveDataToImageFile-6NTxt{œdataTypeœ:œSaveDataToImageFileœ,œidœ:œSaveDataToImageFile-6NTxtœ,œnameœ:œfile_pathœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-pnVic{œfieldNameœ:œfile_pathœ,œidœ:œChatOutput-pnVicœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "className": ""
+        }
+      ],
+      "viewport": {
+        "x": 298.820133085645,
+        "y": 50.08164670041606,
+        "zoom": 0.3275178348908874
+      }
+    },
+    "date_created": "2024-11-09T05:53:02.287Z",
+    "date_updated": "2024-11-09T05:53:02.432Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "822ae1ec-9224-4ae3-8a37-4156b755b050",
+    "user_created": {
+      "username": "arthurbunny",
+      "first_name": "Alex",
+      "last_name": "Wong",
+      "id": "822ae1ec-9224-4ae3-8a37-4156b755b050"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:59.024Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 46,
+    "converter_version": "1.0.0"
+  }
+}

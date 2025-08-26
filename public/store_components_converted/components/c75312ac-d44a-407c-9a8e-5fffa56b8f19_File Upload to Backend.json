@@ -1,0 +1,379 @@
+{
+  "id": "c75312ac-d44a-407c-9a8e-5fffa56b8f19",
+  "name": "File Upload to Backend",
+  "description": "A generic file uploader. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "arroncx",
+    "first_name": "Arron",
+    "last_name": "Clague",
+    "id": "529b5825-d742-44e6-9d53-d80748927d32",
+    "full_name": "Arron Clague"
+  },
+  "store_url": "https://www.langflow.store/store/component/c75312ac-d44a-407c-9a8e-5fffa56b8f19",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-09T09:46:58.599Z",
+    "updated": "2024-09-09T09:46:58.630Z",
+    "downloaded": "2025-08-19T17:50:05.264Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "File",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "path": {
+                "trace_as_metadata": true,
+                "file_path": "",
+                "fileTypes": [
+                  "txt",
+                  "md",
+                  "mdx",
+                  "csv",
+                  "json",
+                  "yaml",
+                  "yml",
+                  "xml",
+                  "html",
+                  "htm",
+                  "pdf",
+                  "docx",
+                  "py",
+                  "sh",
+                  "sql",
+                  "js",
+                  "ts",
+                  "tsx"
+                ],
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "path",
+                "value": "",
+                "display_name": "Input Path",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Supported file types: txt, md, mdx, csv, json, yaml, yml, xml, html, htm, pdf, docx, py, sh, sql, js, ts, tsx",
+                "title_case": false,
+                "type": "file",
+                "_input_type": "FileInput",
+                "load_from_db": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from pathlib import Path\nimport shutil\nfrom axiestudio.base.data.utils import TEXT_FILE_TYPES, parse_text_file_to_data\nfrom axiestudio.custom import Component\nfrom axiestudio.io import BoolInput, FileInput, Output\nfrom axiestudio.schema import Data\n\n\nclass FileComponent(Component):\n    display_name = \"File\"\n    description = \"A generic file uploader.\"\n    icon = \"file-text\"\n    name = \"File\"\n\n    inputs = [\n        FileInput(\n            name=\"path\",\n            display_name=\"Input Path\",\n            file_types=TEXT_FILE_TYPES,\n            info=f\"Supported file types: {', '.join(TEXT_FILE_TYPES)}\",\n        ),\n        MessageTextInput(\n            name=\"opath\",\n            display_name=\"Output Path\",\n            info=\"Path to the directory to load files into.\",\n        ),\n        BoolInput(\n            name=\"silent_errors\",\n            display_name=\"Silent Errors\",\n            advanced=True,\n            info=\"If true, errors will not raise an exception.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"load_file\"),\n    ]\n\n    def load_file(self) -> Data:\n        if not self.path:\n            raise ValueError(\"Please, upload a file to use this component.\")\n        resolved_path = self.resolve_path(self.path)\n        silent_errors = self.silent_errors\n\n        extension = Path(resolved_path).suffix[1:].lower()\n\n        if extension == \"doc\":\n            raise ValueError(\"doc files are not supported. Please save as .docx\")\n        if extension not in TEXT_FILE_TYPES:\n            raise ValueError(f\"Unsupported file type: {extension}\")\n\n        # Save the uploaded file to a local directory before processing\n        local_save_directory = self.opath\n        Path(local_save_directory).mkdir(parents=True, exist_ok=True)  # Create directory if it doesn't exist\n        local_file_path = Path(local_save_directory) / Path(resolved_path).name\n\n        # Copy the file to the local directory\n        shutil.copy(resolved_path, local_file_path)\n\n        # Parse the file data\n        data = parse_text_file_to_data(local_file_path, silent_errors)\n\n        self.status = data if data else \"No data\"\n        return data or Data()",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "opath": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "opath",
+                "value": "/home/koni/upload3",
+                "display_name": "Output Path",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Path to the directory to load files into.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "silent_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "silent_errors",
+                "value": true,
+                "display_name": "Silent Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, errors will not raise an exception.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput",
+                "load_from_db": false
+              }
+            },
+            "description": "A generic file uploader.",
+            "icon": "file-text",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "File Upload to Backend",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "load_file",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "path",
+              "opath",
+              "silent_errors"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-MDrii"
+        },
+        "id": "CustomComponent-MDrii",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "c75312ac-d44a-407c-9a8e-5fffa56b8f19",
+    "name": "File Upload to Backend",
+    "description": "A generic file uploader.",
+    "is_component": true,
+    "liked_by_count": "4",
+    "downloads_count": "111",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "File",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "path": {
+                  "trace_as_metadata": true,
+                  "file_path": "",
+                  "fileTypes": [
+                    "txt",
+                    "md",
+                    "mdx",
+                    "csv",
+                    "json",
+                    "yaml",
+                    "yml",
+                    "xml",
+                    "html",
+                    "htm",
+                    "pdf",
+                    "docx",
+                    "py",
+                    "sh",
+                    "sql",
+                    "js",
+                    "ts",
+                    "tsx"
+                  ],
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "path",
+                  "value": "",
+                  "display_name": "Input Path",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Supported file types: txt, md, mdx, csv, json, yaml, yml, xml, html, htm, pdf, docx, py, sh, sql, js, ts, tsx",
+                  "title_case": false,
+                  "type": "file",
+                  "_input_type": "FileInput",
+                  "load_from_db": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from pathlib import Path\nimport shutil\nfrom axiestudio.base.data.utils import TEXT_FILE_TYPES, parse_text_file_to_data\nfrom axiestudio.custom import Component\nfrom axiestudio.io import BoolInput, FileInput, Output\nfrom axiestudio.schema import Data\n\n\nclass FileComponent(Component):\n    display_name = \"File\"\n    description = \"A generic file uploader.\"\n    icon = \"file-text\"\n    name = \"File\"\n\n    inputs = [\n        FileInput(\n            name=\"path\",\n            display_name=\"Input Path\",\n            file_types=TEXT_FILE_TYPES,\n            info=f\"Supported file types: {', '.join(TEXT_FILE_TYPES)}\",\n        ),\n        MessageTextInput(\n            name=\"opath\",\n            display_name=\"Output Path\",\n            info=\"Path to the directory to load files into.\",\n        ),\n        BoolInput(\n            name=\"silent_errors\",\n            display_name=\"Silent Errors\",\n            advanced=True,\n            info=\"If true, errors will not raise an exception.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"load_file\"),\n    ]\n\n    def load_file(self) -> Data:\n        if not self.path:\n            raise ValueError(\"Please, upload a file to use this component.\")\n        resolved_path = self.resolve_path(self.path)\n        silent_errors = self.silent_errors\n\n        extension = Path(resolved_path).suffix[1:].lower()\n\n        if extension == \"doc\":\n            raise ValueError(\"doc files are not supported. Please save as .docx\")\n        if extension not in TEXT_FILE_TYPES:\n            raise ValueError(f\"Unsupported file type: {extension}\")\n\n        # Save the uploaded file to a local directory before processing\n        local_save_directory = self.opath\n        Path(local_save_directory).mkdir(parents=True, exist_ok=True)  # Create directory if it doesn't exist\n        local_file_path = Path(local_save_directory) / Path(resolved_path).name\n\n        # Copy the file to the local directory\n        shutil.copy(resolved_path, local_file_path)\n\n        # Parse the file data\n        data = parse_text_file_to_data(local_file_path, silent_errors)\n\n        self.status = data if data else \"No data\"\n        return data or Data()",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "opath": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "opath",
+                  "value": "/home/koni/upload3",
+                  "display_name": "Output Path",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Path to the directory to load files into.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "silent_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "silent_errors",
+                  "value": true,
+                  "display_name": "Silent Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, errors will not raise an exception.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput",
+                  "load_from_db": false
+                }
+              },
+              "description": "A generic file uploader.",
+              "icon": "file-text",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "File Upload to Backend",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "load_file",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "path",
+                "opath",
+                "silent_errors"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-MDrii"
+          },
+          "id": "CustomComponent-MDrii",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-09T09:46:58.599Z",
+    "date_updated": "2024-09-09T09:46:58.630Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "529b5825-d742-44e6-9d53-d80748927d32",
+    "user_created": {
+      "username": "arroncx",
+      "first_name": "Arron",
+      "last_name": "Clague",
+      "id": "529b5825-d742-44e6-9d53-d80748927d32"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.772Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

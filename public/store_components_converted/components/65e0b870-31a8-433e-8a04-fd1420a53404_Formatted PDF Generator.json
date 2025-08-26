@@ -1,0 +1,311 @@
+{
+  "id": "65e0b870-31a8-433e-8a04-fd1420a53404",
+  "name": "Formatted PDF Generator",
+  "description": "Receives a text input and transforms it into a formatted PDF. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "DioSou",
+    "first_name": "Dionisio",
+    "last_name": "Souza",
+    "id": "77090a85-6377-410a-941e-64f30058cf8a",
+    "full_name": "Dionisio Souza"
+  },
+  "store_url": "https://www.langflow.store/store/component/65e0b870-31a8-433e-8a04-fd1420a53404",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-30T22:13:55.661Z",
+    "updated": "2024-09-30T23:21:59.825Z",
+    "downloaded": "2025-08-19T17:50:07.319Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "PDFGeneratorComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "\"\"\"\r\nBaseado nos ensinamentos do Professor Sandeco\r\nhttps://www.youtube.com/@canalsandeco\r\n\"\"\"\r\n\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import MessageTextInput, Output\r\nfrom axiestudio.schema import Data\r\nfrom fpdf import FPDF\r\nimport os\r\nimport textwrap\r\n\r\nclass PDFGeneratorComponent(Component):\r\n    display_name = \"Formatted PDF Generator\"\r\n    description = \"Receives a text input and transforms it into a formatted PDF.\"\r\n    icon = \"custom_components\"\r\n    \r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"pdf_title\",\r\n            display_name=\"PDF Title\",\r\n            info=\"Title of the generated PDF.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"text_content\",\r\n            display_name=\"Text Content\",\r\n            info=\"The text content to be included in the PDF.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"PDF Creation Status\", name=\"pdf_status\", method=\"create_pdf\"),\r\n    ]\r\n\r\n    def create_pdf(self) -> Data:\r\n        # Retrieve input values\r\n        pdf_title = self._attributes.get(\"pdf_title\", \"Untitled\")\r\n        text_content = self._attributes.get(\"text_content\", \"\")\r\n\r\n        # Set up the output file path\r\n        downloads_folder = os.path.join(os.path.expanduser(\"~\"), \"Downloads\")\r\n        pdf_filename = f\"{pdf_title.replace(' ', '_')}.pdf\"\r\n        pdf_path = os.path.join(downloads_folder, pdf_filename)\r\n\r\n        class JustifiedPDF(FPDF):\r\n            def multi_cell_justified(self, w, h, txt, indent, border=0, align='J', fill=False):\r\n                # Helper function to split text into lines that fit within a given width\r\n                def split_text(text, max_width):\r\n                    words = text.split()\r\n                    lines = []\r\n                    current_line = []\r\n                    current_width = 0\r\n                    for word in words:\r\n                        word_width = self.get_string_width(word + ' ')\r\n                        if current_width + word_width <= max_width:\r\n                            current_line.append(word)\r\n                            current_width += word_width\r\n                        else:\r\n                            if current_line:\r\n                                lines.append(' '.join(current_line))\r\n                            current_line = [word]\r\n                            current_width = word_width\r\n                    if current_line:\r\n                        lines.append(' '.join(current_line))\r\n                    return lines\r\n\r\n                # Calculate widths for first line (with indent) and subsequent lines\r\n                first_line_width = w - indent\r\n                first_line = split_text(txt, first_line_width)[0]\r\n                remaining_text = ' '.join(txt.split()[len(first_line.split()):])\r\n                subsequent_lines = split_text(remaining_text, w)\r\n                \r\n                # Process and print the first line with indent\r\n                self.set_x(self.l_margin + indent)\r\n                words = first_line.split()\r\n                word_width = [self.get_string_width(word) for word in words]\r\n                # Calculate space between words to justify the line\r\n                space_width = (first_line_width - sum(word_width)) / (len(words) - 1) if len(words) > 1 else 0\r\n                \r\n                for i, word in enumerate(words):\r\n                    self.cell(word_width[i], h, word, 0, 0, 'L')\r\n                    if i < len(words) - 1:  # Don't add space after the last word\r\n                        self.cell(space_width, h, '', 0, 0, 'L')\r\n                self.ln(h)\r\n                \r\n                # Process and print subsequent lines\r\n                for i, line in enumerate(subsequent_lines):\r\n                    self.set_x(self.l_margin)\r\n                    if i == len(subsequent_lines) - 1:  # Last line\r\n                        self.cell(w, h, line, 0, 1, 'L')  # Align left, don't justify\r\n                    else:\r\n                        words = line.split()\r\n                        word_width = [self.get_string_width(word) for word in words]\r\n                        # Calculate space between words to justify the line\r\n                        space_width = (w - sum(word_width)) / (len(words) - 1) if len(words) > 1 else 0\r\n                        \r\n                        for j, word in enumerate(words):\r\n                            self.cell(word_width[j], h, word, 0, 0, 'L')\r\n                            if j < len(words) - 1:  # Don't add space after the last word\r\n                                self.cell(space_width, h, '', 0, 0, 'L')\r\n                        self.ln(h)\r\n\r\n        # Initialize PDF object with custom settings\r\n        pdf = JustifiedPDF()\r\n        pdf.set_left_margin(25)\r\n        pdf.set_right_margin(25)\r\n        pdf.set_auto_page_break(auto=True, margin=25)\r\n        pdf.add_page()\r\n\r\n        # Add title to the PDF\r\n        pdf.set_font(\"Arial\", 'B', 16)\r\n        pdf.cell(0, 10, txt=pdf_title, ln=True, align='C')\r\n        pdf.ln(5)\r\n\r\n        # Set font for the main content\r\n        pdf.set_font(\"Arial\", size=11)\r\n\r\n        # Calculate available width for text\r\n        text_width = pdf.w - pdf.l_margin - pdf.r_margin\r\n\r\n        # Process and add content to the PDF\r\n        paragraphs = text_content.split('\\n')\r\n        for paragraph in paragraphs:\r\n            if paragraph.strip():\r\n                # Add justified paragraph with first line indent\r\n                pdf.multi_cell_justified(text_width, 6, paragraph.strip(), indent=12)\r\n                pdf.ln(1)  # Space between paragraphs\r\n            else:\r\n                pdf.ln(3)  # Blank line between paragraphs\r\n\r\n        # Generate the PDF file\r\n        pdf.output(pdf_path)\r\n\r\n        # Attempt to open the PDF file (Windows-specific)\r\n        try:\r\n            os.startfile(pdf_path)\r\n        except Exception as e:\r\n            return Data(data={\"status\": f\"Error: {str(e)}\"})\r\n\r\n        return Data(data={\"status\": f\"PDF created successfully and opened: {pdf_path}\"})",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "pdf_title": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "pdf_title",
+                "value": "",
+                "display_name": "PDF Title",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Title of the generated PDF.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "text_content": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "text_content",
+                "value": "",
+                "display_name": "Text Content",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The text content to be included in the PDF.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Receives a text input and transforms it into a formatted PDF.",
+            "icon": "custom_components",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Formatted PDF Generator",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "pdf_status",
+                "display_name": "PDF Creation Status",
+                "method": "create_pdf",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "pdf_title",
+              "text_content"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.18",
+            "official": false
+          },
+          "id": "PDFGeneratorComponent-eGsO1"
+        },
+        "id": "PDFGeneratorComponent-eGsO1",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "PDFGeneratorComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "65e0b870-31a8-433e-8a04-fd1420a53404",
+    "name": "Formatted PDF Generator",
+    "description": "Receives a text input and transforms it into a formatted PDF.",
+    "is_component": true,
+    "liked_by_count": "5",
+    "downloads_count": "76",
+    "metadata": {
+      "PDFGeneratorComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "PDFGeneratorComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "\"\"\"\r\nBaseado nos ensinamentos do Professor Sandeco\r\nhttps://www.youtube.com/@canalsandeco\r\n\"\"\"\r\n\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import MessageTextInput, Output\r\nfrom axiestudio.schema import Data\r\nfrom fpdf import FPDF\r\nimport os\r\nimport textwrap\r\n\r\nclass PDFGeneratorComponent(Component):\r\n    display_name = \"Formatted PDF Generator\"\r\n    description = \"Receives a text input and transforms it into a formatted PDF.\"\r\n    icon = \"custom_components\"\r\n    \r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"pdf_title\",\r\n            display_name=\"PDF Title\",\r\n            info=\"Title of the generated PDF.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"text_content\",\r\n            display_name=\"Text Content\",\r\n            info=\"The text content to be included in the PDF.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"PDF Creation Status\", name=\"pdf_status\", method=\"create_pdf\"),\r\n    ]\r\n\r\n    def create_pdf(self) -> Data:\r\n        # Retrieve input values\r\n        pdf_title = self._attributes.get(\"pdf_title\", \"Untitled\")\r\n        text_content = self._attributes.get(\"text_content\", \"\")\r\n\r\n        # Set up the output file path\r\n        downloads_folder = os.path.join(os.path.expanduser(\"~\"), \"Downloads\")\r\n        pdf_filename = f\"{pdf_title.replace(' ', '_')}.pdf\"\r\n        pdf_path = os.path.join(downloads_folder, pdf_filename)\r\n\r\n        class JustifiedPDF(FPDF):\r\n            def multi_cell_justified(self, w, h, txt, indent, border=0, align='J', fill=False):\r\n                # Helper function to split text into lines that fit within a given width\r\n                def split_text(text, max_width):\r\n                    words = text.split()\r\n                    lines = []\r\n                    current_line = []\r\n                    current_width = 0\r\n                    for word in words:\r\n                        word_width = self.get_string_width(word + ' ')\r\n                        if current_width + word_width <= max_width:\r\n                            current_line.append(word)\r\n                            current_width += word_width\r\n                        else:\r\n                            if current_line:\r\n                                lines.append(' '.join(current_line))\r\n                            current_line = [word]\r\n                            current_width = word_width\r\n                    if current_line:\r\n                        lines.append(' '.join(current_line))\r\n                    return lines\r\n\r\n                # Calculate widths for first line (with indent) and subsequent lines\r\n                first_line_width = w - indent\r\n                first_line = split_text(txt, first_line_width)[0]\r\n                remaining_text = ' '.join(txt.split()[len(first_line.split()):])\r\n                subsequent_lines = split_text(remaining_text, w)\r\n                \r\n                # Process and print the first line with indent\r\n                self.set_x(self.l_margin + indent)\r\n                words = first_line.split()\r\n                word_width = [self.get_string_width(word) for word in words]\r\n                # Calculate space between words to justify the line\r\n                space_width = (first_line_width - sum(word_width)) / (len(words) - 1) if len(words) > 1 else 0\r\n                \r\n                for i, word in enumerate(words):\r\n                    self.cell(word_width[i], h, word, 0, 0, 'L')\r\n                    if i < len(words) - 1:  # Don't add space after the last word\r\n                        self.cell(space_width, h, '', 0, 0, 'L')\r\n                self.ln(h)\r\n                \r\n                # Process and print subsequent lines\r\n                for i, line in enumerate(subsequent_lines):\r\n                    self.set_x(self.l_margin)\r\n                    if i == len(subsequent_lines) - 1:  # Last line\r\n                        self.cell(w, h, line, 0, 1, 'L')  # Align left, don't justify\r\n                    else:\r\n                        words = line.split()\r\n                        word_width = [self.get_string_width(word) for word in words]\r\n                        # Calculate space between words to justify the line\r\n                        space_width = (w - sum(word_width)) / (len(words) - 1) if len(words) > 1 else 0\r\n                        \r\n                        for j, word in enumerate(words):\r\n                            self.cell(word_width[j], h, word, 0, 0, 'L')\r\n                            if j < len(words) - 1:  # Don't add space after the last word\r\n                                self.cell(space_width, h, '', 0, 0, 'L')\r\n                        self.ln(h)\r\n\r\n        # Initialize PDF object with custom settings\r\n        pdf = JustifiedPDF()\r\n        pdf.set_left_margin(25)\r\n        pdf.set_right_margin(25)\r\n        pdf.set_auto_page_break(auto=True, margin=25)\r\n        pdf.add_page()\r\n\r\n        # Add title to the PDF\r\n        pdf.set_font(\"Arial\", 'B', 16)\r\n        pdf.cell(0, 10, txt=pdf_title, ln=True, align='C')\r\n        pdf.ln(5)\r\n\r\n        # Set font for the main content\r\n        pdf.set_font(\"Arial\", size=11)\r\n\r\n        # Calculate available width for text\r\n        text_width = pdf.w - pdf.l_margin - pdf.r_margin\r\n\r\n        # Process and add content to the PDF\r\n        paragraphs = text_content.split('\\n')\r\n        for paragraph in paragraphs:\r\n            if paragraph.strip():\r\n                # Add justified paragraph with first line indent\r\n                pdf.multi_cell_justified(text_width, 6, paragraph.strip(), indent=12)\r\n                pdf.ln(1)  # Space between paragraphs\r\n            else:\r\n                pdf.ln(3)  # Blank line between paragraphs\r\n\r\n        # Generate the PDF file\r\n        pdf.output(pdf_path)\r\n\r\n        # Attempt to open the PDF file (Windows-specific)\r\n        try:\r\n            os.startfile(pdf_path)\r\n        except Exception as e:\r\n            return Data(data={\"status\": f\"Error: {str(e)}\"})\r\n\r\n        return Data(data={\"status\": f\"PDF created successfully and opened: {pdf_path}\"})",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "pdf_title": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "pdf_title",
+                  "value": "",
+                  "display_name": "PDF Title",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Title of the generated PDF.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "text_content": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "text_content",
+                  "value": "",
+                  "display_name": "Text Content",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The text content to be included in the PDF.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Receives a text input and transforms it into a formatted PDF.",
+              "icon": "custom_components",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Formatted PDF Generator",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "pdf_status",
+                  "display_name": "PDF Creation Status",
+                  "method": "create_pdf",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "pdf_title",
+                "text_content"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.18",
+              "official": false
+            },
+            "id": "PDFGeneratorComponent-eGsO1"
+          },
+          "id": "PDFGeneratorComponent-eGsO1",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-30T22:13:55.661Z",
+    "date_updated": "2024-09-30T23:21:59.825Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "77090a85-6377-410a-941e-64f30058cf8a",
+    "user_created": {
+      "username": "DioSou",
+      "first_name": "Dionisio",
+      "last_name": "Souza",
+      "id": "77090a85-6377-410a-941e-64f30058cf8a"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.381Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

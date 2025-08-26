@@ -1,0 +1,547 @@
+{
+  "id": "2432829d-9e59-4c79-9eed-8f2934c1c766",
+  "name": "LibreTranslate",
+  "description": "Translates text using the LibreTranslate API. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "Fabricando Sua Ideia",
+    "first_name": "Fabricando Sua Ideia",
+    "last_name": "Sua Ideia",
+    "id": "f2e77b57-53b7-49b9-babd-9d6ec3aecb00",
+    "full_name": "Fabricando Sua Ideia Sua Ideia"
+  },
+  "store_url": "https://www.langflow.store/store/component/2432829d-9e59-4c79-9eed-8f2934c1c766",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-06T15:00:08.064Z",
+    "updated": "2024-08-06T15:08:11.705Z",
+    "downloaded": "2025-08-19T17:50:06.334Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.13",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "LibreTranslateComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "api_endpoint": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "api_endpoint",
+                "display_name": "API Endpoint",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Endpoint for the LibreTranslate API.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "api_key": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "api_key",
+                "display_name": "API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "API Key for the LibreTranslate API (optional).",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.io.text import TextComponent\r\nfrom axiestudio.io import MessageTextInput, Output, DropdownInput, IntInput\r\nfrom axiestudio.schema.message import Message\r\nimport requests\r\n\r\n# Component Create By Fabricando Sua Ideia: https://www.youtube.com/@fabricandosuaideiatutoriais\r\n\r\nclass LibreTranslateComponent(TextComponent):\r\n    display_name = \"LibreTranslate\"\r\n    description = \"Translates text using the LibreTranslate API.\"\r\n    icon = \"languages\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"input_text\",\r\n            display_name=\"Input Text\",\r\n            info=\"Text to translate.\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"source_language\",\r\n            display_name=\"Source Language\",\r\n            options=[\"auto\", \"en\", \"es\", \"fr\", \"de\", \"it\", \"pt\", \"ru\", \"zh\"],\r\n            info=\"Language of the input text.\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"target_language\",\r\n            display_name=\"Target Language\",\r\n            options=[\"en\", \"es\", \"fr\", \"de\", \"it\", \"pt\", \"ru\", \"zh\"],\r\n            info=\"Language to translate the text into.\",\r\n        ),\r\n        IntInput(\r\n            name=\"num_alternatives\",\r\n            display_name=\"Number of Alternatives\",\r\n            info=\"Number of alternative translations to return.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"api_endpoint\",\r\n            display_name=\"API Endpoint\",\r\n            info=\"Endpoint for the LibreTranslate API.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"api_key\",\r\n            display_name=\"API Key\",\r\n            info=\"API Key for the LibreTranslate API (optional).\",\r\n            required=False\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Translated Text\", name=\"translated_text\", method=\"translate_text\"),\r\n        Output(display_name=\"Alternative Translations\", name=\"alternative_translations\", method=\"get_alternatives\"),\r\n        Output(display_name=\"Detected Language\", name=\"detected_language\", method=\"get_detected_language\"),\r\n    ]\r\n\r\n    def translate_text(self) -> Message:\r\n        input_text = self.input_text\r\n        source_language = self.source_language\r\n        target_language = self.target_language\r\n        num_alternatives = self.num_alternatives\r\n        api_endpoint = self.api_endpoint.rstrip('/') + '/translate'  # Ensure the endpoint ends with /translate\r\n        api_key = self.api_key if hasattr(self, 'api_key') else \"\"\r\n\r\n        response = requests.post(\r\n            api_endpoint,\r\n            json={\r\n                \"q\": input_text,\r\n                \"source\": source_language,\r\n                \"target\": target_language,\r\n                \"format\": \"text\",\r\n                \"alternatives\": num_alternatives,\r\n                \"api_key\": api_key\r\n            },\r\n            headers={\"Content-Type\": \"application/json\"}\r\n        )\r\n\r\n        response_data = response.json()\r\n        translated_text = response_data.get(\"translatedText\", \"\")\r\n        self.translated_text = translated_text\r\n        self.alternative_translations = \", \".join(response_data.get(\"alternatives\", []))\r\n        self.detected_language = response_data.get(\"detectedLanguage\", {}).get(\"language\", \"\")\r\n\r\n        return Message(text=translated_text)\r\n\r\n    def get_alternatives(self) -> Message:\r\n        return Message(text=self.alternative_translations)\r\n\r\n    def get_detected_language(self) -> Message:\r\n        return Message(text=self.detected_language)\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_text": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "Ola Mundo!",
+                "name": "input_text",
+                "display_name": "Input Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Text to translate.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "num_alternatives": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "1",
+                "name": "num_alternatives",
+                "display_name": "Number of Alternatives",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Number of alternative translations to return.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "source_language": {
+                "combobox": false,
+                "trace_as_metadata": true,
+                "options": [
+                  "auto",
+                  "en",
+                  "es",
+                  "fr",
+                  "de",
+                  "it",
+                  "pt",
+                  "ru",
+                  "zh"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "pt",
+                "name": "source_language",
+                "display_name": "Source Language",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Language of the input text.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput",
+                "load_from_db": false
+              },
+              "target_language": {
+                "combobox": false,
+                "trace_as_metadata": true,
+                "options": [
+                  "en",
+                  "es",
+                  "fr",
+                  "de",
+                  "it",
+                  "pt",
+                  "ru",
+                  "zh"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "en",
+                "name": "target_language",
+                "display_name": "Target Language",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Language to translate the text into.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput",
+                "load_from_db": false
+              }
+            },
+            "description": "Translates text using the LibreTranslate API.",
+            "icon": "languages",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "LibreTranslate",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "translated_text",
+                "display_name": "Translated Text",
+                "method": "translate_text",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "alternative_translations",
+                "display_name": "Alternative Translations",
+                "method": "get_alternatives",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "detected_language",
+                "display_name": "Detected Language",
+                "method": "get_detected_language",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_text",
+              "source_language",
+              "target_language",
+              "num_alternatives",
+              "api_endpoint",
+              "api_key"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "LibreTranslateComponent-6QbB5"
+        },
+        "id": "LibreTranslateComponent-6QbB5",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "LibreTranslateComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "2432829d-9e59-4c79-9eed-8f2934c1c766",
+    "name": "LibreTranslate",
+    "description": "Translates text using the LibreTranslate API.",
+    "is_component": true,
+    "liked_by_count": "5",
+    "downloads_count": "53",
+    "metadata": {
+      "LibreTranslateComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.13",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "LibreTranslateComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "api_endpoint": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "api_endpoint",
+                  "display_name": "API Endpoint",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Endpoint for the LibreTranslate API.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "api_key": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "api_key",
+                  "display_name": "API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "API Key for the LibreTranslate API (optional).",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.io.text import TextComponent\r\nfrom axiestudio.io import MessageTextInput, Output, DropdownInput, IntInput\r\nfrom axiestudio.schema.message import Message\r\nimport requests\r\n\r\n# Component Create By Fabricando Sua Ideia: https://www.youtube.com/@fabricandosuaideiatutoriais\r\n\r\nclass LibreTranslateComponent(TextComponent):\r\n    display_name = \"LibreTranslate\"\r\n    description = \"Translates text using the LibreTranslate API.\"\r\n    icon = \"languages\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"input_text\",\r\n            display_name=\"Input Text\",\r\n            info=\"Text to translate.\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"source_language\",\r\n            display_name=\"Source Language\",\r\n            options=[\"auto\", \"en\", \"es\", \"fr\", \"de\", \"it\", \"pt\", \"ru\", \"zh\"],\r\n            info=\"Language of the input text.\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"target_language\",\r\n            display_name=\"Target Language\",\r\n            options=[\"en\", \"es\", \"fr\", \"de\", \"it\", \"pt\", \"ru\", \"zh\"],\r\n            info=\"Language to translate the text into.\",\r\n        ),\r\n        IntInput(\r\n            name=\"num_alternatives\",\r\n            display_name=\"Number of Alternatives\",\r\n            info=\"Number of alternative translations to return.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"api_endpoint\",\r\n            display_name=\"API Endpoint\",\r\n            info=\"Endpoint for the LibreTranslate API.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"api_key\",\r\n            display_name=\"API Key\",\r\n            info=\"API Key for the LibreTranslate API (optional).\",\r\n            required=False\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Translated Text\", name=\"translated_text\", method=\"translate_text\"),\r\n        Output(display_name=\"Alternative Translations\", name=\"alternative_translations\", method=\"get_alternatives\"),\r\n        Output(display_name=\"Detected Language\", name=\"detected_language\", method=\"get_detected_language\"),\r\n    ]\r\n\r\n    def translate_text(self) -> Message:\r\n        input_text = self.input_text\r\n        source_language = self.source_language\r\n        target_language = self.target_language\r\n        num_alternatives = self.num_alternatives\r\n        api_endpoint = self.api_endpoint.rstrip('/') + '/translate'  # Ensure the endpoint ends with /translate\r\n        api_key = self.api_key if hasattr(self, 'api_key') else \"\"\r\n\r\n        response = requests.post(\r\n            api_endpoint,\r\n            json={\r\n                \"q\": input_text,\r\n                \"source\": source_language,\r\n                \"target\": target_language,\r\n                \"format\": \"text\",\r\n                \"alternatives\": num_alternatives,\r\n                \"api_key\": api_key\r\n            },\r\n            headers={\"Content-Type\": \"application/json\"}\r\n        )\r\n\r\n        response_data = response.json()\r\n        translated_text = response_data.get(\"translatedText\", \"\")\r\n        self.translated_text = translated_text\r\n        self.alternative_translations = \", \".join(response_data.get(\"alternatives\", []))\r\n        self.detected_language = response_data.get(\"detectedLanguage\", {}).get(\"language\", \"\")\r\n\r\n        return Message(text=translated_text)\r\n\r\n    def get_alternatives(self) -> Message:\r\n        return Message(text=self.alternative_translations)\r\n\r\n    def get_detected_language(self) -> Message:\r\n        return Message(text=self.detected_language)\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_text": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "Ola Mundo!",
+                  "name": "input_text",
+                  "display_name": "Input Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Text to translate.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "num_alternatives": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "1",
+                  "name": "num_alternatives",
+                  "display_name": "Number of Alternatives",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Number of alternative translations to return.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "source_language": {
+                  "combobox": false,
+                  "trace_as_metadata": true,
+                  "options": [
+                    "auto",
+                    "en",
+                    "es",
+                    "fr",
+                    "de",
+                    "it",
+                    "pt",
+                    "ru",
+                    "zh"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "pt",
+                  "name": "source_language",
+                  "display_name": "Source Language",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Language of the input text.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput",
+                  "load_from_db": false
+                },
+                "target_language": {
+                  "combobox": false,
+                  "trace_as_metadata": true,
+                  "options": [
+                    "en",
+                    "es",
+                    "fr",
+                    "de",
+                    "it",
+                    "pt",
+                    "ru",
+                    "zh"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "en",
+                  "name": "target_language",
+                  "display_name": "Target Language",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Language to translate the text into.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput",
+                  "load_from_db": false
+                }
+              },
+              "description": "Translates text using the LibreTranslate API.",
+              "icon": "languages",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "LibreTranslate",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "translated_text",
+                  "display_name": "Translated Text",
+                  "method": "translate_text",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "alternative_translations",
+                  "display_name": "Alternative Translations",
+                  "method": "get_alternatives",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "detected_language",
+                  "display_name": "Detected Language",
+                  "method": "get_detected_language",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_text",
+                "source_language",
+                "target_language",
+                "num_alternatives",
+                "api_endpoint",
+                "api_key"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "LibreTranslateComponent-6QbB5"
+          },
+          "id": "LibreTranslateComponent-6QbB5",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-06T15:00:08.064Z",
+    "date_updated": "2024-08-06T15:08:11.705Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "f2e77b57-53b7-49b9-babd-9d6ec3aecb00",
+    "user_created": {
+      "username": "Fabricando Sua Ideia",
+      "first_name": "Fabricando Sua Ideia",
+      "last_name": "Sua Ideia",
+      "id": "f2e77b57-53b7-49b9-babd-9d6ec3aecb00"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.284Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

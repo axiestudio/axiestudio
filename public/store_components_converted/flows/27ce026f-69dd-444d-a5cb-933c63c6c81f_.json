@@ -1,0 +1,683 @@
+{
+  "id": "27ce026f-69dd-444d-a5cb-933c63c6c81f",
+  "name": "上传测试",
+  "description": "智链iLink 点亮智慧 链接未来 (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "智链",
+    "first_name": "qh",
+    "last_name": "zheng",
+    "id": "e8af2b46-9355-4b04-803d-1b2c71397a68",
+    "full_name": "qh zheng"
+  },
+  "store_url": "https://www.langflow.store/store/component/27ce026f-69dd-444d-a5cb-933c63c6c81f",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-26T08:16:18.190Z",
+    "updated": "2024-07-26T08:16:18.232Z",
+    "downloaded": "2025-08-19T17:50:05.012Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.7",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "Prompt-QU7Gz",
+        "type": "genericNode",
+        "position": {
+          "x": -59.39999999999998,
+          "y": -11
+        },
+        "data": {
+          "type": "Prompt",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.prompts.api_utils import process_prompt_template\nfrom axiestudio.custom import Component\nfrom axiestudio.io import Output, PromptInput\nfrom axiestudio.schema.message import Message\nfrom axiestudio.template.utils import update_template_values\n\n\nclass PromptComponent(Component):\n    display_name: str = \"Prompt\"\n    description: str = \"使用变量创建提示词模板\"\n    icon = \"prompts\"\n    trace_type = \"prompt\"\n    name = \"Prompt\"\n\n    inputs = [\n        PromptInput(name=\"template\", display_name=\"模板\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"提示词消息\", name=\"prompt\", method=\"build_prompt\"),\n    ]\n\n    async def build_prompt(\n        self,\n    ) -> Message:\n        prompt = await Message.from_template_and_variables(**self._attributes)\n        self.status = prompt.text\n        return prompt\n\n    def post_code_processing(self, new_build_config: dict, current_build_config: dict):\n        \"\"\"\n        This function is called after the code validation is done.\n        \"\"\"\n        frontend_node = super().post_code_processing(new_build_config, current_build_config)\n        template = frontend_node[\"template\"][\"template\"][\"value\"]\n        _ = process_prompt_template(\n            template=template,\n            name=\"template\",\n            custom_fields=frontend_node[\"custom_fields\"],\n            frontend_node_template=frontend_node[\"template\"],\n        )\n        # Now that template is updated, we need to grab any values that were set in the current_build_config\n        # and update the frontend_node with those values\n        update_template_values(frontend_template=frontend_node, raw_template=current_build_config[\"template\"])\n        return frontend_node\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "template": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "template",
+                "display_name": "模板",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "prompt"
+              }
+            },
+            "description": "使用变量创建提示词模板",
+            "icon": "prompts",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "提示",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "prompt",
+                "display_name": "提示词消息",
+                "method": "build_prompt",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "template"
+            ],
+            "beta": false,
+            "edited": false
+          },
+          "id": "Prompt-QU7Gz"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 300,
+        "positionAbsolute": {
+          "x": -59.39999999999998,
+          "y": -11
+        },
+        "dragging": false
+      },
+      {
+        "id": "Directory-hfswI",
+        "type": "genericNode",
+        "position": {
+          "x": 98.60000000000002,
+          "y": 325
+        },
+        "data": {
+          "type": "Directory",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List\n\nfrom axiestudio.base.data.utils import parallel_load_data, parse_text_file_to_data, retrieve_file_paths\nfrom axiestudio.custom import Component\nfrom axiestudio.io import BoolInput, IntInput, MessageTextInput\nfrom axiestudio.schema import Data\nfrom axiestudio.template import Output\n\n\nclass DirectoryComponent(Component):\n    display_name = \"Directory\"\n    description = \"从目录中递归加载文件\"\n    icon = \"folder\"\n    name = \"Directory\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"path\",\n            display_name=\"路径\",\n            info=\"Path to the directory to load files from.\",\n        ),\n        MessageTextInput(\n            name=\"types\",\n            display_name=\"类型\",\n            info=\"File types to load. Leave empty to load all types.\",\n            is_list=True,\n        ),\n        IntInput(\n            name=\"depth\",\n            display_name=\"深度\",\n            info=\"Depth to search for files.\",\n            value=0,\n        ),\n        IntInput(\n            name=\"max_concurrency\",\n            display_name=\"最大并发数\",\n            advanced=True,\n            info=\"Maximum concurrency for loading files.\",\n            value=2,\n        ),\n        BoolInput(\n            name=\"load_hidden\",\n            display_name=\"加载隐藏文件\",\n            advanced=True,\n            info=\"If true, hidden files will be loaded.\",\n        ),\n        BoolInput(\n            name=\"recursive\",\n            display_name=\"递归\",\n            advanced=True,\n            info=\"If true, the search will be recursive.\",\n        ),\n        BoolInput(\n            name=\"silent_errors\",\n            display_name=\"静态错误\",\n            advanced=True,\n            info=\"If true, errors will not raise an exception.\",\n        ),\n        BoolInput(\n            name=\"use_multithreading\",\n            display_name=\"使用多线程\",\n            advanced=True,\n            info=\"If true, multithreading will be used.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"数据\", name=\"data\", method=\"load_directory\"),\n    ]\n\n    def load_directory(self) -> List[Data]:\n        path = self.path\n        types = self.types or []  # self.types is already a list due to is_list=True\n        depth = self.depth\n        max_concurrency = self.max_concurrency\n        load_hidden = self.load_hidden\n        recursive = self.recursive\n        silent_errors = self.silent_errors\n        use_multithreading = self.use_multithreading\n\n        resolved_path = self.resolve_path(path)\n        file_paths = retrieve_file_paths(resolved_path, load_hidden, recursive, depth)\n\n        if types:\n            file_paths = [fp for fp in file_paths if any(fp.endswith(ext) for ext in types)]\n\n        loaded_data = []\n\n        if use_multithreading:\n            loaded_data = parallel_load_data(file_paths, silent_errors, max_concurrency)\n        else:\n            loaded_data = [parse_text_file_to_data(file_path, silent_errors) for file_path in file_paths]\n        loaded_data = list(filter(None, loaded_data))\n        self.status = loaded_data\n        return loaded_data  # type: ignore\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "depth": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": 0,
+                "name": "depth",
+                "display_name": "深度",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Depth to search for files.",
+                "title_case": false,
+                "type": "int"
+              },
+              "load_hidden": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "load_hidden",
+                "display_name": "加载隐藏文件",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, hidden files will be loaded.",
+                "title_case": false,
+                "type": "bool"
+              },
+              "max_concurrency": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": 2,
+                "name": "max_concurrency",
+                "display_name": "最大并发数",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Maximum concurrency for loading files.",
+                "title_case": false,
+                "type": "int"
+              },
+              "path": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "path",
+                "display_name": "路径",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Path to the directory to load files from.",
+                "title_case": false,
+                "type": "str"
+              },
+              "recursive": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "recursive",
+                "display_name": "递归",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, the search will be recursive.",
+                "title_case": false,
+                "type": "bool"
+              },
+              "silent_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "silent_errors",
+                "display_name": "静态错误",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, errors will not raise an exception.",
+                "title_case": false,
+                "type": "bool"
+              },
+              "types": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "types",
+                "display_name": "类型",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "File types to load. Leave empty to load all types.",
+                "title_case": false,
+                "type": "str"
+              },
+              "use_multithreading": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "use_multithreading",
+                "display_name": "使用多线程",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, multithreading will be used.",
+                "title_case": false,
+                "type": "bool"
+              }
+            },
+            "description": "从目录中递归加载文件",
+            "icon": "folder",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "目录",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "数据",
+                "method": "load_directory",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "path",
+              "types",
+              "depth",
+              "max_concurrency",
+              "load_hidden",
+              "recursive",
+              "silent_errors",
+              "use_multithreading"
+            ],
+            "beta": false,
+            "edited": false
+          },
+          "id": "Directory-hfswI"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 487
+      }
+    ],
+    "edges": [],
+    "viewport": {
+      "x": 136.78328205436242,
+      "y": 32.94853651650578,
+      "zoom": 0.8705505632961245
+    }
+  },
+  "metadata": {
+    "Prompt": {
+      "count": 1
+    },
+    "Directory": {
+      "count": 1
+    },
+    "total": 2
+  },
+  "original": {
+    "id": "27ce026f-69dd-444d-a5cb-933c63c6c81f",
+    "name": "上传测试",
+    "description": "智链iLink 点亮智慧 链接未来",
+    "is_component": false,
+    "liked_by_count": "0",
+    "downloads_count": "4",
+    "metadata": {
+      "Prompt": {
+        "count": 1
+      },
+      "Directory": {
+        "count": 1
+      },
+      "total": 2
+    },
+    "last_tested_version": "1.0.7",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "Prompt-QU7Gz",
+          "type": "genericNode",
+          "position": {
+            "x": -59.39999999999998,
+            "y": -11
+          },
+          "data": {
+            "type": "Prompt",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.prompts.api_utils import process_prompt_template\nfrom axiestudio.custom import Component\nfrom axiestudio.io import Output, PromptInput\nfrom axiestudio.schema.message import Message\nfrom axiestudio.template.utils import update_template_values\n\n\nclass PromptComponent(Component):\n    display_name: str = \"Prompt\"\n    description: str = \"使用变量创建提示词模板\"\n    icon = \"prompts\"\n    trace_type = \"prompt\"\n    name = \"Prompt\"\n\n    inputs = [\n        PromptInput(name=\"template\", display_name=\"模板\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"提示词消息\", name=\"prompt\", method=\"build_prompt\"),\n    ]\n\n    async def build_prompt(\n        self,\n    ) -> Message:\n        prompt = await Message.from_template_and_variables(**self._attributes)\n        self.status = prompt.text\n        return prompt\n\n    def post_code_processing(self, new_build_config: dict, current_build_config: dict):\n        \"\"\"\n        This function is called after the code validation is done.\n        \"\"\"\n        frontend_node = super().post_code_processing(new_build_config, current_build_config)\n        template = frontend_node[\"template\"][\"template\"][\"value\"]\n        _ = process_prompt_template(\n            template=template,\n            name=\"template\",\n            custom_fields=frontend_node[\"custom_fields\"],\n            frontend_node_template=frontend_node[\"template\"],\n        )\n        # Now that template is updated, we need to grab any values that were set in the current_build_config\n        # and update the frontend_node with those values\n        update_template_values(frontend_template=frontend_node, raw_template=current_build_config[\"template\"])\n        return frontend_node\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "template": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "template",
+                  "display_name": "模板",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "prompt"
+                }
+              },
+              "description": "使用变量创建提示词模板",
+              "icon": "prompts",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "提示",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "prompt",
+                  "display_name": "提示词消息",
+                  "method": "build_prompt",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "template"
+              ],
+              "beta": false,
+              "edited": false
+            },
+            "id": "Prompt-QU7Gz"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 300,
+          "positionAbsolute": {
+            "x": -59.39999999999998,
+            "y": -11
+          },
+          "dragging": false
+        },
+        {
+          "id": "Directory-hfswI",
+          "type": "genericNode",
+          "position": {
+            "x": 98.60000000000002,
+            "y": 325
+          },
+          "data": {
+            "type": "Directory",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List\n\nfrom axiestudio.base.data.utils import parallel_load_data, parse_text_file_to_data, retrieve_file_paths\nfrom axiestudio.custom import Component\nfrom axiestudio.io import BoolInput, IntInput, MessageTextInput\nfrom axiestudio.schema import Data\nfrom axiestudio.template import Output\n\n\nclass DirectoryComponent(Component):\n    display_name = \"Directory\"\n    description = \"从目录中递归加载文件\"\n    icon = \"folder\"\n    name = \"Directory\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"path\",\n            display_name=\"路径\",\n            info=\"Path to the directory to load files from.\",\n        ),\n        MessageTextInput(\n            name=\"types\",\n            display_name=\"类型\",\n            info=\"File types to load. Leave empty to load all types.\",\n            is_list=True,\n        ),\n        IntInput(\n            name=\"depth\",\n            display_name=\"深度\",\n            info=\"Depth to search for files.\",\n            value=0,\n        ),\n        IntInput(\n            name=\"max_concurrency\",\n            display_name=\"最大并发数\",\n            advanced=True,\n            info=\"Maximum concurrency for loading files.\",\n            value=2,\n        ),\n        BoolInput(\n            name=\"load_hidden\",\n            display_name=\"加载隐藏文件\",\n            advanced=True,\n            info=\"If true, hidden files will be loaded.\",\n        ),\n        BoolInput(\n            name=\"recursive\",\n            display_name=\"递归\",\n            advanced=True,\n            info=\"If true, the search will be recursive.\",\n        ),\n        BoolInput(\n            name=\"silent_errors\",\n            display_name=\"静态错误\",\n            advanced=True,\n            info=\"If true, errors will not raise an exception.\",\n        ),\n        BoolInput(\n            name=\"use_multithreading\",\n            display_name=\"使用多线程\",\n            advanced=True,\n            info=\"If true, multithreading will be used.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"数据\", name=\"data\", method=\"load_directory\"),\n    ]\n\n    def load_directory(self) -> List[Data]:\n        path = self.path\n        types = self.types or []  # self.types is already a list due to is_list=True\n        depth = self.depth\n        max_concurrency = self.max_concurrency\n        load_hidden = self.load_hidden\n        recursive = self.recursive\n        silent_errors = self.silent_errors\n        use_multithreading = self.use_multithreading\n\n        resolved_path = self.resolve_path(path)\n        file_paths = retrieve_file_paths(resolved_path, load_hidden, recursive, depth)\n\n        if types:\n            file_paths = [fp for fp in file_paths if any(fp.endswith(ext) for ext in types)]\n\n        loaded_data = []\n\n        if use_multithreading:\n            loaded_data = parallel_load_data(file_paths, silent_errors, max_concurrency)\n        else:\n            loaded_data = [parse_text_file_to_data(file_path, silent_errors) for file_path in file_paths]\n        loaded_data = list(filter(None, loaded_data))\n        self.status = loaded_data\n        return loaded_data  # type: ignore\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "depth": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": 0,
+                  "name": "depth",
+                  "display_name": "深度",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Depth to search for files.",
+                  "title_case": false,
+                  "type": "int"
+                },
+                "load_hidden": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "load_hidden",
+                  "display_name": "加载隐藏文件",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, hidden files will be loaded.",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "max_concurrency": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": 2,
+                  "name": "max_concurrency",
+                  "display_name": "最大并发数",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Maximum concurrency for loading files.",
+                  "title_case": false,
+                  "type": "int"
+                },
+                "path": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "path",
+                  "display_name": "路径",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Path to the directory to load files from.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "recursive": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "recursive",
+                  "display_name": "递归",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, the search will be recursive.",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "silent_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "silent_errors",
+                  "display_name": "静态错误",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, errors will not raise an exception.",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "types": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "types",
+                  "display_name": "类型",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "File types to load. Leave empty to load all types.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "use_multithreading": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "use_multithreading",
+                  "display_name": "使用多线程",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, multithreading will be used.",
+                  "title_case": false,
+                  "type": "bool"
+                }
+              },
+              "description": "从目录中递归加载文件",
+              "icon": "folder",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "目录",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "数据",
+                  "method": "load_directory",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "path",
+                "types",
+                "depth",
+                "max_concurrency",
+                "load_hidden",
+                "recursive",
+                "silent_errors",
+                "use_multithreading"
+              ],
+              "beta": false,
+              "edited": false
+            },
+            "id": "Directory-hfswI"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 487
+        }
+      ],
+      "edges": [],
+      "viewport": {
+        "x": 136.78328205436242,
+        "y": 32.94853651650578,
+        "zoom": 0.8705505632961245
+      }
+    },
+    "date_created": "2024-07-26T08:16:18.190Z",
+    "date_updated": "2024-07-26T08:16:18.232Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "e8af2b46-9355-4b04-803d-1b2c71397a68",
+    "user_created": {
+      "username": "智链",
+      "first_name": "qh",
+      "last_name": "zheng",
+      "id": "e8af2b46-9355-4b04-803d-1b2c71397a68"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:55.503Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 20,
+    "converter_version": "1.0.0"
+  }
+}

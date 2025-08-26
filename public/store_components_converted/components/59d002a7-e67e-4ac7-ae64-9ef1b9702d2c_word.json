@@ -1,0 +1,519 @@
+{
+  "id": "59d002a7-e67e-4ac7-ae64-9ef1b9702d2c",
+  "name": "word文档处理",
+  "description": "Referring to the parse_text_2_to-data function in the langflow.base.data.utils file, modify it to only detect doc and docx documents, which can solve the problem of the original function not recognizing tables in Word documents. October 15, 2024 16:46 参考langflow.base.data.utils文件中parse_text_file_to_data函数，修改成只检测doc和docx文档，能够解决原函数中无法识别word文档内表格问题。2024年10月15日16:46 (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "richasun",
+    "first_name": "Asun",
+    "last_name": "",
+    "id": "5f2158eb-70ae-4490-a60e-23905b534556",
+    "full_name": "Asun"
+  },
+  "store_url": "https://www.langflow.store/store/component/59d002a7-e67e-4ac7-ae64-9ef1b9702d2c",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-15T08:48:36.633Z",
+    "updated": "2024-10-15T08:48:36.869Z",
+    "downloaded": "2025-08-19T17:50:07.690Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Directory",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List\r\nfrom axiestudio.base.data.utils import parallel_load_data, parse_text_file_to_data, retrieve_file_paths\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import BoolInput, IntInput, MessageTextInput\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.template import Output\r\nfrom docx import Document\r\n\r\nclass DirectoryComponent(Component):\r\n    display_name = \"Directory\"\r\n    description = \"Recursively load files from a directory.\"\r\n    icon = \"folder\"\r\n    name = \"Directory\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"path\",\r\n            display_name=\"Path\",\r\n            info=\"Path to the directory to load files from.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"types\",\r\n            display_name=\"Types\",\r\n            info=\"File types to load. Leave empty to load all types.\",\r\n            is_list=True,\r\n        ),\r\n        IntInput(\r\n            name=\"depth\",\r\n            display_name=\"Depth\",\r\n            info=\"Depth to search for files.\",\r\n            value=0,\r\n        ),\r\n        IntInput(\r\n            name=\"max_concurrency\",\r\n            display_name=\"Max Concurrency\",\r\n            advanced=True,\r\n            info=\"Maximum concurrency for loading files.\",\r\n            value=2,\r\n        ),\r\n        BoolInput(\r\n            name=\"load_hidden\",\r\n            display_name=\"Load Hidden\",\r\n            advanced=True,\r\n            info=\"If true, hidden files will be loaded.\",\r\n        ),\r\n        BoolInput(\r\n            name=\"recursive\",\r\n            display_name=\"Recursive\",\r\n            advanced=True,\r\n            info=\"If true, the search will be recursive.\",\r\n        ),\r\n        BoolInput(\r\n            name=\"silent_errors\",\r\n            display_name=\"Silent Errors\",\r\n            advanced=True,\r\n            info=\"If true, errors will not raise an exception.\",\r\n        ),\r\n        BoolInput(\r\n            name=\"use_multithreading\",\r\n            display_name=\"Use Multithreading\",\r\n            advanced=True,\r\n            info=\"If true, multithreading will be used.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Data\", name=\"data\", method=\"load_directory\"),\r\n    ]\r\n\r\n    def load_directory(self) -> List[Data]:\r\n        path = self.path\r\n        types = self.types or []  # self.types is already a list due to is_list=True\r\n        depth = self.depth\r\n        max_concurrency = self.max_concurrency\r\n        load_hidden = self.load_hidden\r\n        recursive = self.recursive\r\n        silent_errors = self.silent_errors\r\n        use_multithreading = self.use_multithreading\r\n\r\n        resolved_path = self.resolve_path(path)\r\n        file_paths = retrieve_file_paths(resolved_path, load_hidden, recursive, depth)\r\n\r\n        if types:\r\n            file_paths = [fp for fp in file_paths if any(fp.endswith(ext) for ext in types)]\r\n\r\n        loaded_data = []\r\n        \r\n        def parse_text_file_to_datas(file_path: str, silent_errors: bool) -> Data | None:\r\n            try:\r\n                # Check if the file is a .docx file\r\n                if file_path.endswith(\".docx\"):\r\n                    doc = Document(file_path)\r\n                    text = []\r\n        \r\n                    # Iterate over all elements in the document\r\n                    for element in doc.element.body:\r\n                        if element.tag.endswith('tbl'):  # Table tag\r\n                            table = element\r\n                            for row in table.xpath('.//w:tr'):  # Iterate through table rows\r\n                                row_data = []\r\n                                for cell in row.xpath('.//w:tc'):  # Iterate through table cells\r\n                                    cell_text = ''.join(cell.xpath('.//w:t//text()'))\r\n                                    row_data.append(cell_text)\r\n                                text.append('\\t'.join(row_data))  # Append row data to text\r\n                            text.append(\"[TABLE DETECTED]\")  # Indicate a table was found\r\n                        elif element.tag.endswith('p'):  # Paragraph tag\r\n                            paragraph = element\r\n                            paragraph_text = ''.join(paragraph.xpath('.//w:t//text()'))\r\n                            if paragraph_text.strip():\r\n                                text.append(paragraph_text)  # Append paragraph text to text\r\n        \r\n                    text_content = \"\\n\".join(text)  # Combine all text content\r\n        \r\n                # Check if the file is a .doc file\r\n                elif file_path.endswith(\".doc\"):\r\n                    # Handle .doc files if needed (requires a different library, like `pywin32` or `unoconv`)\r\n                    raise NotImplementedError(\"Parsing of .doc files is not implemented.\")\r\n        \r\n                else:\r\n                    # Return None for unsupported file types\r\n                    return None\r\n        \r\n            except Exception as e:\r\n                if not silent_errors:\r\n                    msg = f\"Error loading file {file_path}: {e}\"\r\n                    raise ValueError(msg) from e\r\n                return None\r\n    \r\n            return Data(data={\"file_path\": file_path, \"text\": text_content})\r\n        \r\n        if use_multithreading:\r\n            loaded_data = parallel_load_data(file_paths, silent_errors, max_concurrency)\r\n        else:\r\n            loaded_data = [parse_text_file_to_datas(file_path, silent_errors) for file_path in file_paths]\r\n\r\n        loaded_data = list(filter(None, loaded_data))\r\n        self.status = loaded_data\r\n        return loaded_data  # type: ignore\r\n\r\n    \r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "depth": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "depth",
+                "value": 3,
+                "display_name": "Depth",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Depth to search for files.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "load_hidden": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "load_hidden",
+                "value": false,
+                "display_name": "Load Hidden",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, hidden files will be loaded.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "max_concurrency": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_concurrency",
+                "value": 2,
+                "display_name": "Max Concurrency",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Maximum concurrency for loading files.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "path": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "path",
+                "value": "C:\\tmp\\documents\\2022-10",
+                "display_name": "Path",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Path to the directory to load files from.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "recursive": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "recursive",
+                "value": false,
+                "display_name": "Recursive",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, the search will be recursive.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "silent_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "silent_errors",
+                "value": false,
+                "display_name": "Silent Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, errors will not raise an exception.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "types": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "types",
+                "value": "",
+                "display_name": "Types",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "File types to load. Leave empty to load all types.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "use_multithreading": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "use_multithreading",
+                "value": false,
+                "display_name": "Use Multithreading",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, multithreading will be used.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Referring to the parse_text_2_to-data function in the axiestudio.base.data.utils file, modify it to only detect doc and docx documents, which can solve the problem of the original function not recognizing tables in Word documents. October 15, 2024 16:46 参考axiestudio.base.data.utils文件中parse_text_file_to_data函数，修改成只检测doc和docx文档，能够解决原函数中无法识别word文档内表格问题。2024年10月15日16:46",
+            "icon": "folder",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "word文档处理",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "load_directory",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "path",
+              "types",
+              "depth",
+              "max_concurrency",
+              "load_hidden",
+              "recursive",
+              "silent_errors",
+              "use_multithreading"
+            ],
+            "beta": false,
+            "edited": true,
+            "metadata": {},
+            "lf_version": "1.0.19",
+            "official": false
+          },
+          "id": "Directory-Bqywc"
+        },
+        "id": "Directory-Bqywc",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Directory": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "59d002a7-e67e-4ac7-ae64-9ef1b9702d2c",
+    "name": "word文档处理",
+    "description": "Referring to the parse_text_2_to-data function in the langflow.base.data.utils file, modify it to only detect doc and docx documents, which can solve the problem of the original function not recognizing tables in Word documents. October 15, 2024 16:46 参考langflow.base.data.utils文件中parse_text_file_to_data函数，修改成只检测doc和docx文档，能够解决原函数中无法识别word文档内表格问题。2024年10月15日16:46",
+    "is_component": true,
+    "liked_by_count": "1",
+    "downloads_count": "29",
+    "metadata": {
+      "Directory": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.19",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Directory",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List\r\nfrom axiestudio.base.data.utils import parallel_load_data, parse_text_file_to_data, retrieve_file_paths\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import BoolInput, IntInput, MessageTextInput\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.template import Output\r\nfrom docx import Document\r\n\r\nclass DirectoryComponent(Component):\r\n    display_name = \"Directory\"\r\n    description = \"Recursively load files from a directory.\"\r\n    icon = \"folder\"\r\n    name = \"Directory\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"path\",\r\n            display_name=\"Path\",\r\n            info=\"Path to the directory to load files from.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"types\",\r\n            display_name=\"Types\",\r\n            info=\"File types to load. Leave empty to load all types.\",\r\n            is_list=True,\r\n        ),\r\n        IntInput(\r\n            name=\"depth\",\r\n            display_name=\"Depth\",\r\n            info=\"Depth to search for files.\",\r\n            value=0,\r\n        ),\r\n        IntInput(\r\n            name=\"max_concurrency\",\r\n            display_name=\"Max Concurrency\",\r\n            advanced=True,\r\n            info=\"Maximum concurrency for loading files.\",\r\n            value=2,\r\n        ),\r\n        BoolInput(\r\n            name=\"load_hidden\",\r\n            display_name=\"Load Hidden\",\r\n            advanced=True,\r\n            info=\"If true, hidden files will be loaded.\",\r\n        ),\r\n        BoolInput(\r\n            name=\"recursive\",\r\n            display_name=\"Recursive\",\r\n            advanced=True,\r\n            info=\"If true, the search will be recursive.\",\r\n        ),\r\n        BoolInput(\r\n            name=\"silent_errors\",\r\n            display_name=\"Silent Errors\",\r\n            advanced=True,\r\n            info=\"If true, errors will not raise an exception.\",\r\n        ),\r\n        BoolInput(\r\n            name=\"use_multithreading\",\r\n            display_name=\"Use Multithreading\",\r\n            advanced=True,\r\n            info=\"If true, multithreading will be used.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Data\", name=\"data\", method=\"load_directory\"),\r\n    ]\r\n\r\n    def load_directory(self) -> List[Data]:\r\n        path = self.path\r\n        types = self.types or []  # self.types is already a list due to is_list=True\r\n        depth = self.depth\r\n        max_concurrency = self.max_concurrency\r\n        load_hidden = self.load_hidden\r\n        recursive = self.recursive\r\n        silent_errors = self.silent_errors\r\n        use_multithreading = self.use_multithreading\r\n\r\n        resolved_path = self.resolve_path(path)\r\n        file_paths = retrieve_file_paths(resolved_path, load_hidden, recursive, depth)\r\n\r\n        if types:\r\n            file_paths = [fp for fp in file_paths if any(fp.endswith(ext) for ext in types)]\r\n\r\n        loaded_data = []\r\n        \r\n        def parse_text_file_to_datas(file_path: str, silent_errors: bool) -> Data | None:\r\n            try:\r\n                # Check if the file is a .docx file\r\n                if file_path.endswith(\".docx\"):\r\n                    doc = Document(file_path)\r\n                    text = []\r\n        \r\n                    # Iterate over all elements in the document\r\n                    for element in doc.element.body:\r\n                        if element.tag.endswith('tbl'):  # Table tag\r\n                            table = element\r\n                            for row in table.xpath('.//w:tr'):  # Iterate through table rows\r\n                                row_data = []\r\n                                for cell in row.xpath('.//w:tc'):  # Iterate through table cells\r\n                                    cell_text = ''.join(cell.xpath('.//w:t//text()'))\r\n                                    row_data.append(cell_text)\r\n                                text.append('\\t'.join(row_data))  # Append row data to text\r\n                            text.append(\"[TABLE DETECTED]\")  # Indicate a table was found\r\n                        elif element.tag.endswith('p'):  # Paragraph tag\r\n                            paragraph = element\r\n                            paragraph_text = ''.join(paragraph.xpath('.//w:t//text()'))\r\n                            if paragraph_text.strip():\r\n                                text.append(paragraph_text)  # Append paragraph text to text\r\n        \r\n                    text_content = \"\\n\".join(text)  # Combine all text content\r\n        \r\n                # Check if the file is a .doc file\r\n                elif file_path.endswith(\".doc\"):\r\n                    # Handle .doc files if needed (requires a different library, like `pywin32` or `unoconv`)\r\n                    raise NotImplementedError(\"Parsing of .doc files is not implemented.\")\r\n        \r\n                else:\r\n                    # Return None for unsupported file types\r\n                    return None\r\n        \r\n            except Exception as e:\r\n                if not silent_errors:\r\n                    msg = f\"Error loading file {file_path}: {e}\"\r\n                    raise ValueError(msg) from e\r\n                return None\r\n    \r\n            return Data(data={\"file_path\": file_path, \"text\": text_content})\r\n        \r\n        if use_multithreading:\r\n            loaded_data = parallel_load_data(file_paths, silent_errors, max_concurrency)\r\n        else:\r\n            loaded_data = [parse_text_file_to_datas(file_path, silent_errors) for file_path in file_paths]\r\n\r\n        loaded_data = list(filter(None, loaded_data))\r\n        self.status = loaded_data\r\n        return loaded_data  # type: ignore\r\n\r\n    \r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "depth": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "depth",
+                  "value": 3,
+                  "display_name": "Depth",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Depth to search for files.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "load_hidden": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "load_hidden",
+                  "value": false,
+                  "display_name": "Load Hidden",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, hidden files will be loaded.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "max_concurrency": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_concurrency",
+                  "value": 2,
+                  "display_name": "Max Concurrency",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Maximum concurrency for loading files.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "path": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "path",
+                  "value": "C:\\tmp\\documents\\2022-10",
+                  "display_name": "Path",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Path to the directory to load files from.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "recursive": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "recursive",
+                  "value": false,
+                  "display_name": "Recursive",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, the search will be recursive.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "silent_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "silent_errors",
+                  "value": false,
+                  "display_name": "Silent Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, errors will not raise an exception.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "types": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "types",
+                  "value": "",
+                  "display_name": "Types",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "File types to load. Leave empty to load all types.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "use_multithreading": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "use_multithreading",
+                  "value": false,
+                  "display_name": "Use Multithreading",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, multithreading will be used.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Referring to the parse_text_2_to-data function in the axiestudio.base.data.utils file, modify it to only detect doc and docx documents, which can solve the problem of the original function not recognizing tables in Word documents. October 15, 2024 16:46 参考axiestudio.base.data.utils文件中parse_text_file_to_data函数，修改成只检测doc和docx文档，能够解决原函数中无法识别word文档内表格问题。2024年10月15日16:46",
+              "icon": "folder",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "word文档处理",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "load_directory",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "path",
+                "types",
+                "depth",
+                "max_concurrency",
+                "load_hidden",
+                "recursive",
+                "silent_errors",
+                "use_multithreading"
+              ],
+              "beta": false,
+              "edited": true,
+              "metadata": {},
+              "lf_version": "1.0.19",
+              "official": false
+            },
+            "id": "Directory-Bqywc"
+          },
+          "id": "Directory-Bqywc",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-15T08:48:36.633Z",
+    "date_updated": "2024-10-15T08:48:36.869Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "5f2158eb-70ae-4490-a60e-23905b534556",
+    "user_created": {
+      "username": "richasun",
+      "first_name": "Asun",
+      "last_name": null,
+      "id": "5f2158eb-70ae-4490-a60e-23905b534556"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.185Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 14,
+    "converter_version": "1.0.0"
+  }
+}

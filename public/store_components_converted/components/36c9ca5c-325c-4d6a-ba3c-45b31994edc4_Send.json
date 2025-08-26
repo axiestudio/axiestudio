@@ -1,0 +1,481 @@
+{
+  "id": "36c9ca5c-325c-4d6a-ba3c-45b31994edc4",
+  "name": "Send",
+  "description": "Send a streamlit chat message (webhook). (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "joaoguilhermeS",
+    "first_name": "João",
+    "last_name": "Oliveira",
+    "id": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "full_name": "João Oliveira"
+  },
+  "store_url": "https://www.langflow.store/store/component/36c9ca5c-325c-4d6a-ba3c-45b31994edc4",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-23T22:27:55.154Z",
+    "updated": "2024-07-26T18:40:07.694Z",
+    "downloaded": "2025-08-19T17:50:06.649Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.12",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Send",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.schema.message import Message\nfrom axiestudio.inputs import MessageTextInput, DropdownInput, NestedDictInput, IntInput, StrInput, BoolInput\nfrom json import loads, dumps\n\n\nclass Send(Component):\n    display_name = \"Send\"\n    description = \"Send a streamlit chat message (webhook).\"\n    icon = \"Streamlit\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"Session ID of streamlit. For each browser tab that connects to the Streamlit server, a new session is created.\",\n            placeholder=\"Enter the session ID\",\n            value=\"\",\n            required=True\n        ),\n        DropdownInput(\n            name=\"role\",\n            display_name=\"Role\",\n            options=[\"ai\", \"user\"],\n            info=\"Message sender role.\",\n            placeholder=\"Enter the message sender role.\",\n            value=\"ai\",\n            required=True\n        ),\n        MessageTextInput(\n            name=\"message\",\n            display_name=\"Message\",\n            info=\"Content of the message that will be sent.\",\n            value=\"\",\n            required=True\n        ),\n        NestedDictInput(\n            name=\"tweaks\",\n            display_name=\"Tweaks\",\n            info=\"The tweaks can be used to modify the flow's parameters and components.\",\n            value={},\n            required=True,\n            advanced=True\n        ),\n        IntInput(\n            name=\"port\",\n            display_name=\"Port\",\n            info=\"Streamlit API Port\",\n            value=7881,\n            required=True,\n            advanced=True\n        ),\n        StrInput(\n            name=\"hostname\",\n            display_name=\"hostname\",\n            info=\"IP or hostname of Streamlit API\",\n            value=\"localhost\",\n            required=True,\n            advanced=True\n        ),\n        BoolInput(\n            name=\"rerun\",\n            display_name=\"Rerun Flow\",\n            info=\"If True, run the current flow again\",\n            value=True,\n            required=True,\n            advanced=True\n        )\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"text_response\"),\n    ]\n\n\n    async def text_response(self) -> Message:\n        import requests\n        flow_id = self.vertex.graph.flow_id\n        resp = requests.post(f\"http://{self.hostname}:{self.port}/api/v1/sessions/{self.session_id}/messages\", json={\"role\": self.role, \"content\": self.message})\n        if resp.status_code == 200:\n            self.rerun and await self.run_flow(\n                inputs={\"input_value\": \"\"}, flow_id=flow_id, tweaks=self.tweaks\n            )\n            return Message(text=dumps(loads(resp.content)))\n        else:\n            raise Exception(\"Timeout exception\")\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "hostname": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "value": "localhost",
+                "name": "hostname",
+                "display_name": "hostname",
+                "advanced": true,
+                "dynamic": false,
+                "info": "IP or hostname of Streamlit API",
+                "title_case": false,
+                "type": "str"
+              },
+              "message": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "message",
+                "display_name": "Message",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Content of the message that will be sent.",
+                "title_case": false,
+                "type": "str"
+              },
+              "port": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "value": "7881",
+                "name": "port",
+                "display_name": "Port",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Streamlit API Port",
+                "title_case": false,
+                "type": "int",
+                "load_from_db": false
+              },
+              "rerun": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "value": true,
+                "name": "rerun",
+                "display_name": "Rerun Flow",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If True, run the current flow again",
+                "title_case": false,
+                "type": "bool"
+              },
+              "role": {
+                "trace_as_metadata": true,
+                "options": [
+                  "ai",
+                  "user"
+                ],
+                "required": true,
+                "placeholder": "Enter the message sender role.",
+                "show": true,
+                "value": "ai",
+                "name": "role",
+                "display_name": "Role",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Message sender role.",
+                "title_case": false,
+                "type": "str"
+              },
+              "session_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "Enter the session ID",
+                "show": true,
+                "value": "",
+                "name": "session_id",
+                "display_name": "Session ID",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Session ID of streamlit. For each browser tab that connects to the Streamlit server, a new session is created.",
+                "title_case": false,
+                "type": "str"
+              },
+              "tweaks": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "value": {},
+                "name": "tweaks",
+                "display_name": "Tweaks",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The tweaks can be used to modify the flow's parameters and components.",
+                "title_case": false,
+                "type": "NestedDict"
+              }
+            },
+            "description": "Send a streamlit chat message (webhook).",
+            "icon": "Streamlit",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Send",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text",
+                "display_name": "Text",
+                "method": "text_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "session_id",
+              "role",
+              "message",
+              "tweaks",
+              "port",
+              "hostname",
+              "rerun"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "Send-VOYS3",
+          "description": "Send a streamlit chat message (webhook).",
+          "display_name": "Send"
+        },
+        "id": "Send-VOYS3",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Send": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "36c9ca5c-325c-4d6a-ba3c-45b31994edc4",
+    "name": "Send",
+    "description": "Send a streamlit chat message (webhook).",
+    "is_component": true,
+    "liked_by_count": "21",
+    "downloads_count": "179",
+    "metadata": {
+      "Send": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.12",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Send",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.schema.message import Message\nfrom axiestudio.inputs import MessageTextInput, DropdownInput, NestedDictInput, IntInput, StrInput, BoolInput\nfrom json import loads, dumps\n\n\nclass Send(Component):\n    display_name = \"Send\"\n    description = \"Send a streamlit chat message (webhook).\"\n    icon = \"Streamlit\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"Session ID of streamlit. For each browser tab that connects to the Streamlit server, a new session is created.\",\n            placeholder=\"Enter the session ID\",\n            value=\"\",\n            required=True\n        ),\n        DropdownInput(\n            name=\"role\",\n            display_name=\"Role\",\n            options=[\"ai\", \"user\"],\n            info=\"Message sender role.\",\n            placeholder=\"Enter the message sender role.\",\n            value=\"ai\",\n            required=True\n        ),\n        MessageTextInput(\n            name=\"message\",\n            display_name=\"Message\",\n            info=\"Content of the message that will be sent.\",\n            value=\"\",\n            required=True\n        ),\n        NestedDictInput(\n            name=\"tweaks\",\n            display_name=\"Tweaks\",\n            info=\"The tweaks can be used to modify the flow's parameters and components.\",\n            value={},\n            required=True,\n            advanced=True\n        ),\n        IntInput(\n            name=\"port\",\n            display_name=\"Port\",\n            info=\"Streamlit API Port\",\n            value=7881,\n            required=True,\n            advanced=True\n        ),\n        StrInput(\n            name=\"hostname\",\n            display_name=\"hostname\",\n            info=\"IP or hostname of Streamlit API\",\n            value=\"localhost\",\n            required=True,\n            advanced=True\n        ),\n        BoolInput(\n            name=\"rerun\",\n            display_name=\"Rerun Flow\",\n            info=\"If True, run the current flow again\",\n            value=True,\n            required=True,\n            advanced=True\n        )\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"text_response\"),\n    ]\n\n\n    async def text_response(self) -> Message:\n        import requests\n        flow_id = self.vertex.graph.flow_id\n        resp = requests.post(f\"http://{self.hostname}:{self.port}/api/v1/sessions/{self.session_id}/messages\", json={\"role\": self.role, \"content\": self.message})\n        if resp.status_code == 200:\n            self.rerun and await self.run_flow(\n                inputs={\"input_value\": \"\"}, flow_id=flow_id, tweaks=self.tweaks\n            )\n            return Message(text=dumps(loads(resp.content)))\n        else:\n            raise Exception(\"Timeout exception\")\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "hostname": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "localhost",
+                  "name": "hostname",
+                  "display_name": "hostname",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "IP or hostname of Streamlit API",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "message": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "message",
+                  "display_name": "Message",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Content of the message that will be sent.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "port": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "7881",
+                  "name": "port",
+                  "display_name": "Port",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Streamlit API Port",
+                  "title_case": false,
+                  "type": "int",
+                  "load_from_db": false
+                },
+                "rerun": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "value": true,
+                  "name": "rerun",
+                  "display_name": "Rerun Flow",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If True, run the current flow again",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "role": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "ai",
+                    "user"
+                  ],
+                  "required": true,
+                  "placeholder": "Enter the message sender role.",
+                  "show": true,
+                  "value": "ai",
+                  "name": "role",
+                  "display_name": "Role",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Message sender role.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "session_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "Enter the session ID",
+                  "show": true,
+                  "value": "",
+                  "name": "session_id",
+                  "display_name": "Session ID",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Session ID of streamlit. For each browser tab that connects to the Streamlit server, a new session is created.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "tweaks": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "value": {},
+                  "name": "tweaks",
+                  "display_name": "Tweaks",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The tweaks can be used to modify the flow's parameters and components.",
+                  "title_case": false,
+                  "type": "NestedDict"
+                }
+              },
+              "description": "Send a streamlit chat message (webhook).",
+              "icon": "Streamlit",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Send",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text",
+                  "display_name": "Text",
+                  "method": "text_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "session_id",
+                "role",
+                "message",
+                "tweaks",
+                "port",
+                "hostname",
+                "rerun"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "Send-VOYS3",
+            "description": "Send a streamlit chat message (webhook).",
+            "display_name": "Send"
+          },
+          "id": "Send-VOYS3",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-07-23T22:27:55.154Z",
+    "date_updated": "2024-07-26T18:40:07.694Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "user_created": {
+      "username": "joaoguilhermeS",
+      "first_name": "João",
+      "last_name": "Oliveira",
+      "id": "94b2e207-1a44-4905-856c-4f5a69c168ce"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.570Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

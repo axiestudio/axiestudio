@@ -1,0 +1,307 @@
+{
+  "id": "3af11153-53ac-4794-8f10-cf8c237dfc26",
+  "name": "Gemini Embedding Hota",
+  "description": "Use as a template to create your own component. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "datphamvn",
+    "first_name": "Đạt",
+    "last_name": "Phạm",
+    "id": "8d10116f-40e0-4e11-ae64-f2aab9520996",
+    "full_name": "Đạt Phạm"
+  },
+  "store_url": "https://www.langflow.store/store/component/3af11153-53ac-4794-8f10-cf8c237dfc26",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-21T08:37:26.015Z",
+    "updated": "2024-08-21T08:37:26.039Z",
+    "downloaded": "2025-08-19T17:50:05.121Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "api_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "# from axiestudio.field_typing import Data\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import MessageTextInput, Output\r\nfrom axiestudio.schema import Data\r\nfrom langchain_google_genai import GoogleGenerativeAIEmbeddings\r\n\r\nimport re\r\nimport string\r\nfrom typing import Any, Dict, List, Optional\r\n\r\n# TODO: remove ignore once the google package is published with types\r\nfrom google.ai.generativelanguage_v1beta.types import (\r\n    BatchEmbedContentsRequest,\r\n    EmbedContentRequest,\r\n)\r\nfrom langchain_core.embeddings import Embeddings\r\nfrom langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator\r\nfrom langchain_core.utils import get_from_dict_or_env\r\n\r\nfrom langchain_google_genai._common import (\r\n    GoogleGenerativeAIError,\r\n    get_client_info,\r\n)\r\nfrom langchain_google_genai._genai_extension import build_generative_service\r\n\r\nimport numpy as np\r\n\r\n\r\nclass CustomComponent(Component):\r\n    display_name = \"Custom Component\"\r\n    description = \"Use as a template to create your own component.\"\r\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\r\n    icon = \"custom_components\"\r\n    name = \"CustomComponent\"\r\n\r\n    inputs = [\r\n        SecretStrInput(name=\"api_key\", display_name=\"API Key\"),\r\n        MessageTextInput(name=\"model_name\", display_name=\"Model Name\", value=\"models/text-embedding-004\"),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Embeddings\", name=\"embeddings\", method=\"build_embeddings\"),\r\n    ]\r\n\r\n    def build_embeddings(self) -> Embeddings:\r\n        if not self.api_key:\r\n            raise ValueError(\"API Key is required\")\r\n            \r\n        class HotaGoogleGenerativeAIEmbeddings(GoogleGenerativeAIEmbeddings):\r\n            def __init__(self, *args, **kwargs):\r\n                super(GoogleGenerativeAIEmbeddings, self).__init__(*args, **kwargs)\r\n            \r\n            def embed_documents(\r\n                self,\r\n                texts: List[str],\r\n                *,\r\n                batch_size: int = 100,\r\n                task_type: Optional[str] = None,\r\n                titles: Optional[List[str]] = None,\r\n                output_dimensionality: Optional[int] = 1536,\r\n            ) -> List[List[float]]:\r\n                \"\"\"Embed a list of strings. Google Generative AI currently\r\n                sets a max batch size of 100 strings.\r\n        \r\n                Args:\r\n                    texts: List[str] The list of strings to embed.\r\n                    batch_size: [int] The batch size of embeddings to send to the model\r\n                    task_type: task_type (https://ai.google.dev/api/rest/v1/TaskType)\r\n                    titles: An optional list of titles for texts provided.\r\n                    Only applicable when TaskType is RETRIEVAL_DOCUMENT.\r\n                    output_dimensionality: Optional reduced dimension for the output embedding.\r\n                    https://ai.google.dev/api/rest/v1/models/batchEmbedContents#EmbedContentRequest\r\n                Returns:\r\n                    List of embeddings, one for each text.\r\n                \"\"\"\r\n                embeddings: List[List[float]] = []\r\n                batch_start_index = 0\r\n                for batch in GoogleGenerativeAIEmbeddings._prepare_batches(texts, batch_size):\r\n                    if titles:\r\n                        titles_batch = titles[\r\n                            batch_start_index : batch_start_index + len(batch)\r\n                        ]\r\n                        batch_start_index += len(batch)\r\n                    else:\r\n                        titles_batch = [None] * len(batch)  # type: ignore[list-item]\r\n        \r\n                    requests = [\r\n                        self._prepare_request(\r\n                            text=text,\r\n                            task_type=task_type,\r\n                            title=title,\r\n                            output_dimensionality=1536,\r\n                        )\r\n                        for text, title in zip(batch, titles_batch)\r\n                    ]\r\n        \r\n                    try:\r\n                        result = self.client.batch_embed_contents(\r\n                            BatchEmbedContentsRequest(requests=requests, model=self.model)\r\n                        )\r\n                    except Exception as e:\r\n                        raise GoogleGenerativeAIError(f\"Error embedding content: {e}\") from e\r\n                    embeddings.extend([list(np.pad(e.values, (0, 768), 'constant')) for e in result.embeddings])\r\n                return embeddings\r\n        \r\n            def embed_query(\r\n                self,\r\n                text: str,\r\n                task_type: Optional[str] = None,\r\n                title: Optional[str] = None,\r\n                output_dimensionality: Optional[int] = 1536,\r\n            ) -> List[float]:\r\n                \"\"\"Embed a text.\r\n        \r\n                Args:\r\n                    text: The text to embed.\r\n                    task_type: task_type (https://ai.google.dev/api/rest/v1/TaskType)\r\n                    title: An optional title for the text.\r\n                    Only applicable when TaskType is RETRIEVAL_DOCUMENT.\r\n                    output_dimensionality: Optional reduced dimension for the output embedding.\r\n                    https://ai.google.dev/api/rest/v1/models/batchEmbedContents#EmbedContentRequest\r\n        \r\n                Returns:\r\n                    Embedding for the text.\r\n                \"\"\"\r\n                task_type = self.task_type or \"RETRIEVAL_QUERY\"\r\n                return self.embed_documents(\r\n                    [text],\r\n                    task_type=task_type,\r\n                    titles=[title] if title else None,\r\n                    output_dimensionality=1536,\r\n                )[0]\r\n            \r\n        return HotaGoogleGenerativeAIEmbeddings(model=self.model_name, google_api_key=self.api_key)\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "model_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "model_name",
+                "value": "models/text-embedding-004",
+                "display_name": "Model Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Use as a template to create your own component.",
+            "icon": "custom_components",
+            "base_classes": [
+              "Embeddings"
+            ],
+            "display_name": "Gemini Embedding Hota",
+            "documentation": "http://docs.axiestudio.org/components/custom",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Embeddings"
+                ],
+                "selected": "Embeddings",
+                "name": "embeddings",
+                "display_name": "Embeddings",
+                "method": "build_embeddings",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "api_key",
+              "model_name"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.15",
+            "official": false
+          },
+          "id": "CustomComponent-gnatU"
+        },
+        "id": "CustomComponent-gnatU",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "3af11153-53ac-4794-8f10-cf8c237dfc26",
+    "name": "Gemini Embedding Hota",
+    "description": "Use as a template to create your own component.",
+    "is_component": true,
+    "liked_by_count": "5",
+    "downloads_count": "47",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "api_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "# from axiestudio.field_typing import Data\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import MessageTextInput, Output\r\nfrom axiestudio.schema import Data\r\nfrom langchain_google_genai import GoogleGenerativeAIEmbeddings\r\n\r\nimport re\r\nimport string\r\nfrom typing import Any, Dict, List, Optional\r\n\r\n# TODO: remove ignore once the google package is published with types\r\nfrom google.ai.generativelanguage_v1beta.types import (\r\n    BatchEmbedContentsRequest,\r\n    EmbedContentRequest,\r\n)\r\nfrom langchain_core.embeddings import Embeddings\r\nfrom langchain_core.pydantic_v1 import BaseModel, Field, SecretStr, root_validator\r\nfrom langchain_core.utils import get_from_dict_or_env\r\n\r\nfrom langchain_google_genai._common import (\r\n    GoogleGenerativeAIError,\r\n    get_client_info,\r\n)\r\nfrom langchain_google_genai._genai_extension import build_generative_service\r\n\r\nimport numpy as np\r\n\r\n\r\nclass CustomComponent(Component):\r\n    display_name = \"Custom Component\"\r\n    description = \"Use as a template to create your own component.\"\r\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\r\n    icon = \"custom_components\"\r\n    name = \"CustomComponent\"\r\n\r\n    inputs = [\r\n        SecretStrInput(name=\"api_key\", display_name=\"API Key\"),\r\n        MessageTextInput(name=\"model_name\", display_name=\"Model Name\", value=\"models/text-embedding-004\"),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Embeddings\", name=\"embeddings\", method=\"build_embeddings\"),\r\n    ]\r\n\r\n    def build_embeddings(self) -> Embeddings:\r\n        if not self.api_key:\r\n            raise ValueError(\"API Key is required\")\r\n            \r\n        class HotaGoogleGenerativeAIEmbeddings(GoogleGenerativeAIEmbeddings):\r\n            def __init__(self, *args, **kwargs):\r\n                super(GoogleGenerativeAIEmbeddings, self).__init__(*args, **kwargs)\r\n            \r\n            def embed_documents(\r\n                self,\r\n                texts: List[str],\r\n                *,\r\n                batch_size: int = 100,\r\n                task_type: Optional[str] = None,\r\n                titles: Optional[List[str]] = None,\r\n                output_dimensionality: Optional[int] = 1536,\r\n            ) -> List[List[float]]:\r\n                \"\"\"Embed a list of strings. Google Generative AI currently\r\n                sets a max batch size of 100 strings.\r\n        \r\n                Args:\r\n                    texts: List[str] The list of strings to embed.\r\n                    batch_size: [int] The batch size of embeddings to send to the model\r\n                    task_type: task_type (https://ai.google.dev/api/rest/v1/TaskType)\r\n                    titles: An optional list of titles for texts provided.\r\n                    Only applicable when TaskType is RETRIEVAL_DOCUMENT.\r\n                    output_dimensionality: Optional reduced dimension for the output embedding.\r\n                    https://ai.google.dev/api/rest/v1/models/batchEmbedContents#EmbedContentRequest\r\n                Returns:\r\n                    List of embeddings, one for each text.\r\n                \"\"\"\r\n                embeddings: List[List[float]] = []\r\n                batch_start_index = 0\r\n                for batch in GoogleGenerativeAIEmbeddings._prepare_batches(texts, batch_size):\r\n                    if titles:\r\n                        titles_batch = titles[\r\n                            batch_start_index : batch_start_index + len(batch)\r\n                        ]\r\n                        batch_start_index += len(batch)\r\n                    else:\r\n                        titles_batch = [None] * len(batch)  # type: ignore[list-item]\r\n        \r\n                    requests = [\r\n                        self._prepare_request(\r\n                            text=text,\r\n                            task_type=task_type,\r\n                            title=title,\r\n                            output_dimensionality=1536,\r\n                        )\r\n                        for text, title in zip(batch, titles_batch)\r\n                    ]\r\n        \r\n                    try:\r\n                        result = self.client.batch_embed_contents(\r\n                            BatchEmbedContentsRequest(requests=requests, model=self.model)\r\n                        )\r\n                    except Exception as e:\r\n                        raise GoogleGenerativeAIError(f\"Error embedding content: {e}\") from e\r\n                    embeddings.extend([list(np.pad(e.values, (0, 768), 'constant')) for e in result.embeddings])\r\n                return embeddings\r\n        \r\n            def embed_query(\r\n                self,\r\n                text: str,\r\n                task_type: Optional[str] = None,\r\n                title: Optional[str] = None,\r\n                output_dimensionality: Optional[int] = 1536,\r\n            ) -> List[float]:\r\n                \"\"\"Embed a text.\r\n        \r\n                Args:\r\n                    text: The text to embed.\r\n                    task_type: task_type (https://ai.google.dev/api/rest/v1/TaskType)\r\n                    title: An optional title for the text.\r\n                    Only applicable when TaskType is RETRIEVAL_DOCUMENT.\r\n                    output_dimensionality: Optional reduced dimension for the output embedding.\r\n                    https://ai.google.dev/api/rest/v1/models/batchEmbedContents#EmbedContentRequest\r\n        \r\n                Returns:\r\n                    Embedding for the text.\r\n                \"\"\"\r\n                task_type = self.task_type or \"RETRIEVAL_QUERY\"\r\n                return self.embed_documents(\r\n                    [text],\r\n                    task_type=task_type,\r\n                    titles=[title] if title else None,\r\n                    output_dimensionality=1536,\r\n                )[0]\r\n            \r\n        return HotaGoogleGenerativeAIEmbeddings(model=self.model_name, google_api_key=self.api_key)\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "model_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "model_name",
+                  "value": "models/text-embedding-004",
+                  "display_name": "Model Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Use as a template to create your own component.",
+              "icon": "custom_components",
+              "base_classes": [
+                "Embeddings"
+              ],
+              "display_name": "Gemini Embedding Hota",
+              "documentation": "http://docs.axiestudio.org/components/custom",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Embeddings"
+                  ],
+                  "selected": "Embeddings",
+                  "name": "embeddings",
+                  "display_name": "Embeddings",
+                  "method": "build_embeddings",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "api_key",
+                "model_name"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.15",
+              "official": false
+            },
+            "id": "CustomComponent-gnatU"
+          },
+          "id": "CustomComponent-gnatU",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-21T08:37:26.015Z",
+    "date_updated": "2024-08-21T08:37:26.039Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "8d10116f-40e0-4e11-ae64-f2aab9520996",
+    "user_created": {
+      "username": "datphamvn",
+      "first_name": "Đạt",
+      "last_name": "Phạm",
+      "id": "8d10116f-40e0-4e11-ae64-f2aab9520996"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.675Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 12,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,2155 @@
+{
+  "id": "601c617b-0064-4401-a23b-7816407a1b50",
+  "name": "Workers Parallel Prompt Chain - Newsletter Example",
+  "description": "This is a SnowBall Prompt Chain an example, basically a sequential chain that does something. In this case we are trying it out using a Blog Post Example. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "joaoguilhermeS",
+    "first_name": "João",
+    "last_name": "Oliveira",
+    "id": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "full_name": "João Oliveira"
+  },
+  "store_url": "https://www.langflow.store/store/component/601c617b-0064-4401-a23b-7816407a1b50",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-04-25T14:52:52.944Z",
+    "updated": "2024-04-25T14:52:53.010Z",
+    "downloaded": "2025-08-19T17:50:05.066Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Prompt",
+        "id": "57f5c681-a1f5-4053-be33-e9525e7eb00a"
+      }
+    },
+    {
+      "tags_id": {
+        "name": "Chain",
+        "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.0a24",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "CustomComponent-Ik35q",
+        "type": "genericNode",
+        "position": {
+          "x": -60.726226633864144,
+          "y": -104.4093457357717
+        },
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "API_MODEL_KEY": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "API_MODEL_KEY",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n        subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n        return 1\n    \ninstall(\"llm\")\n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"Workers Paralel Prompt Chain\"\n    description = \"This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.\"\n    def build_config(self):\n        return {\n            \"theme\": {\n                \"display_name\": \"Theme\",\n                \"advanced\": False,\n                \"required\": True,\n            },\n            \"model\":{\n                \"display_name\": \"Model\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"claude-3-haiku\",\n                    \"claude-3-sonnet\",\n                    \"claude-3-opus\",\n                    \"gpt-4-turbo\",\n                    \"gpt-4-0125-preview\",\n                    \"gpt-3.5-turbo\",\n                ],\n                \n            },\n            \"web\":{\n                \"display_name\": \"Additional Information (Web, Book, etc.)\",\n                \"advanced\": False,\n                \"required\": False,\n                \"default\": \"\"\n                \n            },\n            \"detail_text\":{\n                \"display_name\": \"Detail Text\",\n                \"advanced\": False,\n                \"required\": True,\n                \"default\": \"No\",\n                \"options\": [\n                    \"Yes\",\n                    \"No\"\n                ],\n            },\n            \"internal_prompt_theme\":{\n                \"display_name\": \"Internal Prompt Theme\",\n                \"required\": False,\n                \"default\": \"Generate a clickworthy title about this topic\"\n            },\n            \"internal_prompt_instruction\":{\n                \"display_name\": \"Internal Prompt Instruction\",\n                \"required\": False,\n                \"default\": \"Generate a compelling 3 section outline given this information\"\n            },\n            \"API_MODEL_KEY\":{\n                \"password\": True,\n                \"required\": True,\n            }\n        }\n    \n    def build(self, theme: str, model: str, API_MODEL_KEY: str, detail_text: bool, internal_prompt_theme: str = '', internal_prompt_instruction: str = '', web: str = '') -> str:\n        \"\"\"\n            Workers Paralel Chain: Start with a small topic and then expand it using paralel workers:\n            [User provide a topic -> chain 1 make a title -> chain 1,2,3,n work in paralel to process the subtasks -> return in json]\n        \"\"\"\n        def install(package):\n            subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n            return 1\n        install(\"llm\")\n        import llm\n        from time import sleep\n        \n        # It is that way to allow you changing it to use more models if you need it ;)\n        model1 = llm.get_model(model) \n        model2 = llm.get_model(model)\n        model3 = llm.get_model(model)\n        \n        model1.key = API_MODEL_KEY\n        model2.key = API_MODEL_KEY\n        model3.key = API_MODEL_KEY\n        \n        prompt_plan = f'{internal_prompt_theme} {theme}, be creative in this process.'\n\n        \n        if(len(web) > 10):\n            prompt_plan += \"Here is some additional information to create the topics.\"\n        \n        if(detail_text):\n            prompt_plan += \"Detail the text as the maximum as you can (I want a lot of topics)\"\n    \n        code_planner_prompt_response = model1.prompt(\n        prompt_plan + '''\\n\n        {Respond in json format {\"newsletter\": [\"topic1\", \"topic2\", \"topic 3\", \"topic 4\", \"topic 5\", ...]}.''' + str(internal_prompt_instruction)\n        )\n    \n        \n        code_planner_result = code_planner_prompt_response.text()\n        \n        function_stubs = json.loads(code_planner_result)[\"newsletter\"]\n\n        function_stub_raw_results = \"# \" + f\"**{theme}**\" + \"\\n\\n\"\n        \n        \n        for stub in function_stubs:\n            function_stub_raw_results += \"\\n\" + f\"## **{stub}**\" + \"\\n\\n\"\n            \n            if(detail_text):\n                code_executor_prompt_response = model1.prompt(\n                    f\"You are writing a newsletter, write the content in plain text about the: {stub}. Remember the context {prompt_plan}. Remember to return the data as plain text in the maximumparagraphs you can generate I want a really big output.\"\n                )\n            else:\n                code_executor_prompt_response = model1.prompt(\n                    f\"You are writing a newsletter, write the content in plain text about the: {stub}. Remember the context {prompt_plan}. Remember to return the data as plain text in 2 or more paragraphs.\"\n                )\n                \n            \n\n            function_stub_raw_results += code_executor_prompt_response.text()\n            \n        return function_stub_raw_results",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "detail_text": {
+                "type": "bool",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Yes",
+                  "No"
+                ],
+                "name": "detail_text",
+                "display_name": "Detail Text",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "internal_prompt_instruction": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "internal_prompt_instruction",
+                "display_name": "Internal Prompt Instruction",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "internal_prompt_theme": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "internal_prompt_theme",
+                "display_name": "Internal Prompt Theme",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "model": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "claude-3-haiku",
+                  "claude-3-sonnet",
+                  "claude-3-opus",
+                  "gpt-4-turbo",
+                  "gpt-4-0125-preview",
+                  "gpt-3.5-turbo"
+                ],
+                "name": "model",
+                "display_name": "Model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "gpt-3.5-turbo"
+              },
+              "theme": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "theme",
+                "display_name": "Theme",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "web": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "web",
+                "display_name": "Additional Information (Web, Book, etc.)",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "WorkersParallelPromptChain",
+            "documentation": "",
+            "custom_fields": {
+              "theme": null,
+              "model": null,
+              "API_MODEL_KEY": null,
+              "detail_text": null,
+              "internal_prompt_theme": null,
+              "internal_prompt_instruction": null,
+              "web": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "CustomComponent-Ik35q",
+          "description": "This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.",
+          "display_name": "WorkersParallelPromptChain"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 877,
+        "positionAbsolute": {
+          "x": -60.726226633864144,
+          "y": -104.4093457357717
+        },
+        "dragging": false
+      },
+      {
+        "id": "ChatOutput-xGZY8",
+        "type": "genericNode",
+        "position": {
+          "x": 623.6268998499909,
+          "y": -44.30846116194553
+        },
+        "data": {
+          "type": "ChatOutput",
+          "node": {
+            "template": {
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional, Union\n\nfrom axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.field_typing import Text\nfrom axiestudio.schema import Record\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Interaction Panel.\"\n    icon = \"ChatOutput\"\n\n    def build(\n        self,\n        sender: Optional[str] = \"Machine\",\n        sender_name: Optional[str] = \"AI\",\n        input_value: Optional[str] = None,\n        session_id: Optional[str] = None,\n        return_record: Optional[bool] = False,\n        record_template: Optional[str] = \"{text}\",\n    ) -> Union[Text, Record]:\n        return super().build_with_record(\n            sender=sender,\n            sender_name=sender_name,\n            input_value=input_value,\n            session_id=session_id,\n            return_record=return_record,\n            record_template=record_template or \"\",\n        )\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Message",
+                "advanced": false,
+                "input_types": [
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "record_template": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "{text}",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "record_template",
+                "display_name": "Record Template",
+                "advanced": true,
+                "dynamic": false,
+                "info": "In case of Message being a Record, this template will be used to convert it to text.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "return_record": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "return_record",
+                "display_name": "Return Record",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Return the message as a record containing the sender, sender_name, and session_id.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "sender": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "Machine",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "name": "sender",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "sender_name": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "sender_name",
+                "display_name": "Sender Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "session_id": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "session_id",
+                "display_name": "Session ID",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If provided, the message will be stored in the memory.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Display a chat message in the Interaction Panel.",
+            "icon": "ChatOutput",
+            "base_classes": [
+              "object",
+              "Record",
+              "str",
+              "Text"
+            ],
+            "display_name": "Chat Output",
+            "documentation": "",
+            "custom_fields": {
+              "sender": null,
+              "sender_name": null,
+              "input_value": null,
+              "session_id": null,
+              "return_record": null,
+              "record_template": null
+            },
+            "output_types": [
+              "Text",
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "ChatOutput-xGZY8"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 384,
+        "positionAbsolute": {
+          "x": 623.6268998499909,
+          "y": -44.30846116194553
+        },
+        "dragging": true
+      },
+      {
+        "id": "TextInput-jw40U",
+        "type": "genericNode",
+        "position": {
+          "x": -782.0314348768611,
+          "y": -355.48124204396464
+        },
+        "data": {
+          "type": "TextInput",
+          "node": {
+            "template": {
+              "input_value": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "You should create 5 topics for this theme",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Value",
+                "advanced": false,
+                "input_types": [
+                  "Record",
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "Text or Record to be passed as input.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional\n\nfrom axiestudio.base.io.text import TextComponent\nfrom axiestudio.field_typing import Text\n\n\nclass TextInput(TextComponent):\n    display_name = \"Text Input\"\n    description = \"Get text inputs from the Interaction Panel.\"\n    icon = \"type\"\n\n    def build_config(self):\n        return {\n            \"input_value\": {\n                \"display_name\": \"Value\",\n                \"input_types\": [\"Record\", \"Text\"],\n                \"info\": \"Text or Record to be passed as input.\",\n            },\n            \"record_template\": {\n                \"display_name\": \"Record Template\",\n                \"multiline\": True,\n                \"info\": \"Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        input_value: Optional[Text] = \"\",\n        record_template: Optional[str] = \"\",\n    ) -> Text:\n        return super().build(input_value=input_value, record_template=record_template)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "record_template": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "record_template",
+                "display_name": "Record Template",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Get text inputs from the Interaction Panel.",
+            "icon": "type",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "Text to extract topics",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null,
+              "record_template": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "TextInput-jw40U"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 290,
+        "positionAbsolute": {
+          "x": -782.0314348768611,
+          "y": -355.48124204396464
+        },
+        "dragging": false
+      },
+      {
+        "id": "TextInput-m1JKG",
+        "type": "genericNode",
+        "position": {
+          "x": -805.0775377643599,
+          "y": -13.118798276347718
+        },
+        "data": {
+          "type": "TextInput",
+          "node": {
+            "template": {
+              "input_value": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "I want you to generate topics related to",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Value",
+                "advanced": false,
+                "input_types": [
+                  "Record",
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "Text or Record to be passed as input.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional\n\nfrom axiestudio.base.io.text import TextComponent\nfrom axiestudio.field_typing import Text\n\n\nclass TextInput(TextComponent):\n    display_name = \"Text Input\"\n    description = \"Get text inputs from the Interaction Panel.\"\n    icon = \"type\"\n\n    def build_config(self):\n        return {\n            \"input_value\": {\n                \"display_name\": \"Value\",\n                \"input_types\": [\"Record\", \"Text\"],\n                \"info\": \"Text or Record to be passed as input.\",\n            },\n            \"record_template\": {\n                \"display_name\": \"Record Template\",\n                \"multiline\": True,\n                \"info\": \"Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        input_value: Optional[Text] = \"\",\n        record_template: Optional[str] = \"\",\n    ) -> Text:\n        return super().build(input_value=input_value, record_template=record_template)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "record_template": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "record_template",
+                "display_name": "Record Template",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Get text inputs from the Interaction Panel.",
+            "icon": "type",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "Workers Context",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null,
+              "record_template": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "TextInput-m1JKG"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 290,
+        "positionAbsolute": {
+          "x": -805.0775377643599,
+          "y": -13.118798276347718
+        },
+        "dragging": false
+      },
+      {
+        "id": "TextInput-mF4xh",
+        "type": "genericNode",
+        "position": {
+          "x": -827.9831230753922,
+          "y": 674.9255962121468
+        },
+        "data": {
+          "type": "TextInput",
+          "node": {
+            "template": {
+              "input_value": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "Artificial intelligence (AI) is a branch of computer science that involves creating systems capable of performing tasks that would typically require human intelligence. These tasks include learning (the acquisition of information and rules for using the information), reasoning (using rules to reach approximate or definite conclusions), and self-correction. Prominent AI applications include expert systems, natural language processing (NLP), speech recognition, and machine vision.  AI is categorized into two main types:  Narrow AI: Also known as weak AI, this type of artificial intelligence operates within a limited context and is a simulation of human intelligence. Narrow AI is often focused on performing a single task extremely well and while these machines may seem intelligent, they are operating under far more constraints and limitations than even the most basic human intelligence. General AI: Also known as strong AI, this type of AI systems possess the ability to perform any intellectual task that a human being can. General AI is still a largely theoretical concept in current research, though numerous breakthroughs in AI capabilities bring the possibility of future development closer. Authors and thought leaders in AI and related fields often discuss its implications, including ethical considerations, the impact on jobs, privacy, and the future interaction between humans and intelligent machines. Their works provide a crucial insight into how AI continues to evolve and reshape our world.",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Value",
+                "advanced": false,
+                "input_types": [
+                  "Record",
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "Text or Record to be passed as input.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional\n\nfrom axiestudio.base.io.text import TextComponent\nfrom axiestudio.field_typing import Text\n\n\nclass TextInput(TextComponent):\n    display_name = \"Text Input\"\n    description = \"Get text inputs from the Interaction Panel.\"\n    icon = \"type\"\n\n    def build_config(self):\n        return {\n            \"input_value\": {\n                \"display_name\": \"Value\",\n                \"input_types\": [\"Record\", \"Text\"],\n                \"info\": \"Text or Record to be passed as input.\",\n            },\n            \"record_template\": {\n                \"display_name\": \"Record Template\",\n                \"multiline\": True,\n                \"info\": \"Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        input_value: Optional[Text] = \"\",\n        record_template: Optional[str] = \"\",\n    ) -> Text:\n        return super().build(input_value=input_value, record_template=record_template)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "record_template": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "record_template",
+                "display_name": "Record Template",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Get text inputs from the Interaction Panel.",
+            "icon": "type",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "Text Input",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null,
+              "record_template": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "TextInput-mF4xh"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 290,
+        "positionAbsolute": {
+          "x": -827.9831230753922,
+          "y": 674.9255962121468
+        },
+        "dragging": false
+      },
+      {
+        "id": "TextInput-f1PXr",
+        "type": "genericNode",
+        "position": {
+          "x": -821.3434479042393,
+          "y": 359.82434502129377
+        },
+        "data": {
+          "type": "TextInput",
+          "node": {
+            "template": {
+              "input_value": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "AI Applied to Agriculture",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Value",
+                "advanced": false,
+                "input_types": [
+                  "Record",
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "Text or Record to be passed as input.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional\n\nfrom axiestudio.base.io.text import TextComponent\nfrom axiestudio.field_typing import Text\n\n\nclass TextInput(TextComponent):\n    display_name = \"Text Input\"\n    description = \"Get text inputs from the Interaction Panel.\"\n    icon = \"type\"\n\n    def build_config(self):\n        return {\n            \"input_value\": {\n                \"display_name\": \"Value\",\n                \"input_types\": [\"Record\", \"Text\"],\n                \"info\": \"Text or Record to be passed as input.\",\n            },\n            \"record_template\": {\n                \"display_name\": \"Record Template\",\n                \"multiline\": True,\n                \"info\": \"Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        input_value: Optional[Text] = \"\",\n        record_template: Optional[str] = \"\",\n    ) -> Text:\n        return super().build(input_value=input_value, record_template=record_template)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "record_template": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "record_template",
+                "display_name": "Record Template",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Get text inputs from the Interaction Panel.",
+            "icon": "type",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "Theme",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null,
+              "record_template": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "TextInput-f1PXr"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 290,
+        "positionAbsolute": {
+          "x": -821.3434479042393,
+          "y": 359.82434502129377
+        },
+        "dragging": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "TextInput-m1JKG",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-m1JKGœ}",
+        "target": "CustomComponent-Ik35q",
+        "targetHandle": "{œfieldNameœ:œinternal_prompt_themeœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "internal_prompt_theme",
+            "id": "CustomComponent-Ik35q",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "TextInput",
+            "id": "TextInput-m1JKG"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 stroke-connection",
+        "id": "reactflow__edge-TextInput-m1JKG{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-m1JKGœ}-CustomComponent-Ik35q{œfieldNameœ:œinternal_prompt_themeœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+      },
+      {
+        "source": "TextInput-jw40U",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-jw40Uœ}",
+        "target": "CustomComponent-Ik35q",
+        "targetHandle": "{œfieldNameœ:œinternal_prompt_instructionœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "internal_prompt_instruction",
+            "id": "CustomComponent-Ik35q",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "TextInput",
+            "id": "TextInput-jw40U"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 stroke-connection",
+        "id": "reactflow__edge-TextInput-jw40U{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-jw40Uœ}-CustomComponent-Ik35q{œfieldNameœ:œinternal_prompt_instructionœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+      },
+      {
+        "source": "CustomComponent-Ik35q",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-Ik35qœ}",
+        "target": "ChatOutput-xGZY8",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-xGZY8œ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "ChatOutput-xGZY8",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "CustomComponent",
+            "id": "CustomComponent-Ik35q"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 stroke-connection",
+        "id": "reactflow__edge-CustomComponent-Ik35q{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-Ik35qœ}-ChatOutput-xGZY8{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-xGZY8œ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+      },
+      {
+        "source": "TextInput-mF4xh",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-mF4xhœ}",
+        "target": "CustomComponent-Ik35q",
+        "targetHandle": "{œfieldNameœ:œwebœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "web",
+            "id": "CustomComponent-Ik35q",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "TextInput",
+            "id": "TextInput-mF4xh"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-foreground stroke-connection",
+        "id": "reactflow__edge-TextInput-mF4xh{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-mF4xhœ}-CustomComponent-Ik35q{œfieldNameœ:œwebœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+      },
+      {
+        "source": "TextInput-f1PXr",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-f1PXrœ}",
+        "target": "CustomComponent-Ik35q",
+        "targetHandle": "{œfieldNameœ:œthemeœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "theme",
+            "id": "CustomComponent-Ik35q",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "TextInput",
+            "id": "TextInput-f1PXr"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-foreground stroke-connection",
+        "id": "reactflow__edge-TextInput-f1PXr{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-f1PXrœ}-CustomComponent-Ik35q{œfieldNameœ:œthemeœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+      }
+    ],
+    "viewport": {
+      "x": 859.1144415590297,
+      "y": 245.78504253563835,
+      "zoom": 0.6417129487814335
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "ChatOutput": {
+      "count": 1
+    },
+    "TextInput": {
+      "count": 4
+    },
+    "total": 6
+  },
+  "original": {
+    "id": "601c617b-0064-4401-a23b-7816407a1b50",
+    "name": "Workers Parallel Prompt Chain - Newsletter Example",
+    "description": "This is a SnowBall Prompt Chain an example, basically a sequential chain that does something. In this case we are trying it out using a Blog Post Example.",
+    "is_component": false,
+    "liked_by_count": "56",
+    "downloads_count": "694",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "ChatOutput": {
+        "count": 1
+      },
+      "TextInput": {
+        "count": 4
+      },
+      "total": 6
+    },
+    "last_tested_version": "1.0.0a24",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "CustomComponent-Ik35q",
+          "type": "genericNode",
+          "position": {
+            "x": -60.726226633864144,
+            "y": -104.4093457357717
+          },
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "API_MODEL_KEY": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "API_MODEL_KEY",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n        subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n        return 1\n    \ninstall(\"llm\")\n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"Workers Paralel Prompt Chain\"\n    description = \"This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.\"\n    def build_config(self):\n        return {\n            \"theme\": {\n                \"display_name\": \"Theme\",\n                \"advanced\": False,\n                \"required\": True,\n            },\n            \"model\":{\n                \"display_name\": \"Model\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"claude-3-haiku\",\n                    \"claude-3-sonnet\",\n                    \"claude-3-opus\",\n                    \"gpt-4-turbo\",\n                    \"gpt-4-0125-preview\",\n                    \"gpt-3.5-turbo\",\n                ],\n                \n            },\n            \"web\":{\n                \"display_name\": \"Additional Information (Web, Book, etc.)\",\n                \"advanced\": False,\n                \"required\": False,\n                \"default\": \"\"\n                \n            },\n            \"detail_text\":{\n                \"display_name\": \"Detail Text\",\n                \"advanced\": False,\n                \"required\": True,\n                \"default\": \"No\",\n                \"options\": [\n                    \"Yes\",\n                    \"No\"\n                ],\n            },\n            \"internal_prompt_theme\":{\n                \"display_name\": \"Internal Prompt Theme\",\n                \"required\": False,\n                \"default\": \"Generate a clickworthy title about this topic\"\n            },\n            \"internal_prompt_instruction\":{\n                \"display_name\": \"Internal Prompt Instruction\",\n                \"required\": False,\n                \"default\": \"Generate a compelling 3 section outline given this information\"\n            },\n            \"API_MODEL_KEY\":{\n                \"password\": True,\n                \"required\": True,\n            }\n        }\n    \n    def build(self, theme: str, model: str, API_MODEL_KEY: str, detail_text: bool, internal_prompt_theme: str = '', internal_prompt_instruction: str = '', web: str = '') -> str:\n        \"\"\"\n            Workers Paralel Chain: Start with a small topic and then expand it using paralel workers:\n            [User provide a topic -> chain 1 make a title -> chain 1,2,3,n work in paralel to process the subtasks -> return in json]\n        \"\"\"\n        def install(package):\n            subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n            return 1\n        install(\"llm\")\n        import llm\n        from time import sleep\n        \n        # It is that way to allow you changing it to use more models if you need it ;)\n        model1 = llm.get_model(model) \n        model2 = llm.get_model(model)\n        model3 = llm.get_model(model)\n        \n        model1.key = API_MODEL_KEY\n        model2.key = API_MODEL_KEY\n        model3.key = API_MODEL_KEY\n        \n        prompt_plan = f'{internal_prompt_theme} {theme}, be creative in this process.'\n\n        \n        if(len(web) > 10):\n            prompt_plan += \"Here is some additional information to create the topics.\"\n        \n        if(detail_text):\n            prompt_plan += \"Detail the text as the maximum as you can (I want a lot of topics)\"\n    \n        code_planner_prompt_response = model1.prompt(\n        prompt_plan + '''\\n\n        {Respond in json format {\"newsletter\": [\"topic1\", \"topic2\", \"topic 3\", \"topic 4\", \"topic 5\", ...]}.''' + str(internal_prompt_instruction)\n        )\n    \n        \n        code_planner_result = code_planner_prompt_response.text()\n        \n        function_stubs = json.loads(code_planner_result)[\"newsletter\"]\n\n        function_stub_raw_results = \"# \" + f\"**{theme}**\" + \"\\n\\n\"\n        \n        \n        for stub in function_stubs:\n            function_stub_raw_results += \"\\n\" + f\"## **{stub}**\" + \"\\n\\n\"\n            \n            if(detail_text):\n                code_executor_prompt_response = model1.prompt(\n                    f\"You are writing a newsletter, write the content in plain text about the: {stub}. Remember the context {prompt_plan}. Remember to return the data as plain text in the maximumparagraphs you can generate I want a really big output.\"\n                )\n            else:\n                code_executor_prompt_response = model1.prompt(\n                    f\"You are writing a newsletter, write the content in plain text about the: {stub}. Remember the context {prompt_plan}. Remember to return the data as plain text in 2 or more paragraphs.\"\n                )\n                \n            \n\n            function_stub_raw_results += code_executor_prompt_response.text()\n            \n        return function_stub_raw_results",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "detail_text": {
+                  "type": "bool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Yes",
+                    "No"
+                  ],
+                  "name": "detail_text",
+                  "display_name": "Detail Text",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "internal_prompt_instruction": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "internal_prompt_instruction",
+                  "display_name": "Internal Prompt Instruction",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "internal_prompt_theme": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "internal_prompt_theme",
+                  "display_name": "Internal Prompt Theme",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "model": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "claude-3-haiku",
+                    "claude-3-sonnet",
+                    "claude-3-opus",
+                    "gpt-4-turbo",
+                    "gpt-4-0125-preview",
+                    "gpt-3.5-turbo"
+                  ],
+                  "name": "model",
+                  "display_name": "Model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "gpt-3.5-turbo"
+                },
+                "theme": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "theme",
+                  "display_name": "Theme",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "web": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "web",
+                  "display_name": "Additional Information (Web, Book, etc.)",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "WorkersParallelPromptChain",
+              "documentation": "",
+              "custom_fields": {
+                "theme": null,
+                "model": null,
+                "API_MODEL_KEY": null,
+                "detail_text": null,
+                "internal_prompt_theme": null,
+                "internal_prompt_instruction": null,
+                "web": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "CustomComponent-Ik35q",
+            "description": "This component is an implementation of Workers Prompt Chaining (Compatible with different LLM models), which consists in independent subtasks to run in parallel to achieve a task keeping an initial goal/theme.",
+            "display_name": "WorkersParallelPromptChain"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 877,
+          "positionAbsolute": {
+            "x": -60.726226633864144,
+            "y": -104.4093457357717
+          },
+          "dragging": false
+        },
+        {
+          "id": "ChatOutput-xGZY8",
+          "type": "genericNode",
+          "position": {
+            "x": 623.6268998499909,
+            "y": -44.30846116194553
+          },
+          "data": {
+            "type": "ChatOutput",
+            "node": {
+              "template": {
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional, Union\n\nfrom axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.field_typing import Text\nfrom axiestudio.schema import Record\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Interaction Panel.\"\n    icon = \"ChatOutput\"\n\n    def build(\n        self,\n        sender: Optional[str] = \"Machine\",\n        sender_name: Optional[str] = \"AI\",\n        input_value: Optional[str] = None,\n        session_id: Optional[str] = None,\n        return_record: Optional[bool] = False,\n        record_template: Optional[str] = \"{text}\",\n    ) -> Union[Text, Record]:\n        return super().build_with_record(\n            sender=sender,\n            sender_name=sender_name,\n            input_value=input_value,\n            session_id=session_id,\n            return_record=return_record,\n            record_template=record_template or \"\",\n        )\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Message",
+                  "advanced": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "record_template": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "{text}",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "record_template",
+                  "display_name": "Record Template",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "In case of Message being a Record, this template will be used to convert it to text.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "return_record": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "return_record",
+                  "display_name": "Return Record",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Return the message as a record containing the sender, sender_name, and session_id.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "sender": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "Machine",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Machine",
+                    "User"
+                  ],
+                  "name": "sender",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "sender_name": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "sender_name",
+                  "display_name": "Sender Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "session_id": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "session_id",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If provided, the message will be stored in the memory.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Display a chat message in the Interaction Panel.",
+              "icon": "ChatOutput",
+              "base_classes": [
+                "object",
+                "Record",
+                "str",
+                "Text"
+              ],
+              "display_name": "Chat Output",
+              "documentation": "",
+              "custom_fields": {
+                "sender": null,
+                "sender_name": null,
+                "input_value": null,
+                "session_id": null,
+                "return_record": null,
+                "record_template": null
+              },
+              "output_types": [
+                "Text",
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "ChatOutput-xGZY8"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 384,
+          "positionAbsolute": {
+            "x": 623.6268998499909,
+            "y": -44.30846116194553
+          },
+          "dragging": true
+        },
+        {
+          "id": "TextInput-jw40U",
+          "type": "genericNode",
+          "position": {
+            "x": -782.0314348768611,
+            "y": -355.48124204396464
+          },
+          "data": {
+            "type": "TextInput",
+            "node": {
+              "template": {
+                "input_value": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "You should create 5 topics for this theme",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Value",
+                  "advanced": false,
+                  "input_types": [
+                    "Record",
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "Text or Record to be passed as input.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional\n\nfrom axiestudio.base.io.text import TextComponent\nfrom axiestudio.field_typing import Text\n\n\nclass TextInput(TextComponent):\n    display_name = \"Text Input\"\n    description = \"Get text inputs from the Interaction Panel.\"\n    icon = \"type\"\n\n    def build_config(self):\n        return {\n            \"input_value\": {\n                \"display_name\": \"Value\",\n                \"input_types\": [\"Record\", \"Text\"],\n                \"info\": \"Text or Record to be passed as input.\",\n            },\n            \"record_template\": {\n                \"display_name\": \"Record Template\",\n                \"multiline\": True,\n                \"info\": \"Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        input_value: Optional[Text] = \"\",\n        record_template: Optional[str] = \"\",\n    ) -> Text:\n        return super().build(input_value=input_value, record_template=record_template)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "record_template": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "record_template",
+                  "display_name": "Record Template",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Get text inputs from the Interaction Panel.",
+              "icon": "type",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "Text to extract topics",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null,
+                "record_template": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "TextInput-jw40U"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 290,
+          "positionAbsolute": {
+            "x": -782.0314348768611,
+            "y": -355.48124204396464
+          },
+          "dragging": false
+        },
+        {
+          "id": "TextInput-m1JKG",
+          "type": "genericNode",
+          "position": {
+            "x": -805.0775377643599,
+            "y": -13.118798276347718
+          },
+          "data": {
+            "type": "TextInput",
+            "node": {
+              "template": {
+                "input_value": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "I want you to generate topics related to",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Value",
+                  "advanced": false,
+                  "input_types": [
+                    "Record",
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "Text or Record to be passed as input.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional\n\nfrom axiestudio.base.io.text import TextComponent\nfrom axiestudio.field_typing import Text\n\n\nclass TextInput(TextComponent):\n    display_name = \"Text Input\"\n    description = \"Get text inputs from the Interaction Panel.\"\n    icon = \"type\"\n\n    def build_config(self):\n        return {\n            \"input_value\": {\n                \"display_name\": \"Value\",\n                \"input_types\": [\"Record\", \"Text\"],\n                \"info\": \"Text or Record to be passed as input.\",\n            },\n            \"record_template\": {\n                \"display_name\": \"Record Template\",\n                \"multiline\": True,\n                \"info\": \"Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        input_value: Optional[Text] = \"\",\n        record_template: Optional[str] = \"\",\n    ) -> Text:\n        return super().build(input_value=input_value, record_template=record_template)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "record_template": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "record_template",
+                  "display_name": "Record Template",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Get text inputs from the Interaction Panel.",
+              "icon": "type",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "Workers Context",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null,
+                "record_template": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "TextInput-m1JKG"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 290,
+          "positionAbsolute": {
+            "x": -805.0775377643599,
+            "y": -13.118798276347718
+          },
+          "dragging": false
+        },
+        {
+          "id": "TextInput-mF4xh",
+          "type": "genericNode",
+          "position": {
+            "x": -827.9831230753922,
+            "y": 674.9255962121468
+          },
+          "data": {
+            "type": "TextInput",
+            "node": {
+              "template": {
+                "input_value": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "Artificial intelligence (AI) is a branch of computer science that involves creating systems capable of performing tasks that would typically require human intelligence. These tasks include learning (the acquisition of information and rules for using the information), reasoning (using rules to reach approximate or definite conclusions), and self-correction. Prominent AI applications include expert systems, natural language processing (NLP), speech recognition, and machine vision.  AI is categorized into two main types:  Narrow AI: Also known as weak AI, this type of artificial intelligence operates within a limited context and is a simulation of human intelligence. Narrow AI is often focused on performing a single task extremely well and while these machines may seem intelligent, they are operating under far more constraints and limitations than even the most basic human intelligence. General AI: Also known as strong AI, this type of AI systems possess the ability to perform any intellectual task that a human being can. General AI is still a largely theoretical concept in current research, though numerous breakthroughs in AI capabilities bring the possibility of future development closer. Authors and thought leaders in AI and related fields often discuss its implications, including ethical considerations, the impact on jobs, privacy, and the future interaction between humans and intelligent machines. Their works provide a crucial insight into how AI continues to evolve and reshape our world.",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Value",
+                  "advanced": false,
+                  "input_types": [
+                    "Record",
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "Text or Record to be passed as input.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional\n\nfrom axiestudio.base.io.text import TextComponent\nfrom axiestudio.field_typing import Text\n\n\nclass TextInput(TextComponent):\n    display_name = \"Text Input\"\n    description = \"Get text inputs from the Interaction Panel.\"\n    icon = \"type\"\n\n    def build_config(self):\n        return {\n            \"input_value\": {\n                \"display_name\": \"Value\",\n                \"input_types\": [\"Record\", \"Text\"],\n                \"info\": \"Text or Record to be passed as input.\",\n            },\n            \"record_template\": {\n                \"display_name\": \"Record Template\",\n                \"multiline\": True,\n                \"info\": \"Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        input_value: Optional[Text] = \"\",\n        record_template: Optional[str] = \"\",\n    ) -> Text:\n        return super().build(input_value=input_value, record_template=record_template)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "record_template": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "record_template",
+                  "display_name": "Record Template",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Get text inputs from the Interaction Panel.",
+              "icon": "type",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "Text Input",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null,
+                "record_template": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "TextInput-mF4xh"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 290,
+          "positionAbsolute": {
+            "x": -827.9831230753922,
+            "y": 674.9255962121468
+          },
+          "dragging": false
+        },
+        {
+          "id": "TextInput-f1PXr",
+          "type": "genericNode",
+          "position": {
+            "x": -821.3434479042393,
+            "y": 359.82434502129377
+          },
+          "data": {
+            "type": "TextInput",
+            "node": {
+              "template": {
+                "input_value": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "AI Applied to Agriculture",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Value",
+                  "advanced": false,
+                  "input_types": [
+                    "Record",
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "Text or Record to be passed as input.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional\n\nfrom axiestudio.base.io.text import TextComponent\nfrom axiestudio.field_typing import Text\n\n\nclass TextInput(TextComponent):\n    display_name = \"Text Input\"\n    description = \"Get text inputs from the Interaction Panel.\"\n    icon = \"type\"\n\n    def build_config(self):\n        return {\n            \"input_value\": {\n                \"display_name\": \"Value\",\n                \"input_types\": [\"Record\", \"Text\"],\n                \"info\": \"Text or Record to be passed as input.\",\n            },\n            \"record_template\": {\n                \"display_name\": \"Record Template\",\n                \"multiline\": True,\n                \"info\": \"Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        input_value: Optional[Text] = \"\",\n        record_template: Optional[str] = \"\",\n    ) -> Text:\n        return super().build(input_value=input_value, record_template=record_template)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "record_template": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "record_template",
+                  "display_name": "Record Template",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Get text inputs from the Interaction Panel.",
+              "icon": "type",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "Theme",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null,
+                "record_template": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "TextInput-f1PXr"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 290,
+          "positionAbsolute": {
+            "x": -821.3434479042393,
+            "y": 359.82434502129377
+          },
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "source": "TextInput-m1JKG",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-m1JKGœ}",
+          "target": "CustomComponent-Ik35q",
+          "targetHandle": "{œfieldNameœ:œinternal_prompt_themeœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "internal_prompt_theme",
+              "id": "CustomComponent-Ik35q",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "TextInput",
+              "id": "TextInput-m1JKG"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 stroke-connection",
+          "id": "reactflow__edge-TextInput-m1JKG{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-m1JKGœ}-CustomComponent-Ik35q{œfieldNameœ:œinternal_prompt_themeœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+        },
+        {
+          "source": "TextInput-jw40U",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-jw40Uœ}",
+          "target": "CustomComponent-Ik35q",
+          "targetHandle": "{œfieldNameœ:œinternal_prompt_instructionœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "internal_prompt_instruction",
+              "id": "CustomComponent-Ik35q",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "TextInput",
+              "id": "TextInput-jw40U"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 stroke-connection",
+          "id": "reactflow__edge-TextInput-jw40U{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-jw40Uœ}-CustomComponent-Ik35q{œfieldNameœ:œinternal_prompt_instructionœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+        },
+        {
+          "source": "CustomComponent-Ik35q",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-Ik35qœ}",
+          "target": "ChatOutput-xGZY8",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-xGZY8œ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "ChatOutput-xGZY8",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "CustomComponent",
+              "id": "CustomComponent-Ik35q"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 stroke-connection",
+          "id": "reactflow__edge-CustomComponent-Ik35q{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-Ik35qœ}-ChatOutput-xGZY8{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-xGZY8œ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+        },
+        {
+          "source": "TextInput-mF4xh",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-mF4xhœ}",
+          "target": "CustomComponent-Ik35q",
+          "targetHandle": "{œfieldNameœ:œwebœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "web",
+              "id": "CustomComponent-Ik35q",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "TextInput",
+              "id": "TextInput-mF4xh"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-foreground stroke-connection",
+          "id": "reactflow__edge-TextInput-mF4xh{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-mF4xhœ}-CustomComponent-Ik35q{œfieldNameœ:œwebœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+        },
+        {
+          "source": "TextInput-f1PXr",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-f1PXrœ}",
+          "target": "CustomComponent-Ik35q",
+          "targetHandle": "{œfieldNameœ:œthemeœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "theme",
+              "id": "CustomComponent-Ik35q",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "TextInput",
+              "id": "TextInput-f1PXr"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-foreground stroke-connection",
+          "id": "reactflow__edge-TextInput-f1PXr{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œTextInputœ,œidœ:œTextInput-f1PXrœ}-CustomComponent-Ik35q{œfieldNameœ:œthemeœ,œidœ:œCustomComponent-Ik35qœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+        }
+      ],
+      "viewport": {
+        "x": 859.1144415590297,
+        "y": 245.78504253563835,
+        "zoom": 0.6417129487814335
+      }
+    },
+    "date_created": "2024-04-25T14:52:52.944Z",
+    "date_updated": "2024-04-25T14:52:53.010Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "user_created": {
+      "username": "joaoguilhermeS",
+      "first_name": "João",
+      "last_name": "Oliveira",
+      "id": "94b2e207-1a44-4905-856c-4f5a69c168ce"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Prompt",
+          "id": "57f5c681-a1f5-4053-be33-e9525e7eb00a"
+        }
+      },
+      {
+        "tags_id": {
+          "name": "Chain",
+          "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:58.926Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 28,
+    "converter_version": "1.0.0"
+  }
+}

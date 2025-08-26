@@ -1,0 +1,457 @@
+{
+  "id": "3403c9aa-c411-4596-89cf-d3b033dca015",
+  "name": "Pulsar Producer",
+  "description": "Create a Pulsar producer and publish data. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "RobertoRiscoFlores",
+    "first_name": "Roberto",
+    "last_name": "Flores",
+    "id": "1e263ac7-2f7c-4435-b439-00400a56eae0",
+    "full_name": "Roberto Flores"
+  },
+  "store_url": "https://www.langflow.store/store/component/3403c9aa-c411-4596-89cf-d3b033dca015",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-31T18:24:10.692Z",
+    "updated": "2024-10-31T18:24:10.728Z",
+    "downloaded": "2025-08-19T17:50:07.416Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Pulsar Producer",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "\r\nimport pulsar\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import MessageTextInput, Output\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.schema.message import Message\r\nfrom dotenv import load_dotenv\r\n\r\n\r\nclass CustomComponent(Component):\r\n    load_dotenv()  # take environment variables from .env\r\n\r\n    display_name = \"Pulsar Producer\"\r\n    description = \"Create a Pulsar producer and publish data.\"\r\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\r\n    icon = \"AstraDB\"\r\n    name = \"Pulsar Producer\"\r\n\r\n    inputs = [\r\n        SecretStrInput(\r\n            name=\"pulsar_service_url\",\r\n            display_name=\"Pulsar Service URL\",\r\n            info=\"URL of Pulsar broker.\",\r\n            advanced=False,\r\n        ),\r\n        SecretStrInput(\r\n            name=\"pulsar_token\",\r\n            display_name=\"Pulsar Security Token\",\r\n            info=\"Secure token for accesing Pulsar service.\",\r\n            advanced=False,\r\n            #value=\"PULSAR_TOKEN\",\r\n        ),\r\n        StrInput(\r\n            name=\"tenant_name\",\r\n            display_name=\"Tenant Name\",\r\n            advanced=False,\r\n            info=\"Your tenant name must start with a lowercase alphabetic character. It can only contain lowercase alphanumeric characters, and hyphens (kebab-case).\",\r\n        ),\r\n        StrInput(\r\n            name=\"namespace\",\r\n            display_name=\"Namespace\",\r\n            advanced=False,\r\n            info=\"Pulsar namespaces are logical groupings of topics.\",\r\n        ),\r\n        StrInput(\r\n            name=\"topicName\",\r\n            display_name=\"Topic\",\r\n            advanced=False,\r\n            info=\"Topics provide a way to group messages matching certain criteria.\",\r\n        ),\r\n        MultilineInput(\r\n            name=\"input_value\",\r\n            display_name=\"Pulsar message\",\r\n            info=\"JSON to be passed as message to the topic.\",\r\n        ),\r\n    ]\r\n    \r\n    outputs = [\r\n        Output(display_name=\"Output\", name=\"output\", method=\"build_output\"),\r\n    ]\r\n\r\n    \r\n\r\n    def build_output(self) -> Message:\r\n        topic = \"persistent://{0}/{1}/{2}\".format(self.tenant_name, self.namespace, self.topicName)\r\n\r\n        client = pulsar.Client(self.pulsar_service_url, authentication = pulsar.AuthenticationToken(self.pulsar_token))\r\n        \r\n        # Extract usage metadata from received string (Json) \r\n        metadata = json.loads(self.input_value)\r\n        \r\n        # create-producer[]\r\n        producer = client.create_producer(topic)\r\n        \r\n        # produce-message[]\r\n        producer.send(self.input_value.encode('utf-8'))\r\n        \r\n        # clean-up[]\r\n        client.close()\r\n        \r\n        output = json.dumps(metadata, ensure_ascii=False)\r\n        self.status = output\r\n\r\n        return output\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Pulsar message",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "JSON to be passed as message to the topic.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "namespace": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "namespace",
+                "value": "",
+                "display_name": "Namespace",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Pulsar namespaces are logical groupings of topics.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "pulsar_service_url": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "pulsar_service_url",
+                "value": "",
+                "display_name": "Pulsar Service URL",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "URL of Pulsar broker.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "pulsar_token": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "pulsar_token",
+                "value": "",
+                "display_name": "Pulsar Security Token",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Secure token for accesing Pulsar service.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "tenant_name": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "tenant_name",
+                "value": "",
+                "display_name": "Tenant Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Your tenant name must start with a lowercase alphabetic character. It can only contain lowercase alphanumeric characters, and hyphens (kebab-case).",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "topicName": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "topicName",
+                "value": "",
+                "display_name": "Topic",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Topics provide a way to group messages matching certain criteria.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              }
+            },
+            "description": "Create a Pulsar producer and publish data.",
+            "icon": "AstraDB",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Pulsar Producer",
+            "documentation": "http://docs.axiestudio.org/components/custom",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "output",
+                "display_name": "Output",
+                "method": "build_output",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "pulsar_service_url",
+              "pulsar_token",
+              "tenant_name",
+              "namespace",
+              "topicName",
+              "input_value"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.18",
+            "official": false
+          },
+          "id": "Pulsar Producer-hvuOI"
+        },
+        "id": "Pulsar Producer-hvuOI",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Pulsar Producer": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "3403c9aa-c411-4596-89cf-d3b033dca015",
+    "name": "Pulsar Producer",
+    "description": "Create a Pulsar producer and publish data.",
+    "is_component": true,
+    "liked_by_count": "0",
+    "downloads_count": "8",
+    "metadata": {
+      "Pulsar Producer": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Pulsar Producer",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "\r\nimport pulsar\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import MessageTextInput, Output\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.schema.message import Message\r\nfrom dotenv import load_dotenv\r\n\r\n\r\nclass CustomComponent(Component):\r\n    load_dotenv()  # take environment variables from .env\r\n\r\n    display_name = \"Pulsar Producer\"\r\n    description = \"Create a Pulsar producer and publish data.\"\r\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\r\n    icon = \"AstraDB\"\r\n    name = \"Pulsar Producer\"\r\n\r\n    inputs = [\r\n        SecretStrInput(\r\n            name=\"pulsar_service_url\",\r\n            display_name=\"Pulsar Service URL\",\r\n            info=\"URL of Pulsar broker.\",\r\n            advanced=False,\r\n        ),\r\n        SecretStrInput(\r\n            name=\"pulsar_token\",\r\n            display_name=\"Pulsar Security Token\",\r\n            info=\"Secure token for accesing Pulsar service.\",\r\n            advanced=False,\r\n            #value=\"PULSAR_TOKEN\",\r\n        ),\r\n        StrInput(\r\n            name=\"tenant_name\",\r\n            display_name=\"Tenant Name\",\r\n            advanced=False,\r\n            info=\"Your tenant name must start with a lowercase alphabetic character. It can only contain lowercase alphanumeric characters, and hyphens (kebab-case).\",\r\n        ),\r\n        StrInput(\r\n            name=\"namespace\",\r\n            display_name=\"Namespace\",\r\n            advanced=False,\r\n            info=\"Pulsar namespaces are logical groupings of topics.\",\r\n        ),\r\n        StrInput(\r\n            name=\"topicName\",\r\n            display_name=\"Topic\",\r\n            advanced=False,\r\n            info=\"Topics provide a way to group messages matching certain criteria.\",\r\n        ),\r\n        MultilineInput(\r\n            name=\"input_value\",\r\n            display_name=\"Pulsar message\",\r\n            info=\"JSON to be passed as message to the topic.\",\r\n        ),\r\n    ]\r\n    \r\n    outputs = [\r\n        Output(display_name=\"Output\", name=\"output\", method=\"build_output\"),\r\n    ]\r\n\r\n    \r\n\r\n    def build_output(self) -> Message:\r\n        topic = \"persistent://{0}/{1}/{2}\".format(self.tenant_name, self.namespace, self.topicName)\r\n\r\n        client = pulsar.Client(self.pulsar_service_url, authentication = pulsar.AuthenticationToken(self.pulsar_token))\r\n        \r\n        # Extract usage metadata from received string (Json) \r\n        metadata = json.loads(self.input_value)\r\n        \r\n        # create-producer[]\r\n        producer = client.create_producer(topic)\r\n        \r\n        # produce-message[]\r\n        producer.send(self.input_value.encode('utf-8'))\r\n        \r\n        # clean-up[]\r\n        client.close()\r\n        \r\n        output = json.dumps(metadata, ensure_ascii=False)\r\n        self.status = output\r\n\r\n        return output\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Pulsar message",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "JSON to be passed as message to the topic.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "namespace": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "namespace",
+                  "value": "",
+                  "display_name": "Namespace",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Pulsar namespaces are logical groupings of topics.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "pulsar_service_url": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "pulsar_service_url",
+                  "value": "",
+                  "display_name": "Pulsar Service URL",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "URL of Pulsar broker.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "pulsar_token": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "pulsar_token",
+                  "value": "",
+                  "display_name": "Pulsar Security Token",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Secure token for accesing Pulsar service.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "tenant_name": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "tenant_name",
+                  "value": "",
+                  "display_name": "Tenant Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Your tenant name must start with a lowercase alphabetic character. It can only contain lowercase alphanumeric characters, and hyphens (kebab-case).",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "topicName": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "topicName",
+                  "value": "",
+                  "display_name": "Topic",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Topics provide a way to group messages matching certain criteria.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                }
+              },
+              "description": "Create a Pulsar producer and publish data.",
+              "icon": "AstraDB",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Pulsar Producer",
+              "documentation": "http://docs.axiestudio.org/components/custom",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "output",
+                  "display_name": "Output",
+                  "method": "build_output",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "pulsar_service_url",
+                "pulsar_token",
+                "tenant_name",
+                "namespace",
+                "topicName",
+                "input_value"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.18",
+              "official": false
+            },
+            "id": "Pulsar Producer-hvuOI"
+          },
+          "id": "Pulsar Producer-hvuOI",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-31T18:24:10.692Z",
+    "date_updated": "2024-10-31T18:24:10.728Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "1e263ac7-2f7c-4435-b439-00400a56eae0",
+    "user_created": {
+      "username": "RobertoRiscoFlores",
+      "first_name": "Roberto",
+      "last_name": "Flores",
+      "id": "1e263ac7-2f7c-4435-b439-00400a56eae0"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.523Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 12,
+    "converter_version": "1.0.0"
+  }
+}

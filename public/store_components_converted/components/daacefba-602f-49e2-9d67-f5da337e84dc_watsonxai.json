@@ -1,0 +1,869 @@
+{
+  "id": "daacefba-602f-49e2-9d67-f5da337e84dc",
+  "name": "watsonx.ai",
+  "description": "Watsonx foundation models (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "Mimr_0",
+    "first_name": "Milan",
+    "last_name": "Mrdenovic",
+    "id": "4d6acd51-154b-427e-af47-512b44b0c1ba",
+    "full_name": "Milan Mrdenovic"
+  },
+  "store_url": "https://www.langflow.store/store/component/daacefba-602f-49e2-9d67-f5da337e84dc",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-06-10T13:54:23.118Z",
+    "updated": "2024-06-10T13:54:23.143Z",
+    "downloaded": "2025-08-19T17:50:05.365Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.0a49",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "apikey": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "apikey",
+                "display_name": "API Key",
+                "advanced": false,
+                "dynamic": false,
+                "info": "API uses API keys for authentication.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "# from axiestudio.field_typing import Data\nfrom axiestudio.custom import CustomComponent\nfrom axiestudio.schema import Record\n#from axiestudio import CustomComponent\nfrom axiestudio import custom\nfrom langchain.schema import Document\nfrom typing import Optional\nfrom langchain.llms.base import BaseLLM\nfrom langchain_ibm import WatsonxLLM\n\n\nclass Watsonx(CustomComponent):\n    display_name = \"Watsonx\"\n    description = \"Watsonx foundation models\"\n    \n    def build_config(self) -> dict:\n        model_options = [\n            # Part of the officially supported foundation models in watsonx.ai\n            'mistralai/mixtral-8x7b-instruct-v01',\n            'meta-llama/llama-3-8b-instruct',\n            'meta-llama/llama-3-70b-instruct',\n            'meta-llama/llama-2-13b-chat',\n            'meta-llama/llama-2-70b-chat',\n            'ibm-mistralai/merlinite-7b',\n            'codellama/codellama-34b-instruct-hf',\n            'google/flan-t5-xl',\n            'google/flan-t5-xxl',\n            'google/flan-ul2',\n            'ibm/granite-13b-chat-v2',\n            'ibm/granite-13b-instruct-v2',\n            'ibm/granite-20b-code-instruct',\n            'ibm/granite-20b-multilingual',\n            'ibm/granite-34b-code-instruct',\n            'ibm/granite-7b-lab',\n            'ibm/granite-8b-code-instruct',\n            'bigscience/mt0-xxl',\n        ]\n\n        decoding_options = [\n            \"greedy\",\n            \"sample\"\n        ]\n        \n        url_options = [      \n            \"https://us-south.ml.cloud.ibm.com\",\n            \"https://eu-gb.ml.cloud.ibm.com\",\n            \"https://eu-de.ml.cloud.ibm.com\",\n            \"https://jp-tok.ml.cloud.ibm.com\"\n        ]\n\n        stp_sequences = [  \n            \"</s>\",\n            \"<|end_of_text|>\"\n        ]\n \n\n        return {\n            \"model_id\": {\n                \"display_name\": \"Model Name\",\n                \"options\": model_options,\n                \"value\": model_options[2],\n                \"info\": \"The ID of the model or tune to be used for this request.\",\n            },\n            \"url\": {\n                \"display_name\": \"Url Endpoint\",\n                \"info\": \"Url endpoint for watsonx\",\n                \"options\": url_options,\n                \"value\": url_options[2],\n            },\n            \"apikey\": {\n                \"display_name\": \"API Key\",\n                \"password\": True,\n                \"info\": \"API uses API keys for authentication.\",\n                \"value\": \"HPsQWoh12PnzXwOdPYWZl8q6GusQX9T4vxsvhS-vcdIs\",  ###placeholder\n                \"required\": True\n            },\n            \"project_id\": {\n                \"display_name\": \"Project_id\",\n                \"info\": \"Project Id necessary to run inference.\",\n                \"value\": \"f275d991-68a4-47d9-b6e8-c8c052f63b33\",  ###placeholder\n                \"required\": True\n            },\n            # \"api_endpoint\": { \"display_name\": \"API Endpoint\", \"value\": \"https://bam-api.res.ibm.com/v1/\" },\n            \"decoding_method\": {\n                \"display_name\": \"Decoding Method\",\n                \"options\": decoding_options,\n                \"value\": decoding_options[0],\n                \"info\": \"Represents the strategy used for picking the tokens during generation of the output text.\"\n            },\n            \"stop_sequences\": {\n                \"display_name\": \"Stopping Sequences\",\n                \"options\": stp_sequences,\n                \"value\": stp_sequences[0],\n                \"info\": \"Encountering these strings will cause the model to stop generation.\",\n            },\n            \"min_new_tokens\": {\n                \"display_name\": \"Minimum New Tokens\",\n                \"value\": 5,\n                \"info\": \"The minimum number of new tokens to be generated.\"\n            },\n            \"max_new_tokens\": {\n                \"display_name\": \"Max New Tokens\",\n                \"value\": 4000,\n                \"info\": \"The maximum number of new tokens to be generated.\"\n            },\n            \"temperature\": {\n                \"display_name\": \"Temperature\",\n                \"value\": 0.7,\n                \"info\": \"A value used to modify the next-token probabilities in sampling mode.\"\n            },\n            \"repetition_penalty\": {\n                \"display_name\": \"Repetition Penalty\",\n                \"value\": 1,\n                \"info\": \"Defaults to 1\"\n            },\n            \"random_seed\": {\n                \"display_name\": \"Random Seed\",\n                \"value\": 1,\n                \"info\": \"Defaults to 1.\"\n            },\n            \"top_p\": {\n                \"display_name\": \"Top_P\",\n                \"value\": 1,\n                \"info\": \"Defaults to 1.\"\n            },\n            \"top_k\": {\n                \"display_name\": \"Top_K\",\n                \"value\": 50,\n                \"info\": \"Defaults to 50.\"\n            },\n            \"code\": {\"show\": False}\n        }\n\n    def build(\n            self,\n            model_id: str,\n            apikey: str,\n            url: str,\n            project_id: str,\n            decoding_method: str,\n            stop_sequences: str,\n            repetition_penalty: float,\n            max_new_tokens: int,\n            min_new_tokens: int,\n            temperature: float,\n            random_seed: int,\n            top_p: float,\n            top_k: int,\n        ) -> BaseLLM:\n            from ibm_watsonx_ai.metanames import GenTextParamsMetaNames as GenParams\n            #creds = APIClient(apikey, url)\n            stop_seq = [seq.strip() for seq in stop_sequences.splitlines()]\n            params = {\n                GenParams.TEMPERATURE: temperature,\n                GenParams.MAX_NEW_TOKENS: max_new_tokens,\n                GenParams.MIN_NEW_TOKENS: min_new_tokens,\n                GenParams.DECODING_METHOD: decoding_method,\n                GenParams.REPETITION_PENALTY: repetition_penalty,\n                GenParams.TOP_K: top_k,\n                GenParams.TOP_P: top_p,\n                GenParams.STOP_SEQUENCES: stop_seq,\n                GenParams.RANDOM_SEED: random_seed,\n            }\n            print(params)\n            model = WatsonxLLM(model_id=model_id, params=params, apikey=apikey, url=url, project_id=project_id, streaming=True)\n            return model\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "decoding_method": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "greedy",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "greedy",
+                  "sample"
+                ],
+                "name": "decoding_method",
+                "display_name": "Decoding Method",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Represents the strategy used for picking the tokens during generation of the output text.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "max_new_tokens": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 4000,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "max_new_tokens",
+                "display_name": "Max New Tokens",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The maximum number of new tokens to be generated.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "min_new_tokens": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 5,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "min_new_tokens",
+                "display_name": "Minimum New Tokens",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The minimum number of new tokens to be generated.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "model_id": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "mistralai/mixtral-8x7b-instruct-v01",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "mistralai/mixtral-8x7b-instruct-v01",
+                  "meta-llama/llama-3-8b-instruct",
+                  "meta-llama/llama-3-70b-instruct",
+                  "meta-llama/llama-2-13b-chat",
+                  "meta-llama/llama-2-70b-chat",
+                  "ibm-mistralai/merlinite-7b",
+                  "codellama/codellama-34b-instruct-hf",
+                  "google/flan-t5-xl",
+                  "google/flan-t5-xxl",
+                  "google/flan-ul2",
+                  "ibm/granite-13b-chat-v2",
+                  "ibm/granite-13b-instruct-v2",
+                  "ibm/granite-20b-code-instruct",
+                  "ibm/granite-20b-multilingual",
+                  "ibm/granite-34b-code-instruct",
+                  "ibm/granite-7b-lab",
+                  "ibm/granite-8b-code-instruct",
+                  "bigscience/mt0-xxl"
+                ],
+                "name": "model_id",
+                "display_name": "Model Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The ID of the model or tune to be used for this request.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "project_id": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "f275d991-68a4-47d9-b6e8-c8c052f63b33",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "project_id",
+                "display_name": "Project_id",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Project Id necessary to run inference.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "random_seed": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 1,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "random_seed",
+                "display_name": "Random Seed",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Defaults to 1.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "repetition_penalty": {
+                "type": "float",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 1,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "repetition_penalty",
+                "display_name": "Repetition Penalty",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Defaults to 1",
+                "rangeSpec": {
+                  "step_type": "float",
+                  "min": -1,
+                  "max": 1,
+                  "step": 0.1
+                },
+                "load_from_db": false,
+                "title_case": false
+              },
+              "stop_sequences": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "</s>",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "</s>",
+                  "<|end_of_text|>"
+                ],
+                "name": "stop_sequences",
+                "display_name": "Stopping Sequences",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Encountering these strings will cause the model to stop generation.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "temperature": {
+                "type": "float",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 0.7,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "temperature",
+                "display_name": "Temperature",
+                "advanced": false,
+                "dynamic": false,
+                "info": "A value used to modify the next-token probabilities in sampling mode.",
+                "rangeSpec": {
+                  "step_type": "float",
+                  "min": -1,
+                  "max": 1,
+                  "step": 0.1
+                },
+                "load_from_db": false,
+                "title_case": false
+              },
+              "top_k": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 50,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "top_k",
+                "display_name": "Top_K",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Defaults to 50.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "top_p": {
+                "type": "float",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 1,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "top_p",
+                "display_name": "Top_P",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Defaults to 1.",
+                "rangeSpec": {
+                  "step_type": "float",
+                  "min": -1,
+                  "max": 1,
+                  "step": 0.1
+                },
+                "load_from_db": false,
+                "title_case": false
+              },
+              "url": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "https://eu-de.ml.cloud.ibm.com",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "https://us-south.ml.cloud.ibm.com",
+                  "https://eu-gb.ml.cloud.ibm.com",
+                  "https://eu-de.ml.cloud.ibm.com",
+                  "https://jp-tok.ml.cloud.ibm.com"
+                ],
+                "name": "url",
+                "display_name": "Url Endpoint",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Url endpoint for watsonx",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Watsonx foundation models",
+            "base_classes": [
+              "BaseLanguageModel",
+              "BaseLLM",
+              "Generic",
+              "object",
+              "Runnable",
+              "RunnableSerializable",
+              "Serializable"
+            ],
+            "display_name": "watsonx.ai",
+            "documentation": "",
+            "custom_fields": {
+              "model_id": null,
+              "apikey": null,
+              "url": null,
+              "project_id": null,
+              "decoding_method": null,
+              "stop_sequences": null,
+              "repetition_penalty": null,
+              "max_new_tokens": null,
+              "min_new_tokens": null,
+              "temperature": null,
+              "random_seed": null,
+              "top_p": null,
+              "top_k": null
+            },
+            "output_types": [
+              "BaseLLM"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-B7oVN",
+          "description": "Watsonx foundation models",
+          "display_name": "watsonx.ai"
+        },
+        "id": "CustomComponent-B7oVN",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "daacefba-602f-49e2-9d67-f5da337e84dc",
+    "name": "watsonx.ai",
+    "description": "Watsonx foundation models",
+    "is_component": true,
+    "liked_by_count": "0",
+    "downloads_count": "0",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.0a49",
+    "private": true,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "apikey": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "apikey",
+                  "display_name": "API Key",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "API uses API keys for authentication.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "# from axiestudio.field_typing import Data\nfrom axiestudio.custom import CustomComponent\nfrom axiestudio.schema import Record\n#from axiestudio import CustomComponent\nfrom axiestudio import custom\nfrom langchain.schema import Document\nfrom typing import Optional\nfrom langchain.llms.base import BaseLLM\nfrom langchain_ibm import WatsonxLLM\n\n\nclass Watsonx(CustomComponent):\n    display_name = \"Watsonx\"\n    description = \"Watsonx foundation models\"\n    \n    def build_config(self) -> dict:\n        model_options = [\n            # Part of the officially supported foundation models in watsonx.ai\n            'mistralai/mixtral-8x7b-instruct-v01',\n            'meta-llama/llama-3-8b-instruct',\n            'meta-llama/llama-3-70b-instruct',\n            'meta-llama/llama-2-13b-chat',\n            'meta-llama/llama-2-70b-chat',\n            'ibm-mistralai/merlinite-7b',\n            'codellama/codellama-34b-instruct-hf',\n            'google/flan-t5-xl',\n            'google/flan-t5-xxl',\n            'google/flan-ul2',\n            'ibm/granite-13b-chat-v2',\n            'ibm/granite-13b-instruct-v2',\n            'ibm/granite-20b-code-instruct',\n            'ibm/granite-20b-multilingual',\n            'ibm/granite-34b-code-instruct',\n            'ibm/granite-7b-lab',\n            'ibm/granite-8b-code-instruct',\n            'bigscience/mt0-xxl',\n        ]\n\n        decoding_options = [\n            \"greedy\",\n            \"sample\"\n        ]\n        \n        url_options = [      \n            \"https://us-south.ml.cloud.ibm.com\",\n            \"https://eu-gb.ml.cloud.ibm.com\",\n            \"https://eu-de.ml.cloud.ibm.com\",\n            \"https://jp-tok.ml.cloud.ibm.com\"\n        ]\n\n        stp_sequences = [  \n            \"</s>\",\n            \"<|end_of_text|>\"\n        ]\n \n\n        return {\n            \"model_id\": {\n                \"display_name\": \"Model Name\",\n                \"options\": model_options,\n                \"value\": model_options[2],\n                \"info\": \"The ID of the model or tune to be used for this request.\",\n            },\n            \"url\": {\n                \"display_name\": \"Url Endpoint\",\n                \"info\": \"Url endpoint for watsonx\",\n                \"options\": url_options,\n                \"value\": url_options[2],\n            },\n            \"apikey\": {\n                \"display_name\": \"API Key\",\n                \"password\": True,\n                \"info\": \"API uses API keys for authentication.\",\n                \"value\": \"HPsQWoh12PnzXwOdPYWZl8q6GusQX9T4vxsvhS-vcdIs\",  ###placeholder\n                \"required\": True\n            },\n            \"project_id\": {\n                \"display_name\": \"Project_id\",\n                \"info\": \"Project Id necessary to run inference.\",\n                \"value\": \"f275d991-68a4-47d9-b6e8-c8c052f63b33\",  ###placeholder\n                \"required\": True\n            },\n            # \"api_endpoint\": { \"display_name\": \"API Endpoint\", \"value\": \"https://bam-api.res.ibm.com/v1/\" },\n            \"decoding_method\": {\n                \"display_name\": \"Decoding Method\",\n                \"options\": decoding_options,\n                \"value\": decoding_options[0],\n                \"info\": \"Represents the strategy used for picking the tokens during generation of the output text.\"\n            },\n            \"stop_sequences\": {\n                \"display_name\": \"Stopping Sequences\",\n                \"options\": stp_sequences,\n                \"value\": stp_sequences[0],\n                \"info\": \"Encountering these strings will cause the model to stop generation.\",\n            },\n            \"min_new_tokens\": {\n                \"display_name\": \"Minimum New Tokens\",\n                \"value\": 5,\n                \"info\": \"The minimum number of new tokens to be generated.\"\n            },\n            \"max_new_tokens\": {\n                \"display_name\": \"Max New Tokens\",\n                \"value\": 4000,\n                \"info\": \"The maximum number of new tokens to be generated.\"\n            },\n            \"temperature\": {\n                \"display_name\": \"Temperature\",\n                \"value\": 0.7,\n                \"info\": \"A value used to modify the next-token probabilities in sampling mode.\"\n            },\n            \"repetition_penalty\": {\n                \"display_name\": \"Repetition Penalty\",\n                \"value\": 1,\n                \"info\": \"Defaults to 1\"\n            },\n            \"random_seed\": {\n                \"display_name\": \"Random Seed\",\n                \"value\": 1,\n                \"info\": \"Defaults to 1.\"\n            },\n            \"top_p\": {\n                \"display_name\": \"Top_P\",\n                \"value\": 1,\n                \"info\": \"Defaults to 1.\"\n            },\n            \"top_k\": {\n                \"display_name\": \"Top_K\",\n                \"value\": 50,\n                \"info\": \"Defaults to 50.\"\n            },\n            \"code\": {\"show\": False}\n        }\n\n    def build(\n            self,\n            model_id: str,\n            apikey: str,\n            url: str,\n            project_id: str,\n            decoding_method: str,\n            stop_sequences: str,\n            repetition_penalty: float,\n            max_new_tokens: int,\n            min_new_tokens: int,\n            temperature: float,\n            random_seed: int,\n            top_p: float,\n            top_k: int,\n        ) -> BaseLLM:\n            from ibm_watsonx_ai.metanames import GenTextParamsMetaNames as GenParams\n            #creds = APIClient(apikey, url)\n            stop_seq = [seq.strip() for seq in stop_sequences.splitlines()]\n            params = {\n                GenParams.TEMPERATURE: temperature,\n                GenParams.MAX_NEW_TOKENS: max_new_tokens,\n                GenParams.MIN_NEW_TOKENS: min_new_tokens,\n                GenParams.DECODING_METHOD: decoding_method,\n                GenParams.REPETITION_PENALTY: repetition_penalty,\n                GenParams.TOP_K: top_k,\n                GenParams.TOP_P: top_p,\n                GenParams.STOP_SEQUENCES: stop_seq,\n                GenParams.RANDOM_SEED: random_seed,\n            }\n            print(params)\n            model = WatsonxLLM(model_id=model_id, params=params, apikey=apikey, url=url, project_id=project_id, streaming=True)\n            return model\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "decoding_method": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "greedy",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "greedy",
+                    "sample"
+                  ],
+                  "name": "decoding_method",
+                  "display_name": "Decoding Method",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Represents the strategy used for picking the tokens during generation of the output text.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "max_new_tokens": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 4000,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "max_new_tokens",
+                  "display_name": "Max New Tokens",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The maximum number of new tokens to be generated.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "min_new_tokens": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 5,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "min_new_tokens",
+                  "display_name": "Minimum New Tokens",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The minimum number of new tokens to be generated.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "model_id": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "mistralai/mixtral-8x7b-instruct-v01",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "mistralai/mixtral-8x7b-instruct-v01",
+                    "meta-llama/llama-3-8b-instruct",
+                    "meta-llama/llama-3-70b-instruct",
+                    "meta-llama/llama-2-13b-chat",
+                    "meta-llama/llama-2-70b-chat",
+                    "ibm-mistralai/merlinite-7b",
+                    "codellama/codellama-34b-instruct-hf",
+                    "google/flan-t5-xl",
+                    "google/flan-t5-xxl",
+                    "google/flan-ul2",
+                    "ibm/granite-13b-chat-v2",
+                    "ibm/granite-13b-instruct-v2",
+                    "ibm/granite-20b-code-instruct",
+                    "ibm/granite-20b-multilingual",
+                    "ibm/granite-34b-code-instruct",
+                    "ibm/granite-7b-lab",
+                    "ibm/granite-8b-code-instruct",
+                    "bigscience/mt0-xxl"
+                  ],
+                  "name": "model_id",
+                  "display_name": "Model Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The ID of the model or tune to be used for this request.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "project_id": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "f275d991-68a4-47d9-b6e8-c8c052f63b33",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "project_id",
+                  "display_name": "Project_id",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Project Id necessary to run inference.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "random_seed": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 1,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "random_seed",
+                  "display_name": "Random Seed",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Defaults to 1.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "repetition_penalty": {
+                  "type": "float",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 1,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "repetition_penalty",
+                  "display_name": "Repetition Penalty",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Defaults to 1",
+                  "rangeSpec": {
+                    "step_type": "float",
+                    "min": -1,
+                    "max": 1,
+                    "step": 0.1
+                  },
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "stop_sequences": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "</s>",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "</s>",
+                    "<|end_of_text|>"
+                  ],
+                  "name": "stop_sequences",
+                  "display_name": "Stopping Sequences",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Encountering these strings will cause the model to stop generation.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "temperature": {
+                  "type": "float",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 0.7,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "temperature",
+                  "display_name": "Temperature",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "A value used to modify the next-token probabilities in sampling mode.",
+                  "rangeSpec": {
+                    "step_type": "float",
+                    "min": -1,
+                    "max": 1,
+                    "step": 0.1
+                  },
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "top_k": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 50,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "top_k",
+                  "display_name": "Top_K",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Defaults to 50.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "top_p": {
+                  "type": "float",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 1,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "top_p",
+                  "display_name": "Top_P",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Defaults to 1.",
+                  "rangeSpec": {
+                    "step_type": "float",
+                    "min": -1,
+                    "max": 1,
+                    "step": 0.1
+                  },
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "url": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "https://eu-de.ml.cloud.ibm.com",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "https://us-south.ml.cloud.ibm.com",
+                    "https://eu-gb.ml.cloud.ibm.com",
+                    "https://eu-de.ml.cloud.ibm.com",
+                    "https://jp-tok.ml.cloud.ibm.com"
+                  ],
+                  "name": "url",
+                  "display_name": "Url Endpoint",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Url endpoint for watsonx",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Watsonx foundation models",
+              "base_classes": [
+                "BaseLanguageModel",
+                "BaseLLM",
+                "Generic",
+                "object",
+                "Runnable",
+                "RunnableSerializable",
+                "Serializable"
+              ],
+              "display_name": "watsonx.ai",
+              "documentation": "",
+              "custom_fields": {
+                "model_id": null,
+                "apikey": null,
+                "url": null,
+                "project_id": null,
+                "decoding_method": null,
+                "stop_sequences": null,
+                "repetition_penalty": null,
+                "max_new_tokens": null,
+                "min_new_tokens": null,
+                "temperature": null,
+                "random_seed": null,
+                "top_p": null,
+                "top_k": null
+              },
+              "output_types": [
+                "BaseLLM"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-B7oVN",
+            "description": "Watsonx foundation models",
+            "display_name": "watsonx.ai"
+          },
+          "id": "CustomComponent-B7oVN",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-06-10T13:54:23.118Z",
+    "date_updated": "2024-06-10T13:54:23.143Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "4d6acd51-154b-427e-af47-512b44b0c1ba",
+    "user_created": {
+      "username": "Mimr_0",
+      "first_name": "Milan",
+      "last_name": "Mrdenovic",
+      "id": "4d6acd51-154b-427e-af47-512b44b0c1ba"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:12.087Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,263 @@
+{
+  "id": "ce1bca46-7610-4ff6-9e40-a6bc272c282c",
+  "name": "URLs to XML document",
+  "description": "Fetches HTML from URLs, parses it, and converts to a simplified XML format. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "appoks",
+    "first_name": "Johnathan Radünz",
+    "last_name": "Radünz",
+    "id": "91fd1e9c-c965-4845-a8ce-b81d962e690b",
+    "full_name": "Johnathan Radünz Radünz"
+  },
+  "store_url": "https://www.langflow.store/store/component/ce1bca46-7610-4ff6-9e40-a6bc272c282c",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-04T15:45:23.802Z",
+    "updated": "2024-08-04T22:53:10.287Z",
+    "downloaded": "2025-08-19T17:50:04.981Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "URLsToXMLConverter",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "search_results": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "search_results",
+                "display_name": "Results from search, with URLs",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "List of retrieved URLs from a search engine to convert to XML",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import requests\nfrom loguru import logger\nfrom bs4 import BeautifulSoup\nfrom xml.etree.ElementTree import Element, SubElement, tostring\nfrom axiestudio.schema import Data\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, Output\nfrom xml.dom.minidom import parse, parseString\n\nclass URLsToXMLConverter(Component):\n    display_name = \"URLs to XML Converter\"\n    description = \"Fetches HTML from URLs, parses it, and converts to a simplified XML format.\"\n    icon = \"file-code\"\n    inputs = [\n        DataInput(\n            name=\"search_results\",\n            display_name=\"Results from search, with URLs\",\n            info=\"List of retrieved URLs from a search engine to convert to XML\",\n            \n        ),\n    ]\n    outputs = [\n        Output(display_name=\"XML Output\", name=\"xml_output\", method=\"process_urls\"),\n    ]\n\n    def html_to_xml(self, soup):\n        def create_element(tag):\n            element = Element(tag.name)\n            for attr, value in tag.attrs.items():\n                element.set(attr, str(value))\n            for child in tag.children:\n                if child.name is not None:\n                    element.append(create_element(child))\n                elif isinstance(child, str) and child.strip():\n                    element.text = child.strip()\n            return element\n\n        root = Element(\"document\")\n        for tag in soup.body.children:\n            if tag.name is not None:\n                root.append(create_element(tag))\n        return root\n\n    def process_urls(self) -> Data:\n        search_results: List[Data] = self.search_results\n        processed_urls = []\n\n        for result in search_results:\n            url = result.link\n            new_item = result.data.copy()\n\n            try:\n                # 1. Extract HTML from the response\n                response = requests.get(url)\n                html_content = response.text\n\n                # 2. Parse the HTML\n                soup = BeautifulSoup(html_content, 'html.parser')\n                logger.debug(f\"Parsed HTML for URL: {url}\")\n\n                # 3. Convert the document to XML Format\n                xml_root = self.html_to_xml(soup)\n                xml_string = parseString(tostring(xml_root)).toprettyxml(indent=\"  \")\n                logger.debug(f\"Converted to XML for URL: {url}\")\n\n                new_item[\"markdown\"] = xml_string\n                processed_urls.append(Data(data=new_item))\n            except Exception as e:\n                logger.error(f\"Error processing URL {url}: {str(e)}\")\n                raise\n\n\n        # self.status = f\"Processed {len(processed_urls)}/{len(search_results)} URLs\"\n        return processed_urls\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              }
+            },
+            "description": "Fetches HTML from URLs, parses it, and converts to a simplified XML format.",
+            "icon": "file-code",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "URLs to XML document",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "xml_output",
+                "display_name": "XML Output",
+                "method": "process_urls",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "search_results"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-Hjzr5"
+        },
+        "id": "CustomComponent-Hjzr5",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "ce1bca46-7610-4ff6-9e40-a6bc272c282c",
+    "name": "URLs to XML document",
+    "description": "Fetches HTML from URLs, parses it, and converts to a simplified XML format.",
+    "is_component": true,
+    "liked_by_count": "5",
+    "downloads_count": "34",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "URLsToXMLConverter",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "search_results": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "search_results",
+                  "display_name": "Results from search, with URLs",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "List of retrieved URLs from a search engine to convert to XML",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import requests\nfrom loguru import logger\nfrom bs4 import BeautifulSoup\nfrom xml.etree.ElementTree import Element, SubElement, tostring\nfrom axiestudio.schema import Data\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, Output\nfrom xml.dom.minidom import parse, parseString\n\nclass URLsToXMLConverter(Component):\n    display_name = \"URLs to XML Converter\"\n    description = \"Fetches HTML from URLs, parses it, and converts to a simplified XML format.\"\n    icon = \"file-code\"\n    inputs = [\n        DataInput(\n            name=\"search_results\",\n            display_name=\"Results from search, with URLs\",\n            info=\"List of retrieved URLs from a search engine to convert to XML\",\n            \n        ),\n    ]\n    outputs = [\n        Output(display_name=\"XML Output\", name=\"xml_output\", method=\"process_urls\"),\n    ]\n\n    def html_to_xml(self, soup):\n        def create_element(tag):\n            element = Element(tag.name)\n            for attr, value in tag.attrs.items():\n                element.set(attr, str(value))\n            for child in tag.children:\n                if child.name is not None:\n                    element.append(create_element(child))\n                elif isinstance(child, str) and child.strip():\n                    element.text = child.strip()\n            return element\n\n        root = Element(\"document\")\n        for tag in soup.body.children:\n            if tag.name is not None:\n                root.append(create_element(tag))\n        return root\n\n    def process_urls(self) -> Data:\n        search_results: List[Data] = self.search_results\n        processed_urls = []\n\n        for result in search_results:\n            url = result.link\n            new_item = result.data.copy()\n\n            try:\n                # 1. Extract HTML from the response\n                response = requests.get(url)\n                html_content = response.text\n\n                # 2. Parse the HTML\n                soup = BeautifulSoup(html_content, 'html.parser')\n                logger.debug(f\"Parsed HTML for URL: {url}\")\n\n                # 3. Convert the document to XML Format\n                xml_root = self.html_to_xml(soup)\n                xml_string = parseString(tostring(xml_root)).toprettyxml(indent=\"  \")\n                logger.debug(f\"Converted to XML for URL: {url}\")\n\n                new_item[\"markdown\"] = xml_string\n                processed_urls.append(Data(data=new_item))\n            except Exception as e:\n                logger.error(f\"Error processing URL {url}: {str(e)}\")\n                raise\n\n\n        # self.status = f\"Processed {len(processed_urls)}/{len(search_results)} URLs\"\n        return processed_urls\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                }
+              },
+              "description": "Fetches HTML from URLs, parses it, and converts to a simplified XML format.",
+              "icon": "file-code",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "URLs to XML document",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "xml_output",
+                  "display_name": "XML Output",
+                  "method": "process_urls",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "search_results"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-Hjzr5"
+          },
+          "id": "CustomComponent-Hjzr5",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-04T15:45:23.802Z",
+    "date_updated": "2024-08-04T22:53:10.287Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "91fd1e9c-c965-4845-a8ce-b81d962e690b",
+    "user_created": {
+      "username": "appoks",
+      "first_name": "Johnathan Radünz",
+      "last_name": "Radünz",
+      "id": "91fd1e9c-c965-4845-a8ce-b81d962e690b"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.893Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

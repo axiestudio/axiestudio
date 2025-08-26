@@ -1,0 +1,717 @@
+{
+  "id": "183bd953-b08a-4e69-b433-a0cad81fc1dd",
+  "name": "OpenAI - Json Mode + Seed",
+  "description": "Generates text using OpenAI LLMs, with optional JSON Mode and Seed parameters. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "NamastexLabs",
+    "first_name": "Felipe",
+    "last_name": "Rosa",
+    "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "full_name": "Felipe Rosa"
+  },
+  "store_url": "https://www.langflow.store/store/component/183bd953-b08a-4e69-b433-a0cad81fc1dd",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-05-21T17:16:41.464Z",
+    "updated": "2024-05-21T17:16:41.489Z",
+    "downloaded": "2025-08-19T17:50:05.314Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.0a34",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "OpenAIModel",
+          "node": {
+            "template": {
+              "input_value": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Input",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional\r\n\r\nfrom langchain_openai import ChatOpenAI\r\nfrom pydantic.v1 import SecretStr\r\n\r\nfrom axiestudio.base.constants import STREAM_INFO_TEXT\r\nfrom axiestudio.base.models.model import LCModelComponent\r\nfrom axiestudio.base.models.openai_constants import MODEL_NAMES\r\nfrom axiestudio.field_typing import NestedDict, Text\r\n\r\n\r\nclass OpenAIModelComponent(LCModelComponent):\r\n    display_name = \"OpenAI\"\r\n    description = \"Generates text using OpenAI LLMs.\"\r\n    icon = \"OpenAI\"\r\n\r\n    field_order = [\r\n        \"max_tokens\",\r\n        \"model_kwargs\",\r\n        \"model_name\",\r\n        \"openai_api_base\",\r\n        \"openai_api_key\",\r\n        \"temperature\",\r\n        \"input_value\",\r\n        \"system_message\",\r\n        \"stream\",\r\n        \"json_mode\",\r\n        \"seed\",\r\n    ]\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"input_value\": {\"display_name\": \"Input\"},\r\n            \"max_tokens\": {\r\n                \"display_name\": \"Max Tokens\",\r\n                \"advanced\": True,\r\n            },\r\n            \"model_kwargs\": {\r\n                \"display_name\": \"Model Kwargs\",\r\n                \"advanced\": True,\r\n            },\r\n            \"model_name\": {\r\n                \"display_name\": \"Model Name\",\r\n                \"advanced\": False,\r\n                \"options\": MODEL_NAMES,\r\n            },\r\n            \"openai_api_base\": {\r\n                \"display_name\": \"OpenAI API Base\",\r\n                \"advanced\": True,\r\n                \"info\": (\r\n                    \"The base URL of the OpenAI API. Defaults to https://api.openai.com/v1.\\n\\n\"\r\n                    \"You can change this to use other APIs like JinaChat, LocalAI and Prem.\"\r\n                ),\r\n            },\r\n            \"openai_api_key\": {\r\n                \"display_name\": \"OpenAI API Key\",\r\n                \"info\": \"The OpenAI API Key to use for the OpenAI model.\",\r\n                \"advanced\": False,\r\n                \"password\": True,\r\n            },\r\n            \"temperature\": {\r\n                \"display_name\": \"Temperature\",\r\n                \"advanced\": False,\r\n                \"value\": 0.1,\r\n            },\r\n            \"stream\": {\r\n                \"display_name\": \"Stream\",\r\n                \"info\": STREAM_INFO_TEXT,\r\n                \"advanced\": True,\r\n            },\r\n            \"system_message\": {\r\n                \"display_name\": \"System Message\",\r\n                \"info\": \"System message to pass to the model.\",\r\n                \"advanced\": True,\r\n            },\r\n            \"json_mode\": {\r\n                \"display_name\": \"JSON Mode\",\r\n                \"info\": \"Enable JSON mode for the model output.\",\r\n                \"advanced\": True,\r\n            },\r\n            \"seed\": {\r\n                \"display_name\": \"Seed\",\r\n                \"info\": \"The seed controls the reproducibility of the job.\",\r\n                \"advanced\": True,\r\n            },\r\n        }\r\n\r\n    def build(\r\n        self,\r\n        input_value: Text,\r\n        openai_api_key: str,\r\n        temperature: float,\r\n        model_name: str = \"gpt-4o\",\r\n        max_tokens: Optional[int] = 256,\r\n        model_kwargs: NestedDict = {},\r\n        openai_api_base: Optional[str] = None,\r\n        stream: bool = False,\r\n        system_message: Optional[str] = None,\r\n        json_mode: bool = False,\r\n        seed: Optional[int] = None,\r\n    ) -> Text:\r\n        if not openai_api_base:\r\n            openai_api_base = \"https://api.openai.com/v1\"\r\n        if openai_api_key:\r\n            api_key = SecretStr(openai_api_key)\r\n        else:\r\n            api_key = None\r\n\r\n        response_format = None\r\n        if json_mode:\r\n            response_format = {\"type\": \"json_object\"}\r\n\r\n        output = ChatOpenAI(\r\n            max_tokens=max_tokens,\r\n            model_kwargs=model_kwargs,\r\n            model=model_name,\r\n            base_url=openai_api_base,\r\n            api_key=api_key,\r\n            temperature=temperature,\r\n            response_format=response_format,\r\n            seed=seed,\r\n        )\r\n\r\n        return self.get_chat_result(output, stream, input_value, system_message)",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "json_mode": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": true,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "json_mode",
+                "display_name": "JSON Mode",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Enable JSON mode for the model output.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "max_tokens": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "1000",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "max_tokens",
+                "display_name": "Max Tokens",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "model_kwargs": {
+                "type": "NestedDict",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": {},
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "model_kwargs",
+                "display_name": "Model Kwargs",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "model_name": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "gpt-4-turbo",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "gpt-4o",
+                  "gpt-4-turbo",
+                  "gpt-4-turbo-preview",
+                  "gpt-3.5-turbo",
+                  "gpt-3.5-turbo-0125"
+                ],
+                "name": "model_name",
+                "display_name": "Model Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "openai_api_base": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "openai_api_base",
+                "display_name": "OpenAI API Base",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The base URL of the OpenAI API. Defaults to https://api.openai.com/v1.\n\nYou can change this to use other APIs like JinaChat, LocalAI and Prem.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "openai_api_key": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "openai_api_key",
+                "display_name": "OpenAI API Key",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The OpenAI API Key to use for the OpenAI model.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "seed": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "seed",
+                "display_name": "Seed",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The seed controls the reproducibility of the job.",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "88"
+              },
+              "stream": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "stream",
+                "display_name": "Stream",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Stream the response from the model. Streaming works only in Chat.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "system_message": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "system_message",
+                "display_name": "System Message",
+                "advanced": true,
+                "dynamic": false,
+                "info": "System message to pass to the model.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "temperature": {
+                "type": "float",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "0.2",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "temperature",
+                "display_name": "Temperature",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "rangeSpec": {
+                  "step_type": "float",
+                  "min": -1,
+                  "max": 1,
+                  "step": 0.1
+                },
+                "load_from_db": false,
+                "title_case": false
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Generates text using OpenAI LLMs, with optional JSON Mode and Seed parameters.",
+            "icon": "OpenAI",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "OpenAI - Json Mode + Seed",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null,
+              "openai_api_key": null,
+              "temperature": null,
+              "model_name": null,
+              "max_tokens": null,
+              "model_kwargs": null,
+              "openai_api_base": null,
+              "stream": null,
+              "system_message": null,
+              "json_mode": null,
+              "seed": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "max_tokens",
+              "model_kwargs",
+              "model_name",
+              "openai_api_base",
+              "openai_api_key",
+              "temperature",
+              "input_value",
+              "system_message",
+              "stream",
+              "json_mode",
+              "seed"
+            ],
+            "beta": false,
+            "official": false
+          },
+          "id": "OpenAIModel-S60to",
+          "description": "Generates text using OpenAI LLMs.",
+          "display_name": "OpenAI"
+        },
+        "id": "OpenAIModel-S60to",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "OpenAIModel": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "183bd953-b08a-4e69-b433-a0cad81fc1dd",
+    "name": "OpenAI - Json Mode + Seed",
+    "description": "Generates text using OpenAI LLMs, with optional JSON Mode and Seed parameters.",
+    "is_component": true,
+    "liked_by_count": "15",
+    "downloads_count": "98",
+    "metadata": {
+      "OpenAIModel": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.0a34",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "OpenAIModel",
+            "node": {
+              "template": {
+                "input_value": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional\r\n\r\nfrom langchain_openai import ChatOpenAI\r\nfrom pydantic.v1 import SecretStr\r\n\r\nfrom axiestudio.base.constants import STREAM_INFO_TEXT\r\nfrom axiestudio.base.models.model import LCModelComponent\r\nfrom axiestudio.base.models.openai_constants import MODEL_NAMES\r\nfrom axiestudio.field_typing import NestedDict, Text\r\n\r\n\r\nclass OpenAIModelComponent(LCModelComponent):\r\n    display_name = \"OpenAI\"\r\n    description = \"Generates text using OpenAI LLMs.\"\r\n    icon = \"OpenAI\"\r\n\r\n    field_order = [\r\n        \"max_tokens\",\r\n        \"model_kwargs\",\r\n        \"model_name\",\r\n        \"openai_api_base\",\r\n        \"openai_api_key\",\r\n        \"temperature\",\r\n        \"input_value\",\r\n        \"system_message\",\r\n        \"stream\",\r\n        \"json_mode\",\r\n        \"seed\",\r\n    ]\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"input_value\": {\"display_name\": \"Input\"},\r\n            \"max_tokens\": {\r\n                \"display_name\": \"Max Tokens\",\r\n                \"advanced\": True,\r\n            },\r\n            \"model_kwargs\": {\r\n                \"display_name\": \"Model Kwargs\",\r\n                \"advanced\": True,\r\n            },\r\n            \"model_name\": {\r\n                \"display_name\": \"Model Name\",\r\n                \"advanced\": False,\r\n                \"options\": MODEL_NAMES,\r\n            },\r\n            \"openai_api_base\": {\r\n                \"display_name\": \"OpenAI API Base\",\r\n                \"advanced\": True,\r\n                \"info\": (\r\n                    \"The base URL of the OpenAI API. Defaults to https://api.openai.com/v1.\\n\\n\"\r\n                    \"You can change this to use other APIs like JinaChat, LocalAI and Prem.\"\r\n                ),\r\n            },\r\n            \"openai_api_key\": {\r\n                \"display_name\": \"OpenAI API Key\",\r\n                \"info\": \"The OpenAI API Key to use for the OpenAI model.\",\r\n                \"advanced\": False,\r\n                \"password\": True,\r\n            },\r\n            \"temperature\": {\r\n                \"display_name\": \"Temperature\",\r\n                \"advanced\": False,\r\n                \"value\": 0.1,\r\n            },\r\n            \"stream\": {\r\n                \"display_name\": \"Stream\",\r\n                \"info\": STREAM_INFO_TEXT,\r\n                \"advanced\": True,\r\n            },\r\n            \"system_message\": {\r\n                \"display_name\": \"System Message\",\r\n                \"info\": \"System message to pass to the model.\",\r\n                \"advanced\": True,\r\n            },\r\n            \"json_mode\": {\r\n                \"display_name\": \"JSON Mode\",\r\n                \"info\": \"Enable JSON mode for the model output.\",\r\n                \"advanced\": True,\r\n            },\r\n            \"seed\": {\r\n                \"display_name\": \"Seed\",\r\n                \"info\": \"The seed controls the reproducibility of the job.\",\r\n                \"advanced\": True,\r\n            },\r\n        }\r\n\r\n    def build(\r\n        self,\r\n        input_value: Text,\r\n        openai_api_key: str,\r\n        temperature: float,\r\n        model_name: str = \"gpt-4o\",\r\n        max_tokens: Optional[int] = 256,\r\n        model_kwargs: NestedDict = {},\r\n        openai_api_base: Optional[str] = None,\r\n        stream: bool = False,\r\n        system_message: Optional[str] = None,\r\n        json_mode: bool = False,\r\n        seed: Optional[int] = None,\r\n    ) -> Text:\r\n        if not openai_api_base:\r\n            openai_api_base = \"https://api.openai.com/v1\"\r\n        if openai_api_key:\r\n            api_key = SecretStr(openai_api_key)\r\n        else:\r\n            api_key = None\r\n\r\n        response_format = None\r\n        if json_mode:\r\n            response_format = {\"type\": \"json_object\"}\r\n\r\n        output = ChatOpenAI(\r\n            max_tokens=max_tokens,\r\n            model_kwargs=model_kwargs,\r\n            model=model_name,\r\n            base_url=openai_api_base,\r\n            api_key=api_key,\r\n            temperature=temperature,\r\n            response_format=response_format,\r\n            seed=seed,\r\n        )\r\n\r\n        return self.get_chat_result(output, stream, input_value, system_message)",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "json_mode": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": true,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "json_mode",
+                  "display_name": "JSON Mode",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Enable JSON mode for the model output.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "max_tokens": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "1000",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "max_tokens",
+                  "display_name": "Max Tokens",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "model_kwargs": {
+                  "type": "NestedDict",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": {},
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "model_kwargs",
+                  "display_name": "Model Kwargs",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "model_name": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "gpt-4-turbo",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "gpt-4o",
+                    "gpt-4-turbo",
+                    "gpt-4-turbo-preview",
+                    "gpt-3.5-turbo",
+                    "gpt-3.5-turbo-0125"
+                  ],
+                  "name": "model_name",
+                  "display_name": "Model Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "openai_api_base": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "openai_api_base",
+                  "display_name": "OpenAI API Base",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The base URL of the OpenAI API. Defaults to https://api.openai.com/v1.\n\nYou can change this to use other APIs like JinaChat, LocalAI and Prem.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "openai_api_key": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "openai_api_key",
+                  "display_name": "OpenAI API Key",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The OpenAI API Key to use for the OpenAI model.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "seed": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "seed",
+                  "display_name": "Seed",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The seed controls the reproducibility of the job.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "88"
+                },
+                "stream": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "stream",
+                  "display_name": "Stream",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Stream the response from the model. Streaming works only in Chat.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "system_message": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "system_message",
+                  "display_name": "System Message",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "System message to pass to the model.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "temperature": {
+                  "type": "float",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "0.2",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "temperature",
+                  "display_name": "Temperature",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "rangeSpec": {
+                    "step_type": "float",
+                    "min": -1,
+                    "max": 1,
+                    "step": 0.1
+                  },
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Generates text using OpenAI LLMs, with optional JSON Mode and Seed parameters.",
+              "icon": "OpenAI",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "OpenAI - Json Mode + Seed",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null,
+                "openai_api_key": null,
+                "temperature": null,
+                "model_name": null,
+                "max_tokens": null,
+                "model_kwargs": null,
+                "openai_api_base": null,
+                "stream": null,
+                "system_message": null,
+                "json_mode": null,
+                "seed": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "max_tokens",
+                "model_kwargs",
+                "model_name",
+                "openai_api_base",
+                "openai_api_key",
+                "temperature",
+                "input_value",
+                "system_message",
+                "stream",
+                "json_mode",
+                "seed"
+              ],
+              "beta": false,
+              "official": false
+            },
+            "id": "OpenAIModel-S60to",
+            "description": "Generates text using OpenAI LLMs.",
+            "display_name": "OpenAI"
+          },
+          "id": "OpenAIModel-S60to",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-05-21T17:16:41.464Z",
+    "date_updated": "2024-05-21T17:16:41.489Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "user_created": {
+      "username": "NamastexLabs",
+      "first_name": "Felipe",
+      "last_name": "Rosa",
+      "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.066Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

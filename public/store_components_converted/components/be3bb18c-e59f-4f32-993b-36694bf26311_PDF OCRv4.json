@@ -1,0 +1,519 @@
+{
+  "id": "be3bb18c-e59f-4f32-993b-36694bf26311",
+  "name": "PDF OCR识别多文档解析v4",
+  "description": "Recursively load files from a directory. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "richasun",
+    "first_name": "Asun",
+    "last_name": "",
+    "id": "5f2158eb-70ae-4490-a60e-23905b534556",
+    "full_name": "Asun"
+  },
+  "store_url": "https://www.langflow.store/store/component/be3bb18c-e59f-4f32-993b-36694bf26311",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-19T07:03:46.444Z",
+    "updated": "2024-10-19T07:03:46.478Z",
+    "downloaded": "2025-08-19T17:50:07.541Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Directory",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.data.utils import TEXT_FILE_TYPES, parallel_load_data, retrieve_file_paths\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import BoolInput, IntInput, MessageTextInput\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.template import Output\r\nfrom docx import Document  # 解析 DOCX 文件\r\nfrom PyPDF2 import PdfReader  # 首选解析 PDF 文件\r\nfrom unstructured.partition.auto import partition  # 作为 PDF 的备用解析方案\r\nimport pytesseract\r\nfrom pdf2image import convert_from_path\r\n\r\n\r\nclass DirectoryComponent(Component):\r\n    display_name = \"目录\"\r\n    description = \"Recursively load files from a directory.\"\r\n    icon = \"folder\"\r\n    name = \"Directory\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"path\",\r\n            display_name=\"Path\",\r\n            info=\"Path to the directory to load files from.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"types\",\r\n            display_name=\"Types\",\r\n            info=\"File types to load. Leave empty to load all default supported types.\",\r\n            is_list=True,\r\n        ),\r\n        IntInput(\r\n            name=\"depth\",\r\n            display_name=\"Depth\",\r\n            info=\"Depth to search for files.\",\r\n            value=0,\r\n        ),\r\n        IntInput(\r\n            name=\"max_concurrency\",\r\n            display_name=\"Max Concurrency\",\r\n            advanced=True,\r\n            value=2,\r\n        ),\r\n        BoolInput(\r\n            name=\"load_hidden\",\r\n            display_name=\"Load Hidden\",\r\n            advanced=True,\r\n        ),\r\n        BoolInput(\r\n            name=\"recursive\",\r\n            display_name=\"Recursive\",\r\n            advanced=True,\r\n        ),\r\n        BoolInput(\r\n            name=\"silent_errors\",\r\n            display_name=\"Silent Errors\",\r\n            advanced=True,\r\n        ),\r\n        BoolInput(\r\n            name=\"use_multithreading\",\r\n            display_name=\"Use Multithreading\",\r\n            advanced=True,\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Data\", name=\"data\", method=\"load_directory\"),\r\n    ]\r\n\r\n    def load_directory(self) -> list[Data]:\r\n        path = self.path\r\n        types = (\r\n            self.types if self.types and self.types != [\"\"] else TEXT_FILE_TYPES\r\n        )\r\n        depth = self.depth\r\n        max_concurrency = self.max_concurrency\r\n        load_hidden = self.load_hidden\r\n        recursive = self.recursive\r\n        silent_errors = self.silent_errors\r\n        use_multithreading = self.use_multithreading\r\n\r\n        resolved_path = self.resolve_path(path)\r\n        file_paths = retrieve_file_paths(resolved_path, load_hidden, recursive, depth, types)\r\n\r\n        if types:\r\n            file_paths = [fp for fp in file_paths if any(fp.endswith(ext) for ext in types)]\r\n\r\n        if use_multithreading:\r\n            loaded_data = parallel_load_data(file_paths, silent_errors, max_concurrency)\r\n        else:\r\n            loaded_data = [self.parse_file(file_path, silent_errors) for file_path in file_paths]\r\n\r\n        loaded_data = list(filter(None, loaded_data))\r\n        self.status = loaded_data\r\n        return loaded_data  # type: ignore[return-value]\r\n\r\n    def parse_file(self, file_path: str, silent_errors: bool) -> Data | None:\r\n        \"\"\"Parses a file based on its type.\"\"\"\r\n        try:\r\n            if file_path.endswith(\".docx\"):\r\n                return self.parse_docx(file_path)\r\n            elif file_path.endswith(\".pdf\"):\r\n                return self.parse_pdf(file_path)\r\n            else:\r\n                return parse_text_file_to_data(file_path, silent_errors)\r\n        except Exception as e:\r\n            if not silent_errors:\r\n                raise e\r\n            return None\r\n\r\n    def parse_docx(self, file_path: str) -> Data:\r\n        \"\"\"Parse DOCX files using python-docx.\"\"\"\r\n        doc = Document(file_path)\r\n        content = \"\\n\".join([para.text for para in doc.paragraphs])\r\n        return Data(data={\"file_path\": file_path, \"text\": content})\r\n\r\n    def parse_pdf(self, file_path: str) -> Data:\r\n        \"\"\"Try to parse PDF using PyPDF2. If it fails or returns empty, use unstructured or OCR.\"\"\"\r\n        content = \"\"\r\n    \r\n        # 尝试使用 PyPDF2 解析\r\n        try:\r\n            reader = PdfReader(file_path)\r\n            if reader.is_encrypted:\r\n                reader.decrypt('')  # 解密\r\n            for page in reader.pages:\r\n                content += page.extract_text() or \"\"\r\n        except Exception as e:\r\n            content = \"\"\r\n            print(f\"PyPDF2 failed: {e}\")\r\n    \r\n        # 如果 PyPDF2 解析失败，尝试使用 unstructured\r\n        if not content.strip():\r\n            try:\r\n                elements = partition(file_path=file_path)\r\n                content = \"\\n\".join([element.text for element in elements if element.text])\r\n            except Exception as e:\r\n                print(f\"unstructured failed: {e}\")\r\n    \r\n        # 如果仍然没有有效内容，尝试使用 OCR\r\n        if not content.strip():\r\n            try:\r\n                content = self.parse_pdf_with_ocr(file_path)\r\n            except Exception as e:\r\n                raise RuntimeError(f\"Failed to parse PDF with PyPDF2, unstructured, and OCR: {file_path}\") from e\r\n    \r\n        return Data(data={\"file_path\": file_path, \"text\": content})\r\n        \r\n        \r\n    def parse_pdf_with_ocr(self, file_path: str) -> Data:\r\n        try:\r\n            images = convert_from_path(file_path)\r\n            ocr_text = \"\"\r\n            for i, image in enumerate(images):\r\n                text = pytesseract.image_to_string(image, lang=\"chi_sim\")\r\n                ocr_text += f\"Page {i + 1}:\\n{text}\\n\"\r\n            return ocr_text\r\n        except Exception as e:\r\n            if not self.silent_errors:\r\n                raise e\r\n            return None",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "depth": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "depth",
+                "value": 5,
+                "display_name": "Depth",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Depth to search for files.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "load_hidden": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "load_hidden",
+                "value": false,
+                "display_name": "Load Hidden",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "max_concurrency": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_concurrency",
+                "value": 2,
+                "display_name": "Max Concurrency",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "path": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "path",
+                "value": "C:\\tmp\\docstore\\documents_pdf\\2020-11",
+                "display_name": "Path",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Path to the directory to load files from.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "recursive": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "recursive",
+                "value": false,
+                "display_name": "Recursive",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "silent_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "silent_errors",
+                "value": false,
+                "display_name": "Silent Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "types": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "types",
+                "value": "",
+                "display_name": "Types",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "File types to load. Leave empty to load all default supported types.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "use_multithreading": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "use_multithreading",
+                "value": false,
+                "display_name": "Use Multithreading",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Recursively load files from a directory.",
+            "icon": "folder",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "PDF OCR识别多文档解析v4",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "load_directory",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "path",
+              "types",
+              "depth",
+              "max_concurrency",
+              "load_hidden",
+              "recursive",
+              "silent_errors",
+              "use_multithreading"
+            ],
+            "beta": false,
+            "edited": true,
+            "metadata": {},
+            "lf_version": "1.0.19",
+            "official": false
+          },
+          "id": "Directory-gpvwA"
+        },
+        "id": "Directory-gpvwA",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Directory": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "be3bb18c-e59f-4f32-993b-36694bf26311",
+    "name": "PDF OCR识别多文档解析v4",
+    "description": "Recursively load files from a directory.",
+    "is_component": true,
+    "liked_by_count": "7",
+    "downloads_count": "101",
+    "metadata": {
+      "Directory": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.19",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Directory",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.data.utils import TEXT_FILE_TYPES, parallel_load_data, retrieve_file_paths\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import BoolInput, IntInput, MessageTextInput\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.template import Output\r\nfrom docx import Document  # 解析 DOCX 文件\r\nfrom PyPDF2 import PdfReader  # 首选解析 PDF 文件\r\nfrom unstructured.partition.auto import partition  # 作为 PDF 的备用解析方案\r\nimport pytesseract\r\nfrom pdf2image import convert_from_path\r\n\r\n\r\nclass DirectoryComponent(Component):\r\n    display_name = \"目录\"\r\n    description = \"Recursively load files from a directory.\"\r\n    icon = \"folder\"\r\n    name = \"Directory\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"path\",\r\n            display_name=\"Path\",\r\n            info=\"Path to the directory to load files from.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"types\",\r\n            display_name=\"Types\",\r\n            info=\"File types to load. Leave empty to load all default supported types.\",\r\n            is_list=True,\r\n        ),\r\n        IntInput(\r\n            name=\"depth\",\r\n            display_name=\"Depth\",\r\n            info=\"Depth to search for files.\",\r\n            value=0,\r\n        ),\r\n        IntInput(\r\n            name=\"max_concurrency\",\r\n            display_name=\"Max Concurrency\",\r\n            advanced=True,\r\n            value=2,\r\n        ),\r\n        BoolInput(\r\n            name=\"load_hidden\",\r\n            display_name=\"Load Hidden\",\r\n            advanced=True,\r\n        ),\r\n        BoolInput(\r\n            name=\"recursive\",\r\n            display_name=\"Recursive\",\r\n            advanced=True,\r\n        ),\r\n        BoolInput(\r\n            name=\"silent_errors\",\r\n            display_name=\"Silent Errors\",\r\n            advanced=True,\r\n        ),\r\n        BoolInput(\r\n            name=\"use_multithreading\",\r\n            display_name=\"Use Multithreading\",\r\n            advanced=True,\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Data\", name=\"data\", method=\"load_directory\"),\r\n    ]\r\n\r\n    def load_directory(self) -> list[Data]:\r\n        path = self.path\r\n        types = (\r\n            self.types if self.types and self.types != [\"\"] else TEXT_FILE_TYPES\r\n        )\r\n        depth = self.depth\r\n        max_concurrency = self.max_concurrency\r\n        load_hidden = self.load_hidden\r\n        recursive = self.recursive\r\n        silent_errors = self.silent_errors\r\n        use_multithreading = self.use_multithreading\r\n\r\n        resolved_path = self.resolve_path(path)\r\n        file_paths = retrieve_file_paths(resolved_path, load_hidden, recursive, depth, types)\r\n\r\n        if types:\r\n            file_paths = [fp for fp in file_paths if any(fp.endswith(ext) for ext in types)]\r\n\r\n        if use_multithreading:\r\n            loaded_data = parallel_load_data(file_paths, silent_errors, max_concurrency)\r\n        else:\r\n            loaded_data = [self.parse_file(file_path, silent_errors) for file_path in file_paths]\r\n\r\n        loaded_data = list(filter(None, loaded_data))\r\n        self.status = loaded_data\r\n        return loaded_data  # type: ignore[return-value]\r\n\r\n    def parse_file(self, file_path: str, silent_errors: bool) -> Data | None:\r\n        \"\"\"Parses a file based on its type.\"\"\"\r\n        try:\r\n            if file_path.endswith(\".docx\"):\r\n                return self.parse_docx(file_path)\r\n            elif file_path.endswith(\".pdf\"):\r\n                return self.parse_pdf(file_path)\r\n            else:\r\n                return parse_text_file_to_data(file_path, silent_errors)\r\n        except Exception as e:\r\n            if not silent_errors:\r\n                raise e\r\n            return None\r\n\r\n    def parse_docx(self, file_path: str) -> Data:\r\n        \"\"\"Parse DOCX files using python-docx.\"\"\"\r\n        doc = Document(file_path)\r\n        content = \"\\n\".join([para.text for para in doc.paragraphs])\r\n        return Data(data={\"file_path\": file_path, \"text\": content})\r\n\r\n    def parse_pdf(self, file_path: str) -> Data:\r\n        \"\"\"Try to parse PDF using PyPDF2. If it fails or returns empty, use unstructured or OCR.\"\"\"\r\n        content = \"\"\r\n    \r\n        # 尝试使用 PyPDF2 解析\r\n        try:\r\n            reader = PdfReader(file_path)\r\n            if reader.is_encrypted:\r\n                reader.decrypt('')  # 解密\r\n            for page in reader.pages:\r\n                content += page.extract_text() or \"\"\r\n        except Exception as e:\r\n            content = \"\"\r\n            print(f\"PyPDF2 failed: {e}\")\r\n    \r\n        # 如果 PyPDF2 解析失败，尝试使用 unstructured\r\n        if not content.strip():\r\n            try:\r\n                elements = partition(file_path=file_path)\r\n                content = \"\\n\".join([element.text for element in elements if element.text])\r\n            except Exception as e:\r\n                print(f\"unstructured failed: {e}\")\r\n    \r\n        # 如果仍然没有有效内容，尝试使用 OCR\r\n        if not content.strip():\r\n            try:\r\n                content = self.parse_pdf_with_ocr(file_path)\r\n            except Exception as e:\r\n                raise RuntimeError(f\"Failed to parse PDF with PyPDF2, unstructured, and OCR: {file_path}\") from e\r\n    \r\n        return Data(data={\"file_path\": file_path, \"text\": content})\r\n        \r\n        \r\n    def parse_pdf_with_ocr(self, file_path: str) -> Data:\r\n        try:\r\n            images = convert_from_path(file_path)\r\n            ocr_text = \"\"\r\n            for i, image in enumerate(images):\r\n                text = pytesseract.image_to_string(image, lang=\"chi_sim\")\r\n                ocr_text += f\"Page {i + 1}:\\n{text}\\n\"\r\n            return ocr_text\r\n        except Exception as e:\r\n            if not self.silent_errors:\r\n                raise e\r\n            return None",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "depth": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "depth",
+                  "value": 5,
+                  "display_name": "Depth",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Depth to search for files.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "load_hidden": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "load_hidden",
+                  "value": false,
+                  "display_name": "Load Hidden",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "max_concurrency": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_concurrency",
+                  "value": 2,
+                  "display_name": "Max Concurrency",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "path": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "path",
+                  "value": "C:\\tmp\\docstore\\documents_pdf\\2020-11",
+                  "display_name": "Path",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Path to the directory to load files from.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "recursive": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "recursive",
+                  "value": false,
+                  "display_name": "Recursive",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "silent_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "silent_errors",
+                  "value": false,
+                  "display_name": "Silent Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "types": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "types",
+                  "value": "",
+                  "display_name": "Types",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "File types to load. Leave empty to load all default supported types.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "use_multithreading": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "use_multithreading",
+                  "value": false,
+                  "display_name": "Use Multithreading",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Recursively load files from a directory.",
+              "icon": "folder",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "PDF OCR识别多文档解析v4",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "load_directory",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "path",
+                "types",
+                "depth",
+                "max_concurrency",
+                "load_hidden",
+                "recursive",
+                "silent_errors",
+                "use_multithreading"
+              ],
+              "beta": false,
+              "edited": true,
+              "metadata": {},
+              "lf_version": "1.0.19",
+              "official": false
+            },
+            "id": "Directory-gpvwA"
+          },
+          "id": "Directory-gpvwA",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-19T07:03:46.444Z",
+    "date_updated": "2024-10-19T07:03:46.478Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "5f2158eb-70ae-4490-a60e-23905b534556",
+    "user_created": {
+      "username": "richasun",
+      "first_name": "Asun",
+      "last_name": null,
+      "id": "5f2158eb-70ae-4490-a60e-23905b534556"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.619Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

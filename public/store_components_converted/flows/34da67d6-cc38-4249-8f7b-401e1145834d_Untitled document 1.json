@@ -1,0 +1,433 @@
+{
+  "id": "34da67d6-cc38-4249-8f7b-401e1145834d",
+  "name": "Untitled document (1)",
+  "description": "Sculpting Language with Precision. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "cxavier",
+    "first_name": "Xavier",
+    "last_name": "Corbier",
+    "id": "80410a65-79aa-4d36-9be3-c77175969cb4",
+    "full_name": "Xavier Corbier"
+  },
+  "store_url": "https://www.langflow.store/store/component/34da67d6-cc38-4249-8f7b-401e1145834d",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-16T20:49:29.006Z",
+    "updated": "2024-09-16T20:49:29.041Z",
+    "downloaded": "2025-08-19T17:50:06.042Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "unstructured.io Partition API-Y9eDD",
+        "type": "genericNode",
+        "position": {
+          "x": 326,
+          "y": 255.390625
+        },
+        "data": {
+          "type": "unstructured.io Partition API",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "additional_params": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "additional_params",
+                "display_name": "Additional Parameters",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "JSON-formatted dictionary to pass to the data field of the request to the Unstructured API",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "api_key": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "api_key",
+                "display_name": "API key",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "api_url": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "api_url",
+                "display_name": "API URL",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "base64_content": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "base64_content",
+                "display_name": "base64 Encoded File",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Provide the base64 encoded content of the file",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import json\r\nimport base64\r\nfrom io import BytesIO\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import MessageInput, StrInput, Output, MessageTextInput\r\nfrom unstructured.partition.api import partition_via_api\r\n\r\nclass UnstructuredPartitionAPI(Component):\r\n    display_name = \"unstructured.io Partition API\"\r\n    description = \"Send a base64 file to unstructured.io for parsing using unstructured.partition.api.partition_via_api\"\r\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\r\n    icon = \"custom_components\"\r\n    name = \"unstructured.io Partition API\"\r\n\r\n    inputs = [\r\n        StrInput(name=\"api_key\", required=True, display_name=\"API key\"),\r\n        StrInput(name=\"api_url\", display_name=\"API URL\", value=\"https://api.unstructured.io/general/v0/general\"),\r\n        MessageInput(\r\n            name=\"base64_content\",\r\n            display_name=\"base64 Encoded File\",\r\n            required=True,\r\n            info=\"Provide the base64 encoded content of the file\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"filename\", \r\n            display_name=\"Filename\", \r\n            required=True, \r\n            placeholder=\"Enter filename with extension...\",\r\n            info=\"Filename to use as metadata\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"additional_params\", \r\n            display_name=\"Additional Parameters\", \r\n            required=False, \r\n            info=\"JSON-formatted dictionary to pass to the data field of the request to the Unstructured API\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Output\", name=\"output\", method=\"build_output\"),\r\n    ]\r\n\r\n    def build_output(self) -> str:\r\n        if not self.base64_content:\r\n            raise ValueError(\"Please provide the base64 encoded content of the file.\")\r\n        \r\n        # Decode the base64 content to bytes\r\n        file_bytes = base64.b64decode(self.base64_content.text)\r\n        \r\n        # Create a file-like object from bytes\r\n        file_like = BytesIO(file_bytes)\r\n        \r\n        # Convert additional_params JSON string to dictionary\r\n        additional_params = {}\r\n        if self.additional_params and self.additional_params.text.strip():\r\n            try:\r\n                additional_params = json.loads(self.additional_params.text)\r\n            except json.JSONDecodeError as e:\r\n                raise ValueError(f\"Invalid JSON string in additional_params: {e}\")\r\n\r\n        # Invoke API\r\n        elements = partition_via_api(\r\n            file=file_like,\r\n            metadata_filename=self.filename,\r\n            api_url=self.api_url,\r\n            api_key=self.api_key,\r\n            **additional_params\r\n        )\r\n\r\n        doc_text = \"\\n\".join([str(el) for el in elements])\r\n        return doc_text\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "filename": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "Enter filename with extension...",
+                "show": true,
+                "value": "",
+                "name": "filename",
+                "display_name": "Filename",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Filename to use as metadata",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Send a base64 file to unstructured.io for parsing using unstructured.partition.api.partition_via_api",
+            "icon": "custom_components",
+            "base_classes": [
+              "Text"
+            ],
+            "display_name": "unstructured.io Partition API",
+            "documentation": "http://docs.axiestudio.org/components/custom",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Text"
+                ],
+                "selected": "Text",
+                "name": "output",
+                "display_name": "Output",
+                "method": "build_output",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "api_key",
+              "api_url",
+              "base64_content",
+              "filename",
+              "additional_params"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "unstructured.io Partition API-Y9eDD"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 702,
+        "dragging": false
+      }
+    ],
+    "edges": [],
+    "viewport": {
+      "x": 26.54669348178936,
+      "y": 41.75808733831013,
+      "zoom": 0.9136189253361372
+    }
+  },
+  "metadata": {
+    "unstructured.io Partition API": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "34da67d6-cc38-4249-8f7b-401e1145834d",
+    "name": "Untitled document (1)",
+    "description": "Sculpting Language with Precision.",
+    "is_component": false,
+    "liked_by_count": "0",
+    "downloads_count": "3",
+    "metadata": {
+      "unstructured.io Partition API": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "unstructured.io Partition API-Y9eDD",
+          "type": "genericNode",
+          "position": {
+            "x": 326,
+            "y": 255.390625
+          },
+          "data": {
+            "type": "unstructured.io Partition API",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "additional_params": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "additional_params",
+                  "display_name": "Additional Parameters",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "JSON-formatted dictionary to pass to the data field of the request to the Unstructured API",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "api_key": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "api_key",
+                  "display_name": "API key",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "api_url": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "api_url",
+                  "display_name": "API URL",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "base64_content": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "base64_content",
+                  "display_name": "base64 Encoded File",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Provide the base64 encoded content of the file",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import json\r\nimport base64\r\nfrom io import BytesIO\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import MessageInput, StrInput, Output, MessageTextInput\r\nfrom unstructured.partition.api import partition_via_api\r\n\r\nclass UnstructuredPartitionAPI(Component):\r\n    display_name = \"unstructured.io Partition API\"\r\n    description = \"Send a base64 file to unstructured.io for parsing using unstructured.partition.api.partition_via_api\"\r\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\r\n    icon = \"custom_components\"\r\n    name = \"unstructured.io Partition API\"\r\n\r\n    inputs = [\r\n        StrInput(name=\"api_key\", required=True, display_name=\"API key\"),\r\n        StrInput(name=\"api_url\", display_name=\"API URL\", value=\"https://api.unstructured.io/general/v0/general\"),\r\n        MessageInput(\r\n            name=\"base64_content\",\r\n            display_name=\"base64 Encoded File\",\r\n            required=True,\r\n            info=\"Provide the base64 encoded content of the file\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"filename\", \r\n            display_name=\"Filename\", \r\n            required=True, \r\n            placeholder=\"Enter filename with extension...\",\r\n            info=\"Filename to use as metadata\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"additional_params\", \r\n            display_name=\"Additional Parameters\", \r\n            required=False, \r\n            info=\"JSON-formatted dictionary to pass to the data field of the request to the Unstructured API\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Output\", name=\"output\", method=\"build_output\"),\r\n    ]\r\n\r\n    def build_output(self) -> str:\r\n        if not self.base64_content:\r\n            raise ValueError(\"Please provide the base64 encoded content of the file.\")\r\n        \r\n        # Decode the base64 content to bytes\r\n        file_bytes = base64.b64decode(self.base64_content.text)\r\n        \r\n        # Create a file-like object from bytes\r\n        file_like = BytesIO(file_bytes)\r\n        \r\n        # Convert additional_params JSON string to dictionary\r\n        additional_params = {}\r\n        if self.additional_params and self.additional_params.text.strip():\r\n            try:\r\n                additional_params = json.loads(self.additional_params.text)\r\n            except json.JSONDecodeError as e:\r\n                raise ValueError(f\"Invalid JSON string in additional_params: {e}\")\r\n\r\n        # Invoke API\r\n        elements = partition_via_api(\r\n            file=file_like,\r\n            metadata_filename=self.filename,\r\n            api_url=self.api_url,\r\n            api_key=self.api_key,\r\n            **additional_params\r\n        )\r\n\r\n        doc_text = \"\\n\".join([str(el) for el in elements])\r\n        return doc_text\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "filename": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "Enter filename with extension...",
+                  "show": true,
+                  "value": "",
+                  "name": "filename",
+                  "display_name": "Filename",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Filename to use as metadata",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Send a base64 file to unstructured.io for parsing using unstructured.partition.api.partition_via_api",
+              "icon": "custom_components",
+              "base_classes": [
+                "Text"
+              ],
+              "display_name": "unstructured.io Partition API",
+              "documentation": "http://docs.axiestudio.org/components/custom",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Text"
+                  ],
+                  "selected": "Text",
+                  "name": "output",
+                  "display_name": "Output",
+                  "method": "build_output",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "api_key",
+                "api_url",
+                "base64_content",
+                "filename",
+                "additional_params"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "unstructured.io Partition API-Y9eDD"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 702,
+          "dragging": false
+        }
+      ],
+      "edges": [],
+      "viewport": {
+        "x": 26.54669348178936,
+        "y": 41.75808733831013,
+        "zoom": 0.9136189253361372
+      }
+    },
+    "date_created": "2024-09-16T20:49:29.006Z",
+    "date_updated": "2024-09-16T20:49:29.041Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "80410a65-79aa-4d36-9be3-c77175969cb4",
+    "user_created": {
+      "username": "cxavier",
+      "first_name": "Xavier",
+      "last_name": "Corbier",
+      "id": "80410a65-79aa-4d36-9be3-c77175969cb4"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:56.151Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,489 @@
+{
+  "id": "72550f7b-39c4-48cb-be83-bb00c7c7d6db",
+  "name": "Neo4J Ingestion",
+  "description": "Neo4J Ingestion (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "tiagodavi",
+    "first_name": "",
+    "last_name": "",
+    "id": "48f264de-083c-46f7-a307-a8659a151afe",
+    "full_name": "tiagodavi"
+  },
+  "store_url": "https://www.langflow.store/store/component/72550f7b-39c4-48cb-be83-bb00c7c7d6db",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-01T11:04:58.261Z",
+    "updated": "2024-08-01T11:04:58.565Z",
+    "downloaded": "2025-08-19T17:50:05.986Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.13",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "NEO4J",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "splits": {
+                "trace_as_metadata": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "splits",
+                "display_name": "PDF Reader Output",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.io import HandleInput, Output\nfrom axiestudio.schema import Data\nfrom langchain_community.graphs import Neo4jGraph\n\nclass Neo4jIngestionComponent(Component):\n    display_name = \"NEO4J\"\n    description = \"Neo4J Ingestion\"\n    icon = \"git-graph\"\n    name = \"NEO4J\"\n\n    inputs = [\n         HandleInput(\n            name=\"splits\",\n            display_name=\"PDF Reader Output\",\n            input_types=[\"Data\"],\n            is_list=True,\n        ),\n        DropdownInput(\n            name=\"openai_model\",\n            display_name=\"Model\",\n            advanced=False,\n            options=[\n                \"text-embedding-3-small\",\n                \"text-embedding-3-large\",\n                \"text-embedding-ada-002\",\n            ],\n            value=\"text-embedding-3-small\",\n        ),\n        StrInput(name=\"openai_endpoint\", display_name=\"OpenAI Embeddings Endpoint\"),\n        SecretStrInput(name=\"openai_api_key\", display_name=\"OpenAI API Key\", value=\"OPENAI_API_KEY\"),\n        StrInput(name=\"neo4j_uri\", display_name=\"NEO4J URI\"),\n        StrInput(name=\"neo4j_username\", display_name=\"NEO4J USERNAME\"),\n        StrInput(name=\"neo4j_password\", display_name=\"NEO4J PASSWORD\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Output\", name=\"output\", method=\"build_output\"),\n    ]\n\n    def build_chunks(self, splits):\n        parents = {}\n        chunks = []\n        chunk_seq_id = 0\n        for split in splits:\n            chunk_seq_id += 1\n            chunks.append({\n                \"chunkId\": split.id,\n                \"text\": split.chunk,\n                \"source\": split.source,\n                \"pageId\": split.page,\n                \"chunkSeqId\": chunk_seq_id\n            })\n            \n            if split.page not in parents:\n                parents[split.page] = {\"text\": split.text, \"pageId\": split.page}\n                \n        return chunks, parents\n        \n    def build_output(self) -> Data:\n        kg = Neo4jGraph(\n            url=self.neo4j_uri, \n            username=self.neo4j_username, \n            password=self.neo4j_password\n        )\n        \n        chunks, parents = self.build_chunks(self.splits)\n        \n        ## CLEAR DATABASE\n    \n        kg.query(\"\"\" MATCH (n) DETACH DELETE n \"\"\")\n        kg.query(\"\"\" DROP CONSTRAINT unique_chunk IF EXISTS \"\"\")\n        kg.query(\"\"\" DROP INDEX unique_chunk IF EXISTS \"\"\")\n        kg.query(\"\"\" DROP INDEX chunks_embedding IF EXISTS \"\"\")\n        \n    \n        ## CREATE PARENT NODES \n        \n        merge_parent_node = \"\"\"\n        MERGE(p:Page {pageId: $params.pageId})\n        ON CREATE SET\n            p.text = $params.text\n        RETURN p\n        \"\"\"\n        node_count = 0\n        for p in parents:\n            kg.query(merge_parent_node, params={'params': parents[p]})\n            node_count += 1\n        \n        print(f\"Created {node_count} parent nodes\")\n        \n        ## CREATE NODE WITH PROPERTIES\n\n        merge_chunk_node = \"\"\"\n        MERGE(c:Chunk {chunkId: $params.chunkId})\n        ON CREATE SET \n            c.text = $params.text,\n            c.source = $params.source,\n            c.pageId = $params.pageId,\n            c.chunkSeqId = $params.chunkSeqId\n        RETURN c\n        \"\"\"\n        \n        node_count = 0\n        for chunk in chunks:\n            print(f\"Creating `:Chunk` node for chunk ID {chunk['chunkId']}\")\n            kg.query(merge_chunk_node, params={'params': chunk})\n            node_count += 1\n            \n        print(f\"Created {node_count} chunk nodes\")\n        \n        ## CREATE UNIQUE INDEX \n        \n        kg.query(\"\"\"\n        CREATE CONSTRAINT unique_chunk IF NOT EXISTS \n        FOR (c:Chunk) REQUIRE c.chunkId IS UNIQUE\n        \"\"\")\n        \n        ## CREATE VECTOR INDEX\n\n        kg.query(\"\"\"\n         CREATE VECTOR INDEX `chunks_embedding` IF NOT EXISTS\n          FOR (c:Chunk) ON (c.textEmbedding) \n          OPTIONS { indexConfig: {\n            `vector.dimensions`: 1536,\n            `vector.similarity_function`: 'cosine'    \n         }}\"\"\")\n\n        ## DISPLAY INDEXES \n        # print(kg.query(\"SHOW INDEXES\"))\n        \n        kg.query(\"\"\"\n        MATCH (chunk:Chunk) WHERE chunk.textEmbedding IS NULL\n        WITH chunk, genai.vector.encode(\n            chunk.text, \n            \"OpenAI\", \n              {\n                token: $openAiApiKey, \n                endpoint: $openAiEndpoint,\n                model: $openAiModel\n              }) AS vector\n            CALL db.create.setNodeVectorProperty(chunk, \"textEmbedding\", vector)\n        \"\"\", params={\n                \"openAiApiKey\":self.openai_api_key, \n                \"openAiEndpoint\": self.openai_endpoint,\n                \"openAiModel\": self.openai_model,\n        })\n        \n        \n        nodes_next_query = \"\"\"\n          MATCH (chunk:Chunk)\n          WITH chunk\n            ORDER BY chunk.chunkSeqId ASC\n          WITH collect(chunk) as chunk_list\n            CALL apoc.nodes.link(\n                chunk_list, \n                \"NEXT\", \n                {avoidDuplicates: true}\n            )\n          RETURN size(chunk_list)\n        \"\"\"\n        \n        kg.query(nodes_next_query)\n        \n        nodes_belongs_to_query = \"\"\"\n        MATCH (c:Chunk), (p:Page)\n        WHERE c.pageId = p.pageId\n        MERGE (c)-[:BELONGS_TO]->(p)\n        \"\"\"\n        \n        kg.query(nodes_belongs_to_query)\n        \n        index_query = \"\"\"\n        CREATE INDEX FOR (c:Chunk) ON (c.pageId);\n        CREATE INDEX FOR (p:Page) ON (p.pageId);\n        \"\"\"\n        \n        kg.query(index_query)\n        \n        return Data(text=f\"Created {node_count} nodes\")\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "neo4j_password": {
+                "trace_as_metadata": true,
+                "load_from_db": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "NEO4J_PASS",
+                "name": "neo4j_password",
+                "display_name": "NEO4J PASSWORD",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "neo4j_uri": {
+                "trace_as_metadata": true,
+                "load_from_db": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "NEO4J_URI",
+                "name": "neo4j_uri",
+                "display_name": "NEO4J URI",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "neo4j_username": {
+                "trace_as_metadata": true,
+                "load_from_db": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "NEO4J_USER",
+                "name": "neo4j_username",
+                "display_name": "NEO4J USERNAME",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "openai_api_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "openai_api_key",
+                "display_name": "OpenAI API Key",
+                "advanced": false,
+                "input_types": [],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "openai_endpoint": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "https://api.openai.com/v1/embeddings",
+                "name": "openai_endpoint",
+                "display_name": "OpenAI Embeddings Endpoint",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "openai_model": {
+                "combobox": false,
+                "trace_as_metadata": true,
+                "options": [
+                  "text-embedding-3-small",
+                  "text-embedding-3-large",
+                  "text-embedding-ada-002"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "text-embedding-3-small",
+                "name": "openai_model",
+                "display_name": "Model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              }
+            },
+            "description": "Neo4J Ingestion",
+            "icon": "git-graph",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Neo4J Ingestion",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "output",
+                "display_name": "Output",
+                "method": "build_output",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "splits",
+              "openai_model",
+              "openai_endpoint",
+              "openai_api_key",
+              "neo4j_uri",
+              "neo4j_username",
+              "neo4j_password"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "NEO4J-1CsZ1",
+          "description": "Knowledge Graphs for RAG.",
+          "display_name": "Neo4J Ingestion"
+        },
+        "id": "NEO4J-1CsZ1",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "NEO4J": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "72550f7b-39c4-48cb-be83-bb00c7c7d6db",
+    "name": "Neo4J Ingestion",
+    "description": "Neo4J Ingestion",
+    "is_component": true,
+    "liked_by_count": "24",
+    "downloads_count": "234",
+    "metadata": {
+      "NEO4J": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.13",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "NEO4J",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "splits": {
+                  "trace_as_metadata": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "splits",
+                  "display_name": "PDF Reader Output",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.io import HandleInput, Output\nfrom axiestudio.schema import Data\nfrom langchain_community.graphs import Neo4jGraph\n\nclass Neo4jIngestionComponent(Component):\n    display_name = \"NEO4J\"\n    description = \"Neo4J Ingestion\"\n    icon = \"git-graph\"\n    name = \"NEO4J\"\n\n    inputs = [\n         HandleInput(\n            name=\"splits\",\n            display_name=\"PDF Reader Output\",\n            input_types=[\"Data\"],\n            is_list=True,\n        ),\n        DropdownInput(\n            name=\"openai_model\",\n            display_name=\"Model\",\n            advanced=False,\n            options=[\n                \"text-embedding-3-small\",\n                \"text-embedding-3-large\",\n                \"text-embedding-ada-002\",\n            ],\n            value=\"text-embedding-3-small\",\n        ),\n        StrInput(name=\"openai_endpoint\", display_name=\"OpenAI Embeddings Endpoint\"),\n        SecretStrInput(name=\"openai_api_key\", display_name=\"OpenAI API Key\", value=\"OPENAI_API_KEY\"),\n        StrInput(name=\"neo4j_uri\", display_name=\"NEO4J URI\"),\n        StrInput(name=\"neo4j_username\", display_name=\"NEO4J USERNAME\"),\n        StrInput(name=\"neo4j_password\", display_name=\"NEO4J PASSWORD\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Output\", name=\"output\", method=\"build_output\"),\n    ]\n\n    def build_chunks(self, splits):\n        parents = {}\n        chunks = []\n        chunk_seq_id = 0\n        for split in splits:\n            chunk_seq_id += 1\n            chunks.append({\n                \"chunkId\": split.id,\n                \"text\": split.chunk,\n                \"source\": split.source,\n                \"pageId\": split.page,\n                \"chunkSeqId\": chunk_seq_id\n            })\n            \n            if split.page not in parents:\n                parents[split.page] = {\"text\": split.text, \"pageId\": split.page}\n                \n        return chunks, parents\n        \n    def build_output(self) -> Data:\n        kg = Neo4jGraph(\n            url=self.neo4j_uri, \n            username=self.neo4j_username, \n            password=self.neo4j_password\n        )\n        \n        chunks, parents = self.build_chunks(self.splits)\n        \n        ## CLEAR DATABASE\n    \n        kg.query(\"\"\" MATCH (n) DETACH DELETE n \"\"\")\n        kg.query(\"\"\" DROP CONSTRAINT unique_chunk IF EXISTS \"\"\")\n        kg.query(\"\"\" DROP INDEX unique_chunk IF EXISTS \"\"\")\n        kg.query(\"\"\" DROP INDEX chunks_embedding IF EXISTS \"\"\")\n        \n    \n        ## CREATE PARENT NODES \n        \n        merge_parent_node = \"\"\"\n        MERGE(p:Page {pageId: $params.pageId})\n        ON CREATE SET\n            p.text = $params.text\n        RETURN p\n        \"\"\"\n        node_count = 0\n        for p in parents:\n            kg.query(merge_parent_node, params={'params': parents[p]})\n            node_count += 1\n        \n        print(f\"Created {node_count} parent nodes\")\n        \n        ## CREATE NODE WITH PROPERTIES\n\n        merge_chunk_node = \"\"\"\n        MERGE(c:Chunk {chunkId: $params.chunkId})\n        ON CREATE SET \n            c.text = $params.text,\n            c.source = $params.source,\n            c.pageId = $params.pageId,\n            c.chunkSeqId = $params.chunkSeqId\n        RETURN c\n        \"\"\"\n        \n        node_count = 0\n        for chunk in chunks:\n            print(f\"Creating `:Chunk` node for chunk ID {chunk['chunkId']}\")\n            kg.query(merge_chunk_node, params={'params': chunk})\n            node_count += 1\n            \n        print(f\"Created {node_count} chunk nodes\")\n        \n        ## CREATE UNIQUE INDEX \n        \n        kg.query(\"\"\"\n        CREATE CONSTRAINT unique_chunk IF NOT EXISTS \n        FOR (c:Chunk) REQUIRE c.chunkId IS UNIQUE\n        \"\"\")\n        \n        ## CREATE VECTOR INDEX\n\n        kg.query(\"\"\"\n         CREATE VECTOR INDEX `chunks_embedding` IF NOT EXISTS\n          FOR (c:Chunk) ON (c.textEmbedding) \n          OPTIONS { indexConfig: {\n            `vector.dimensions`: 1536,\n            `vector.similarity_function`: 'cosine'    \n         }}\"\"\")\n\n        ## DISPLAY INDEXES \n        # print(kg.query(\"SHOW INDEXES\"))\n        \n        kg.query(\"\"\"\n        MATCH (chunk:Chunk) WHERE chunk.textEmbedding IS NULL\n        WITH chunk, genai.vector.encode(\n            chunk.text, \n            \"OpenAI\", \n              {\n                token: $openAiApiKey, \n                endpoint: $openAiEndpoint,\n                model: $openAiModel\n              }) AS vector\n            CALL db.create.setNodeVectorProperty(chunk, \"textEmbedding\", vector)\n        \"\"\", params={\n                \"openAiApiKey\":self.openai_api_key, \n                \"openAiEndpoint\": self.openai_endpoint,\n                \"openAiModel\": self.openai_model,\n        })\n        \n        \n        nodes_next_query = \"\"\"\n          MATCH (chunk:Chunk)\n          WITH chunk\n            ORDER BY chunk.chunkSeqId ASC\n          WITH collect(chunk) as chunk_list\n            CALL apoc.nodes.link(\n                chunk_list, \n                \"NEXT\", \n                {avoidDuplicates: true}\n            )\n          RETURN size(chunk_list)\n        \"\"\"\n        \n        kg.query(nodes_next_query)\n        \n        nodes_belongs_to_query = \"\"\"\n        MATCH (c:Chunk), (p:Page)\n        WHERE c.pageId = p.pageId\n        MERGE (c)-[:BELONGS_TO]->(p)\n        \"\"\"\n        \n        kg.query(nodes_belongs_to_query)\n        \n        index_query = \"\"\"\n        CREATE INDEX FOR (c:Chunk) ON (c.pageId);\n        CREATE INDEX FOR (p:Page) ON (p.pageId);\n        \"\"\"\n        \n        kg.query(index_query)\n        \n        return Data(text=f\"Created {node_count} nodes\")\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "neo4j_password": {
+                  "trace_as_metadata": true,
+                  "load_from_db": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "NEO4J_PASS",
+                  "name": "neo4j_password",
+                  "display_name": "NEO4J PASSWORD",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "neo4j_uri": {
+                  "trace_as_metadata": true,
+                  "load_from_db": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "NEO4J_URI",
+                  "name": "neo4j_uri",
+                  "display_name": "NEO4J URI",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "neo4j_username": {
+                  "trace_as_metadata": true,
+                  "load_from_db": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "NEO4J_USER",
+                  "name": "neo4j_username",
+                  "display_name": "NEO4J USERNAME",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "openai_api_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "openai_api_key",
+                  "display_name": "OpenAI API Key",
+                  "advanced": false,
+                  "input_types": [],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "openai_endpoint": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "https://api.openai.com/v1/embeddings",
+                  "name": "openai_endpoint",
+                  "display_name": "OpenAI Embeddings Endpoint",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "openai_model": {
+                  "combobox": false,
+                  "trace_as_metadata": true,
+                  "options": [
+                    "text-embedding-3-small",
+                    "text-embedding-3-large",
+                    "text-embedding-ada-002"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "text-embedding-3-small",
+                  "name": "openai_model",
+                  "display_name": "Model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                }
+              },
+              "description": "Neo4J Ingestion",
+              "icon": "git-graph",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Neo4J Ingestion",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "output",
+                  "display_name": "Output",
+                  "method": "build_output",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "splits",
+                "openai_model",
+                "openai_endpoint",
+                "openai_api_key",
+                "neo4j_uri",
+                "neo4j_username",
+                "neo4j_password"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "NEO4J-1CsZ1",
+            "description": "Knowledge Graphs for RAG.",
+            "display_name": "Neo4J Ingestion"
+          },
+          "id": "NEO4J-1CsZ1",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-01T11:04:58.261Z",
+    "date_updated": "2024-08-01T11:04:58.565Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "48f264de-083c-46f7-a307-a8659a151afe",
+    "user_created": {
+      "username": "tiagodavi",
+      "first_name": null,
+      "last_name": null,
+      "id": "48f264de-083c-46f7-a307-a8659a151afe"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.596Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

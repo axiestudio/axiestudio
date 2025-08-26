@@ -1,0 +1,559 @@
+{
+  "id": "7d692196-3f96-4b2e-b790-db2c7568a63d",
+  "name": "Bing Web Search",
+  "description": "Call the Bing Search API. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "voytas",
+    "first_name": "Martinus Alexander",
+    "last_name": "Napier",
+    "id": "aab8a5e4-031f-4795-8c01-0b842993ca01",
+    "full_name": "Martinus Alexander Napier"
+  },
+  "store_url": "https://www.langflow.store/store/component/7d692196-3f96-4b2e-b790-db2c7568a63d",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-03T20:42:23.978Z",
+    "updated": "2024-09-03T22:24:13.848Z",
+    "downloaded": "2025-08-19T17:50:06.016Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "BingSearchAPI",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "bing_search_url": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "bing_search_url",
+                "value": "",
+                "display_name": "Bing Search URL",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "bing_subscription_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "bing_subscription_key",
+                "value": "",
+                "display_name": "Bing Subscription Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List, cast\r\n\r\nfrom langchain_community.tools.bing_search import BingSearchResults\r\nfrom langchain_community.utilities import BingSearchAPIWrapper\r\n\r\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\r\nfrom axiestudio.field_typing import Tool\r\nfrom axiestudio.inputs import IntInput, MessageTextInput, MultilineInput, SecretStrInput, DropdownInput\r\nfrom axiestudio.schema import Data\r\n\r\n# version 0.1\r\n\r\nclass BingSearchAPIComponent(LCToolComponent):\r\n    display_name = \"Bing Search API\"\r\n    description = \"Call the Bing Search API.\"\r\n    name = \"BingSearchAPI\"\r\n    icon = \"search\"\r\n\r\n    RF = [\"Computation\",\"Entities\",\"Images\",\"News\",\"Places\",\"RelatedSearches\",\"SpellSuggestions\",\"TimeZone\",\"Translations\",\"Videos\",\"Webpages\"]\r\n    \r\n    SS = [\"Off\", \"Moderate\", \"Strict\"]\r\n    \r\n    FRESH=[\"Day\", \"Week\", \"Month\"]\r\n    \r\n    inputs = [\r\n        SecretStrInput(name=\"bing_subscription_key\", display_name=\"Bing Subscription Key\"),\r\n        MultilineInput(\r\n            name=\"input_value\",\r\n            display_name=\"Input\",\r\n        ),\r\n        MessageTextInput(name=\"bing_search_url\", display_name=\"Bing Search URL\", advanced=True),\r\n        IntInput(name=\"k\", display_name=\"Number of results\", value=4, required=True),\r\n        DropdownInput(name=\"response_filter\", display_name=\"Response Filter\", options=RF, value=RF[-1], advanced=True),\r\n        DropdownInput(name=\"safe_search\", display_name=\"Safe Search\", options=SS, value=SS[1], advanced=True),\r\n        DropdownInput(name=\"freshness\", display_name=\"Freshness\", options=FRESH, value=FRESH[-1], advanced=True),\r\n    ]\r\n\r\n    def get_search_kwargs(self):\r\n        return {\r\n            \"responseFilter\": self.response_filter,\r\n            \"safeSearch\": self.safe_search,\r\n            \"freshness\": self.freshness,\r\n            \"textDecorations\": False,\r\n            \"textFormat\": \"RAW\",\r\n            \"mkt\": \"en-US\"\r\n        }\r\n\r\n    def run_model(self) -> List[Data]:\r\n        search_kwargs = self.get_search_kwargs()\r\n        if self.bing_search_url:\r\n            wrapper = BingSearchAPIWrapper(\r\n                bing_search_url=self.bing_search_url, bing_subscription_key=self.bing_subscription_key, search_kwargs=search_kwargs\r\n            )\r\n        else:\r\n            wrapper = BingSearchAPIWrapper(bing_subscription_key=self.bing_subscription_key, search_kwargs=search_kwargs)  # type: ignore\r\n        results = wrapper.results(query=self.input_value, num_results=self.k)\r\n        data = [Data(data=result, text=result[\"snippet\"]) for result in results]\r\n        self.status = data\r\n        return data\r\n\r\n    def build_tool(self) -> Tool:\r\n        search_kwargs = self.get_search_kwargs()\r\n        if self.bing_search_url:\r\n            wrapper = BingSearchAPIWrapper(\r\n                bing_search_url=self.bing_search_url, bing_subscription_key=self.bing_subscription_key, search_kwargs=search_kwargs\r\n            )\r\n        else:\r\n            wrapper = BingSearchAPIWrapper(bing_subscription_key=self.bing_subscription_key, search_kwargs=search_kwargs)  # type: ignore\r\n        return cast(Tool, BingSearchResults(api_wrapper=wrapper, num_results=self.k))",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "freshness": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Day",
+                  "Week",
+                  "Month"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "freshness",
+                "value": "Month",
+                "display_name": "Freshness",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "k": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "k",
+                "value": 5,
+                "display_name": "Number of results",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "response_filter": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Computation",
+                  "Entities",
+                  "Images",
+                  "News",
+                  "Places",
+                  "RelatedSearches",
+                  "SpellSuggestions",
+                  "TimeZone",
+                  "Translations",
+                  "Videos",
+                  "Webpages"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "response_filter",
+                "value": "Webpages",
+                "display_name": "Response Filter",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "safe_search": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Off",
+                  "Moderate",
+                  "Strict"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "safe_search",
+                "value": "Moderate",
+                "display_name": "Safe Search",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              }
+            },
+            "description": "Call the Bing Search API.",
+            "icon": "search",
+            "base_classes": [
+              "Data",
+              "Tool"
+            ],
+            "display_name": "Bing Web Search",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "bing_subscription_key",
+              "input_value",
+              "bing_search_url",
+              "k",
+              "response_filter",
+              "safe_search",
+              "freshness"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "BingSearchAPI-oPT0z"
+        },
+        "id": "BingSearchAPI-oPT0z",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "BingSearchAPI": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "7d692196-3f96-4b2e-b790-db2c7568a63d",
+    "name": "Bing Web Search",
+    "description": "Call the Bing Search API.",
+    "is_component": true,
+    "liked_by_count": "7",
+    "downloads_count": "48",
+    "metadata": {
+      "BingSearchAPI": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "BingSearchAPI",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "bing_search_url": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "bing_search_url",
+                  "value": "",
+                  "display_name": "Bing Search URL",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "bing_subscription_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "bing_subscription_key",
+                  "value": "",
+                  "display_name": "Bing Subscription Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List, cast\r\n\r\nfrom langchain_community.tools.bing_search import BingSearchResults\r\nfrom langchain_community.utilities import BingSearchAPIWrapper\r\n\r\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\r\nfrom axiestudio.field_typing import Tool\r\nfrom axiestudio.inputs import IntInput, MessageTextInput, MultilineInput, SecretStrInput, DropdownInput\r\nfrom axiestudio.schema import Data\r\n\r\n# version 0.1\r\n\r\nclass BingSearchAPIComponent(LCToolComponent):\r\n    display_name = \"Bing Search API\"\r\n    description = \"Call the Bing Search API.\"\r\n    name = \"BingSearchAPI\"\r\n    icon = \"search\"\r\n\r\n    RF = [\"Computation\",\"Entities\",\"Images\",\"News\",\"Places\",\"RelatedSearches\",\"SpellSuggestions\",\"TimeZone\",\"Translations\",\"Videos\",\"Webpages\"]\r\n    \r\n    SS = [\"Off\", \"Moderate\", \"Strict\"]\r\n    \r\n    FRESH=[\"Day\", \"Week\", \"Month\"]\r\n    \r\n    inputs = [\r\n        SecretStrInput(name=\"bing_subscription_key\", display_name=\"Bing Subscription Key\"),\r\n        MultilineInput(\r\n            name=\"input_value\",\r\n            display_name=\"Input\",\r\n        ),\r\n        MessageTextInput(name=\"bing_search_url\", display_name=\"Bing Search URL\", advanced=True),\r\n        IntInput(name=\"k\", display_name=\"Number of results\", value=4, required=True),\r\n        DropdownInput(name=\"response_filter\", display_name=\"Response Filter\", options=RF, value=RF[-1], advanced=True),\r\n        DropdownInput(name=\"safe_search\", display_name=\"Safe Search\", options=SS, value=SS[1], advanced=True),\r\n        DropdownInput(name=\"freshness\", display_name=\"Freshness\", options=FRESH, value=FRESH[-1], advanced=True),\r\n    ]\r\n\r\n    def get_search_kwargs(self):\r\n        return {\r\n            \"responseFilter\": self.response_filter,\r\n            \"safeSearch\": self.safe_search,\r\n            \"freshness\": self.freshness,\r\n            \"textDecorations\": False,\r\n            \"textFormat\": \"RAW\",\r\n            \"mkt\": \"en-US\"\r\n        }\r\n\r\n    def run_model(self) -> List[Data]:\r\n        search_kwargs = self.get_search_kwargs()\r\n        if self.bing_search_url:\r\n            wrapper = BingSearchAPIWrapper(\r\n                bing_search_url=self.bing_search_url, bing_subscription_key=self.bing_subscription_key, search_kwargs=search_kwargs\r\n            )\r\n        else:\r\n            wrapper = BingSearchAPIWrapper(bing_subscription_key=self.bing_subscription_key, search_kwargs=search_kwargs)  # type: ignore\r\n        results = wrapper.results(query=self.input_value, num_results=self.k)\r\n        data = [Data(data=result, text=result[\"snippet\"]) for result in results]\r\n        self.status = data\r\n        return data\r\n\r\n    def build_tool(self) -> Tool:\r\n        search_kwargs = self.get_search_kwargs()\r\n        if self.bing_search_url:\r\n            wrapper = BingSearchAPIWrapper(\r\n                bing_search_url=self.bing_search_url, bing_subscription_key=self.bing_subscription_key, search_kwargs=search_kwargs\r\n            )\r\n        else:\r\n            wrapper = BingSearchAPIWrapper(bing_subscription_key=self.bing_subscription_key, search_kwargs=search_kwargs)  # type: ignore\r\n        return cast(Tool, BingSearchResults(api_wrapper=wrapper, num_results=self.k))",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "freshness": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Day",
+                    "Week",
+                    "Month"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "freshness",
+                  "value": "Month",
+                  "display_name": "Freshness",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "k": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "k",
+                  "value": 5,
+                  "display_name": "Number of results",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "response_filter": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Computation",
+                    "Entities",
+                    "Images",
+                    "News",
+                    "Places",
+                    "RelatedSearches",
+                    "SpellSuggestions",
+                    "TimeZone",
+                    "Translations",
+                    "Videos",
+                    "Webpages"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "response_filter",
+                  "value": "Webpages",
+                  "display_name": "Response Filter",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "safe_search": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Off",
+                    "Moderate",
+                    "Strict"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "safe_search",
+                  "value": "Moderate",
+                  "display_name": "Safe Search",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                }
+              },
+              "description": "Call the Bing Search API.",
+              "icon": "search",
+              "base_classes": [
+                "Data",
+                "Tool"
+              ],
+              "display_name": "Bing Web Search",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "bing_subscription_key",
+                "input_value",
+                "bing_search_url",
+                "k",
+                "response_filter",
+                "safe_search",
+                "freshness"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "BingSearchAPI-oPT0z"
+          },
+          "id": "BingSearchAPI-oPT0z",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-03T20:42:23.978Z",
+    "date_updated": "2024-09-03T22:24:13.848Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "aab8a5e4-031f-4795-8c01-0b842993ca01",
+    "user_created": {
+      "username": "voytas",
+      "first_name": "Martinus Alexander",
+      "last_name": "Napier",
+      "id": "aab8a5e4-031f-4795-8c01-0b842993ca01"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.750Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

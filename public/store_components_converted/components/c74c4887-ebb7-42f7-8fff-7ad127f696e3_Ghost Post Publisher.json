@@ -1,0 +1,699 @@
+{
+  "id": "c74c4887-ebb7-42f7-8fff-7ad127f696e3",
+  "name": "Ghost Post Publisher",
+  "description": "Publishes content on Ghost CMS via Admin API. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "KrashTime",
+    "first_name": "Jean",
+    "last_name": "Oliveira",
+    "id": "2e977744-9c32-4ebd-b6e9-3a43df9b496a",
+    "full_name": "Jean Oliveira"
+  },
+  "store_url": "https://www.langflow.store/store/component/c74c4887-ebb7-42f7-8fff-7ad127f696e3",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-03T01:12:29.208Z",
+    "updated": "2024-09-03T01:12:29.234Z",
+    "downloaded": "2025-08-19T17:50:06.586Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "GhostPublisherComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "api_key": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "Admin API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The Ghost Admin API key.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\r\nfrom axiestudio.inputs import MessageTextInput, MultilineInput, DropdownInput, StrInput\r\nfrom axiestudio.io import Output\r\nfrom axiestudio.schema.message import Message\r\nimport jwt\r\nimport time\r\nimport requests\r\n\r\nclass GhostPublisherComponent(Component):\r\n    display_name = \"Ghost Publisher\"\r\n    description = \"Publishes content on Ghost CMS via Admin API.\"\r\n    icon = \"send\"  # Choose an appropriate icon\r\n\r\n    # Defining the component inputs\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"ghost_url\",\r\n            display_name=\"Ghost Admin URL\",\r\n            info=\"The Ghost Admin API URL, e.g., https://yourdomain.ghost.io/ghost/api/admin/\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"api_key\",\r\n            display_name=\"Admin API Key\",\r\n            info=\"The Ghost Admin API key.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"post_title\",\r\n            display_name=\"Post Title\",\r\n            info=\"The title of the post to be published.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"meta_title\",\r\n            display_name=\"Meta Title\",\r\n            info=\"The meta title for SEO (which appears in the browser tab).\",\r\n            advanced=True,\r\n        ),\r\n        MessageTextInput(\r\n            name=\"post_slug\",\r\n            display_name=\"Post Slug\",\r\n            info=\"The slug (unique identifier) of the post.\",\r\n            advanced=True,\r\n        ),\r\n        MessageTextInput(\r\n            name=\"meta_description\",\r\n            display_name=\"Meta Description\",\r\n            info=\"The meta description for SEO.\",\r\n            advanced=True,\r\n        ),\r\n        MultilineInput(\r\n            name=\"post_content\",\r\n            display_name=\"Post Content\",\r\n            info=\"The HTML or Lexical content to be published.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"post_tags\",\r\n            display_name=\"Tags\",\r\n            info=\"Comma-separated tags for the post.\",\r\n            advanced=True,\r\n        ),\r\n        MessageTextInput(\r\n            name=\"post_authors\",\r\n            display_name=\"Authors\",\r\n            info=\"Comma-separated authors for the post (identified by email).\",\r\n            advanced=True,\r\n        ),\r\n        DropdownInput(\r\n            name=\"post_status\",\r\n            display_name=\"Post Status\",\r\n            options=[\"published\", \"draft\", \"scheduled\"],\r\n            value=\"draft\",  # Sets \"draft\" as default\r\n            info=\"Choose whether the post will be published, left as a draft, or scheduled.\",\r\n        ),\r\n        StrInput(\r\n            name=\"scheduled_time\",\r\n            display_name=\"Publish Date and Time\",\r\n            info=\"Set the date and time for the post to be published (only if the status is 'scheduled'). Use the format YYYY-MM-DDTHH:MM:SS.\",\r\n            advanced=True,\r\n        ),\r\n    ]\r\n\r\n    # Defining the component output\r\n    outputs = [\r\n        Output(display_name=\"Result\", name=\"result\", method=\"publish_post\"),\r\n    ]\r\n\r\n    def generate_jwt(self, api_key):\r\n        # Split the API Key into ID and Secret\r\n        key_id, key_secret = api_key.split(':')\r\n        \r\n        # Set the payload for the JWT\r\n        iat = int(time.time())\r\n        exp = iat + 300  # Token valid for 5 minutes\r\n        header = {'alg': 'HS256', 'kid': key_id}\r\n        payload = {\r\n            'iat': iat,\r\n            'exp': exp,\r\n            'aud': '/admin/'\r\n        }\r\n\r\n        # Generate the JWT\r\n        token = jwt.encode(payload, bytes.fromhex(key_secret), algorithm='HS256', headers=header)\r\n        return token\r\n\r\n    async def publish_post(self) -> Message:\r\n        # Retrieving input values\r\n        ghost_url = self.ghost_url.rstrip('/')  # Remove trailing slash from URL if any\r\n        api_key = self.api_key\r\n        post_title = self.post_title\r\n        meta_title = self.meta_title\r\n        post_slug = self.post_slug\r\n        meta_description = self.meta_description\r\n        post_content = self.post_content.strip()  # Remove leading and trailing whitespace\r\n        post_tags = [tag.strip() for tag in self.post_tags.split(',')] if self.post_tags else []\r\n        post_authors = [author.strip() for author in self.post_authors.split(',')] if self.post_authors else []\r\n        post_status = self.post_status\r\n        scheduled_time = self.scheduled_time.strip() if self.scheduled_time else None\r\n\r\n        # Wrap the HTML content in a Lexical card\r\n        wrapped_html = f\"<!--kg-card-begin: html-->{post_content}<!--kg-card-end: html-->\"\r\n\r\n        # Generate the JWT token for authentication\r\n        token = self.generate_jwt(api_key)\r\n        \r\n        # Set the request headers and payload\r\n        headers = {\r\n            'Authorization': f'Ghost {token}',\r\n            'Content-Type': 'application/json',\r\n            'Accept-Version': 'v5.0'\r\n        }\r\n        post_data = {\r\n            \"posts\": [\r\n                {\r\n                    \"title\": post_title,\r\n                    \"slug\": post_slug if post_slug else None,\r\n                    \"html\": wrapped_html,\r\n                    \"status\": post_status,\r\n                    \"meta_title\": meta_title if meta_title else None,\r\n                    \"meta_description\": meta_description if meta_description else None,\r\n                    \"tags\": post_tags,\r\n                    \"authors\": post_authors,\r\n                    \"published_at\": scheduled_time if post_status == \"scheduled\" and scheduled_time else None,\r\n                }\r\n            ]\r\n        }\r\n        \r\n        # Adding the source=html parameter to the URL\r\n        response = requests.post(f'{ghost_url}/posts/?source=html', headers=headers, json=post_data)\r\n\r\n        if response.status_code == 201:\r\n            result = \"Post published successfully!\"\r\n        else:\r\n            result = f\"Failed to publish post: {response.status_code} - {response.text}\"\r\n\r\n        self.status = result\r\n        return Message(text=result)\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "ghost_url": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "ghost_url",
+                "value": "",
+                "display_name": "Ghost Admin URL",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The Ghost Admin API URL, e.g., https://yourdomain.ghost.io/ghost/api/admin/",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "meta_description": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "meta_description",
+                "value": "",
+                "display_name": "Meta Description",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The meta description for SEO.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "meta_title": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "meta_title",
+                "value": "",
+                "display_name": "Meta Title",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The meta title for SEO (which appears in the browser tab).",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "post_authors": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "post_authors",
+                "value": "",
+                "display_name": "Authors",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Comma-separated authors for the post (identified by email).",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "post_content": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "post_content",
+                "value": "",
+                "display_name": "Post Content",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The HTML or Lexical content to be published.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "post_slug": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "post_slug",
+                "value": "",
+                "display_name": "Post Slug",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The slug (unique identifier) of the post.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "post_status": {
+                "trace_as_metadata": true,
+                "options": [
+                  "published",
+                  "draft",
+                  "scheduled"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "post_status",
+                "value": "draft",
+                "display_name": "Post Status",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Choose whether the post will be published, left as a draft, or scheduled.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "post_tags": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "post_tags",
+                "value": "",
+                "display_name": "Tags",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Comma-separated tags for the post.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "post_title": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "post_title",
+                "value": "",
+                "display_name": "Post Title",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The title of the post to be published.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "scheduled_time": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "scheduled_time",
+                "value": "",
+                "display_name": "Publish Date and Time",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Set the date and time for the post to be published (only if the status is 'scheduled'). Use the format YYYY-MM-DDTHH:MM:SS.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              }
+            },
+            "description": "Publishes content on Ghost CMS via Admin API.",
+            "icon": "send",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Ghost Post Publisher",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "result",
+                "display_name": "Result",
+                "method": "publish_post",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "ghost_url",
+              "api_key",
+              "post_title",
+              "meta_title",
+              "post_slug",
+              "meta_description",
+              "post_content",
+              "post_tags",
+              "post_authors",
+              "post_status",
+              "scheduled_time"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-QKkV0"
+        },
+        "id": "CustomComponent-QKkV0",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "c74c4887-ebb7-42f7-8fff-7ad127f696e3",
+    "name": "Ghost Post Publisher",
+    "description": "Publishes content on Ghost CMS via Admin API.",
+    "is_component": true,
+    "liked_by_count": "3",
+    "downloads_count": "24",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "GhostPublisherComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "api_key": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "Admin API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The Ghost Admin API key.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\r\nfrom axiestudio.inputs import MessageTextInput, MultilineInput, DropdownInput, StrInput\r\nfrom axiestudio.io import Output\r\nfrom axiestudio.schema.message import Message\r\nimport jwt\r\nimport time\r\nimport requests\r\n\r\nclass GhostPublisherComponent(Component):\r\n    display_name = \"Ghost Publisher\"\r\n    description = \"Publishes content on Ghost CMS via Admin API.\"\r\n    icon = \"send\"  # Choose an appropriate icon\r\n\r\n    # Defining the component inputs\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"ghost_url\",\r\n            display_name=\"Ghost Admin URL\",\r\n            info=\"The Ghost Admin API URL, e.g., https://yourdomain.ghost.io/ghost/api/admin/\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"api_key\",\r\n            display_name=\"Admin API Key\",\r\n            info=\"The Ghost Admin API key.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"post_title\",\r\n            display_name=\"Post Title\",\r\n            info=\"The title of the post to be published.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"meta_title\",\r\n            display_name=\"Meta Title\",\r\n            info=\"The meta title for SEO (which appears in the browser tab).\",\r\n            advanced=True,\r\n        ),\r\n        MessageTextInput(\r\n            name=\"post_slug\",\r\n            display_name=\"Post Slug\",\r\n            info=\"The slug (unique identifier) of the post.\",\r\n            advanced=True,\r\n        ),\r\n        MessageTextInput(\r\n            name=\"meta_description\",\r\n            display_name=\"Meta Description\",\r\n            info=\"The meta description for SEO.\",\r\n            advanced=True,\r\n        ),\r\n        MultilineInput(\r\n            name=\"post_content\",\r\n            display_name=\"Post Content\",\r\n            info=\"The HTML or Lexical content to be published.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"post_tags\",\r\n            display_name=\"Tags\",\r\n            info=\"Comma-separated tags for the post.\",\r\n            advanced=True,\r\n        ),\r\n        MessageTextInput(\r\n            name=\"post_authors\",\r\n            display_name=\"Authors\",\r\n            info=\"Comma-separated authors for the post (identified by email).\",\r\n            advanced=True,\r\n        ),\r\n        DropdownInput(\r\n            name=\"post_status\",\r\n            display_name=\"Post Status\",\r\n            options=[\"published\", \"draft\", \"scheduled\"],\r\n            value=\"draft\",  # Sets \"draft\" as default\r\n            info=\"Choose whether the post will be published, left as a draft, or scheduled.\",\r\n        ),\r\n        StrInput(\r\n            name=\"scheduled_time\",\r\n            display_name=\"Publish Date and Time\",\r\n            info=\"Set the date and time for the post to be published (only if the status is 'scheduled'). Use the format YYYY-MM-DDTHH:MM:SS.\",\r\n            advanced=True,\r\n        ),\r\n    ]\r\n\r\n    # Defining the component output\r\n    outputs = [\r\n        Output(display_name=\"Result\", name=\"result\", method=\"publish_post\"),\r\n    ]\r\n\r\n    def generate_jwt(self, api_key):\r\n        # Split the API Key into ID and Secret\r\n        key_id, key_secret = api_key.split(':')\r\n        \r\n        # Set the payload for the JWT\r\n        iat = int(time.time())\r\n        exp = iat + 300  # Token valid for 5 minutes\r\n        header = {'alg': 'HS256', 'kid': key_id}\r\n        payload = {\r\n            'iat': iat,\r\n            'exp': exp,\r\n            'aud': '/admin/'\r\n        }\r\n\r\n        # Generate the JWT\r\n        token = jwt.encode(payload, bytes.fromhex(key_secret), algorithm='HS256', headers=header)\r\n        return token\r\n\r\n    async def publish_post(self) -> Message:\r\n        # Retrieving input values\r\n        ghost_url = self.ghost_url.rstrip('/')  # Remove trailing slash from URL if any\r\n        api_key = self.api_key\r\n        post_title = self.post_title\r\n        meta_title = self.meta_title\r\n        post_slug = self.post_slug\r\n        meta_description = self.meta_description\r\n        post_content = self.post_content.strip()  # Remove leading and trailing whitespace\r\n        post_tags = [tag.strip() for tag in self.post_tags.split(',')] if self.post_tags else []\r\n        post_authors = [author.strip() for author in self.post_authors.split(',')] if self.post_authors else []\r\n        post_status = self.post_status\r\n        scheduled_time = self.scheduled_time.strip() if self.scheduled_time else None\r\n\r\n        # Wrap the HTML content in a Lexical card\r\n        wrapped_html = f\"<!--kg-card-begin: html-->{post_content}<!--kg-card-end: html-->\"\r\n\r\n        # Generate the JWT token for authentication\r\n        token = self.generate_jwt(api_key)\r\n        \r\n        # Set the request headers and payload\r\n        headers = {\r\n            'Authorization': f'Ghost {token}',\r\n            'Content-Type': 'application/json',\r\n            'Accept-Version': 'v5.0'\r\n        }\r\n        post_data = {\r\n            \"posts\": [\r\n                {\r\n                    \"title\": post_title,\r\n                    \"slug\": post_slug if post_slug else None,\r\n                    \"html\": wrapped_html,\r\n                    \"status\": post_status,\r\n                    \"meta_title\": meta_title if meta_title else None,\r\n                    \"meta_description\": meta_description if meta_description else None,\r\n                    \"tags\": post_tags,\r\n                    \"authors\": post_authors,\r\n                    \"published_at\": scheduled_time if post_status == \"scheduled\" and scheduled_time else None,\r\n                }\r\n            ]\r\n        }\r\n        \r\n        # Adding the source=html parameter to the URL\r\n        response = requests.post(f'{ghost_url}/posts/?source=html', headers=headers, json=post_data)\r\n\r\n        if response.status_code == 201:\r\n            result = \"Post published successfully!\"\r\n        else:\r\n            result = f\"Failed to publish post: {response.status_code} - {response.text}\"\r\n\r\n        self.status = result\r\n        return Message(text=result)\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "ghost_url": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "ghost_url",
+                  "value": "",
+                  "display_name": "Ghost Admin URL",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The Ghost Admin API URL, e.g., https://yourdomain.ghost.io/ghost/api/admin/",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "meta_description": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "meta_description",
+                  "value": "",
+                  "display_name": "Meta Description",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The meta description for SEO.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "meta_title": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "meta_title",
+                  "value": "",
+                  "display_name": "Meta Title",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The meta title for SEO (which appears in the browser tab).",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "post_authors": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "post_authors",
+                  "value": "",
+                  "display_name": "Authors",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Comma-separated authors for the post (identified by email).",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "post_content": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "post_content",
+                  "value": "",
+                  "display_name": "Post Content",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The HTML or Lexical content to be published.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "post_slug": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "post_slug",
+                  "value": "",
+                  "display_name": "Post Slug",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The slug (unique identifier) of the post.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "post_status": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "published",
+                    "draft",
+                    "scheduled"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "post_status",
+                  "value": "draft",
+                  "display_name": "Post Status",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Choose whether the post will be published, left as a draft, or scheduled.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "post_tags": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "post_tags",
+                  "value": "",
+                  "display_name": "Tags",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Comma-separated tags for the post.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "post_title": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "post_title",
+                  "value": "",
+                  "display_name": "Post Title",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The title of the post to be published.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "scheduled_time": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "scheduled_time",
+                  "value": "",
+                  "display_name": "Publish Date and Time",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Set the date and time for the post to be published (only if the status is 'scheduled'). Use the format YYYY-MM-DDTHH:MM:SS.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                }
+              },
+              "description": "Publishes content on Ghost CMS via Admin API.",
+              "icon": "send",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Ghost Post Publisher",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "result",
+                  "display_name": "Result",
+                  "method": "publish_post",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "ghost_url",
+                "api_key",
+                "post_title",
+                "meta_title",
+                "post_slug",
+                "meta_description",
+                "post_content",
+                "post_tags",
+                "post_authors",
+                "post_status",
+                "scheduled_time"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-QKkV0"
+          },
+          "id": "CustomComponent-QKkV0",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-03T01:12:29.208Z",
+    "date_updated": "2024-09-03T01:12:29.234Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "2e977744-9c32-4ebd-b6e9-3a43df9b496a",
+    "user_created": {
+      "username": "KrashTime",
+      "first_name": "Jean",
+      "last_name": "Oliveira",
+      "id": "2e977744-9c32-4ebd-b6e9-3a43df9b496a"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.764Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

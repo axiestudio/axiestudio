@@ -1,0 +1,709 @@
+{
+  "id": "20fcb17f-7448-44c7-b14d-6af5253251d8",
+  "name": "PineconeFlexNamespace",
+  "description": "Pinecone Vector Store with search capabilities (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "MarceloSMiranda",
+    "first_name": "Marcelo",
+    "last_name": "Miranda",
+    "id": "0bfa5b3f-b077-4257-b45f-4c8adcfc64bc",
+    "full_name": "Marcelo Miranda"
+  },
+  "store_url": "https://www.langflow.store/store/component/20fcb17f-7448-44c7-b14d-6af5253251d8",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-29T18:29:02.846Z",
+    "updated": "2024-10-29T18:29:02.894Z",
+    "downloaded": "2025-08-19T17:50:07.503Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Vector Store",
+        "id": "cd614b49-dd57-4c8b-a5eb-f8bb5f957b9a"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.19.post1",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Pinecone",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "embedding": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "embedding",
+                "value": "",
+                "display_name": "Embedding",
+                "advanced": false,
+                "input_types": [
+                  "Embeddings"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "ingest_data": {
+                "trace_as_metadata": true,
+                "list": true,
+                "trace_as_input": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "ingest_data",
+                "value": "",
+                "display_name": "Ingest Data",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "namespace_input": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "namespace_input",
+                "value": "",
+                "display_name": "Namespace Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langchain_pinecone import Pinecone\r\nfrom axiestudio.base.vectorstores.model import LCVectorStoreComponent, check_cached_vector_store\r\nfrom axiestudio.helpers.data import docs_to_data\r\nfrom axiestudio.io import (\r\n    DataInput,\r\n    DropdownInput,\r\n    HandleInput,\r\n    IntInput,\r\n    MultilineInput,\r\n    SecretStrInput,\r\n    StrInput,\r\n)\r\nfrom axiestudio.schema import Data\r\nfrom typing import Union, Optional\r\nfrom axiestudio.schema.message import Message\r\n\r\nclass PineconeVectorStoreComponent(LCVectorStoreComponent):\r\n    display_name = \"Pinecone\"\r\n    description = \"Pinecone Vector Store with search capabilities\"\r\n    documentation = \"https://python.langchain.com/v0.2/docs/integrations/vectorstores/pinecone/\"\r\n    name = \"Pinecone\"\r\n    icon = \"Pinecone\"\r\n    inputs = [\r\n        StrInput(name=\"index_name\", display_name=\"Index Name\", required=True),\r\n        StrInput(name=\"namespace\", display_name=\"Namespace\", info=\"Namespace for the index.\"),\r\n        HandleInput(name=\"namespace_input\", display_name=\"Namespace Input\", input_types=[\"Message\"]),\r\n        DropdownInput(\r\n            name=\"distance_strategy\",\r\n            display_name=\"Distance Strategy\",\r\n            options=[\"Cosine\", \"Euclidean\", \"Dot Product\"],\r\n            value=\"Cosine\",\r\n            advanced=True,\r\n        ),\r\n        SecretStrInput(name=\"pinecone_api_key\", display_name=\"Pinecone API Key\", required=True),\r\n        StrInput(\r\n            name=\"text_key\",\r\n            display_name=\"Text Key\",\r\n            info=\"Key in the record to use as text.\",\r\n            value=\"text\",\r\n            advanced=True,\r\n        ),\r\n        MultilineInput(name=\"search_query\", display_name=\"Search Query\"),\r\n        DataInput(\r\n            name=\"ingest_data\",\r\n            display_name=\"Ingest Data\",\r\n            is_list=True,\r\n        ),\r\n        HandleInput(name=\"embedding\", display_name=\"Embedding\", input_types=[\"Embeddings\"]),\r\n        IntInput(\r\n            name=\"number_of_results\",\r\n            display_name=\"Number of Results\",\r\n            info=\"Number of results to return.\",\r\n            value=4,\r\n            advanced=True,\r\n        ),\r\n    ]\r\n\r\n    def get_namespace(self) -> Optional[str]:\r\n        \"\"\"Get namespace from either direct input or connected component\"\"\"\r\n        if hasattr(self, 'namespace_input') and isinstance(self.namespace_input, Message):\r\n            return str(self.namespace_input.text)\r\n        return self.namespace if hasattr(self, 'namespace') else None\r\n\r\n    @check_cached_vector_store\r\n    def build_vector_store(self) -> Pinecone:\r\n        from langchain_pinecone._utilities import DistanceStrategy\r\n        from langchain_pinecone.vectorstores import Pinecone\r\n\r\n        distance_strategy = self.distance_strategy.replace(\" \", \"_\").upper()\r\n        _distance_strategy = DistanceStrategy[distance_strategy]\r\n\r\n        namespace = self.get_namespace()\r\n\r\n        pinecone = Pinecone(\r\n            index_name=self.index_name,\r\n            embedding=self.embedding,\r\n            text_key=self.text_key,\r\n            namespace=namespace,\r\n            distance_strategy=_distance_strategy,\r\n            pinecone_api_key=self.pinecone_api_key,\r\n        )\r\n\r\n        documents = []\r\n        for _input in self.ingest_data or []:\r\n            if isinstance(_input, Data):\r\n                documents.append(_input.to_lc_document())\r\n            else:\r\n                documents.append(_input)\r\n        if documents:\r\n            pinecone.add_documents(documents)\r\n        return pinecone\r\n\r\n    def search_documents(self) -> list[Data]:\r\n        vector_store = self.build_vector_store()\r\n        if self.search_query and isinstance(self.search_query, str) and self.search_query.strip():\r\n            docs = vector_store.similarity_search(\r\n                query=self.search_query,\r\n                k=self.number_of_results,\r\n            )\r\n            data = docs_to_data(docs)\r\n            self.status = data\r\n            return data\r\n        return []",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "distance_strategy": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Cosine",
+                  "Euclidean",
+                  "Dot Product"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "distance_strategy",
+                "value": "Cosine",
+                "display_name": "Distance Strategy",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "index_name": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "index_name",
+                "value": "documentossalvos",
+                "display_name": "Index Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "namespace": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "namespace",
+                "value": "",
+                "display_name": "Namespace",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Namespace for the index.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "number_of_results": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "number_of_results",
+                "value": 4,
+                "display_name": "Number of Results",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Number of results to return.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "pinecone_api_key": {
+                "load_from_db": true,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "pinecone_api_key",
+                "value": "",
+                "display_name": "Pinecone API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "search_query": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "search_query",
+                "value": "",
+                "display_name": "Search Query",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "text_key": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "text_key",
+                "value": "text",
+                "display_name": "Text Key",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Key in the record to use as text.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              }
+            },
+            "description": "Pinecone Vector Store with search capabilities",
+            "icon": "Pinecone",
+            "base_classes": [
+              "Data",
+              "Retriever",
+              "VectorStore"
+            ],
+            "display_name": "PineconeFlexNamespace",
+            "documentation": "https://python.langchain.com/v0.2/docs/integrations/vectorstores/pinecone/",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Retriever"
+                ],
+                "selected": "Retriever",
+                "name": "base_retriever",
+                "display_name": "Retriever",
+                "method": "build_base_retriever",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": []
+              },
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "search_results",
+                "display_name": "Search Results",
+                "method": "search_documents",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": [
+                  "distance_strategy",
+                  "embedding",
+                  "index_name",
+                  "ingest_data",
+                  "namespace",
+                  "namespace_input",
+                  "number_of_results",
+                  "pinecone_api_key",
+                  "search_query",
+                  "text_key"
+                ]
+              },
+              {
+                "types": [
+                  "VectorStore"
+                ],
+                "selected": "VectorStore",
+                "name": "vector_store",
+                "display_name": "Vector Store",
+                "method": "cast_vector_store",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": []
+              }
+            ],
+            "field_order": [
+              "index_name",
+              "namespace",
+              "namespace_input",
+              "distance_strategy",
+              "pinecone_api_key",
+              "text_key",
+              "search_query",
+              "ingest_data",
+              "embedding",
+              "number_of_results"
+            ],
+            "beta": false,
+            "edited": true,
+            "metadata": {},
+            "lf_version": "1.0.19.post1",
+            "official": false
+          },
+          "id": "Pinecone-eWpXP"
+        },
+        "id": "Pinecone-eWpXP",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Pinecone": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "20fcb17f-7448-44c7-b14d-6af5253251d8",
+    "name": "PineconeFlexNamespace",
+    "description": "Pinecone Vector Store with search capabilities",
+    "is_component": true,
+    "liked_by_count": "2",
+    "downloads_count": "24",
+    "metadata": {
+      "Pinecone": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.19.post1",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Pinecone",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "embedding": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "embedding",
+                  "value": "",
+                  "display_name": "Embedding",
+                  "advanced": false,
+                  "input_types": [
+                    "Embeddings"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "ingest_data": {
+                  "trace_as_metadata": true,
+                  "list": true,
+                  "trace_as_input": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "ingest_data",
+                  "value": "",
+                  "display_name": "Ingest Data",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "namespace_input": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "namespace_input",
+                  "value": "",
+                  "display_name": "Namespace Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from langchain_pinecone import Pinecone\r\nfrom axiestudio.base.vectorstores.model import LCVectorStoreComponent, check_cached_vector_store\r\nfrom axiestudio.helpers.data import docs_to_data\r\nfrom axiestudio.io import (\r\n    DataInput,\r\n    DropdownInput,\r\n    HandleInput,\r\n    IntInput,\r\n    MultilineInput,\r\n    SecretStrInput,\r\n    StrInput,\r\n)\r\nfrom axiestudio.schema import Data\r\nfrom typing import Union, Optional\r\nfrom axiestudio.schema.message import Message\r\n\r\nclass PineconeVectorStoreComponent(LCVectorStoreComponent):\r\n    display_name = \"Pinecone\"\r\n    description = \"Pinecone Vector Store with search capabilities\"\r\n    documentation = \"https://python.langchain.com/v0.2/docs/integrations/vectorstores/pinecone/\"\r\n    name = \"Pinecone\"\r\n    icon = \"Pinecone\"\r\n    inputs = [\r\n        StrInput(name=\"index_name\", display_name=\"Index Name\", required=True),\r\n        StrInput(name=\"namespace\", display_name=\"Namespace\", info=\"Namespace for the index.\"),\r\n        HandleInput(name=\"namespace_input\", display_name=\"Namespace Input\", input_types=[\"Message\"]),\r\n        DropdownInput(\r\n            name=\"distance_strategy\",\r\n            display_name=\"Distance Strategy\",\r\n            options=[\"Cosine\", \"Euclidean\", \"Dot Product\"],\r\n            value=\"Cosine\",\r\n            advanced=True,\r\n        ),\r\n        SecretStrInput(name=\"pinecone_api_key\", display_name=\"Pinecone API Key\", required=True),\r\n        StrInput(\r\n            name=\"text_key\",\r\n            display_name=\"Text Key\",\r\n            info=\"Key in the record to use as text.\",\r\n            value=\"text\",\r\n            advanced=True,\r\n        ),\r\n        MultilineInput(name=\"search_query\", display_name=\"Search Query\"),\r\n        DataInput(\r\n            name=\"ingest_data\",\r\n            display_name=\"Ingest Data\",\r\n            is_list=True,\r\n        ),\r\n        HandleInput(name=\"embedding\", display_name=\"Embedding\", input_types=[\"Embeddings\"]),\r\n        IntInput(\r\n            name=\"number_of_results\",\r\n            display_name=\"Number of Results\",\r\n            info=\"Number of results to return.\",\r\n            value=4,\r\n            advanced=True,\r\n        ),\r\n    ]\r\n\r\n    def get_namespace(self) -> Optional[str]:\r\n        \"\"\"Get namespace from either direct input or connected component\"\"\"\r\n        if hasattr(self, 'namespace_input') and isinstance(self.namespace_input, Message):\r\n            return str(self.namespace_input.text)\r\n        return self.namespace if hasattr(self, 'namespace') else None\r\n\r\n    @check_cached_vector_store\r\n    def build_vector_store(self) -> Pinecone:\r\n        from langchain_pinecone._utilities import DistanceStrategy\r\n        from langchain_pinecone.vectorstores import Pinecone\r\n\r\n        distance_strategy = self.distance_strategy.replace(\" \", \"_\").upper()\r\n        _distance_strategy = DistanceStrategy[distance_strategy]\r\n\r\n        namespace = self.get_namespace()\r\n\r\n        pinecone = Pinecone(\r\n            index_name=self.index_name,\r\n            embedding=self.embedding,\r\n            text_key=self.text_key,\r\n            namespace=namespace,\r\n            distance_strategy=_distance_strategy,\r\n            pinecone_api_key=self.pinecone_api_key,\r\n        )\r\n\r\n        documents = []\r\n        for _input in self.ingest_data or []:\r\n            if isinstance(_input, Data):\r\n                documents.append(_input.to_lc_document())\r\n            else:\r\n                documents.append(_input)\r\n        if documents:\r\n            pinecone.add_documents(documents)\r\n        return pinecone\r\n\r\n    def search_documents(self) -> list[Data]:\r\n        vector_store = self.build_vector_store()\r\n        if self.search_query and isinstance(self.search_query, str) and self.search_query.strip():\r\n            docs = vector_store.similarity_search(\r\n                query=self.search_query,\r\n                k=self.number_of_results,\r\n            )\r\n            data = docs_to_data(docs)\r\n            self.status = data\r\n            return data\r\n        return []",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "distance_strategy": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Cosine",
+                    "Euclidean",
+                    "Dot Product"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "distance_strategy",
+                  "value": "Cosine",
+                  "display_name": "Distance Strategy",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "index_name": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "index_name",
+                  "value": "documentossalvos",
+                  "display_name": "Index Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "namespace": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "namespace",
+                  "value": "",
+                  "display_name": "Namespace",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Namespace for the index.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "number_of_results": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "number_of_results",
+                  "value": 4,
+                  "display_name": "Number of Results",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Number of results to return.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "pinecone_api_key": {
+                  "load_from_db": true,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "pinecone_api_key",
+                  "value": "",
+                  "display_name": "Pinecone API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "search_query": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "search_query",
+                  "value": "",
+                  "display_name": "Search Query",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "text_key": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "text_key",
+                  "value": "text",
+                  "display_name": "Text Key",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Key in the record to use as text.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                }
+              },
+              "description": "Pinecone Vector Store with search capabilities",
+              "icon": "Pinecone",
+              "base_classes": [
+                "Data",
+                "Retriever",
+                "VectorStore"
+              ],
+              "display_name": "PineconeFlexNamespace",
+              "documentation": "https://python.langchain.com/v0.2/docs/integrations/vectorstores/pinecone/",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Retriever"
+                  ],
+                  "selected": "Retriever",
+                  "name": "base_retriever",
+                  "display_name": "Retriever",
+                  "method": "build_base_retriever",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": []
+                },
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "search_results",
+                  "display_name": "Search Results",
+                  "method": "search_documents",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": [
+                    "distance_strategy",
+                    "embedding",
+                    "index_name",
+                    "ingest_data",
+                    "namespace",
+                    "namespace_input",
+                    "number_of_results",
+                    "pinecone_api_key",
+                    "search_query",
+                    "text_key"
+                  ]
+                },
+                {
+                  "types": [
+                    "VectorStore"
+                  ],
+                  "selected": "VectorStore",
+                  "name": "vector_store",
+                  "display_name": "Vector Store",
+                  "method": "cast_vector_store",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": []
+                }
+              ],
+              "field_order": [
+                "index_name",
+                "namespace",
+                "namespace_input",
+                "distance_strategy",
+                "pinecone_api_key",
+                "text_key",
+                "search_query",
+                "ingest_data",
+                "embedding",
+                "number_of_results"
+              ],
+              "beta": false,
+              "edited": true,
+              "metadata": {},
+              "lf_version": "1.0.19.post1",
+              "official": false
+            },
+            "id": "Pinecone-eWpXP"
+          },
+          "id": "Pinecone-eWpXP",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-29T18:29:02.846Z",
+    "date_updated": "2024-10-29T18:29:02.894Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "0bfa5b3f-b077-4257-b45f-4c8adcfc64bc",
+    "user_created": {
+      "username": "MarceloSMiranda",
+      "first_name": "Marcelo",
+      "last_name": "Miranda",
+      "id": "0bfa5b3f-b077-4257-b45f-4c8adcfc64bc"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Vector Store",
+          "id": "cd614b49-dd57-4c8b-a5eb-f8bb5f957b9a"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.230Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,337 @@
+{
+  "id": "8a6496b9-a20f-4353-87db-9aef3fe2201d",
+  "name": "Fetch Recursive URLs",
+  "description": "Fetch URLs from a given URL and recursively extract links. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "f2data",
+    "first_name": "Guilherme",
+    "last_name": "Janku Achcar",
+    "id": "ec09c754-36f5-4aca-b455-187329ae2984",
+    "full_name": "Guilherme Janku Achcar"
+  },
+  "store_url": "https://www.langflow.store/store/component/8a6496b9-a20f-4353-87db-9aef3fe2201d",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-11T13:00:21.453Z",
+    "updated": "2024-07-11T13:00:21.514Z",
+    "downloaded": "2025-08-19T17:50:06.446Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.6",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "URL",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import re\r\nimport requests\r\nfrom bs4 import BeautifulSoup\r\nfrom urllib.parse import urljoin, urlparse\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.inputs import MessageTextInput, BoolInput, IntInput\r\nfrom axiestudio.template import Output\r\nfrom axiestudio.schema import Data\r\n\r\nclass URLComponent(Component):\r\n    display_name = \"URL Finder\"\r\n    description = \"Fetch URLs from a given URL and recursively extract links.\"\r\n    icon = \"link\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"urls\",\r\n            display_name=\"URLs\",\r\n            info=\"Enter one or more URLs, separated by commas.\",\r\n            is_list=True,\r\n        ),\r\n        BoolInput(\r\n            name=\"same_domain\",\r\n            display_name=\"Same Domain\",\r\n            info=\"Ensure URLs are from the same domain.\",\r\n        ),\r\n        IntInput(\r\n            name=\"max_depth\",\r\n            display_name=\"Max Depth\",\r\n            info=\"Maximum depth for recursive URL fetching.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Extracted URLs\", name=\"extracted_urls\", method=\"fetch_urls\"),\r\n    ]\r\n\r\n    def ensure_url(self, string: str) -> str:\r\n        \"\"\"\r\n        Ensures the given string is a URL by adding 'http://' if it doesn't start with 'http://' or 'https://'.\r\n        Raises an error if the string is not a valid URL.\r\n\r\n        Parameters:\r\n            string (str): The string to be checked and possibly modified.\r\n\r\n        Returns:\r\n            str: The modified string that is ensured to be a URL.\r\n\r\n        Raises:\r\n            ValueError: If the string is not a valid URL.\r\n        \"\"\"\r\n        if not string.startswith((\"http://\", \"https://\")):\r\n            string = \"http://\" + string\r\n\r\n        # Basic URL validation regex\r\n        url_regex = re.compile(\r\n            r\"^(https?:\\/\\/)?\"  # optional protocol\r\n            r\"(www\\.)?\"  # optional www\r\n            r\"([a-zA-Z0-9.-]+)\"  # domain\r\n            r\"(\\.[a-zA-Z]{2,})?\"  # top-level domain\r\n            r\"(:\\d+)?\"  # optional port\r\n            r\"(\\/[^\\s]*)?$\",  # optional path\r\n            re.IGNORECASE,\r\n        )\r\n\r\n        if not url_regex.match(string):\r\n            raise ValueError(f\"Invalid URL: {string}\")\r\n\r\n        return string\r\n\r\n    def fetch_links(self, url: str, same_domain: bool) -> list:\r\n        \"\"\"\r\n        Fetches all links from the given URL. If same_domain is True, only fetch links from the same domain.\r\n\r\n        Parameters:\r\n            url (str): The URL to fetch links from.\r\n            same_domain (bool): Whether to restrict links to the same domain.\r\n\r\n        Returns:\r\n            list: A list of URLs.\r\n        \"\"\"\r\n        response = requests.get(url)\r\n        soup = BeautifulSoup(response.content, 'html.parser')\r\n        base_url = urlparse(url)\r\n\r\n        links = set()\r\n        for anchor in soup.find_all('a', href=True):\r\n            link = urljoin(url, anchor['href'])\r\n            if same_domain:\r\n                link_parsed = urlparse(link)\r\n                if link_parsed.netloc != base_url.netloc:\r\n                    continue\r\n            links.add(link)\r\n        \r\n        return list(links)\r\n\r\n    def recursive_fetch(self, urls: list, same_domain: bool, max_depth: int, current_depth: int = 0) -> set:\r\n        \"\"\"\r\n        Recursively fetch links from the given URLs up to the specified maximum depth.\r\n\r\n        Parameters:\r\n            urls (list): The list of URLs to start fetching from.\r\n            same_domain (bool): Whether to restrict links to the same domain.\r\n            max_depth (int): Maximum depth for recursion.\r\n            current_depth (int): Current depth of recursion.\r\n\r\n        Returns:\r\n            set: A set of all fetched URLs.\r\n        \"\"\"\r\n        if current_depth >= max_depth:\r\n            return set(urls)\r\n\r\n        all_urls = set(urls)\r\n        for url in urls:\r\n            new_links = self.fetch_links(url, same_domain)\r\n            all_urls.update(new_links)\r\n            if current_depth + 1 < max_depth:\r\n                all_urls.update(self.recursive_fetch(new_links, same_domain, max_depth, current_depth + 1))\r\n\r\n        return all_urls\r\n\r\n    def fetch_urls(self) -> list[Data]:\r\n        initial_urls = [self.ensure_url(url.strip()) for url in self.urls if url.strip()]\r\n        same_domain = self.same_domain\r\n        max_depth = self.max_depth\r\n\r\n        all_urls = self.recursive_fetch(initial_urls, same_domain, max_depth)\r\n        \r\n        return [Data(text=url) for url in all_urls]\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "max_depth": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "3",
+                "name": "max_depth",
+                "display_name": "Max Depth",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Maximum depth for recursive URL fetching.",
+                "title_case": false,
+                "type": "int"
+              },
+              "same_domain": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": true,
+                "name": "same_domain",
+                "display_name": "Same Domain",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Ensure URLs are from the same domain.",
+                "title_case": false,
+                "type": "bool"
+              },
+              "urls": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": [
+                  "https://www.axiestudio.org/iadevs"
+                ],
+                "name": "urls",
+                "display_name": "URLs",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter one or more URLs, separated by commas.",
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "Fetch URLs from a given URL and recursively extract links.",
+            "icon": "link",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Fetch Recursive URLs",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "extracted_urls",
+                "display_name": "Extracted URLs",
+                "method": "fetch_urls",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "hidden": false
+              }
+            ],
+            "field_order": [
+              "urls",
+              "same_domain",
+              "max_depth"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "URL-Awn1e",
+          "description": "Fetch URLs from a given URL and recursively extract links.",
+          "display_name": "URL"
+        },
+        "id": "URL-Awn1e",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "URL": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "8a6496b9-a20f-4353-87db-9aef3fe2201d",
+    "name": "Fetch Recursive URLs",
+    "description": "Fetch URLs from a given URL and recursively extract links.",
+    "is_component": true,
+    "liked_by_count": "14",
+    "downloads_count": "81",
+    "metadata": {
+      "URL": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.6",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "URL",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import re\r\nimport requests\r\nfrom bs4 import BeautifulSoup\r\nfrom urllib.parse import urljoin, urlparse\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.inputs import MessageTextInput, BoolInput, IntInput\r\nfrom axiestudio.template import Output\r\nfrom axiestudio.schema import Data\r\n\r\nclass URLComponent(Component):\r\n    display_name = \"URL Finder\"\r\n    description = \"Fetch URLs from a given URL and recursively extract links.\"\r\n    icon = \"link\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"urls\",\r\n            display_name=\"URLs\",\r\n            info=\"Enter one or more URLs, separated by commas.\",\r\n            is_list=True,\r\n        ),\r\n        BoolInput(\r\n            name=\"same_domain\",\r\n            display_name=\"Same Domain\",\r\n            info=\"Ensure URLs are from the same domain.\",\r\n        ),\r\n        IntInput(\r\n            name=\"max_depth\",\r\n            display_name=\"Max Depth\",\r\n            info=\"Maximum depth for recursive URL fetching.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Extracted URLs\", name=\"extracted_urls\", method=\"fetch_urls\"),\r\n    ]\r\n\r\n    def ensure_url(self, string: str) -> str:\r\n        \"\"\"\r\n        Ensures the given string is a URL by adding 'http://' if it doesn't start with 'http://' or 'https://'.\r\n        Raises an error if the string is not a valid URL.\r\n\r\n        Parameters:\r\n            string (str): The string to be checked and possibly modified.\r\n\r\n        Returns:\r\n            str: The modified string that is ensured to be a URL.\r\n\r\n        Raises:\r\n            ValueError: If the string is not a valid URL.\r\n        \"\"\"\r\n        if not string.startswith((\"http://\", \"https://\")):\r\n            string = \"http://\" + string\r\n\r\n        # Basic URL validation regex\r\n        url_regex = re.compile(\r\n            r\"^(https?:\\/\\/)?\"  # optional protocol\r\n            r\"(www\\.)?\"  # optional www\r\n            r\"([a-zA-Z0-9.-]+)\"  # domain\r\n            r\"(\\.[a-zA-Z]{2,})?\"  # top-level domain\r\n            r\"(:\\d+)?\"  # optional port\r\n            r\"(\\/[^\\s]*)?$\",  # optional path\r\n            re.IGNORECASE,\r\n        )\r\n\r\n        if not url_regex.match(string):\r\n            raise ValueError(f\"Invalid URL: {string}\")\r\n\r\n        return string\r\n\r\n    def fetch_links(self, url: str, same_domain: bool) -> list:\r\n        \"\"\"\r\n        Fetches all links from the given URL. If same_domain is True, only fetch links from the same domain.\r\n\r\n        Parameters:\r\n            url (str): The URL to fetch links from.\r\n            same_domain (bool): Whether to restrict links to the same domain.\r\n\r\n        Returns:\r\n            list: A list of URLs.\r\n        \"\"\"\r\n        response = requests.get(url)\r\n        soup = BeautifulSoup(response.content, 'html.parser')\r\n        base_url = urlparse(url)\r\n\r\n        links = set()\r\n        for anchor in soup.find_all('a', href=True):\r\n            link = urljoin(url, anchor['href'])\r\n            if same_domain:\r\n                link_parsed = urlparse(link)\r\n                if link_parsed.netloc != base_url.netloc:\r\n                    continue\r\n            links.add(link)\r\n        \r\n        return list(links)\r\n\r\n    def recursive_fetch(self, urls: list, same_domain: bool, max_depth: int, current_depth: int = 0) -> set:\r\n        \"\"\"\r\n        Recursively fetch links from the given URLs up to the specified maximum depth.\r\n\r\n        Parameters:\r\n            urls (list): The list of URLs to start fetching from.\r\n            same_domain (bool): Whether to restrict links to the same domain.\r\n            max_depth (int): Maximum depth for recursion.\r\n            current_depth (int): Current depth of recursion.\r\n\r\n        Returns:\r\n            set: A set of all fetched URLs.\r\n        \"\"\"\r\n        if current_depth >= max_depth:\r\n            return set(urls)\r\n\r\n        all_urls = set(urls)\r\n        for url in urls:\r\n            new_links = self.fetch_links(url, same_domain)\r\n            all_urls.update(new_links)\r\n            if current_depth + 1 < max_depth:\r\n                all_urls.update(self.recursive_fetch(new_links, same_domain, max_depth, current_depth + 1))\r\n\r\n        return all_urls\r\n\r\n    def fetch_urls(self) -> list[Data]:\r\n        initial_urls = [self.ensure_url(url.strip()) for url in self.urls if url.strip()]\r\n        same_domain = self.same_domain\r\n        max_depth = self.max_depth\r\n\r\n        all_urls = self.recursive_fetch(initial_urls, same_domain, max_depth)\r\n        \r\n        return [Data(text=url) for url in all_urls]\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "max_depth": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "3",
+                  "name": "max_depth",
+                  "display_name": "Max Depth",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Maximum depth for recursive URL fetching.",
+                  "title_case": false,
+                  "type": "int"
+                },
+                "same_domain": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": true,
+                  "name": "same_domain",
+                  "display_name": "Same Domain",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Ensure URLs are from the same domain.",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "urls": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": [
+                    "https://www.axiestudio.org/iadevs"
+                  ],
+                  "name": "urls",
+                  "display_name": "URLs",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter one or more URLs, separated by commas.",
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "Fetch URLs from a given URL and recursively extract links.",
+              "icon": "link",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Fetch Recursive URLs",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "extracted_urls",
+                  "display_name": "Extracted URLs",
+                  "method": "fetch_urls",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "hidden": false
+                }
+              ],
+              "field_order": [
+                "urls",
+                "same_domain",
+                "max_depth"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "URL-Awn1e",
+            "description": "Fetch URLs from a given URL and recursively extract links.",
+            "display_name": "URL"
+          },
+          "id": "URL-Awn1e",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-07-11T13:00:21.453Z",
+    "date_updated": "2024-07-11T13:00:21.514Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "ec09c754-36f5-4aca-b455-187329ae2984",
+    "user_created": {
+      "username": "f2data",
+      "first_name": "Guilherme",
+      "last_name": "Janku Achcar",
+      "id": "ec09c754-36f5-4aca-b455-187329ae2984"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.944Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

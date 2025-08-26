@@ -1,0 +1,425 @@
+{
+  "id": "57089c68-9ccc-42ab-846d-d51cb8feef09",
+  "name": "MongoDB Message Writer",
+  "description": "Writes a message to MongoDB. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "oaklight",
+    "first_name": "Peng",
+    "last_name": "Ding",
+    "id": "a2e8c50e-0f99-48ab-9186-96d917ba655e",
+    "full_name": "Peng Ding"
+  },
+  "store_url": "https://www.langflow.store/store/component/57089c68-9ccc-42ab-846d-d51cb8feef09",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-05-19T23:24:45.552Z",
+    "updated": "2024-05-19T23:31:31.434Z",
+    "downloaded": "2025-08-19T17:50:05.042Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Memory",
+        "id": "e660a9ea-35fb-4587-bfbd-13dba4c556d1"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.0a33",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "collection_name": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "collection_name",
+                "display_name": "Collection Name",
+                "advanced": false,
+                "input_types": [
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "The name of the MongoDB collection.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "connection_string": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "connection_string",
+                "display_name": "MongoDB Connection String",
+                "advanced": false,
+                "input_types": [
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "The connection string to connect to MongoDB.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "database_name": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "database_name",
+                "display_name": "Database Name",
+                "advanced": false,
+                "input_types": [
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "The name of the MongoDB database.",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "message_history"
+              },
+              "input_value": {
+                "type": "Record",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Input Record",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Record to write to MongoDB.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "session_id": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "session_id",
+                "display_name": "Session ID",
+                "advanced": false,
+                "input_types": [
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "The session ID for chat history.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from datetime import datetime\nfrom typing import cast, Dict, Optional\n\nfrom axiestudio.base.memory.memory import BaseMemoryComponent\nfrom axiestudio.field_typing import Text\nfrom axiestudio.schema.schema import Record\nfrom pymongo import errors, MongoClient\nfrom pymongo.collection import Collection\n\n\nclass MongoDBMessageWriterComponent(BaseMemoryComponent):\n    display_name = \"MongoDB Message Writer\"\n    description = \"Writes a message to MongoDB.\"\n\n    def build_config(self):\n        return {\n            \"connection_string\": {\n                \"display_name\": \"MongoDB Connection String\",\n                \"info\": \"The connection string to connect to MongoDB.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"database_name\": {\n                \"display_name\": \"Database Name\",\n                \"info\": \"The name of the MongoDB database.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"collection_name\": {\n                \"display_name\": \"Collection Name\",\n                \"info\": \"The name of the MongoDB collection.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"session_id\": {\n                \"display_name\": \"Session ID\",\n                \"info\": \"The session ID for chat history.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"input_value\": {\n                \"display_name\": \"Input Record\",\n                \"info\": \"Record to write to MongoDB.\",\n            },\n        }\n\n    def add_message(\n        self,\n        memory: Collection,\n        sender: Text,\n        sender_name: Text,\n        text: Text,\n        session_id: Text,\n        metadata: Optional[Dict] = None,\n        **kwargs,\n    ):\n        \"\"\"\n        Adds a message to the MongoDB collection.\n\n        Args:\n            sender (Text): The type of the message sender. Valid values are \"Machine\" or \"User\".\n            sender_name (Text): The name of the message sender.\n            text (Text): The content of the message.\n            session_id (Text): The session ID associated with the message.\n            metadata (dict | None, optional): Additional metadata for the message. Defaults to None.\n\n        Raises:\n            ValueError: If the MongoClient instance is not provided.\n        \"\"\"\n        # memory: Collection = cast(Collection, kwargs.get(\"memory\"))\n        # if not memory:\n        #     raise ValueError(\"pymongo.collection.Collection object is required.\")\n\n        if metadata is None:\n            metadata = {}\n\n        # Construct the message document\n        message_document = {\n            \"sender\": sender,\n            \"sender_name\": sender_name,\n            \"text\": text,\n            \"session_id\": session_id,\n            \"metadata\": metadata,\n            \"timestamp\": kwargs.get(\"timestamp\") or datetime.now(),\n        }\n\n        # Insert the message document into the collection\n        try:\n            memory.insert_one(message_document)\n        except errors.PyMongoError as e:\n            raise errors.PyMongoError(f\"Failed to write message to MongoDB: {e}\")\n\n    def build(\n        self,\n        input_value: Record,\n        session_id: Text,\n        connection_string: Text,\n        database_name: Text,\n        collection_name: Text,\n    ) -> Record:\n\n        try:\n            client = MongoClient(connection_string)\n            memory = client[database_name][collection_name]\n\n            self.add_message(memory=memory, **input_value.data)\n            self.status = f\"Added message to MongoDB for session {session_id}\"\n            return input_value\n        except errors.ConnectionFailure as error:\n            raise ConnectionError(f\"Could not connect to MongoDB: {error}\")\n\n\n# Usage example:\n# mongo_writer = MongoDBMessageWriterComponent()\n# input_record = Record(data={\n#     \"sender\": \"User\",\n#     \"sender_name\": \"John Doe\",\n#     \"text\": \"Hello, this is a test message.\"\n# })\n# written_record = mongo_writer.build(\n#     input_value=input_record,\n#     connection_string=\"mongodb://localhost:27017/\",\n#     database_name=\"my_database\",\n#     collection_name=\"my_collection\",\n#     session_id=\"my_session\"\n# )\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Writes a message to MongoDB.",
+            "icon": "history",
+            "base_classes": [
+              "Record"
+            ],
+            "display_name": "MongoDB Message Writer",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null,
+              "session_id": null,
+              "connection_string": null,
+              "database_name": null,
+              "collection_name": null
+            },
+            "output_types": [
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": true,
+            "official": false
+          },
+          "id": "CustomComponent-YREYR"
+        },
+        "id": "CustomComponent-YREYR",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "57089c68-9ccc-42ab-846d-d51cb8feef09",
+    "name": "MongoDB Message Writer",
+    "description": "Writes a message to MongoDB.",
+    "is_component": true,
+    "liked_by_count": "14",
+    "downloads_count": "140",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.0a33",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "collection_name": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "collection_name",
+                  "display_name": "Collection Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "The name of the MongoDB collection.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "connection_string": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "connection_string",
+                  "display_name": "MongoDB Connection String",
+                  "advanced": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "The connection string to connect to MongoDB.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "database_name": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "database_name",
+                  "display_name": "Database Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "The name of the MongoDB database.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "message_history"
+                },
+                "input_value": {
+                  "type": "Record",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Input Record",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Record to write to MongoDB.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "session_id": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "session_id",
+                  "display_name": "Session ID",
+                  "advanced": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "The session ID for chat history.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from datetime import datetime\nfrom typing import cast, Dict, Optional\n\nfrom axiestudio.base.memory.memory import BaseMemoryComponent\nfrom axiestudio.field_typing import Text\nfrom axiestudio.schema.schema import Record\nfrom pymongo import errors, MongoClient\nfrom pymongo.collection import Collection\n\n\nclass MongoDBMessageWriterComponent(BaseMemoryComponent):\n    display_name = \"MongoDB Message Writer\"\n    description = \"Writes a message to MongoDB.\"\n\n    def build_config(self):\n        return {\n            \"connection_string\": {\n                \"display_name\": \"MongoDB Connection String\",\n                \"info\": \"The connection string to connect to MongoDB.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"database_name\": {\n                \"display_name\": \"Database Name\",\n                \"info\": \"The name of the MongoDB database.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"collection_name\": {\n                \"display_name\": \"Collection Name\",\n                \"info\": \"The name of the MongoDB collection.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"session_id\": {\n                \"display_name\": \"Session ID\",\n                \"info\": \"The session ID for chat history.\",\n                \"input_types\": [\"Text\"],\n            },\n            \"input_value\": {\n                \"display_name\": \"Input Record\",\n                \"info\": \"Record to write to MongoDB.\",\n            },\n        }\n\n    def add_message(\n        self,\n        memory: Collection,\n        sender: Text,\n        sender_name: Text,\n        text: Text,\n        session_id: Text,\n        metadata: Optional[Dict] = None,\n        **kwargs,\n    ):\n        \"\"\"\n        Adds a message to the MongoDB collection.\n\n        Args:\n            sender (Text): The type of the message sender. Valid values are \"Machine\" or \"User\".\n            sender_name (Text): The name of the message sender.\n            text (Text): The content of the message.\n            session_id (Text): The session ID associated with the message.\n            metadata (dict | None, optional): Additional metadata for the message. Defaults to None.\n\n        Raises:\n            ValueError: If the MongoClient instance is not provided.\n        \"\"\"\n        # memory: Collection = cast(Collection, kwargs.get(\"memory\"))\n        # if not memory:\n        #     raise ValueError(\"pymongo.collection.Collection object is required.\")\n\n        if metadata is None:\n            metadata = {}\n\n        # Construct the message document\n        message_document = {\n            \"sender\": sender,\n            \"sender_name\": sender_name,\n            \"text\": text,\n            \"session_id\": session_id,\n            \"metadata\": metadata,\n            \"timestamp\": kwargs.get(\"timestamp\") or datetime.now(),\n        }\n\n        # Insert the message document into the collection\n        try:\n            memory.insert_one(message_document)\n        except errors.PyMongoError as e:\n            raise errors.PyMongoError(f\"Failed to write message to MongoDB: {e}\")\n\n    def build(\n        self,\n        input_value: Record,\n        session_id: Text,\n        connection_string: Text,\n        database_name: Text,\n        collection_name: Text,\n    ) -> Record:\n\n        try:\n            client = MongoClient(connection_string)\n            memory = client[database_name][collection_name]\n\n            self.add_message(memory=memory, **input_value.data)\n            self.status = f\"Added message to MongoDB for session {session_id}\"\n            return input_value\n        except errors.ConnectionFailure as error:\n            raise ConnectionError(f\"Could not connect to MongoDB: {error}\")\n\n\n# Usage example:\n# mongo_writer = MongoDBMessageWriterComponent()\n# input_record = Record(data={\n#     \"sender\": \"User\",\n#     \"sender_name\": \"John Doe\",\n#     \"text\": \"Hello, this is a test message.\"\n# })\n# written_record = mongo_writer.build(\n#     input_value=input_record,\n#     connection_string=\"mongodb://localhost:27017/\",\n#     database_name=\"my_database\",\n#     collection_name=\"my_collection\",\n#     session_id=\"my_session\"\n# )\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Writes a message to MongoDB.",
+              "icon": "history",
+              "base_classes": [
+                "Record"
+              ],
+              "display_name": "MongoDB Message Writer",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null,
+                "session_id": null,
+                "connection_string": null,
+                "database_name": null,
+                "collection_name": null
+              },
+              "output_types": [
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": true,
+              "official": false
+            },
+            "id": "CustomComponent-YREYR"
+          },
+          "id": "CustomComponent-YREYR",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-05-19T23:24:45.552Z",
+    "date_updated": "2024-05-19T23:31:31.434Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "a2e8c50e-0f99-48ab-9186-96d917ba655e",
+    "user_created": {
+      "username": "oaklight",
+      "first_name": "Peng",
+      "last_name": "Ding",
+      "id": "a2e8c50e-0f99-48ab-9186-96d917ba655e"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Memory",
+          "id": "e660a9ea-35fb-4587-bfbd-13dba4c556d1"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.138Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

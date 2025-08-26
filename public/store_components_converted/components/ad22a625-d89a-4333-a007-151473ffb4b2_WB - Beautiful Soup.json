@@ -1,0 +1,421 @@
+{
+  "id": "ad22a625-d89a-4333-a007-151473ffb4b2",
+  "name": "WB - Beautiful Soup",
+  "description": "Scrape web content using BeautifulSoup. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "joaoguilhermeS",
+    "first_name": "João",
+    "last_name": "Oliveira",
+    "id": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "full_name": "João Oliveira"
+  },
+  "store_url": "https://www.langflow.store/store/component/ad22a625-d89a-4333-a007-151473ffb4b2",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-15T19:10:07.231Z",
+    "updated": "2024-10-15T19:10:07.297Z",
+    "downloaded": "2025-08-19T17:50:07.694Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "beautifulsoup_scrape_api",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional, List, Dict\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom axiestudio.inputs import MessageTextInput, IntInput, DictInput\nfrom axiestudio.schema import Data\nfrom axiestudio.field_typing import Tool\nfrom langchain.tools import StructuredTool\nfrom pydantic import BaseModel, Field\nimport requests\nfrom bs4 import BeautifulSoup\nfrom urllib.parse import urljoin, urlparse\n\nclass BeautifulSoupScrapeApiComponent(LCToolComponent):\n    display_name: str = \"BeautifulSoup Scrape API\"\n    description: str = \"Scrape web content using BeautifulSoup.\"\n    name = \"beautifulsoup_scrape_api\"\n    documentation: str = \"https://www.crummy.com/software/BeautifulSoup/bs4/doc/\"\n    icon = \"loader-circle\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"url\",\n            display_name=\"URL\",\n            info=\"The URL to scrape.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            info=\"Timeout in seconds for the request.\",\n            value=10,\n        ),\n        DictInput(\n            name=\"pageOptions\",\n            display_name=\"Page Options\",\n            info=\"The page options to send with the request.\",\n            advanced=True,\n        ),\n        DictInput(\n            name=\"extractorOptions\",\n            display_name=\"Extractor Options\",\n            info=\"The extractor options to send with the request.\",\n            advanced=True,\n        ),\n    ]\n\n    class BeautifulSoupScrapeApiSchema(BaseModel):\n        url: str = Field(..., description=\"The URL to scrape\")\n        timeout: int = Field(default=10, description=\"Timeout in seconds for the request\")\n        pageOptions: Optional[dict] = Field(default=None, description=\"The page options to send with the request\")\n        extractorOptions: Optional[dict] = Field(default=None, description=\"The extractor options to send with the request\")\n\n    def run_model(self) -> Data:\n        results = self.scrape_url(\n            url=self.url,\n            timeout=self.timeout,\n            pageOptions=self.pageOptions,\n            extractorOptions=self.extractorOptions,\n        )\n        data = Data(data=results)\n        self.status = data\n        return data\n\n    def scrape_url(self, url: str, timeout: int = 10, pageOptions: Optional[dict] = None, extractorOptions: Optional[dict] = None) -> Dict[str, List[Dict[str, str]]]:\n        urls = self.extract_urls(url, timeout, pageOptions)\n        scraped_data = []\n        for url in urls:\n            data = self.scrape_page(url, timeout)\n            scraped_data.append(data)\n        return {\"scraped_data\": scraped_data}\n\n    def extract_urls(self, base_url: str, timeout: int, pageOptions: Optional[dict]) -> List[str]:\n        response = requests.get(base_url, timeout=timeout, params=pageOptions)\n        if response.status_code == 200:\n            soup = BeautifulSoup(response.text, 'html.parser')\n            a_tags = soup.find_all('a')\n            urls = []\n            base_parsed = urlparse(base_url)\n            base_netloc = base_parsed.netloc\n            for tag in a_tags:\n                href = tag.get('href')\n                if href:\n                    full_url = urljoin(base_url, href)\n                    parsed_url = urlparse(full_url)\n                    # Only include URLs with HTTP or HTTPS schemes and same netloc\n                    if parsed_url.scheme in ['http', 'https'] and parsed_url.netloc == base_netloc:\n                        urls.append(full_url)\n            return list(set(urls))  # Remove duplicate URLs\n        else:\n            print(f\"Error accessing the page. Status code: {response.status_code}\")\n            return []\n\n    def scrape_page(self, url: str, timeout: int) -> Dict[str, str]:\n        response = requests.get(url, timeout=timeout)\n        if response.status_code == 200:\n            soup = BeautifulSoup(response.text, 'html.parser')\n            # Collect page title as an example\n            title = soup.title.string if soup.title else 'No Title'\n            # Collect all text from the page as an example\n            content = soup.get_text(separator=\"\\n\", strip=True)\n            return {\n                'url': url,\n                'title': title,\n                'content': content\n            }\n        else:\n            print(f\"Error accessing the page {url}. Status code: {response.status_code}\")\n            return {\n                'url': url,\n                'title': 'Error accessing the page',\n                'content': ''\n            }\n\n    def build_tool(self) -> Tool:\n        return StructuredTool.from_function(\n            name=\"beautifulsoup_scrape_api\",\n            description=\"Scrape web content using BeautifulSoup. Input should be a dictionary with 'url' and optional 'timeout', 'pageOptions', and 'extractorOptions'.\",\n            func=self.scrape_url,\n            args_schema=self.BeautifulSoupScrapeApiSchema,\n        )\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "extractorOptions": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "extractorOptions",
+                "value": {},
+                "display_name": "Extractor Options",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The extractor options to send with the request.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "pageOptions": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "pageOptions",
+                "value": {},
+                "display_name": "Page Options",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The page options to send with the request.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "timeout",
+                "value": "10000",
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Timeout in seconds for the request.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "url": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "url",
+                "value": "",
+                "display_name": "URL",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The URL to scrape.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Scrape web content using BeautifulSoup.",
+            "icon": "loader-circle",
+            "base_classes": [
+              "Data",
+              "Tool"
+            ],
+            "display_name": "WB - Beautiful Soup",
+            "documentation": "https://www.crummy.com/software/BeautifulSoup/bs4/doc/",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": [
+                  "extractorOptions",
+                  "pageOptions",
+                  "timeout",
+                  "url"
+                ]
+              },
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": [
+                  "extractorOptions",
+                  "pageOptions",
+                  "timeout",
+                  "url"
+                ]
+              }
+            ],
+            "field_order": [
+              "url",
+              "timeout",
+              "pageOptions",
+              "extractorOptions"
+            ],
+            "beta": false,
+            "edited": true,
+            "metadata": {},
+            "lf_version": "1.0.19",
+            "official": false
+          },
+          "id": "beautifulsoup_scrape_api-X2Oxr"
+        },
+        "id": "beautifulsoup_scrape_api-X2Oxr",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "beautifulsoup_scrape_api": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "ad22a625-d89a-4333-a007-151473ffb4b2",
+    "name": "WB - Beautiful Soup",
+    "description": "Scrape web content using BeautifulSoup.",
+    "is_component": true,
+    "liked_by_count": "11",
+    "downloads_count": "122",
+    "metadata": {
+      "beautifulsoup_scrape_api": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.19",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "beautifulsoup_scrape_api",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional, List, Dict\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom axiestudio.inputs import MessageTextInput, IntInput, DictInput\nfrom axiestudio.schema import Data\nfrom axiestudio.field_typing import Tool\nfrom langchain.tools import StructuredTool\nfrom pydantic import BaseModel, Field\nimport requests\nfrom bs4 import BeautifulSoup\nfrom urllib.parse import urljoin, urlparse\n\nclass BeautifulSoupScrapeApiComponent(LCToolComponent):\n    display_name: str = \"BeautifulSoup Scrape API\"\n    description: str = \"Scrape web content using BeautifulSoup.\"\n    name = \"beautifulsoup_scrape_api\"\n    documentation: str = \"https://www.crummy.com/software/BeautifulSoup/bs4/doc/\"\n    icon = \"loader-circle\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"url\",\n            display_name=\"URL\",\n            info=\"The URL to scrape.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            info=\"Timeout in seconds for the request.\",\n            value=10,\n        ),\n        DictInput(\n            name=\"pageOptions\",\n            display_name=\"Page Options\",\n            info=\"The page options to send with the request.\",\n            advanced=True,\n        ),\n        DictInput(\n            name=\"extractorOptions\",\n            display_name=\"Extractor Options\",\n            info=\"The extractor options to send with the request.\",\n            advanced=True,\n        ),\n    ]\n\n    class BeautifulSoupScrapeApiSchema(BaseModel):\n        url: str = Field(..., description=\"The URL to scrape\")\n        timeout: int = Field(default=10, description=\"Timeout in seconds for the request\")\n        pageOptions: Optional[dict] = Field(default=None, description=\"The page options to send with the request\")\n        extractorOptions: Optional[dict] = Field(default=None, description=\"The extractor options to send with the request\")\n\n    def run_model(self) -> Data:\n        results = self.scrape_url(\n            url=self.url,\n            timeout=self.timeout,\n            pageOptions=self.pageOptions,\n            extractorOptions=self.extractorOptions,\n        )\n        data = Data(data=results)\n        self.status = data\n        return data\n\n    def scrape_url(self, url: str, timeout: int = 10, pageOptions: Optional[dict] = None, extractorOptions: Optional[dict] = None) -> Dict[str, List[Dict[str, str]]]:\n        urls = self.extract_urls(url, timeout, pageOptions)\n        scraped_data = []\n        for url in urls:\n            data = self.scrape_page(url, timeout)\n            scraped_data.append(data)\n        return {\"scraped_data\": scraped_data}\n\n    def extract_urls(self, base_url: str, timeout: int, pageOptions: Optional[dict]) -> List[str]:\n        response = requests.get(base_url, timeout=timeout, params=pageOptions)\n        if response.status_code == 200:\n            soup = BeautifulSoup(response.text, 'html.parser')\n            a_tags = soup.find_all('a')\n            urls = []\n            base_parsed = urlparse(base_url)\n            base_netloc = base_parsed.netloc\n            for tag in a_tags:\n                href = tag.get('href')\n                if href:\n                    full_url = urljoin(base_url, href)\n                    parsed_url = urlparse(full_url)\n                    # Only include URLs with HTTP or HTTPS schemes and same netloc\n                    if parsed_url.scheme in ['http', 'https'] and parsed_url.netloc == base_netloc:\n                        urls.append(full_url)\n            return list(set(urls))  # Remove duplicate URLs\n        else:\n            print(f\"Error accessing the page. Status code: {response.status_code}\")\n            return []\n\n    def scrape_page(self, url: str, timeout: int) -> Dict[str, str]:\n        response = requests.get(url, timeout=timeout)\n        if response.status_code == 200:\n            soup = BeautifulSoup(response.text, 'html.parser')\n            # Collect page title as an example\n            title = soup.title.string if soup.title else 'No Title'\n            # Collect all text from the page as an example\n            content = soup.get_text(separator=\"\\n\", strip=True)\n            return {\n                'url': url,\n                'title': title,\n                'content': content\n            }\n        else:\n            print(f\"Error accessing the page {url}. Status code: {response.status_code}\")\n            return {\n                'url': url,\n                'title': 'Error accessing the page',\n                'content': ''\n            }\n\n    def build_tool(self) -> Tool:\n        return StructuredTool.from_function(\n            name=\"beautifulsoup_scrape_api\",\n            description=\"Scrape web content using BeautifulSoup. Input should be a dictionary with 'url' and optional 'timeout', 'pageOptions', and 'extractorOptions'.\",\n            func=self.scrape_url,\n            args_schema=self.BeautifulSoupScrapeApiSchema,\n        )\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "extractorOptions": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "extractorOptions",
+                  "value": {},
+                  "display_name": "Extractor Options",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The extractor options to send with the request.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "pageOptions": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "pageOptions",
+                  "value": {},
+                  "display_name": "Page Options",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The page options to send with the request.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "timeout",
+                  "value": "10000",
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Timeout in seconds for the request.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "url": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "url",
+                  "value": "",
+                  "display_name": "URL",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The URL to scrape.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Scrape web content using BeautifulSoup.",
+              "icon": "loader-circle",
+              "base_classes": [
+                "Data",
+                "Tool"
+              ],
+              "display_name": "WB - Beautiful Soup",
+              "documentation": "https://www.crummy.com/software/BeautifulSoup/bs4/doc/",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": [
+                    "extractorOptions",
+                    "pageOptions",
+                    "timeout",
+                    "url"
+                  ]
+                },
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": [
+                    "extractorOptions",
+                    "pageOptions",
+                    "timeout",
+                    "url"
+                  ]
+                }
+              ],
+              "field_order": [
+                "url",
+                "timeout",
+                "pageOptions",
+                "extractorOptions"
+              ],
+              "beta": false,
+              "edited": true,
+              "metadata": {},
+              "lf_version": "1.0.19",
+              "official": false
+            },
+            "id": "beautifulsoup_scrape_api-X2Oxr"
+          },
+          "id": "beautifulsoup_scrape_api-X2Oxr",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-15T19:10:07.231Z",
+    "date_updated": "2024-10-15T19:10:07.297Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "user_created": {
+      "username": "joaoguilhermeS",
+      "first_name": "João",
+      "last_name": "Oliveira",
+      "id": "94b2e207-1a44-4905-856c-4f5a69c168ce"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.403Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

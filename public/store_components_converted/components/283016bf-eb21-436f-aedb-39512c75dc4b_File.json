@@ -1,0 +1,415 @@
+{
+  "id": "283016bf-eb21-436f-aedb-39512c75dc4b",
+  "name": "File",
+  "description": "A file loader that can read text from images using OCR. Only accept Traditional Chinese and English. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "rianne",
+    "first_name": "Rianne",
+    "last_name": "Tseng",
+    "id": "1b50f995-7227-4491-bcd4-de9f1ff82fdc",
+    "full_name": "Rianne Tseng"
+  },
+  "store_url": "https://www.langflow.store/store/component/283016bf-eb21-436f-aedb-39512c75dc4b",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-16T08:32:30.201Z",
+    "updated": "2024-10-16T08:32:30.239Z",
+    "downloaded": "2025-08-19T17:50:06.801Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "File",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "path": {
+                "trace_as_metadata": true,
+                "file_path": "",
+                "fileTypes": [
+                  "txt",
+                  "md",
+                  "mdx",
+                  "csv",
+                  "json",
+                  "yaml",
+                  "yml",
+                  "xml",
+                  "html",
+                  "htm",
+                  "pdf",
+                  "docx",
+                  "py",
+                  "sh",
+                  "sql",
+                  "js",
+                  "ts",
+                  "tsx",
+                  "jpg",
+                  "jpeg",
+                  "png",
+                  "bmp",
+                  "image"
+                ],
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "path",
+                "value": "",
+                "display_name": "Path",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Supported file types: txt, md, mdx, csv, json, yaml, yml, xml, html, htm, pdf, docx, py, sh, sql, js, ts, tsx jpg, jpeg, png, bmp, image",
+                "title_case": false,
+                "type": "file",
+                "_input_type": "FileInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from pathlib import Path\n\nfrom axiestudio.base.data.utils import TEXT_FILE_TYPES, parse_text_file_to_data\nfrom axiestudio.custom import Component\nfrom axiestudio.io import BoolInput, FileInput, Output\nfrom axiestudio.schema import Data\n\nimport fitz \nimport pytesseract\nfrom PIL import Image\nimport io\n\nclass FileComponent(Component):\n    display_name = \"File\"\n    description = \"A file loader that can read text from images using OCR. Only accept Traditional Chinese and English.\"\n    icon = \"file-text\"\n    name = \"File\"\n\n    inputs = [\n        FileInput(\n            name=\"path\",\n            display_name=\"Path\",\n            file_types=TEXT_FILE_TYPES + IMG_FILE_TYPES,\n            info=f\"Supported file types: {', '.join(TEXT_FILE_TYPES)} {', '.join(IMG_FILE_TYPES)}\",\n        ),\n        BoolInput(\n            name=\"silent_errors\",\n            display_name=\"Silent Errors\",\n            advanced=True,\n            info=\"If true, errors will not raise an exception.\",\n        ),\n        StrInput(name=\"sep\", display_name=\"Separator\", advanced=True, value=\"\\n\"),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            info=\"The maximum time spent to recognize the text embedded in an image using OCR.\",\n            value=3,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"load_file\"),\n    ]\n\n    def load_file(self) -> Data:\n        if not self.path:\n            raise ValueError(\"Please, upload a file to use this component.\")\n        resolved_path = self.resolve_path(self.path)\n        silent_errors = self.silent_errors\n\n        extension = Path(resolved_path).suffix[1:].lower()\n        text = \"\"\n        \n        if extension in IMG_FILE_TYPES:\n            image = Image.open(self.path)\n            text += pytesseract.image_to_string(image, lang='chi_tra+eng')\n            data = Data(file_path=resolved_path, text=str(text))\n        elif extension == \"pdf\":\n            pdf_path = resolved_path\n            pdf_document = fitz.open(pdf_path)\n        \n            for page_num in range(pdf_document.page_count):\n                page = pdf_document.load_page(page_num)\n                page_text = page.get_text(\"text\")\n                text += page_text + \"\\n\"\n                image_list = page.get_images(full=True)\n                for img in image_list:\n                    xref = img[0]\n                    base_image = pdf_document.extract_image(xref)\n                    image_bytes = base_image[\"image\"]\n                    image_ext = base_image[\"ext\"]\n                    image = Image.open(io.BytesIO(image_bytes))\n                    try:\n                        ocr_text = pytesseract.image_to_string(image, lang='chi_tra+eng', timeout=self.timeout)\n                    except RuntimeError as timeout_error:\n                        ocr_text = \"\"\n                    text += ocr_text + \"\\n\"\n        \n            pdf_document.close()\n            data = Data(file_path=resolved_path, text=str(text))\n        else:\n            data = parse_text_file_to_data(resolved_path, silent_errors)\n        \n        self.status = data if data else \"No data\"\n        return data or Data()\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "sep": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sep",
+                "value": "\n",
+                "display_name": "Separator",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "silent_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "silent_errors",
+                "value": false,
+                "display_name": "Silent Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, errors will not raise an exception.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "timeout",
+                "value": 3,
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The maximum time spent to recognize the text embedded in an image using OCR.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              }
+            },
+            "description": "A file loader that can read text from images using OCR. Only accept Traditional Chinese and English.",
+            "icon": "file-text",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "File",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "load_file",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "path",
+              "silent_errors",
+              "sep",
+              "timeout"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "File-BQDhn",
+          "description": "A generic file loader.",
+          "display_name": "File"
+        },
+        "id": "File-BQDhn",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "File": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "283016bf-eb21-436f-aedb-39512c75dc4b",
+    "name": "File",
+    "description": "A file loader that can read text from images using OCR. Only accept Traditional Chinese and English.",
+    "is_component": true,
+    "liked_by_count": "6",
+    "downloads_count": "79",
+    "metadata": {
+      "File": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "File",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "path": {
+                  "trace_as_metadata": true,
+                  "file_path": "",
+                  "fileTypes": [
+                    "txt",
+                    "md",
+                    "mdx",
+                    "csv",
+                    "json",
+                    "yaml",
+                    "yml",
+                    "xml",
+                    "html",
+                    "htm",
+                    "pdf",
+                    "docx",
+                    "py",
+                    "sh",
+                    "sql",
+                    "js",
+                    "ts",
+                    "tsx",
+                    "jpg",
+                    "jpeg",
+                    "png",
+                    "bmp",
+                    "image"
+                  ],
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "path",
+                  "value": "",
+                  "display_name": "Path",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Supported file types: txt, md, mdx, csv, json, yaml, yml, xml, html, htm, pdf, docx, py, sh, sql, js, ts, tsx jpg, jpeg, png, bmp, image",
+                  "title_case": false,
+                  "type": "file",
+                  "_input_type": "FileInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from pathlib import Path\n\nfrom axiestudio.base.data.utils import TEXT_FILE_TYPES, parse_text_file_to_data\nfrom axiestudio.custom import Component\nfrom axiestudio.io import BoolInput, FileInput, Output\nfrom axiestudio.schema import Data\n\nimport fitz \nimport pytesseract\nfrom PIL import Image\nimport io\n\nclass FileComponent(Component):\n    display_name = \"File\"\n    description = \"A file loader that can read text from images using OCR. Only accept Traditional Chinese and English.\"\n    icon = \"file-text\"\n    name = \"File\"\n\n    inputs = [\n        FileInput(\n            name=\"path\",\n            display_name=\"Path\",\n            file_types=TEXT_FILE_TYPES + IMG_FILE_TYPES,\n            info=f\"Supported file types: {', '.join(TEXT_FILE_TYPES)} {', '.join(IMG_FILE_TYPES)}\",\n        ),\n        BoolInput(\n            name=\"silent_errors\",\n            display_name=\"Silent Errors\",\n            advanced=True,\n            info=\"If true, errors will not raise an exception.\",\n        ),\n        StrInput(name=\"sep\", display_name=\"Separator\", advanced=True, value=\"\\n\"),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            info=\"The maximum time spent to recognize the text embedded in an image using OCR.\",\n            value=3,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"load_file\"),\n    ]\n\n    def load_file(self) -> Data:\n        if not self.path:\n            raise ValueError(\"Please, upload a file to use this component.\")\n        resolved_path = self.resolve_path(self.path)\n        silent_errors = self.silent_errors\n\n        extension = Path(resolved_path).suffix[1:].lower()\n        text = \"\"\n        \n        if extension in IMG_FILE_TYPES:\n            image = Image.open(self.path)\n            text += pytesseract.image_to_string(image, lang='chi_tra+eng')\n            data = Data(file_path=resolved_path, text=str(text))\n        elif extension == \"pdf\":\n            pdf_path = resolved_path\n            pdf_document = fitz.open(pdf_path)\n        \n            for page_num in range(pdf_document.page_count):\n                page = pdf_document.load_page(page_num)\n                page_text = page.get_text(\"text\")\n                text += page_text + \"\\n\"\n                image_list = page.get_images(full=True)\n                for img in image_list:\n                    xref = img[0]\n                    base_image = pdf_document.extract_image(xref)\n                    image_bytes = base_image[\"image\"]\n                    image_ext = base_image[\"ext\"]\n                    image = Image.open(io.BytesIO(image_bytes))\n                    try:\n                        ocr_text = pytesseract.image_to_string(image, lang='chi_tra+eng', timeout=self.timeout)\n                    except RuntimeError as timeout_error:\n                        ocr_text = \"\"\n                    text += ocr_text + \"\\n\"\n        \n            pdf_document.close()\n            data = Data(file_path=resolved_path, text=str(text))\n        else:\n            data = parse_text_file_to_data(resolved_path, silent_errors)\n        \n        self.status = data if data else \"No data\"\n        return data or Data()\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "sep": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sep",
+                  "value": "\n",
+                  "display_name": "Separator",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "silent_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "silent_errors",
+                  "value": false,
+                  "display_name": "Silent Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, errors will not raise an exception.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "timeout",
+                  "value": 3,
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The maximum time spent to recognize the text embedded in an image using OCR.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                }
+              },
+              "description": "A file loader that can read text from images using OCR. Only accept Traditional Chinese and English.",
+              "icon": "file-text",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "File",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "load_file",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "path",
+                "silent_errors",
+                "sep",
+                "timeout"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "File-BQDhn",
+            "description": "A generic file loader.",
+            "display_name": "File"
+          },
+          "id": "File-BQDhn",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-16T08:32:30.201Z",
+    "date_updated": "2024-10-16T08:32:30.239Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "1b50f995-7227-4491-bcd4-de9f1ff82fdc",
+    "user_created": {
+      "username": "rianne",
+      "first_name": "Rianne",
+      "last_name": "Tseng",
+      "id": "1b50f995-7227-4491-bcd4-de9f1ff82fdc"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.328Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

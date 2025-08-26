@@ -1,0 +1,377 @@
+{
+  "id": "d8ce6880-1be6-4e3d-9a8c-c559ffdc4f6c",
+  "name": "FirecrawlScrapeApi",
+  "description": "Firecrawl Scrape API that can work as a tool for agent. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "Gnex",
+    "first_name": "Michał Artur",
+    "last_name": "Marciniak",
+    "id": "c7a4033a-9a24-4f0d-b211-30c5d662f3c8",
+    "full_name": "Michał Artur Marciniak"
+  },
+  "store_url": "https://www.langflow.store/store/component/d8ce6880-1be6-4e3d-9a8c-c559ffdc4f6c",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-28T21:46:28.998Z",
+    "updated": "2024-10-28T21:46:29.034Z",
+    "downloaded": "2025-08-19T17:50:07.672Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "FirecrawlScrapeApi",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "api_key": {
+                "load_from_db": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "Firecrawl API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The API key to use Firecrawl API.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Any\n\nimport httpx\nfrom langchain.tools import StructuredTool\nfrom loguru import logger\nfrom pydantic import BaseModel, Field\n\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom axiestudio.field_typing import Tool\nfrom axiestudio.inputs import BoolInput, DropdownInput, IntInput, MessageTextInput, SecretStrInput, DataInput, StrInput\nfrom axiestudio.schema import Data\nfrom axiestudio.custom import CustomComponent\nfrom axiestudio.schema import Data\n\n\nclass FirecrawlScrapeTool(LCToolComponent):\n    display_name: str = \"Firecrawl Scrape API Tool\"\n    description: str = \"Firecrawl Scrape API that can work as a tool for agent.\"\n    name = \"FirecrawlScrapeApi\"\n\n    output_types: list[str] = [\"Document\"]\n    documentation: str = \"https://docs.firecrawl.dev/api-reference/endpoint/scrape\"\n    \n    inputs = [\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"Firecrawl API Key\",\n            required=True,\n            password=True,\n            info=\"The API key to use Firecrawl API.\",\n        ),\n        StrInput(\n            name=\"url\",\n            display_name=\"URL\",\n            info=\"The URL to scrape.\",\n            # required=True,\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            info=\"Timeout in milliseconds for the request.\",\n            value=100000,\n        )\n    ]\n    \n    class FirecrawlScrapeSchema(BaseModel):\n        url: str = Field(..., description=\"Website URL you want to scrape.\")\n        timeout: int = Field(100000, description=\"How much you want to wait for results.\")\n\n\n    def run_model(self) -> list[Data]:\n        return self._firecrawl_scrape(\n            self.url,\n            self.timeout,\n        )\n\n    def build_tool(self) -> Tool:\n        return StructuredTool.from_function(\n            name=\"firecrawl_scrape\",\n            description=\"Scrape website using Firecrawl Scrape API.\",\n            func=self._firecrawl_scrape,\n            args_schema=self.FirecrawlScrapeSchema,\n        )\n        \n        \n    def _firecrawl_scrape(\n        self,\n        url: str,\n        timeout: int = 100000,\n    ) -> Data:\n        try:\n            from firecrawl.firecrawl import FirecrawlApp\n        except ImportError as e:\n            msg = \"Could not import firecrawl integration package. Please install it with `pip install firecrawl-py`.\"\n            raise ImportError(msg) from e\n\n        app = FirecrawlApp(api_key=self.api_key)\n        results = app.scrape_url(\n            url,\n            {\n                \"timeout\": self.timeout,\n            },\n        )\n\n        return Data(data=results)\n        \n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "timeout",
+                "value": 10000,
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Timeout in milliseconds for the request.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "url": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "url",
+                "value": "",
+                "display_name": "URL",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The URL to scrape.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              }
+            },
+            "description": "Firecrawl Scrape API that can work as a tool for agent.",
+            "base_classes": [
+              "Data",
+              "Tool"
+            ],
+            "display_name": "FirecrawlScrapeApi",
+            "documentation": "https://docs.firecrawl.dev/api-reference/endpoint/scrape",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": [
+                  "api_key",
+                  "timeout",
+                  "url"
+                ]
+              },
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": [
+                  "api_key",
+                  "timeout",
+                  "url"
+                ]
+              }
+            ],
+            "field_order": [
+              "api_key",
+              "url",
+              "timeout"
+            ],
+            "beta": false,
+            "edited": true,
+            "metadata": {},
+            "official": false
+          },
+          "id": "FirecrawlScrapeApi-VcCnZ"
+        },
+        "id": "FirecrawlScrapeApi-VcCnZ",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "FirecrawlScrapeApi": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "d8ce6880-1be6-4e3d-9a8c-c559ffdc4f6c",
+    "name": "FirecrawlScrapeApi",
+    "description": "Firecrawl Scrape API that can work as a tool for agent.",
+    "is_component": true,
+    "liked_by_count": "6",
+    "downloads_count": "82",
+    "metadata": {
+      "FirecrawlScrapeApi": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "FirecrawlScrapeApi",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "api_key": {
+                  "load_from_db": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "Firecrawl API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The API key to use Firecrawl API.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Any\n\nimport httpx\nfrom langchain.tools import StructuredTool\nfrom loguru import logger\nfrom pydantic import BaseModel, Field\n\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom axiestudio.field_typing import Tool\nfrom axiestudio.inputs import BoolInput, DropdownInput, IntInput, MessageTextInput, SecretStrInput, DataInput, StrInput\nfrom axiestudio.schema import Data\nfrom axiestudio.custom import CustomComponent\nfrom axiestudio.schema import Data\n\n\nclass FirecrawlScrapeTool(LCToolComponent):\n    display_name: str = \"Firecrawl Scrape API Tool\"\n    description: str = \"Firecrawl Scrape API that can work as a tool for agent.\"\n    name = \"FirecrawlScrapeApi\"\n\n    output_types: list[str] = [\"Document\"]\n    documentation: str = \"https://docs.firecrawl.dev/api-reference/endpoint/scrape\"\n    \n    inputs = [\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"Firecrawl API Key\",\n            required=True,\n            password=True,\n            info=\"The API key to use Firecrawl API.\",\n        ),\n        StrInput(\n            name=\"url\",\n            display_name=\"URL\",\n            info=\"The URL to scrape.\",\n            # required=True,\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            info=\"Timeout in milliseconds for the request.\",\n            value=100000,\n        )\n    ]\n    \n    class FirecrawlScrapeSchema(BaseModel):\n        url: str = Field(..., description=\"Website URL you want to scrape.\")\n        timeout: int = Field(100000, description=\"How much you want to wait for results.\")\n\n\n    def run_model(self) -> list[Data]:\n        return self._firecrawl_scrape(\n            self.url,\n            self.timeout,\n        )\n\n    def build_tool(self) -> Tool:\n        return StructuredTool.from_function(\n            name=\"firecrawl_scrape\",\n            description=\"Scrape website using Firecrawl Scrape API.\",\n            func=self._firecrawl_scrape,\n            args_schema=self.FirecrawlScrapeSchema,\n        )\n        \n        \n    def _firecrawl_scrape(\n        self,\n        url: str,\n        timeout: int = 100000,\n    ) -> Data:\n        try:\n            from firecrawl.firecrawl import FirecrawlApp\n        except ImportError as e:\n            msg = \"Could not import firecrawl integration package. Please install it with `pip install firecrawl-py`.\"\n            raise ImportError(msg) from e\n\n        app = FirecrawlApp(api_key=self.api_key)\n        results = app.scrape_url(\n            url,\n            {\n                \"timeout\": self.timeout,\n            },\n        )\n\n        return Data(data=results)\n        \n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "timeout",
+                  "value": 10000,
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Timeout in milliseconds for the request.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "url": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "url",
+                  "value": "",
+                  "display_name": "URL",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The URL to scrape.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                }
+              },
+              "description": "Firecrawl Scrape API that can work as a tool for agent.",
+              "base_classes": [
+                "Data",
+                "Tool"
+              ],
+              "display_name": "FirecrawlScrapeApi",
+              "documentation": "https://docs.firecrawl.dev/api-reference/endpoint/scrape",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": [
+                    "api_key",
+                    "timeout",
+                    "url"
+                  ]
+                },
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": [
+                    "api_key",
+                    "timeout",
+                    "url"
+                  ]
+                }
+              ],
+              "field_order": [
+                "api_key",
+                "url",
+                "timeout"
+              ],
+              "beta": false,
+              "edited": true,
+              "metadata": {},
+              "official": false
+            },
+            "id": "FirecrawlScrapeApi-VcCnZ"
+          },
+          "id": "FirecrawlScrapeApi-VcCnZ",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-28T21:46:28.998Z",
+    "date_updated": "2024-10-28T21:46:29.034Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "c7a4033a-9a24-4f0d-b211-30c5d662f3c8",
+    "user_created": {
+      "username": "Gnex",
+      "first_name": "Michał Artur",
+      "last_name": "Marciniak",
+      "id": "c7a4033a-9a24-4f0d-b211-30c5d662f3c8"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:12.057Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 12,
+    "converter_version": "1.0.0"
+  }
+}

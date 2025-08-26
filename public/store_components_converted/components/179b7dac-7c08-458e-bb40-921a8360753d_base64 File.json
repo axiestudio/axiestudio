@@ -1,0 +1,343 @@
+{
+  "id": "179b7dac-7c08-458e-bb40-921a8360753d",
+  "name": "base64 File",
+  "description": "Loads a file from a base64 encoded string, temporarily stores it, and processes similar to FileComponent. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "mieslep",
+    "first_name": "Phil",
+    "last_name": "Miesle",
+    "id": "9d20ffdb-ed66-469f-b1db-272eb675d093",
+    "full_name": "Phil Miesle"
+  },
+  "store_url": "https://www.langflow.store/store/component/179b7dac-7c08-458e-bb40-921a8360753d",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-22T09:28:31.060Z",
+    "updated": "2024-08-22T09:28:31.087Z",
+    "downloaded": "2025-08-19T17:50:06.544Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "base64 File",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "base64_string": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "Enter base64 encoded file string here...",
+                "show": true,
+                "value": "",
+                "name": "base64_string",
+                "display_name": "base64 Encoded File",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import base64\r\nimport os\r\nimport tempfile\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.base.data.utils import parse_text_file_to_data\r\nfrom axiestudio.io import BoolInput, MessageTextInput, Output\r\n\r\nclass Base64FileLoader(Component):\r\n    display_name = \"base64 File\"\r\n    description = \"Loads a file from a base64 encoded string, temporarily stores it, and processes similar to FileComponent.\"\r\n    icon = \"file-text\"\r\n    name = \"base64 File\"\r\n\r\n    inputs = [\r\n        MessageTextInput(name=\"base64_string\", display_name=\"base64 Encoded File\", required=True, placeholder=\"Enter base64 encoded file string here...\"),\r\n        MessageTextInput(name=\"filename\", display_name=\"Filename\", required=True, placeholder=\"Enter filename with extension...\"),\r\n        BoolInput(\r\n            name=\"silent_errors\",\r\n            display_name=\"Silent Errors\",\r\n            advanced=True,\r\n            info=\"If true, errors will not raise an exception.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Data\", name=\"data\", method=\"decode_and_load_file\"),\r\n    ]\r\n\r\n    def decode_and_load_file(self) -> Data:\r\n\r\n        if not self.base64_string:\r\n            raise ValueError(\"Base64 string is empty. Please provide a valid base64 encoded file.\")\r\n        if not self.filename:\r\n            raise ValueError(\"Filename is required.\")\r\n\r\n        base64_val = self.base64_string\r\n        filename_val = self.filename \r\n        \r\n        # Decode the base64 string to bytes\r\n        try:\r\n            file_bytes = base64.b64decode(base64_val)\r\n        except Exception as e:\r\n            raise ValueError(f\"Failed to decode base64 string: {str(e)}\")\r\n\r\n        # Create a temporary directory to store the file\r\n        with tempfile.TemporaryDirectory() as tmpdirname:\r\n            temp_file_path = os.path.join(tmpdirname, filename_val)\r\n\r\n            # Write bytes to a temporary file\r\n            with open(temp_file_path, 'wb') as temp_file:\r\n                temp_file.write(file_bytes)\r\n\r\n            # Use the existing utility to parse the text file\r\n            try:\r\n                data = parse_text_file_to_data(temp_file_path, silent_errors=self.silent_errors)\r\n            except Exception as e:\r\n                raise ValueError(f\"Failed to parse the file: {str(e)}\")\r\n\r\n            # Ensure file is deleted after processing if required\r\n            os.remove(temp_file_path)\r\n\r\n            self.status = \"File processed successfully.\"\r\n            return data\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "filename": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "Enter filename with extension...",
+                "show": true,
+                "value": "",
+                "name": "filename",
+                "display_name": "Filename",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "silent_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "silent_errors",
+                "display_name": "Silent Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, errors will not raise an exception.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Loads a file from a base64 encoded string, temporarily stores it, and processes similar to FileComponent.",
+            "icon": "file-text",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "base64 File",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "decode_and_load_file",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "base64_string",
+              "filename",
+              "silent_errors"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "base64 File-dOjJF"
+        },
+        "id": "base64 File-dOjJF",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "base64 File": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "179b7dac-7c08-458e-bb40-921a8360753d",
+    "name": "base64 File",
+    "description": "Loads a file from a base64 encoded string, temporarily stores it, and processes similar to FileComponent.",
+    "is_component": true,
+    "liked_by_count": "11",
+    "downloads_count": "73",
+    "metadata": {
+      "base64 File": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "base64 File",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "base64_string": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "Enter base64 encoded file string here...",
+                  "show": true,
+                  "value": "",
+                  "name": "base64_string",
+                  "display_name": "base64 Encoded File",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import base64\r\nimport os\r\nimport tempfile\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.base.data.utils import parse_text_file_to_data\r\nfrom axiestudio.io import BoolInput, MessageTextInput, Output\r\n\r\nclass Base64FileLoader(Component):\r\n    display_name = \"base64 File\"\r\n    description = \"Loads a file from a base64 encoded string, temporarily stores it, and processes similar to FileComponent.\"\r\n    icon = \"file-text\"\r\n    name = \"base64 File\"\r\n\r\n    inputs = [\r\n        MessageTextInput(name=\"base64_string\", display_name=\"base64 Encoded File\", required=True, placeholder=\"Enter base64 encoded file string here...\"),\r\n        MessageTextInput(name=\"filename\", display_name=\"Filename\", required=True, placeholder=\"Enter filename with extension...\"),\r\n        BoolInput(\r\n            name=\"silent_errors\",\r\n            display_name=\"Silent Errors\",\r\n            advanced=True,\r\n            info=\"If true, errors will not raise an exception.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Data\", name=\"data\", method=\"decode_and_load_file\"),\r\n    ]\r\n\r\n    def decode_and_load_file(self) -> Data:\r\n\r\n        if not self.base64_string:\r\n            raise ValueError(\"Base64 string is empty. Please provide a valid base64 encoded file.\")\r\n        if not self.filename:\r\n            raise ValueError(\"Filename is required.\")\r\n\r\n        base64_val = self.base64_string\r\n        filename_val = self.filename \r\n        \r\n        # Decode the base64 string to bytes\r\n        try:\r\n            file_bytes = base64.b64decode(base64_val)\r\n        except Exception as e:\r\n            raise ValueError(f\"Failed to decode base64 string: {str(e)}\")\r\n\r\n        # Create a temporary directory to store the file\r\n        with tempfile.TemporaryDirectory() as tmpdirname:\r\n            temp_file_path = os.path.join(tmpdirname, filename_val)\r\n\r\n            # Write bytes to a temporary file\r\n            with open(temp_file_path, 'wb') as temp_file:\r\n                temp_file.write(file_bytes)\r\n\r\n            # Use the existing utility to parse the text file\r\n            try:\r\n                data = parse_text_file_to_data(temp_file_path, silent_errors=self.silent_errors)\r\n            except Exception as e:\r\n                raise ValueError(f\"Failed to parse the file: {str(e)}\")\r\n\r\n            # Ensure file is deleted after processing if required\r\n            os.remove(temp_file_path)\r\n\r\n            self.status = \"File processed successfully.\"\r\n            return data\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "filename": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "Enter filename with extension...",
+                  "show": true,
+                  "value": "",
+                  "name": "filename",
+                  "display_name": "Filename",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "silent_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "silent_errors",
+                  "display_name": "Silent Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, errors will not raise an exception.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Loads a file from a base64 encoded string, temporarily stores it, and processes similar to FileComponent.",
+              "icon": "file-text",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "base64 File",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "decode_and_load_file",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "base64_string",
+                "filename",
+                "silent_errors"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "base64 File-dOjJF"
+          },
+          "id": "base64 File-dOjJF",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-22T09:28:31.060Z",
+    "date_updated": "2024-08-22T09:28:31.087Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "9d20ffdb-ed66-469f-b1db-272eb675d093",
+    "user_created": {
+      "username": "mieslep",
+      "first_name": "Phil",
+      "last_name": "Miesle",
+      "id": "9d20ffdb-ed66-469f-b1db-272eb675d093"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.056Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

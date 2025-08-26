@@ -1,0 +1,443 @@
+{
+  "id": "0e03777b-80ff-4111-a722-ee36d5fa3541",
+  "name": "Github Query Tool",
+  "description": "Find issues from Github with your agent (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "renancleyson-dev",
+    "first_name": "Renan",
+    "last_name": "Cleyson",
+    "id": "104d0dde-15a3-4ed0-b9fd-c20c56946737",
+    "full_name": "Renan Cleyson"
+  },
+  "store_url": "https://www.langflow.store/store/component/0e03777b-80ff-4111-a722-ee36d5fa3541",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-30T20:22:29.581Z",
+    "updated": "2024-08-30T20:22:29.605Z",
+    "downloaded": "2025-08-19T17:50:06.661Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "GithubQueryTool",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "llm": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "llm",
+                "value": "",
+                "display_name": "Language Model",
+                "advanced": false,
+                "input_types": [
+                  "LanguageModel"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "api_key": {
+                "load_from_db": true,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "# from axiestudio.field_typing import Data\nimport asyncio\nimport httpx\nfrom axiestudio.io import StrInput, Output, SecretStrInput, IntInput, BoolInput\nfrom axiestudio.custom import Component\nfrom axiestudio.field_typing import Tool\nfrom langchain_core.tools import tool\n\n\nclass GithubQueryTool(Component):\n    display_name = \"Github Query Tool\"\n    description = \"Find issues from Github with your agent\"\n    icon=\"github\"\n    name = \"GithubQueryTool\"\n\n    inputs = [\n        BoolInput(name=\"use_llm\", display_name=\"Use LLM to create query\", value=False),\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"]),\n        StrInput(name=\"repo\", display_name=\"Repository\", required=True, value=\"axiestudio-ai/axiestudio\"),\n        IntInput(name=\"timeout\", display_name=\"Timeout\", value=5),\n        IntInput(name=\"per_page\", display_name=\"Retrieve Size\", value=10),\n        SecretStrInput(name=\"api_key\", display_name=\"API Key\", required=True),\n    ]\n\n    outputs = [\n        Output(display_name=\"Tool\", name=\"tool\", method=\"build_tool\"),\n    ]\n    \n    def build_tool(self) -> Tool:\n        GITHUB_ISSUES_URL = \"https://api.github.com/search/issues\"\n        repo = self.repo\n        llm = self.llm\n        use_llm = self.use_llm\n        query = f\"per_page={self.per_page}&q=is:open+is:issue\"\n        \n        if use_llm and not llm:\n            raise Exception(\"Language model is required when 'use LLM to create query' is enabled\")\n\n        if repo:\n            query += f\"+repo:{self.repo}\"\n\n        @tool\n        async def github_search_issues(match_text: str) -> str:\n            \"\"\"\n                Useful to show existing feature requests and reports from the community related to the user's request/question.\n                Make sure to include the Issue's number, title, and link(url) for the user.\n                Be specific with your query.\n                ---\n            \"\"\"\n\n            nonlocal query\n            agent_query = query\n\n            if use_llm:\n                prompt = HumanMessage(content=f\"You extract the main 2 keywords in the text and extract these into a comma separated list.\\nText: {match_text}\")\n                response = await llm.ainvoke([prompt])\n                keywords = \" OR \".join(response.content.strip().split(\",\")[:3])\n                agent_query += f\"+{keywords}\"\n\n            url = f\"{GITHUB_ISSUES_URL}?{agent_query}\"\n            headers = {\n                \"Accept\": \"application/vnd.github.text-match+json\",\n                \"Authorization\": f\"Bearer {self.api_key}\",\n            }\n            async with httpx.AsyncClient() as client:\n                response = await client.request(\"GET\", url, headers=headers, timeout=self.timeout)\n\n            response = response.json()\n            \n            def handle_format(item):\n                ITEM_TEMPLATE = \"Title: {title}\\nIssue Number: {number}\\nState: {state}\\n{html_url}\\n\"\n                TEXT_MATCHES_TEMPLATE = \"Matches:\\n{}------------\"\n                MATCH_TEMPLATE = \"At {object_type}'s {property}:\\n{fragment}\\n\"\n\n                matches = \"\\n\".join([MATCH_TEMPLATE.format(**match) for match in item[\"text_matches\"]])\n                return f\"{ITEM_TEMPLATE.format(**item)}{TEXT_MATCHES_TEMPLATE.format(matches)}\"\n\n            return \"\\n\".join([handle_format(item) for item in response[\"items\"]])\n\n        return github_search_issues\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "per_page": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "per_page",
+                "value": "20",
+                "display_name": "Retrieve Size",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "repo": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "repo",
+                "value": "axiestudio-ai/axiestudio",
+                "display_name": "Repository",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "timeout",
+                "value": "5",
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "use_llm": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "use_llm",
+                "value": false,
+                "display_name": "Use LLM to create query",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Find issues from Github with your agent",
+            "icon": "github",
+            "base_classes": [
+              "Tool"
+            ],
+            "display_name": "Github Query Tool",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "use_llm",
+              "llm",
+              "repo",
+              "timeout",
+              "per_page",
+              "api_key"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "GithubQueryTool-SW2SW"
+        },
+        "id": "GithubQueryTool-SW2SW",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "GithubQueryTool": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "0e03777b-80ff-4111-a722-ee36d5fa3541",
+    "name": "Github Query Tool",
+    "description": "Find issues from Github with your agent",
+    "is_component": true,
+    "liked_by_count": "7",
+    "downloads_count": "43",
+    "metadata": {
+      "GithubQueryTool": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "GithubQueryTool",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "llm": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "llm",
+                  "value": "",
+                  "display_name": "Language Model",
+                  "advanced": false,
+                  "input_types": [
+                    "LanguageModel"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "api_key": {
+                  "load_from_db": true,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "# from axiestudio.field_typing import Data\nimport asyncio\nimport httpx\nfrom axiestudio.io import StrInput, Output, SecretStrInput, IntInput, BoolInput\nfrom axiestudio.custom import Component\nfrom axiestudio.field_typing import Tool\nfrom langchain_core.tools import tool\n\n\nclass GithubQueryTool(Component):\n    display_name = \"Github Query Tool\"\n    description = \"Find issues from Github with your agent\"\n    icon=\"github\"\n    name = \"GithubQueryTool\"\n\n    inputs = [\n        BoolInput(name=\"use_llm\", display_name=\"Use LLM to create query\", value=False),\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"]),\n        StrInput(name=\"repo\", display_name=\"Repository\", required=True, value=\"axiestudio-ai/axiestudio\"),\n        IntInput(name=\"timeout\", display_name=\"Timeout\", value=5),\n        IntInput(name=\"per_page\", display_name=\"Retrieve Size\", value=10),\n        SecretStrInput(name=\"api_key\", display_name=\"API Key\", required=True),\n    ]\n\n    outputs = [\n        Output(display_name=\"Tool\", name=\"tool\", method=\"build_tool\"),\n    ]\n    \n    def build_tool(self) -> Tool:\n        GITHUB_ISSUES_URL = \"https://api.github.com/search/issues\"\n        repo = self.repo\n        llm = self.llm\n        use_llm = self.use_llm\n        query = f\"per_page={self.per_page}&q=is:open+is:issue\"\n        \n        if use_llm and not llm:\n            raise Exception(\"Language model is required when 'use LLM to create query' is enabled\")\n\n        if repo:\n            query += f\"+repo:{self.repo}\"\n\n        @tool\n        async def github_search_issues(match_text: str) -> str:\n            \"\"\"\n                Useful to show existing feature requests and reports from the community related to the user's request/question.\n                Make sure to include the Issue's number, title, and link(url) for the user.\n                Be specific with your query.\n                ---\n            \"\"\"\n\n            nonlocal query\n            agent_query = query\n\n            if use_llm:\n                prompt = HumanMessage(content=f\"You extract the main 2 keywords in the text and extract these into a comma separated list.\\nText: {match_text}\")\n                response = await llm.ainvoke([prompt])\n                keywords = \" OR \".join(response.content.strip().split(\",\")[:3])\n                agent_query += f\"+{keywords}\"\n\n            url = f\"{GITHUB_ISSUES_URL}?{agent_query}\"\n            headers = {\n                \"Accept\": \"application/vnd.github.text-match+json\",\n                \"Authorization\": f\"Bearer {self.api_key}\",\n            }\n            async with httpx.AsyncClient() as client:\n                response = await client.request(\"GET\", url, headers=headers, timeout=self.timeout)\n\n            response = response.json()\n            \n            def handle_format(item):\n                ITEM_TEMPLATE = \"Title: {title}\\nIssue Number: {number}\\nState: {state}\\n{html_url}\\n\"\n                TEXT_MATCHES_TEMPLATE = \"Matches:\\n{}------------\"\n                MATCH_TEMPLATE = \"At {object_type}'s {property}:\\n{fragment}\\n\"\n\n                matches = \"\\n\".join([MATCH_TEMPLATE.format(**match) for match in item[\"text_matches\"]])\n                return f\"{ITEM_TEMPLATE.format(**item)}{TEXT_MATCHES_TEMPLATE.format(matches)}\"\n\n            return \"\\n\".join([handle_format(item) for item in response[\"items\"]])\n\n        return github_search_issues\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "per_page": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "per_page",
+                  "value": "20",
+                  "display_name": "Retrieve Size",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "repo": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "repo",
+                  "value": "axiestudio-ai/axiestudio",
+                  "display_name": "Repository",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "timeout",
+                  "value": "5",
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "use_llm": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "use_llm",
+                  "value": false,
+                  "display_name": "Use LLM to create query",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Find issues from Github with your agent",
+              "icon": "github",
+              "base_classes": [
+                "Tool"
+              ],
+              "display_name": "Github Query Tool",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "use_llm",
+                "llm",
+                "repo",
+                "timeout",
+                "per_page",
+                "api_key"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "GithubQueryTool-SW2SW"
+          },
+          "id": "GithubQueryTool-SW2SW",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-30T20:22:29.581Z",
+    "date_updated": "2024-08-30T20:22:29.605Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "104d0dde-15a3-4ed0-b9fd-c20c56946737",
+    "user_created": {
+      "username": "renancleyson-dev",
+      "first_name": "Renan",
+      "last_name": "Cleyson",
+      "id": "104d0dde-15a3-4ed0-b9fd-c20c56946737"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:08.948Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 16,
+    "converter_version": "1.0.0"
+  }
+}

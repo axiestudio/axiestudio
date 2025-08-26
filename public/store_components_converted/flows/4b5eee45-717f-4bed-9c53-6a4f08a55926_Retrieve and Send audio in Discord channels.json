@@ -1,0 +1,1269 @@
+{
+  "id": "4b5eee45-717f-4bed-9c53-6a4f08a55926",
+  "name": "Retrieve and Send audio in Discord channels",
+  "description": "This flow retrieves an audio file from a Discord channel, transcribes it, and resends the audio. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "ygorbalves",
+    "first_name": "Ygor",
+    "last_name": "Alves",
+    "id": "3785b674-1a4b-42da-9b4d-d028c7191975",
+    "full_name": "Ygor Alves"
+  },
+  "store_url": "https://www.langflow.store/store/component/4b5eee45-717f-4bed-9c53-6a4f08a55926",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-05-29T20:31:30.227Z",
+    "updated": "2024-05-29T20:31:30.252Z",
+    "downloaded": "2025-08-19T17:50:05.164Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "TextOutput-K3JUc",
+        "type": "genericNode",
+        "position": {
+          "x": 963.2112182764338,
+          "y": 1512.3600649024077
+        },
+        "data": {
+          "type": "TextOutput",
+          "node": {
+            "template": {
+              "input_value": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Value",
+                "advanced": false,
+                "input_types": [
+                  "Record",
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "Text or Record to be passed as output.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional\n\nfrom axiestudio.base.io.text import TextComponent\nfrom axiestudio.field_typing import Text\n\n\nclass TextOutput(TextComponent):\n    display_name = \"Text Output\"\n    description = \"Display a text output in the Playground.\"\n    icon = \"type\"\n\n    def build_config(self):\n        return {\n            \"input_value\": {\n                \"display_name\": \"Value\",\n                \"input_types\": [\"Record\", \"Text\"],\n                \"info\": \"Text or Record to be passed as output.\",\n            },\n            \"record_template\": {\n                \"display_name\": \"Record Template\",\n                \"multiline\": True,\n                \"info\": \"Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(self, input_value: Optional[Text] = \"\", record_template: Optional[str] = \"\") -> Text:\n        return super().build(input_value=input_value, record_template=record_template)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "record_template": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "record_template",
+                "display_name": "Record Template",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Display a text output in the Playground.",
+            "icon": "type",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "Text Output",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null,
+              "record_template": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "TextOutput-K3JUc"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 289
+      },
+      {
+        "id": "CustomComponent-pE01p",
+        "type": "genericNode",
+        "position": {
+          "x": -222.00000000000006,
+          "y": 1323.109142678172
+        },
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "channel_id": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "channel_id",
+                "display_name": "ChannelId",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "816462295625367585"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional, Any\nfrom axiestudio import CustomComponent\nfrom axiestudio.schema import Record\nfrom tempfile import NamedTemporaryFile\nimport subprocess\nimport sys\nimport base64\nfrom json import loads\n\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordGetAudioMessage(CustomComponent):\n    display_name = \"DiscordGetAudioMessage\"\n    description = \"Retrieve the audio message from the Discord channel.\"\n    field_order = [\"token\", \"channel_id\", \"limit\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"limit\": {\n                \"display_name\": \"Limit\",\n                \"value\": 20,\n                \"advanced\": False,\n                \"info\": \"Number of messages that will be checked, the value 0 means limitless\",\n                \"required\": True,\n            }\n        }\n\n\n    def build(self, token: str, channel_id: int,  limit: int) -> Record:\n        import requests\n        body = {\"token\": token, \"limit\": limit, \"content_type\": [\"ogg\"]}\n        resp = requests.post(f\"http://discord:7880/api/v1/channels/{channel_id}/get_messages/last\", json=body)\n        if resp.status_code == 200:\n            file = loads(resp.content)\n            tmp_file = NamedTemporaryFile(delete=False, suffix=\".ogg\")\n            resolved_path = self.resolve_path(tmp_file.name)\n            with open(tmp_file.name, 'wb') as f:  # Open the file in binary mode\n                f.write(base64.b64decode(file[\"content\"]))\n            return Record(data={\"file_path\": resolved_path, \"text\": file[\"content\"]})\n        else:\n            raise Exception(\"Timeout exception\")\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "limit": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "20",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "limit",
+                "display_name": "Limit",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Number of messages that will be checked, the value 0 means limitless",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "token": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "token",
+                "display_name": "Token",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Retrieve the audio message from the Discord channel.",
+            "icon": "Discord",
+            "base_classes": [
+              "Record"
+            ],
+            "display_name": "DiscordGetAudioMessage",
+            "documentation": "",
+            "custom_fields": {
+              "token": null,
+              "channel_id": null,
+              "limit": null
+            },
+            "output_types": [
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "token",
+              "channel_id",
+              "limit"
+            ],
+            "beta": false
+          },
+          "id": "CustomComponent-pE01p",
+          "description": "Retrieve the audio message from the Discord channel.",
+          "display_name": "DiscordGetAudioMessage"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 481,
+        "dragging": false
+      },
+      {
+        "id": "CustomComponent-AMdls",
+        "type": "genericNode",
+        "position": {
+          "x": 414.0858368077167,
+          "y": 1721.4304559686595
+        },
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "file": {
+                "type": "Record",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "file",
+                "display_name": "File",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "channel_id": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "channel_id",
+                "display_name": "ChannelId",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "816462295625367585"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\nfrom axiestudio.schema import Record\nimport subprocess\nimport sys\nimport base64\nimport re\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordAudioSender(CustomComponent):\n    display_name = \"DiscordAudioSender\"\n    description = \"Send audio file to discord channel\"\n    field_order = [\"token\", \"channel_id\", \"file\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"file\": {\n                \"display_name\": \"File\",\n                \"advanced\": False,\n                \"required\": True,\n            }\n        }\n\n    def build(self, token: str, channel_id: int, file: Record) -> str:\n        import requests\n        filename = re.findall(r\"(?:(?:\\/)|(?:\\\\))([a-zA-Z\\d ._]{0,40})\", file.file_path)[-1]\n\n        body = {\n            \"token\": token,\n            \"type\": file.text_key,\n            \"filename\": filename,\n            \"data\": file.data,\n            \"is_audio\": True,\n        }\n        resp = requests.post(\n            f\"http://discord:7880/api/v1/channels/{channel_id}/send_message\",\n            json=body)\n        if resp.status_code == 200:\n            return \"Sent record successfully\"\n        else:\n            if isinstance(resp.content, str):\n                raise Exception(resp.content)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "token": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "token",
+                "display_name": "Token",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Send audio file to discord channel",
+            "icon": "Discord",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "DiscordAudioSender",
+            "documentation": "",
+            "custom_fields": {
+              "token": null,
+              "channel_id": null,
+              "file": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "token",
+              "channel_id",
+              "file"
+            ],
+            "beta": false
+          },
+          "id": "CustomComponent-AMdls",
+          "description": "Send audio file to discord channel",
+          "display_name": "DiscordAudioSender"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 423,
+        "dragging": false
+      },
+      {
+        "id": "CustomComponent-6xeTR",
+        "type": "genericNode",
+        "position": {
+          "x": 411.7899085337399,
+          "y": 1223.5339957477654
+        },
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "file": {
+                "type": "Record",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "file",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "AssemblyAIKey": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "AssemblyAIKey",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\nfrom axiestudio.schema import Record\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"assemblyai\")\n\nclass AssemblyAITranscriberRecord (CustomComponent):\n    display_name = \"AssemblyAITranscriberRecord \"\n    description = \"This component processes and convert audio and video files to text using AssemblyAI API\"\n    import assemblyai as aai\n    \n    def build_config(self):\n        return {\n            'audio_file': {\n                \"display_name\": \"AudioRecord\",\n                'required': True\n            },\n            \"language\": {\n                \"display_name\": \"language\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"Global English\",\n                    \"Australian English\",\n                    \"British English\",\n                    \"US English\",\n                    \"Spanish\",\n                    \"French\",\n                    \"German\",\n                    \"Italian\",\n                    \"Portuguese\",\n                    \"Dutch\",\n                    \"Hindi\",\n                    \"Japanese\",\n                    \"Chinese\",\n                    \"Finnish\",\n                    \"Korean\",\n                    \"Polish\",\n                    \"Russian\",\n                    \"Turkish\",\n                    \"Ukrainian\",\n                    \"Vietnamese\",\n                ],\n            },\n            \"AssemblyAIKey\":{\n                \"password\": True\n            }\n        }\n    \n    def build(self, file: Record, AssemblyAIKey: str, language: str) -> str:\n        def get_language_code(language):\n            language_dict = {\n                \"Global English\": \"en\",\n                \"Australian English\": \"en_au\",\n                \"British English\": \"en_uk\",\n                \"US English\": \"en_us\",\n                \"Spanish\": \"es\",\n                \"French\": \"fr\",\n                \"German\": \"de\",\n                \"Italian\": \"it\",\n                \"Portuguese\": \"pt\",\n                \"Dutch\": \"nl\",\n                \"Hindi\": \"hi\",\n                \"Japanese\": \"ja\",\n                \"Chinese\": \"zh\",\n                \"Finnish\": \"fi\",\n                \"Korean\": \"ko\",\n                \"Polish\": \"pl\",\n                \"Russian\": \"ru\",\n                \"Turkish\": \"tr\",\n                \"Ukrainian\": \"uk\",\n                \"Vietnamese\": \"vi\",\n            }\n            return language_dict.get(language, \"Unknown language\")\n        import assemblyai as aai\n        aai.settings.api_key = AssemblyAIKey\n        language = get_language_code(language)\n        config = aai.TranscriptionConfig(language_code=language, speaker_labels=True)\n        transcriber = aai.Transcriber(config=config)\n    \n        transcript = transcriber.transcribe(str(file.data[\"file_path\"]))\n        if(str(transcript.text) == 'None'):\n            return \"No text was detected.\"\n        return str(transcript.text)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "language": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Global English",
+                  "Australian English",
+                  "British English",
+                  "US English",
+                  "Spanish",
+                  "French",
+                  "German",
+                  "Italian",
+                  "Portuguese",
+                  "Dutch",
+                  "Hindi",
+                  "Japanese",
+                  "Chinese",
+                  "Finnish",
+                  "Korean",
+                  "Polish",
+                  "Russian",
+                  "Turkish",
+                  "Ukrainian",
+                  "Vietnamese"
+                ],
+                "name": "language",
+                "display_name": "language",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "Portuguese"
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "This component processes and convert audio and video files to text using AssemblyAI API",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "AssemblyAITranscriberRecord ",
+            "documentation": "",
+            "custom_fields": {
+              "file": null,
+              "AssemblyAIKey": null,
+              "language": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "CustomComponent-6xeTR",
+          "description": "This component processes and convert audio and video files to text using AssemblyAI API",
+          "display_name": "AssemblyAITranscriberRecord "
+        },
+        "selected": false,
+        "width": 384,
+        "height": 451,
+        "positionAbsolute": {
+          "x": 411.7899085337399,
+          "y": 1223.5339957477654
+        },
+        "dragging": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "CustomComponent-pE01p",
+        "target": "CustomComponent-AMdls",
+        "sourceHandle": "{œbaseClassesœ:[œRecordœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-pE01pœ}",
+        "targetHandle": "{œfieldNameœ:œfileœ,œidœ:œCustomComponent-AMdlsœ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+        "id": "reactflow__edge-CustomComponent-pE01p{œbaseClassesœ:[œRecordœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-pE01pœ}-CustomComponent-AMdls{œfieldNameœ:œfileœ,œidœ:œCustomComponent-AMdlsœ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "file",
+            "id": "CustomComponent-AMdls",
+            "inputTypes": null,
+            "type": "Record"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "Record"
+            ],
+            "dataType": "CustomComponent",
+            "id": "CustomComponent-pE01p"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 stroke-connection",
+        "selected": false
+      },
+      {
+        "source": "CustomComponent-pE01p",
+        "target": "CustomComponent-6xeTR",
+        "sourceHandle": "{œbaseClassesœ:[œRecordœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-pE01pœ}",
+        "targetHandle": "{œfieldNameœ:œfileœ,œidœ:œCustomComponent-6xeTRœ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+        "id": "reactflow__edge-CustomComponent-pE01p{œbaseClassesœ:[œRecordœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-pE01pœ}-CustomComponent-6xeTR{œfieldNameœ:œfileœ,œidœ:œCustomComponent-6xeTRœ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "file",
+            "id": "CustomComponent-6xeTR",
+            "inputTypes": null,
+            "type": "Record"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "Record"
+            ],
+            "dataType": "CustomComponent",
+            "id": "CustomComponent-pE01p"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 stroke-connection",
+        "selected": false
+      },
+      {
+        "source": "CustomComponent-6xeTR",
+        "target": "TextOutput-K3JUc",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-6xeTRœ}",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œTextOutput-K3JUcœ,œinputTypesœ:[œRecordœ,œTextœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-CustomComponent-6xeTR{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-6xeTRœ}-TextOutput-K3JUc{œfieldNameœ:œinput_valueœ,œidœ:œTextOutput-K3JUcœ,œinputTypesœ:[œRecordœ,œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "TextOutput-K3JUc",
+            "inputTypes": [
+              "Record",
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "CustomComponent",
+            "id": "CustomComponent-6xeTR"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 stroke-connection",
+        "selected": false
+      }
+    ],
+    "viewport": {
+      "x": 261.39053748028573,
+      "y": -971.571125675946,
+      "zoom": 0.8538177143912433
+    }
+  },
+  "metadata": {
+    "TextOutput": {
+      "count": 1
+    },
+    "CustomComponent": {
+      "count": 3
+    },
+    "total": 4
+  },
+  "original": {
+    "id": "4b5eee45-717f-4bed-9c53-6a4f08a55926",
+    "name": "Retrieve and Send audio in Discord channels",
+    "description": "This flow retrieves an audio file from a Discord channel, transcribes it, and resends the audio.",
+    "is_component": false,
+    "liked_by_count": "1",
+    "downloads_count": "62",
+    "metadata": {
+      "TextOutput": {
+        "count": 1
+      },
+      "CustomComponent": {
+        "count": 3
+      },
+      "total": 4
+    },
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "TextOutput-K3JUc",
+          "type": "genericNode",
+          "position": {
+            "x": 963.2112182764338,
+            "y": 1512.3600649024077
+          },
+          "data": {
+            "type": "TextOutput",
+            "node": {
+              "template": {
+                "input_value": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Value",
+                  "advanced": false,
+                  "input_types": [
+                    "Record",
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "Text or Record to be passed as output.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional\n\nfrom axiestudio.base.io.text import TextComponent\nfrom axiestudio.field_typing import Text\n\n\nclass TextOutput(TextComponent):\n    display_name = \"Text Output\"\n    description = \"Display a text output in the Playground.\"\n    icon = \"type\"\n\n    def build_config(self):\n        return {\n            \"input_value\": {\n                \"display_name\": \"Value\",\n                \"input_types\": [\"Record\", \"Text\"],\n                \"info\": \"Text or Record to be passed as output.\",\n            },\n            \"record_template\": {\n                \"display_name\": \"Record Template\",\n                \"multiline\": True,\n                \"info\": \"Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(self, input_value: Optional[Text] = \"\", record_template: Optional[str] = \"\") -> Text:\n        return super().build(input_value=input_value, record_template=record_template)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "record_template": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "record_template",
+                  "display_name": "Record Template",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Template to convert Record to Text. If left empty, it will be dynamically set to the Record's text key.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Display a text output in the Playground.",
+              "icon": "type",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "Text Output",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null,
+                "record_template": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "TextOutput-K3JUc"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 289
+        },
+        {
+          "id": "CustomComponent-pE01p",
+          "type": "genericNode",
+          "position": {
+            "x": -222.00000000000006,
+            "y": 1323.109142678172
+          },
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "channel_id": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "channel_id",
+                  "display_name": "ChannelId",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "816462295625367585"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional, Any\nfrom axiestudio import CustomComponent\nfrom axiestudio.schema import Record\nfrom tempfile import NamedTemporaryFile\nimport subprocess\nimport sys\nimport base64\nfrom json import loads\n\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordGetAudioMessage(CustomComponent):\n    display_name = \"DiscordGetAudioMessage\"\n    description = \"Retrieve the audio message from the Discord channel.\"\n    field_order = [\"token\", \"channel_id\", \"limit\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"limit\": {\n                \"display_name\": \"Limit\",\n                \"value\": 20,\n                \"advanced\": False,\n                \"info\": \"Number of messages that will be checked, the value 0 means limitless\",\n                \"required\": True,\n            }\n        }\n\n\n    def build(self, token: str, channel_id: int,  limit: int) -> Record:\n        import requests\n        body = {\"token\": token, \"limit\": limit, \"content_type\": [\"ogg\"]}\n        resp = requests.post(f\"http://discord:7880/api/v1/channels/{channel_id}/get_messages/last\", json=body)\n        if resp.status_code == 200:\n            file = loads(resp.content)\n            tmp_file = NamedTemporaryFile(delete=False, suffix=\".ogg\")\n            resolved_path = self.resolve_path(tmp_file.name)\n            with open(tmp_file.name, 'wb') as f:  # Open the file in binary mode\n                f.write(base64.b64decode(file[\"content\"]))\n            return Record(data={\"file_path\": resolved_path, \"text\": file[\"content\"]})\n        else:\n            raise Exception(\"Timeout exception\")\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "limit": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "20",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "limit",
+                  "display_name": "Limit",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Number of messages that will be checked, the value 0 means limitless",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "token": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "token",
+                  "display_name": "Token",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Retrieve the audio message from the Discord channel.",
+              "icon": "Discord",
+              "base_classes": [
+                "Record"
+              ],
+              "display_name": "DiscordGetAudioMessage",
+              "documentation": "",
+              "custom_fields": {
+                "token": null,
+                "channel_id": null,
+                "limit": null
+              },
+              "output_types": [
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "token",
+                "channel_id",
+                "limit"
+              ],
+              "beta": false
+            },
+            "id": "CustomComponent-pE01p",
+            "description": "Retrieve the audio message from the Discord channel.",
+            "display_name": "DiscordGetAudioMessage"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 481,
+          "dragging": false
+        },
+        {
+          "id": "CustomComponent-AMdls",
+          "type": "genericNode",
+          "position": {
+            "x": 414.0858368077167,
+            "y": 1721.4304559686595
+          },
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "file": {
+                  "type": "Record",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "file",
+                  "display_name": "File",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "channel_id": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "channel_id",
+                  "display_name": "ChannelId",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "816462295625367585"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\nfrom axiestudio.schema import Record\nimport subprocess\nimport sys\nimport base64\nimport re\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordAudioSender(CustomComponent):\n    display_name = \"DiscordAudioSender\"\n    description = \"Send audio file to discord channel\"\n    field_order = [\"token\", \"channel_id\", \"file\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"file\": {\n                \"display_name\": \"File\",\n                \"advanced\": False,\n                \"required\": True,\n            }\n        }\n\n    def build(self, token: str, channel_id: int, file: Record) -> str:\n        import requests\n        filename = re.findall(r\"(?:(?:\\/)|(?:\\\\))([a-zA-Z\\d ._]{0,40})\", file.file_path)[-1]\n\n        body = {\n            \"token\": token,\n            \"type\": file.text_key,\n            \"filename\": filename,\n            \"data\": file.data,\n            \"is_audio\": True,\n        }\n        resp = requests.post(\n            f\"http://discord:7880/api/v1/channels/{channel_id}/send_message\",\n            json=body)\n        if resp.status_code == 200:\n            return \"Sent record successfully\"\n        else:\n            if isinstance(resp.content, str):\n                raise Exception(resp.content)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "token": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "token",
+                  "display_name": "Token",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Send audio file to discord channel",
+              "icon": "Discord",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "DiscordAudioSender",
+              "documentation": "",
+              "custom_fields": {
+                "token": null,
+                "channel_id": null,
+                "file": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "token",
+                "channel_id",
+                "file"
+              ],
+              "beta": false
+            },
+            "id": "CustomComponent-AMdls",
+            "description": "Send audio file to discord channel",
+            "display_name": "DiscordAudioSender"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 423,
+          "dragging": false
+        },
+        {
+          "id": "CustomComponent-6xeTR",
+          "type": "genericNode",
+          "position": {
+            "x": 411.7899085337399,
+            "y": 1223.5339957477654
+          },
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "file": {
+                  "type": "Record",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "file",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "AssemblyAIKey": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "AssemblyAIKey",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\nfrom axiestudio.schema import Record\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"assemblyai\")\n\nclass AssemblyAITranscriberRecord (CustomComponent):\n    display_name = \"AssemblyAITranscriberRecord \"\n    description = \"This component processes and convert audio and video files to text using AssemblyAI API\"\n    import assemblyai as aai\n    \n    def build_config(self):\n        return {\n            'audio_file': {\n                \"display_name\": \"AudioRecord\",\n                'required': True\n            },\n            \"language\": {\n                \"display_name\": \"language\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"Global English\",\n                    \"Australian English\",\n                    \"British English\",\n                    \"US English\",\n                    \"Spanish\",\n                    \"French\",\n                    \"German\",\n                    \"Italian\",\n                    \"Portuguese\",\n                    \"Dutch\",\n                    \"Hindi\",\n                    \"Japanese\",\n                    \"Chinese\",\n                    \"Finnish\",\n                    \"Korean\",\n                    \"Polish\",\n                    \"Russian\",\n                    \"Turkish\",\n                    \"Ukrainian\",\n                    \"Vietnamese\",\n                ],\n            },\n            \"AssemblyAIKey\":{\n                \"password\": True\n            }\n        }\n    \n    def build(self, file: Record, AssemblyAIKey: str, language: str) -> str:\n        def get_language_code(language):\n            language_dict = {\n                \"Global English\": \"en\",\n                \"Australian English\": \"en_au\",\n                \"British English\": \"en_uk\",\n                \"US English\": \"en_us\",\n                \"Spanish\": \"es\",\n                \"French\": \"fr\",\n                \"German\": \"de\",\n                \"Italian\": \"it\",\n                \"Portuguese\": \"pt\",\n                \"Dutch\": \"nl\",\n                \"Hindi\": \"hi\",\n                \"Japanese\": \"ja\",\n                \"Chinese\": \"zh\",\n                \"Finnish\": \"fi\",\n                \"Korean\": \"ko\",\n                \"Polish\": \"pl\",\n                \"Russian\": \"ru\",\n                \"Turkish\": \"tr\",\n                \"Ukrainian\": \"uk\",\n                \"Vietnamese\": \"vi\",\n            }\n            return language_dict.get(language, \"Unknown language\")\n        import assemblyai as aai\n        aai.settings.api_key = AssemblyAIKey\n        language = get_language_code(language)\n        config = aai.TranscriptionConfig(language_code=language, speaker_labels=True)\n        transcriber = aai.Transcriber(config=config)\n    \n        transcript = transcriber.transcribe(str(file.data[\"file_path\"]))\n        if(str(transcript.text) == 'None'):\n            return \"No text was detected.\"\n        return str(transcript.text)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "language": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Global English",
+                    "Australian English",
+                    "British English",
+                    "US English",
+                    "Spanish",
+                    "French",
+                    "German",
+                    "Italian",
+                    "Portuguese",
+                    "Dutch",
+                    "Hindi",
+                    "Japanese",
+                    "Chinese",
+                    "Finnish",
+                    "Korean",
+                    "Polish",
+                    "Russian",
+                    "Turkish",
+                    "Ukrainian",
+                    "Vietnamese"
+                  ],
+                  "name": "language",
+                  "display_name": "language",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "Portuguese"
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "This component processes and convert audio and video files to text using AssemblyAI API",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "AssemblyAITranscriberRecord ",
+              "documentation": "",
+              "custom_fields": {
+                "file": null,
+                "AssemblyAIKey": null,
+                "language": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "CustomComponent-6xeTR",
+            "description": "This component processes and convert audio and video files to text using AssemblyAI API",
+            "display_name": "AssemblyAITranscriberRecord "
+          },
+          "selected": false,
+          "width": 384,
+          "height": 451,
+          "positionAbsolute": {
+            "x": 411.7899085337399,
+            "y": 1223.5339957477654
+          },
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "source": "CustomComponent-pE01p",
+          "target": "CustomComponent-AMdls",
+          "sourceHandle": "{œbaseClassesœ:[œRecordœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-pE01pœ}",
+          "targetHandle": "{œfieldNameœ:œfileœ,œidœ:œCustomComponent-AMdlsœ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+          "id": "reactflow__edge-CustomComponent-pE01p{œbaseClassesœ:[œRecordœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-pE01pœ}-CustomComponent-AMdls{œfieldNameœ:œfileœ,œidœ:œCustomComponent-AMdlsœ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "file",
+              "id": "CustomComponent-AMdls",
+              "inputTypes": null,
+              "type": "Record"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "Record"
+              ],
+              "dataType": "CustomComponent",
+              "id": "CustomComponent-pE01p"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 stroke-connection",
+          "selected": false
+        },
+        {
+          "source": "CustomComponent-pE01p",
+          "target": "CustomComponent-6xeTR",
+          "sourceHandle": "{œbaseClassesœ:[œRecordœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-pE01pœ}",
+          "targetHandle": "{œfieldNameœ:œfileœ,œidœ:œCustomComponent-6xeTRœ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+          "id": "reactflow__edge-CustomComponent-pE01p{œbaseClassesœ:[œRecordœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-pE01pœ}-CustomComponent-6xeTR{œfieldNameœ:œfileœ,œidœ:œCustomComponent-6xeTRœ,œinputTypesœ:null,œtypeœ:œRecordœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "file",
+              "id": "CustomComponent-6xeTR",
+              "inputTypes": null,
+              "type": "Record"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "Record"
+              ],
+              "dataType": "CustomComponent",
+              "id": "CustomComponent-pE01p"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 stroke-connection",
+          "selected": false
+        },
+        {
+          "source": "CustomComponent-6xeTR",
+          "target": "TextOutput-K3JUc",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-6xeTRœ}",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œTextOutput-K3JUcœ,œinputTypesœ:[œRecordœ,œTextœ],œtypeœ:œstrœ}",
+          "id": "reactflow__edge-CustomComponent-6xeTR{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-6xeTRœ}-TextOutput-K3JUc{œfieldNameœ:œinput_valueœ,œidœ:œTextOutput-K3JUcœ,œinputTypesœ:[œRecordœ,œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "TextOutput-K3JUc",
+              "inputTypes": [
+                "Record",
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "CustomComponent",
+              "id": "CustomComponent-6xeTR"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 stroke-connection",
+          "selected": false
+        }
+      ],
+      "viewport": {
+        "x": 261.39053748028573,
+        "y": -971.571125675946,
+        "zoom": 0.8538177143912433
+      }
+    },
+    "date_created": "2024-05-29T20:31:30.227Z",
+    "date_updated": "2024-05-29T20:31:30.252Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "3785b674-1a4b-42da-9b4d-d028c7191975",
+    "user_created": {
+      "username": "ygorbalves",
+      "first_name": "Ygor",
+      "last_name": "Alves",
+      "id": "3785b674-1a4b-42da-9b4d-d028c7191975"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:57.573Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 22,
+    "converter_version": "1.0.0"
+  }
+}

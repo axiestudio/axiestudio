@@ -1,0 +1,547 @@
+{
+  "id": "a4ddd9c6-c028-45be-88fd-a49aeb89cd5c",
+  "name": "Listen",
+  "description": "Retrieve the next Streamlit chat message (webhook). (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "joaoguilhermeS",
+    "first_name": "João",
+    "last_name": "Oliveira",
+    "id": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "full_name": "João Oliveira"
+  },
+  "store_url": "https://www.langflow.store/store/component/a4ddd9c6-c028-45be-88fd-a49aeb89cd5c",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-23T21:01:35.351Z",
+    "updated": "2024-08-06T17:19:47.120Z",
+    "downloaded": "2025-08-19T17:50:06.623Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Listen",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "ai_avatar": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "ai_avatar",
+                "value": "🤖",
+                "display_name": "AI Avatar",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "It must be an emoji",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional\nfrom axiestudio.custom import Component\nfrom axiestudio.schema.message import Message, Data\nfrom axiestudio.inputs import MessageTextInput, IntInput\nimport sys\nfrom json import loads, dumps\n\nclass Listen(Component):\n    display_name = \"Listen\"\n    description = \"Retrieve the next Streamlit chat message (webhook).\"\n    icon = \"Streamlit\"\n    response = None\n\n    inputs = [\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            info=\"Timeout in seconds\",\n            value=120,\n            required=True\n        ),\n        IntInput(\n            name=\"port\",\n            display_name=\"Port\",\n            info=\"Port that Streamlit API is Running\",\n            advanced=True,\n            value=7881,\n            required=True\n        ),\n        StrInput(\n            name=\"title\",\n            display_name=\"Title\",\n            value=\"Welcome to My Streamlit Chat Application\",\n            info=\"The title of chat template\",\n            required=False,\n            advanced=True\n        ),\n        StrInput(\n            name=\"welcome_msg\",\n            display_name=\"Welcome Message\",\n            required=True,\n            advanced=True\n        ),\n        StrInput(\n            name=\"input_msg\",\n            display_name=\"Input Message\",\n            required=True,\n            value=\"A Text Input Placeholder\",\n            advanced=True\n        ),\n        FloatInput(\n            name=\"write_speed\",\n            display_name=\"Write Speed\",\n            value=0.2,\n            required=True,\n            advanced=True\n        ),\n        MessageTextInput(\n            name=\"ai_avatar\",\n            display_name=\"AI Avatar\",\n            value=\"🤖\",\n            info=\"It must be an emoji\",\n            required=False,\n            advanced=True\n        ),\n        MessageTextInput(\n            name=\"user_avatar\",\n            display_name=\"User Avatar\",\n            value=\"\",\n            required=False,\n            advanced=True\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Session ID\", name=\"session_id\", method=\"session_id_response\"),\n        Output(display_name=\"Message Content\", name=\"message_content\", method=\"message_content_response\"),\n        Output(display_name=\"History\", name=\"chat history\", method=\"chat_history_response\"),\n    ]\n\n    def get_api_response(self):\n        import requests\n        body = {\n            \"title\": self.title,\n            \"welcome_msg\": self.welcome_msg,\n            \"input_msg\": self.input_msg,\n            \"write_speed\": self.write_speed,\n        }\n        if self.ai_avatar: body[\"ai_avatar\"] = self.ai_avatar\n        if self.user_avatar: body[\"user_avatar\"] = self.user_avatar\n        resp = requests.post(f\"http://localhost:{self.port}/api/v1/chats\", json=body)\n        resp = requests.get(f\"http://localhost:{self.port}/api/v1/listen/message?timeout={self.timeout}\")\n        if resp.status_code == 200:\n            self.response = loads(resp.content)\n            return self.response\n        else:\n            raise Exception(\"Timeout exception\")\n    \n    def session_id_response(self) -> Message:\n        if self.response is not None:\n            return Message(\n                text=self.response[\"session_id\"],\n            )\n        return Message(\n            text=self.get_api_response()[\"session_id\"],\n        )\n\n    def message_content_response(self) -> Message:\n        if self.response is not None:\n            return Message(\n                text=self.response[\"content\"],\n                sender=\"User\",\n            )\n        return Message(\n            text=self.get_api_response()[\"content\"],\n        )\n\n    def chat_history_response(self) -> Data:\n        if self.response is not None:\n            return self.response[\"history\"]\n        return self.get_api_response()[\"history\"]",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_msg": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "input_msg",
+                "value": "A Text Input Placeholder",
+                "display_name": "Input Message",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "port": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "port",
+                "value": 7881,
+                "display_name": "Port",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Port that Streamlit API is Running",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "timeout",
+                "value": 120,
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Timeout in seconds",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "title": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "title",
+                "value": "Welcome to My Streamlit Chat Application",
+                "display_name": "Title",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The title of chat template",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "user_avatar": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "user_avatar",
+                "value": "",
+                "display_name": "User Avatar",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "welcome_msg": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "welcome_msg",
+                "value": "Welcome!",
+                "display_name": "Welcome Message",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "write_speed": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "write_speed",
+                "value": 0.2,
+                "display_name": "Write Speed",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "float",
+                "_input_type": "FloatInput"
+              }
+            },
+            "description": "Retrieve the next Streamlit chat message (webhook).",
+            "icon": "Streamlit",
+            "base_classes": [
+              "Data",
+              "Message"
+            ],
+            "display_name": "Listen",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "session_id",
+                "display_name": "Session ID",
+                "method": "session_id_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "message_content",
+                "display_name": "Message Content",
+                "method": "message_content_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "chat history",
+                "display_name": "History",
+                "method": "chat_history_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "Listen-65nCa"
+        },
+        "id": "Listen-65nCa",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Listen": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "a4ddd9c6-c028-45be-88fd-a49aeb89cd5c",
+    "name": "Listen",
+    "description": "Retrieve the next Streamlit chat message (webhook).",
+    "is_component": true,
+    "liked_by_count": "17",
+    "downloads_count": "189",
+    "metadata": {
+      "Listen": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Listen",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "ai_avatar": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "ai_avatar",
+                  "value": "🤖",
+                  "display_name": "AI Avatar",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "It must be an emoji",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional\nfrom axiestudio.custom import Component\nfrom axiestudio.schema.message import Message, Data\nfrom axiestudio.inputs import MessageTextInput, IntInput\nimport sys\nfrom json import loads, dumps\n\nclass Listen(Component):\n    display_name = \"Listen\"\n    description = \"Retrieve the next Streamlit chat message (webhook).\"\n    icon = \"Streamlit\"\n    response = None\n\n    inputs = [\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            info=\"Timeout in seconds\",\n            value=120,\n            required=True\n        ),\n        IntInput(\n            name=\"port\",\n            display_name=\"Port\",\n            info=\"Port that Streamlit API is Running\",\n            advanced=True,\n            value=7881,\n            required=True\n        ),\n        StrInput(\n            name=\"title\",\n            display_name=\"Title\",\n            value=\"Welcome to My Streamlit Chat Application\",\n            info=\"The title of chat template\",\n            required=False,\n            advanced=True\n        ),\n        StrInput(\n            name=\"welcome_msg\",\n            display_name=\"Welcome Message\",\n            required=True,\n            advanced=True\n        ),\n        StrInput(\n            name=\"input_msg\",\n            display_name=\"Input Message\",\n            required=True,\n            value=\"A Text Input Placeholder\",\n            advanced=True\n        ),\n        FloatInput(\n            name=\"write_speed\",\n            display_name=\"Write Speed\",\n            value=0.2,\n            required=True,\n            advanced=True\n        ),\n        MessageTextInput(\n            name=\"ai_avatar\",\n            display_name=\"AI Avatar\",\n            value=\"🤖\",\n            info=\"It must be an emoji\",\n            required=False,\n            advanced=True\n        ),\n        MessageTextInput(\n            name=\"user_avatar\",\n            display_name=\"User Avatar\",\n            value=\"\",\n            required=False,\n            advanced=True\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Session ID\", name=\"session_id\", method=\"session_id_response\"),\n        Output(display_name=\"Message Content\", name=\"message_content\", method=\"message_content_response\"),\n        Output(display_name=\"History\", name=\"chat history\", method=\"chat_history_response\"),\n    ]\n\n    def get_api_response(self):\n        import requests\n        body = {\n            \"title\": self.title,\n            \"welcome_msg\": self.welcome_msg,\n            \"input_msg\": self.input_msg,\n            \"write_speed\": self.write_speed,\n        }\n        if self.ai_avatar: body[\"ai_avatar\"] = self.ai_avatar\n        if self.user_avatar: body[\"user_avatar\"] = self.user_avatar\n        resp = requests.post(f\"http://localhost:{self.port}/api/v1/chats\", json=body)\n        resp = requests.get(f\"http://localhost:{self.port}/api/v1/listen/message?timeout={self.timeout}\")\n        if resp.status_code == 200:\n            self.response = loads(resp.content)\n            return self.response\n        else:\n            raise Exception(\"Timeout exception\")\n    \n    def session_id_response(self) -> Message:\n        if self.response is not None:\n            return Message(\n                text=self.response[\"session_id\"],\n            )\n        return Message(\n            text=self.get_api_response()[\"session_id\"],\n        )\n\n    def message_content_response(self) -> Message:\n        if self.response is not None:\n            return Message(\n                text=self.response[\"content\"],\n                sender=\"User\",\n            )\n        return Message(\n            text=self.get_api_response()[\"content\"],\n        )\n\n    def chat_history_response(self) -> Data:\n        if self.response is not None:\n            return self.response[\"history\"]\n        return self.get_api_response()[\"history\"]",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_msg": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_msg",
+                  "value": "A Text Input Placeholder",
+                  "display_name": "Input Message",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "port": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "port",
+                  "value": 7881,
+                  "display_name": "Port",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Port that Streamlit API is Running",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "timeout",
+                  "value": 120,
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Timeout in seconds",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "title": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "title",
+                  "value": "Welcome to My Streamlit Chat Application",
+                  "display_name": "Title",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The title of chat template",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "user_avatar": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "user_avatar",
+                  "value": "",
+                  "display_name": "User Avatar",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "welcome_msg": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "welcome_msg",
+                  "value": "Welcome!",
+                  "display_name": "Welcome Message",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "write_speed": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "write_speed",
+                  "value": 0.2,
+                  "display_name": "Write Speed",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "float",
+                  "_input_type": "FloatInput"
+                }
+              },
+              "description": "Retrieve the next Streamlit chat message (webhook).",
+              "icon": "Streamlit",
+              "base_classes": [
+                "Data",
+                "Message"
+              ],
+              "display_name": "Listen",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "session_id",
+                  "display_name": "Session ID",
+                  "method": "session_id_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "message_content",
+                  "display_name": "Message Content",
+                  "method": "message_content_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "chat history",
+                  "display_name": "History",
+                  "method": "chat_history_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "Listen-65nCa"
+          },
+          "id": "Listen-65nCa",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-07-23T21:01:35.351Z",
+    "date_updated": "2024-08-06T17:19:47.120Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "user_created": {
+      "username": "joaoguilhermeS",
+      "first_name": "João",
+      "last_name": "Oliveira",
+      "id": "94b2e207-1a44-4905-856c-4f5a69c168ce"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.235Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

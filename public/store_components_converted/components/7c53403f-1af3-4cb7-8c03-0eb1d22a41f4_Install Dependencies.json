@@ -1,0 +1,419 @@
+{
+  "id": "7c53403f-1af3-4cb7-8c03-0eb1d22a41f4",
+  "name": "Install Dependencies",
+  "description": "Installs a specified package using pip, brew, or apt. Supports password input for sudo commands for apt. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "joaoguilhermeS",
+    "first_name": "João",
+    "last_name": "Oliveira",
+    "id": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "full_name": "João Oliveira"
+  },
+  "store_url": "https://www.langflow.store/store/component/7c53403f-1af3-4cb7-8c03-0eb1d22a41f4",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-28T02:40:28.598Z",
+    "updated": "2024-10-28T02:40:28.668Z",
+    "downloaded": "2025-08-19T17:50:07.494Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "PackageInstallerComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import subprocess\nfrom axiestudio.custom import Component\nfrom axiestudio.inputs import DropdownInput, MessageTextInput, SecretStrInput\nfrom axiestudio.template import Output\nfrom axiestudio.schema.message import Message\n\nclass PackageInstallerComponent(Component):\n    display_name = \"Package Installer\"\n    description = \"Installs a specified package using pip, brew, or apt. Supports password input for sudo commands for apt.\"\n    icon = \"package\"\n\n    # Define inputs: method of installation, package name, and password\n    inputs = [\n        DropdownInput(\n            name=\"install_method\",\n            display_name=\"Installation Method\",\n            options=[\"pip\", \"brew\", \"apt\"],\n            info=\"Choose how to install the package.\",\n        ),\n        MessageTextInput(\n            name=\"package_name\",\n            display_name=\"Package Name\",\n            info=\"Specify the name of the package to install.\",\n        ),\n        SecretStrInput(\n            name=\"sudo_password\",\n            display_name=\"Sudo Password\",\n            info=\"Enter your password for sudo (required for apt installations).\",\n        ),\n        MessageTextInput(\n            name=\"pass_value\",\n            display_name=\"Text to Pass\",\n            info=\"Pass a text to the next component in the Pass Output.\"\n        )\n    ]\n\n    outputs = [\n        Output(display_name=\"Install Output\", name=\"install_output\", method=\"install_packages\"),\n        Output(display_name=\"Pass\", name=\"pass\", method=\"build_pass\"),\n    ]\n\n    def install_packages(self) -> Message:\n        install_method = self.install_method\n        package_name = self.package_name\n        sudo_password = self.sudo_password\n        result = \"\"\n\n        if not package_name:\n            raise Exception(\"Error: No package name provided.\")\n\n        try:\n            if install_method == \"pip\":\n                # No password needed for pip installations\n                result = self.run_command([\"pip\", \"install\", package_name])\n\n            elif install_method == \"brew\":\n                # Homebrew should not be run with sudo\n                result = self.run_command([\"brew\", \"install\", package_name])\n\n            elif install_method == \"apt\":\n                # Use sudo password for apt installation\n                result = self.run_command_with_sudo([\"apt\", \"update\"], sudo_password)\n                result += \"\\n\" + self.run_command_with_sudo([\"apt\", \"install\", \"-y\", package_name], sudo_password)\n\n        except Exception as e:\n            self.status = f\"Installation failed: {str(e)}\"\n            raise  # Re-raise the exception for Langflow to capture and handle\n\n        # Store result as status and return it in Data object\n        self.status = result\n        return Message(content=result)  # Updated line\n\n    def run_command(self, command: list) -> str:\n        \"\"\"Run a command without sudo.\"\"\"\n        try:\n            result = subprocess.run(command, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)\n            return result.stdout\n        except subprocess.CalledProcessError as e:\n            raise Exception(f\"Command failed: {e.stderr}\")\n\n    def run_command_with_sudo(self, command: list, password: str) -> str:\n        \"\"\"Run a command with sudo, using the provided password for apt installations.\"\"\"\n        try:\n            # Prepend echo and pipe the password to the sudo command for apt\n            sudo_command = ['sudo', '-S'] + command\n            process = subprocess.run(sudo_command, input=password + \"\\n\", text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)\n            if process.returncode != 0:\n                raise Exception(f\"Command failed: {process.stderr}\")\n            return process.stdout\n        except subprocess.CalledProcessError as e:\n            raise Exception(f\"Command failed: {e.stderr}\")\n    \n    def build_pass(self) -> Message:\n        return Message(content=self.pass_value)  # Updated line\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "install_method": {
+                "trace_as_metadata": true,
+                "options": [
+                  "pip",
+                  "brew",
+                  "apt"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "install_method",
+                "value": "pip",
+                "display_name": "Installation Method",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Choose how to install the package.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput",
+                "load_from_db": false
+              },
+              "package_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "package_name",
+                "value": "pydub",
+                "display_name": "Package Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Specify the name of the package to install.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "pass_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "pass_value",
+                "value": "",
+                "display_name": "Text to Pass",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Pass a text to the next component in the Pass Output.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "sudo_password": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sudo_password",
+                "value": "",
+                "display_name": "Sudo Password",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter your password for sudo (required for apt installations).",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              }
+            },
+            "description": "Installs a specified package using pip, brew, or apt. Supports password input for sudo commands for apt.",
+            "icon": "package",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Install Dependencies",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "install_output",
+                "display_name": "Install Output",
+                "method": "install_packages",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "pass",
+                "display_name": "Pass",
+                "method": "build_pass",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "install_method",
+              "package_name",
+              "sudo_password",
+              "pass_value"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.19",
+            "official": false
+          },
+          "id": "PackageInstallerComponent-qH7zC"
+        },
+        "id": "PackageInstallerComponent-qH7zC",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "PackageInstallerComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "7c53403f-1af3-4cb7-8c03-0eb1d22a41f4",
+    "name": "Install Dependencies",
+    "description": "Installs a specified package using pip, brew, or apt. Supports password input for sudo commands for apt.",
+    "is_component": true,
+    "liked_by_count": "3",
+    "downloads_count": "55",
+    "metadata": {
+      "PackageInstallerComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.19",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "PackageInstallerComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import subprocess\nfrom axiestudio.custom import Component\nfrom axiestudio.inputs import DropdownInput, MessageTextInput, SecretStrInput\nfrom axiestudio.template import Output\nfrom axiestudio.schema.message import Message\n\nclass PackageInstallerComponent(Component):\n    display_name = \"Package Installer\"\n    description = \"Installs a specified package using pip, brew, or apt. Supports password input for sudo commands for apt.\"\n    icon = \"package\"\n\n    # Define inputs: method of installation, package name, and password\n    inputs = [\n        DropdownInput(\n            name=\"install_method\",\n            display_name=\"Installation Method\",\n            options=[\"pip\", \"brew\", \"apt\"],\n            info=\"Choose how to install the package.\",\n        ),\n        MessageTextInput(\n            name=\"package_name\",\n            display_name=\"Package Name\",\n            info=\"Specify the name of the package to install.\",\n        ),\n        SecretStrInput(\n            name=\"sudo_password\",\n            display_name=\"Sudo Password\",\n            info=\"Enter your password for sudo (required for apt installations).\",\n        ),\n        MessageTextInput(\n            name=\"pass_value\",\n            display_name=\"Text to Pass\",\n            info=\"Pass a text to the next component in the Pass Output.\"\n        )\n    ]\n\n    outputs = [\n        Output(display_name=\"Install Output\", name=\"install_output\", method=\"install_packages\"),\n        Output(display_name=\"Pass\", name=\"pass\", method=\"build_pass\"),\n    ]\n\n    def install_packages(self) -> Message:\n        install_method = self.install_method\n        package_name = self.package_name\n        sudo_password = self.sudo_password\n        result = \"\"\n\n        if not package_name:\n            raise Exception(\"Error: No package name provided.\")\n\n        try:\n            if install_method == \"pip\":\n                # No password needed for pip installations\n                result = self.run_command([\"pip\", \"install\", package_name])\n\n            elif install_method == \"brew\":\n                # Homebrew should not be run with sudo\n                result = self.run_command([\"brew\", \"install\", package_name])\n\n            elif install_method == \"apt\":\n                # Use sudo password for apt installation\n                result = self.run_command_with_sudo([\"apt\", \"update\"], sudo_password)\n                result += \"\\n\" + self.run_command_with_sudo([\"apt\", \"install\", \"-y\", package_name], sudo_password)\n\n        except Exception as e:\n            self.status = f\"Installation failed: {str(e)}\"\n            raise  # Re-raise the exception for Langflow to capture and handle\n\n        # Store result as status and return it in Data object\n        self.status = result\n        return Message(content=result)  # Updated line\n\n    def run_command(self, command: list) -> str:\n        \"\"\"Run a command without sudo.\"\"\"\n        try:\n            result = subprocess.run(command, check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)\n            return result.stdout\n        except subprocess.CalledProcessError as e:\n            raise Exception(f\"Command failed: {e.stderr}\")\n\n    def run_command_with_sudo(self, command: list, password: str) -> str:\n        \"\"\"Run a command with sudo, using the provided password for apt installations.\"\"\"\n        try:\n            # Prepend echo and pipe the password to the sudo command for apt\n            sudo_command = ['sudo', '-S'] + command\n            process = subprocess.run(sudo_command, input=password + \"\\n\", text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)\n            if process.returncode != 0:\n                raise Exception(f\"Command failed: {process.stderr}\")\n            return process.stdout\n        except subprocess.CalledProcessError as e:\n            raise Exception(f\"Command failed: {e.stderr}\")\n    \n    def build_pass(self) -> Message:\n        return Message(content=self.pass_value)  # Updated line\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "install_method": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "pip",
+                    "brew",
+                    "apt"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "install_method",
+                  "value": "pip",
+                  "display_name": "Installation Method",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Choose how to install the package.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput",
+                  "load_from_db": false
+                },
+                "package_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "package_name",
+                  "value": "pydub",
+                  "display_name": "Package Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Specify the name of the package to install.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "pass_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "pass_value",
+                  "value": "",
+                  "display_name": "Text to Pass",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Pass a text to the next component in the Pass Output.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "sudo_password": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sudo_password",
+                  "value": "",
+                  "display_name": "Sudo Password",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter your password for sudo (required for apt installations).",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                }
+              },
+              "description": "Installs a specified package using pip, brew, or apt. Supports password input for sudo commands for apt.",
+              "icon": "package",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Install Dependencies",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "install_output",
+                  "display_name": "Install Output",
+                  "method": "install_packages",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "pass",
+                  "display_name": "Pass",
+                  "method": "build_pass",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "install_method",
+                "package_name",
+                "sudo_password",
+                "pass_value"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.19",
+              "official": false
+            },
+            "id": "PackageInstallerComponent-qH7zC"
+          },
+          "id": "PackageInstallerComponent-qH7zC",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-28T02:40:28.598Z",
+    "date_updated": "2024-10-28T02:40:28.668Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "user_created": {
+      "username": "joaoguilhermeS",
+      "first_name": "João",
+      "last_name": "Oliveira",
+      "id": "94b2e207-1a44-4905-856c-4f5a69c168ce"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.740Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

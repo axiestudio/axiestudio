@@ -1,0 +1,519 @@
+{
+  "id": "6fcf2118-8580-4040-8704-a477e91b8e7a",
+  "name": "S3 File Downloader",
+  "description": "Downloads and loads files from S3-compatible object storage (minio for now). (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "appoks",
+    "first_name": "Johnathan Radünz",
+    "last_name": "Radünz",
+    "id": "91fd1e9c-c965-4845-a8ce-b81d962e690b",
+    "full_name": "Johnathan Radünz Radünz"
+  },
+  "store_url": "https://www.langflow.store/store/component/6fcf2118-8580-4040-8704-a477e91b8e7a",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-04T15:48:55.029Z",
+    "updated": "2024-08-04T22:54:49.226Z",
+    "downloaded": "2025-08-19T17:50:05.963Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "S3FileLoaderComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "aws_access_key_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "aws_access_key_id",
+                "display_name": "Access Key ID",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Your Access Key ID",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "aws_secret_access_key": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "aws_secret_access_key",
+                "display_name": "Secret Access Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Your Secret Access Key",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "bucket_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "bucket_name",
+                "display_name": "Bucket Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The name of the bucket",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import os\nimport boto3\nfrom botocore.exceptions import ClientError\nfrom pathlib import Path\nfrom typing import List\nfrom loguru import logger\nfrom axiestudio.custom import Component\nfrom axiestudio.io import (\n    DataInput,\n    IntInput,\n    Output,\n    MessageTextInput,\n    BoolInput\n)\nfrom axiestudio.base.data.utils import TEXT_FILE_TYPES, parse_text_file_to_data\nfrom axiestudio.schema import Data\n\nclass S3FileLoaderComponent(Component):\n    display_name = \"S3-compatible File Downloader\"\n    description = \"Downloads and loads files from S3-compatible object storage (minio for now).\"\n    icon = \"cloud-download\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"aws_access_key_id\",\n            display_name=\"Access Key ID\",\n            info=\"Your Access Key ID\",\n        ),\n        MessageTextInput(\n            name=\"aws_secret_access_key\",\n            display_name=\"Secret Access Key\",\n            info=\"Your Secret Access Key\",\n        ),\n        MessageTextInput(\n            name=\"region_name\",\n            display_name=\"Region\",\n            info=\"The region where your bucket is located (for S3)\",\n        ),\n        MessageTextInput(\n            name=\"bucket_name\",\n            display_name=\"Bucket Name\",\n            info=\"The name of the bucket\",\n        ),\n        MessageTextInput(\n            name=\"object_key\",\n            display_name=\"Object Key\",\n            info=\"The key (path) of the asset in the bucket\",\n        ),\n        MessageTextInput(\n            name=\"endpoint_url\",\n            display_name=\"Endpoint URL\",\n            info=\"The MinIO server endpoint URL (e.g., http://localhost:9000)\",\n        ),\n        BoolInput(\n            name=\"silent_errors\",\n            display_name=\"Silent Errors\",\n            advanced=True,\n            info=\"If true, errors will not raise an exception.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"load_file_from_s3\"),\n    ]\n\n    def load_file_from_s3(self) -> Data:\n        try:\n            # Prepare the S3 client configuration\n            client_kwargs = {\n                'aws_access_key_id': self.aws_access_key_id,\n                'aws_secret_access_key': self.aws_secret_access_key,\n            }\n\n            if self.endpoint_url:\n                client_kwargs['endpoint_url'] = self.endpoint_url\n                client_kwargs['config'] = boto3.session.Config(signature_version='s3v4')\n                client_kwargs['use_ssl'] = self.endpoint_url.startswith('https')\n                client_kwargs['verify'] = False  # This is often needed for self-signed certs, use with caution\n            else:\n                client_kwargs['region_name'] = self.region_name\n\n            # Create an S3 client\n            s3_client = boto3.client('s3', **client_kwargs)\n\n            # Create a temporary file to store the downloaded content\n            temp_file = Path(f\"/tmp/{self.object_key.split('/')[-1]}\")\n            temp_file.parent.mkdir(parents=True, exist_ok=True)\n\n            # Download the file\n            s3_client.download_file(self.bucket_name, self.object_key, str(temp_file))\n\n            # Check file type\n            extension = temp_file.suffix[1:].lower()\n            if extension == \"doc\":\n                raise ValueError(\"doc files are not supported. Please save as .docx\")\n            if extension not in TEXT_FILE_TYPES:\n                raise ValueError(f\"Unsupported file type: {extension}\")\n\n            # Parse the file\n            data = parse_text_file_to_data(str(temp_file), self.silent_errors)\n            \n            # Clean up the temporary file\n            temp_file.unlink()\n\n            self.status = f\"Successfully loaded {self.object_key}\"\n            return data or Data()\n\n        except ClientError as e:\n            error_message = f\"Failed to download from storage: {str(e)}\"\n            self.status = error_message\n            if not self.silent_errors:\n                raise\n            return Data()\n\n        except Exception as e:\n            error_message = f\"An unexpected error occurred: {str(e)}\"\n            self.status = error_message\n            if not self.silent_errors:\n                raise\n            return Data()\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "endpoint_url": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "http://localhost:9000",
+                "name": "endpoint_url",
+                "display_name": "Endpoint URL",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The MinIO server endpoint URL (e.g., http://localhost:9000)",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "object_key": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "object_key",
+                "display_name": "Object Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The key (path) of the asset in the bucket",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "region_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "us-east-1",
+                "name": "region_name",
+                "display_name": "Region",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The region where your bucket is located (for S3)",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "silent_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "silent_errors",
+                "display_name": "Silent Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, errors will not raise an exception.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Downloads and loads files from S3-compatible object storage (minio for now).",
+            "icon": "cloud-download",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "S3 File Downloader",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "load_file_from_s3",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "aws_access_key_id",
+              "aws_secret_access_key",
+              "region_name",
+              "bucket_name",
+              "object_key",
+              "endpoint_url",
+              "silent_errors"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "S3FileLoaderComponent-I6O74"
+        },
+        "id": "S3FileLoaderComponent-I6O74",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "S3FileLoaderComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "6fcf2118-8580-4040-8704-a477e91b8e7a",
+    "name": "S3 File Downloader",
+    "description": "Downloads and loads files from S3-compatible object storage (minio for now).",
+    "is_component": true,
+    "liked_by_count": "10",
+    "downloads_count": "130",
+    "metadata": {
+      "S3FileLoaderComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "S3FileLoaderComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "aws_access_key_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "aws_access_key_id",
+                  "display_name": "Access Key ID",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Your Access Key ID",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "aws_secret_access_key": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "aws_secret_access_key",
+                  "display_name": "Secret Access Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Your Secret Access Key",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "bucket_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "bucket_name",
+                  "display_name": "Bucket Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The name of the bucket",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import os\nimport boto3\nfrom botocore.exceptions import ClientError\nfrom pathlib import Path\nfrom typing import List\nfrom loguru import logger\nfrom axiestudio.custom import Component\nfrom axiestudio.io import (\n    DataInput,\n    IntInput,\n    Output,\n    MessageTextInput,\n    BoolInput\n)\nfrom axiestudio.base.data.utils import TEXT_FILE_TYPES, parse_text_file_to_data\nfrom axiestudio.schema import Data\n\nclass S3FileLoaderComponent(Component):\n    display_name = \"S3-compatible File Downloader\"\n    description = \"Downloads and loads files from S3-compatible object storage (minio for now).\"\n    icon = \"cloud-download\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"aws_access_key_id\",\n            display_name=\"Access Key ID\",\n            info=\"Your Access Key ID\",\n        ),\n        MessageTextInput(\n            name=\"aws_secret_access_key\",\n            display_name=\"Secret Access Key\",\n            info=\"Your Secret Access Key\",\n        ),\n        MessageTextInput(\n            name=\"region_name\",\n            display_name=\"Region\",\n            info=\"The region where your bucket is located (for S3)\",\n        ),\n        MessageTextInput(\n            name=\"bucket_name\",\n            display_name=\"Bucket Name\",\n            info=\"The name of the bucket\",\n        ),\n        MessageTextInput(\n            name=\"object_key\",\n            display_name=\"Object Key\",\n            info=\"The key (path) of the asset in the bucket\",\n        ),\n        MessageTextInput(\n            name=\"endpoint_url\",\n            display_name=\"Endpoint URL\",\n            info=\"The MinIO server endpoint URL (e.g., http://localhost:9000)\",\n        ),\n        BoolInput(\n            name=\"silent_errors\",\n            display_name=\"Silent Errors\",\n            advanced=True,\n            info=\"If true, errors will not raise an exception.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"load_file_from_s3\"),\n    ]\n\n    def load_file_from_s3(self) -> Data:\n        try:\n            # Prepare the S3 client configuration\n            client_kwargs = {\n                'aws_access_key_id': self.aws_access_key_id,\n                'aws_secret_access_key': self.aws_secret_access_key,\n            }\n\n            if self.endpoint_url:\n                client_kwargs['endpoint_url'] = self.endpoint_url\n                client_kwargs['config'] = boto3.session.Config(signature_version='s3v4')\n                client_kwargs['use_ssl'] = self.endpoint_url.startswith('https')\n                client_kwargs['verify'] = False  # This is often needed for self-signed certs, use with caution\n            else:\n                client_kwargs['region_name'] = self.region_name\n\n            # Create an S3 client\n            s3_client = boto3.client('s3', **client_kwargs)\n\n            # Create a temporary file to store the downloaded content\n            temp_file = Path(f\"/tmp/{self.object_key.split('/')[-1]}\")\n            temp_file.parent.mkdir(parents=True, exist_ok=True)\n\n            # Download the file\n            s3_client.download_file(self.bucket_name, self.object_key, str(temp_file))\n\n            # Check file type\n            extension = temp_file.suffix[1:].lower()\n            if extension == \"doc\":\n                raise ValueError(\"doc files are not supported. Please save as .docx\")\n            if extension not in TEXT_FILE_TYPES:\n                raise ValueError(f\"Unsupported file type: {extension}\")\n\n            # Parse the file\n            data = parse_text_file_to_data(str(temp_file), self.silent_errors)\n            \n            # Clean up the temporary file\n            temp_file.unlink()\n\n            self.status = f\"Successfully loaded {self.object_key}\"\n            return data or Data()\n\n        except ClientError as e:\n            error_message = f\"Failed to download from storage: {str(e)}\"\n            self.status = error_message\n            if not self.silent_errors:\n                raise\n            return Data()\n\n        except Exception as e:\n            error_message = f\"An unexpected error occurred: {str(e)}\"\n            self.status = error_message\n            if not self.silent_errors:\n                raise\n            return Data()\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "endpoint_url": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "http://localhost:9000",
+                  "name": "endpoint_url",
+                  "display_name": "Endpoint URL",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The MinIO server endpoint URL (e.g., http://localhost:9000)",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "object_key": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "object_key",
+                  "display_name": "Object Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The key (path) of the asset in the bucket",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "region_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "us-east-1",
+                  "name": "region_name",
+                  "display_name": "Region",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The region where your bucket is located (for S3)",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "silent_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "silent_errors",
+                  "display_name": "Silent Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, errors will not raise an exception.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Downloads and loads files from S3-compatible object storage (minio for now).",
+              "icon": "cloud-download",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "S3 File Downloader",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "load_file_from_s3",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "aws_access_key_id",
+                "aws_secret_access_key",
+                "region_name",
+                "bucket_name",
+                "object_key",
+                "endpoint_url",
+                "silent_errors"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "S3FileLoaderComponent-I6O74"
+          },
+          "id": "S3FileLoaderComponent-I6O74",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-04T15:48:55.029Z",
+    "date_updated": "2024-08-04T22:54:49.226Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "91fd1e9c-c965-4845-a8ce-b81d962e690b",
+    "user_created": {
+      "username": "appoks",
+      "first_name": "Johnathan Radünz",
+      "last_name": "Radünz",
+      "id": "91fd1e9c-c965-4845-a8ce-b81d962e690b"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.568Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

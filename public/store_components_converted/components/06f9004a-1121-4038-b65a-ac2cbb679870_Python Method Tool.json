@@ -1,0 +1,517 @@
+{
+  "id": "06f9004a-1121-4038-b65a-ac2cbb679870",
+  "name": "Python Method Tool",
+  "description": "Python method to tool (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "yamon",
+    "first_name": "YamonCompany",
+    "last_name": "kim",
+    "id": "23c5d1e9-66fe-4789-85da-d07be25ec3cc",
+    "full_name": "YamonCompany kim"
+  },
+  "store_url": "https://www.langflow.store/store/component/06f9004a-1121-4038-b65a-ac2cbb679870",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-29T06:56:35.902Z",
+    "updated": "2024-07-29T06:56:35.958Z",
+    "downloaded": "2025-08-19T17:50:06.099Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.13",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "PythonCodeStructuredTool",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "_functions": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "{}",
+                "name": "_functions",
+                "display_name": "Functions",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import ast\nimport json\nfrom typing import Any\n\nfrom langchain.agents import Tool\nfrom axiestudio.inputs.inputs import (\n    MultilineInput,\n    MessageTextInput,\n    BoolInput,\n    DropdownInput,\n    IntInput,\n    FloatInput,\n    HandleInput,\n    FieldTypes,\n)\nfrom langchain_core.tools import StructuredTool\nfrom axiestudio.io import Output\n\nfrom axiestudio.custom import Component\nfrom axiestudio.schema.dotdict import dotdict\nfrom axiestudio.schema import Data\n\nfrom pydantic.v1 import Field, create_model\nfrom pydantic.v1.fields import Undefined\n\n\nclass PythonCodeStructuredTool(Component):\n    DEFAULT_KEYS = [\n        \"code\",\n        \"_type\",\n        \"text_key\",\n        \"tool_code\",\n        \"tool_name\",\n        \"tool_description\",\n        \"return_direct\",\n        \"tool_function\",\n        \"global_variables\",\n        \"_functions\",\n    ]\n    AVAILABLE_TYPES = {\n        \"str\": {\"annotation\": str, \"field\": MessageTextInput},\n        \"int\": {\"annotation\": int, \"field\": IntInput},\n        \"float\": {\"annotation\": float, \"field\": FloatInput},\n        \"bool\": {\"annotation\": bool, \"field\": BoolInput},\n        \"NoneType\": {\"annotation\": None},\n    }\n    display_name = \"Python Method Tool\"\n    description = \"Python method to tool\"\n    documentation = \"https://python.langchain.com/docs/modules/tools/custom_tools/#structuredtool-dataclass\"\n    name = \"PythonCodeStructuredTool\"\n    icon = \"🐍\"\n\n    inputs = [\n        MultilineInput(\n            name=\"tool_code\",\n            display_name=\"Tool Code\",\n            info=\"Enter the dataclass code.\",\n            placeholder=\"def my_function(args):\\n    pass\",\n            required=True,\n            real_time_refresh=True,\n            refresh_button=True,\n        ),\n        MessageTextInput(name=\"tool_name\", display_name=\"Tool Name\", info=\"Enter the name of the tool.\", required=True),\n        MessageTextInput(\n            name=\"tool_description\",\n            display_name=\"Description\",\n            info=\"Enter the description of the tool.\",\n            required=True,\n        ),\n        BoolInput(\n            name=\"return_direct\",\n            display_name=\"Return Directly\",\n            info=\"Should the tool return the function output directly?\",\n        ),\n        DropdownInput(\n            name=\"tool_function\",\n            display_name=\"Tool Function\",\n            info=\"Select the function for additional expressions.\",\n            options=[],\n            required=True,\n            real_time_refresh=True,\n            refresh_button=True,\n        ),\n        HandleInput(\n            name=\"global_variables\",\n            display_name=\"Global Variables\",\n            info=\"Enter the global variables or Create Data Component.\",\n            input_types=[\"Data\"],\n            field_type=FieldTypes.DICT,\n            is_list=True,\n        ),\n        MessageTextInput(name=\"_functions\", display_name=\"Functions\", advanced=True),\n    ]\n\n    outputs = [\n        Output(display_name=\"Tool\", name=\"result_tool\", method=\"build_tool\"),\n    ]\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None) -> dotdict:\n        if field_name is None:\n            return build_config\n\n        if field_name != \"tool_code\" and field_name != \"tool_function\":\n            return build_config\n\n        try:\n            named_functions = {}\n            functions = self._parse_functions(build_config[\"tool_code\"][\"value\"])\n            existing_fields = {}\n            if len(build_config) > len(self.DEFAULT_KEYS):\n                for key in build_config.copy():\n                    if key not in self.DEFAULT_KEYS:\n                        existing_fields[key] = build_config.pop(key)\n\n            names = []\n            for func in functions:\n                named_functions[func[\"name\"]] = func\n                names.append(func[\"name\"])\n\n                for arg in func[\"args\"]:\n                    field_name = f\"{func['name']}|{arg['name']}\"\n                    if field_name in existing_fields:\n                        build_config[field_name] = existing_fields[field_name]\n                        continue\n\n                    for annotation in arg[\"annotations\"]:\n                        if annotation not in self.AVAILABLE_TYPES:\n                            raise Exception(f\"Unsupported type: {func['name']}_{arg['name']} - {annotation}\")\n\n                    field = MessageTextInput(\n                        display_name=f\"{arg['name']}: Description\",\n                        name=field_name,\n                        info=f\"Enter the description for {arg['name']}\",\n                        required=True,\n                    )\n                    build_config[field_name] = field.to_dict()\n\n            build_config[\"_functions\"][\"value\"] = json.dumps(named_functions)\n            build_config[\"tool_function\"][\"options\"] = names\n        except Exception as e:\n            self.status = f\"Failed to extract names: {str(e)}\"\n            build_config[\"tool_function\"][\"options\"] = [\"Failed to parse\", str(e)]\n        return build_config\n\n    async def build_tool(self) -> Tool:\n        local_namespace = {}  # type: ignore\n        tool_code = f\"from langchain_core.pydantic_v1 import BaseModel, Field\\n{self.tool_code}\"\n        modules = self._find_imports(tool_code)\n        import_code = \"\"\n        for module in modules[\"imports\"]:\n            import_code += f\"global {module}\\nimport {module}\\n\"\n        for from_module in modules[\"from_imports\"]:\n            for alias in from_module.names:\n                import_code += f\"global {alias.name}\\n\"\n            import_code += (\n                f\"from {from_module.module} import {', '.join([alias.name for alias in from_module.names])}\\n\"\n            )\n        exec(import_code, globals())\n        exec(tool_code, globals(), local_namespace)\n\n        class PythonCodeToolFunc:\n            params: dict = {}\n\n            def run(**kwargs):\n                for key in kwargs:\n                    if key not in PythonCodeToolFunc.params:\n                        PythonCodeToolFunc.params[key] = kwargs[key]\n                return local_namespace[self.tool_function](**PythonCodeToolFunc.params)\n\n        _globals = globals()\n        _local = {}\n        _local[self.tool_function] = PythonCodeToolFunc\n        _globals.update(_local)\n\n        if isinstance(self.global_variables, list):\n            for data in self.global_variables:\n                if isinstance(data, Data):\n                    _globals.update(data.data)\n        elif isinstance(self.global_variables, dict):\n            _globals.update(self.global_variables)\n\n        named_functions = json.loads(self._attributes[\"_functions\"])\n        schema_fields = {}\n\n        for attr in self._attributes:\n            if attr in self.DEFAULT_KEYS:\n                continue\n\n            func_name = attr.split(\"|\")[0]\n            field_name = attr.split(\"|\")[1]\n            func_arg = self._find_arg(named_functions, func_name, field_name)\n            if func_arg is None:\n                raise Exception(f\"Failed to find arg: {field_name}\")\n\n            field_annotations = func_arg[\"annotations\"]\n\n            field_value = self._get_value(self._attributes[attr], str)\n            schema_annotations = str\n            is_annotated = False\n            for field_annotation in field_annotations:\n                if field_annotation not in self.AVAILABLE_TYPES:\n                    raise Exception(f\"Unsupported type: {field_name} - {field_annotation}\")\n                if not is_annotated:\n                    schema_annotations = self.AVAILABLE_TYPES[field_annotation][\"annotation\"]\n                    is_annotated = True\n                else:\n                    schema_annotations |= self.AVAILABLE_TYPES[field_annotation][\"annotation\"]\n            schema_fields[field_name] = (\n                schema_annotations,\n                Field(default=func_arg[\"default\"] if \"default\" in func_arg else Undefined, description=field_value),\n            )\n\n        PythonCodeToolSchema = None\n        if schema_fields:\n            PythonCodeToolSchema = create_model(\"PythonCodeToolSchema\", **schema_fields)  # type: ignore\n\n        tool = StructuredTool.from_function(\n            func=_local[self.tool_function].run,\n            args_schema=PythonCodeToolSchema,\n            name=self.tool_name,\n            description=self.tool_description,\n            return_direct=self.return_direct,\n        )\n        return tool  # type: ignore\n\n    def post_code_processing(self, new_frontend_node: dict, current_frontend_node: dict):\n        \"\"\"\n        This function is called after the code validation is done.\n        \"\"\"\n        frontend_node = super().post_code_processing(new_frontend_node, current_frontend_node)\n        frontend_node[\"template\"] = self.update_build_config(\n            frontend_node[\"template\"], frontend_node[\"template\"][\"tool_code\"][\"value\"], \"tool_code\"\n        )\n        frontend_node = super().post_code_processing(new_frontend_node, current_frontend_node)\n        for key in frontend_node[\"template\"]:\n            if key in self.DEFAULT_KEYS:\n                continue\n            frontend_node[\"template\"] = self.update_build_config(\n                frontend_node[\"template\"], frontend_node[\"template\"][key][\"value\"], key\n            )\n            frontend_node = super().post_code_processing(new_frontend_node, current_frontend_node)\n        return frontend_node\n\n    def _parse_functions(self, code: str) -> list:\n        parsed_code = ast.parse(code)\n        functions = []\n        for node in parsed_code.body:\n            if not isinstance(node, ast.FunctionDef):\n                continue\n            func = {\"name\": node.name, \"args\": []}\n            for arg in node.args.args:\n                func_arg = {\"name\": arg.arg, \"annotations\": None}\n\n                for default in node.args.defaults:\n                    if (\n                        arg.lineno > default.lineno\n                        or arg.col_offset > default.col_offset\n                        or arg.end_lineno < default.end_lineno\n                        or arg.end_col_offset < default.end_col_offset\n                    ):\n                        continue\n\n                    if isinstance(default, ast.Name):\n                        func_arg[\"default\"] = default.id\n                    elif isinstance(default, ast.Constant):\n                        func_arg[\"default\"] = default.value\n\n                if arg.annotation:\n                    func_arg[\"annotations\"] = self._traverse_annotation(arg.annotation)\n\n                func[\"args\"].append(func_arg)\n            functions.append(func)\n\n        return functions\n\n    def _traverse_annotation(self, annotation: Any) -> list:\n        annotation_list = []\n        if isinstance(annotation, ast.BinOp):\n            if not isinstance(annotation.op, ast.BitOr):\n                raise Exception(f\"Unsupported operator: {annotation.op}\")\n            annotation_list.extend(self._traverse_annotation(annotation.left))\n            annotation_list.extend(self._traverse_annotation(annotation.right))\n        elif isinstance(annotation, ast.Name):\n            annotation_list.append(annotation.id)\n        elif isinstance(annotation, ast.Constant):\n            if annotation.value is None:\n                annotation_list.append(\"NoneType\")\n            else:\n                annotation_list.append(annotation.kind)\n        return annotation_list\n\n    def _find_imports(self, code: str) -> dotdict:\n        imports = []\n        from_imports = []\n        parsed_code = ast.parse(code)\n        for node in parsed_code.body:\n            if isinstance(node, ast.Import):\n                for alias in node.names:\n                    imports.append(alias.name)\n            elif isinstance(node, ast.ImportFrom):\n                from_imports.append(node)\n        return {\"imports\": imports, \"from_imports\": from_imports}\n\n    def _get_value(self, value: Any, annotation: Any) -> Any:\n        return value if isinstance(value, annotation) else value[\"value\"]\n\n    def _find_arg(self, named_functions: dict, func_name: str, arg_name: str) -> dict | None:\n        for arg in named_functions[func_name][\"args\"]:\n            if arg[\"name\"] == arg_name:\n                return arg\n        return None\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "global_variables": {
+                "trace_as_metadata": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "global_variables",
+                "display_name": "Global Variables",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Enter the global variables or Create Data Component.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "HandleInput"
+              },
+              "return_direct": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "return_direct",
+                "display_name": "Return Directly",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Should the tool return the function output directly?",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "tool_code": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "def my_function(args):\n    pass",
+                "show": true,
+                "value": "",
+                "name": "tool_code",
+                "display_name": "Tool Code",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter the dataclass code.",
+                "real_time_refresh": true,
+                "refresh_button": true,
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "tool_description": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "tool_description",
+                "display_name": "Description",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter the description of the tool.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "tool_function": {
+                "combobox": false,
+                "trace_as_metadata": true,
+                "options": [],
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "tool_function",
+                "display_name": "Tool Function",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Select the function for additional expressions.",
+                "real_time_refresh": true,
+                "refresh_button": true,
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "tool_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "tool_name",
+                "display_name": "Tool Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter the name of the tool.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Python method to tool",
+            "icon": "🐍",
+            "base_classes": [
+              "Tool"
+            ],
+            "display_name": "Python Method Tool",
+            "documentation": "https://python.langchain.com/docs/modules/tools/custom_tools/#structuredtool-dataclass",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "result_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "tool_code",
+              "tool_name",
+              "tool_description",
+              "return_direct",
+              "tool_function",
+              "global_variables",
+              "_functions"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-NbEGx"
+        },
+        "id": "CustomComponent-NbEGx",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "06f9004a-1121-4038-b65a-ac2cbb679870",
+    "name": "Python Method Tool",
+    "description": "Python method to tool",
+    "is_component": true,
+    "liked_by_count": "13",
+    "downloads_count": "173",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.13",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "PythonCodeStructuredTool",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "_functions": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "{}",
+                  "name": "_functions",
+                  "display_name": "Functions",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import ast\nimport json\nfrom typing import Any\n\nfrom langchain.agents import Tool\nfrom axiestudio.inputs.inputs import (\n    MultilineInput,\n    MessageTextInput,\n    BoolInput,\n    DropdownInput,\n    IntInput,\n    FloatInput,\n    HandleInput,\n    FieldTypes,\n)\nfrom langchain_core.tools import StructuredTool\nfrom axiestudio.io import Output\n\nfrom axiestudio.custom import Component\nfrom axiestudio.schema.dotdict import dotdict\nfrom axiestudio.schema import Data\n\nfrom pydantic.v1 import Field, create_model\nfrom pydantic.v1.fields import Undefined\n\n\nclass PythonCodeStructuredTool(Component):\n    DEFAULT_KEYS = [\n        \"code\",\n        \"_type\",\n        \"text_key\",\n        \"tool_code\",\n        \"tool_name\",\n        \"tool_description\",\n        \"return_direct\",\n        \"tool_function\",\n        \"global_variables\",\n        \"_functions\",\n    ]\n    AVAILABLE_TYPES = {\n        \"str\": {\"annotation\": str, \"field\": MessageTextInput},\n        \"int\": {\"annotation\": int, \"field\": IntInput},\n        \"float\": {\"annotation\": float, \"field\": FloatInput},\n        \"bool\": {\"annotation\": bool, \"field\": BoolInput},\n        \"NoneType\": {\"annotation\": None},\n    }\n    display_name = \"Python Method Tool\"\n    description = \"Python method to tool\"\n    documentation = \"https://python.langchain.com/docs/modules/tools/custom_tools/#structuredtool-dataclass\"\n    name = \"PythonCodeStructuredTool\"\n    icon = \"🐍\"\n\n    inputs = [\n        MultilineInput(\n            name=\"tool_code\",\n            display_name=\"Tool Code\",\n            info=\"Enter the dataclass code.\",\n            placeholder=\"def my_function(args):\\n    pass\",\n            required=True,\n            real_time_refresh=True,\n            refresh_button=True,\n        ),\n        MessageTextInput(name=\"tool_name\", display_name=\"Tool Name\", info=\"Enter the name of the tool.\", required=True),\n        MessageTextInput(\n            name=\"tool_description\",\n            display_name=\"Description\",\n            info=\"Enter the description of the tool.\",\n            required=True,\n        ),\n        BoolInput(\n            name=\"return_direct\",\n            display_name=\"Return Directly\",\n            info=\"Should the tool return the function output directly?\",\n        ),\n        DropdownInput(\n            name=\"tool_function\",\n            display_name=\"Tool Function\",\n            info=\"Select the function for additional expressions.\",\n            options=[],\n            required=True,\n            real_time_refresh=True,\n            refresh_button=True,\n        ),\n        HandleInput(\n            name=\"global_variables\",\n            display_name=\"Global Variables\",\n            info=\"Enter the global variables or Create Data Component.\",\n            input_types=[\"Data\"],\n            field_type=FieldTypes.DICT,\n            is_list=True,\n        ),\n        MessageTextInput(name=\"_functions\", display_name=\"Functions\", advanced=True),\n    ]\n\n    outputs = [\n        Output(display_name=\"Tool\", name=\"result_tool\", method=\"build_tool\"),\n    ]\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None) -> dotdict:\n        if field_name is None:\n            return build_config\n\n        if field_name != \"tool_code\" and field_name != \"tool_function\":\n            return build_config\n\n        try:\n            named_functions = {}\n            functions = self._parse_functions(build_config[\"tool_code\"][\"value\"])\n            existing_fields = {}\n            if len(build_config) > len(self.DEFAULT_KEYS):\n                for key in build_config.copy():\n                    if key not in self.DEFAULT_KEYS:\n                        existing_fields[key] = build_config.pop(key)\n\n            names = []\n            for func in functions:\n                named_functions[func[\"name\"]] = func\n                names.append(func[\"name\"])\n\n                for arg in func[\"args\"]:\n                    field_name = f\"{func['name']}|{arg['name']}\"\n                    if field_name in existing_fields:\n                        build_config[field_name] = existing_fields[field_name]\n                        continue\n\n                    for annotation in arg[\"annotations\"]:\n                        if annotation not in self.AVAILABLE_TYPES:\n                            raise Exception(f\"Unsupported type: {func['name']}_{arg['name']} - {annotation}\")\n\n                    field = MessageTextInput(\n                        display_name=f\"{arg['name']}: Description\",\n                        name=field_name,\n                        info=f\"Enter the description for {arg['name']}\",\n                        required=True,\n                    )\n                    build_config[field_name] = field.to_dict()\n\n            build_config[\"_functions\"][\"value\"] = json.dumps(named_functions)\n            build_config[\"tool_function\"][\"options\"] = names\n        except Exception as e:\n            self.status = f\"Failed to extract names: {str(e)}\"\n            build_config[\"tool_function\"][\"options\"] = [\"Failed to parse\", str(e)]\n        return build_config\n\n    async def build_tool(self) -> Tool:\n        local_namespace = {}  # type: ignore\n        tool_code = f\"from langchain_core.pydantic_v1 import BaseModel, Field\\n{self.tool_code}\"\n        modules = self._find_imports(tool_code)\n        import_code = \"\"\n        for module in modules[\"imports\"]:\n            import_code += f\"global {module}\\nimport {module}\\n\"\n        for from_module in modules[\"from_imports\"]:\n            for alias in from_module.names:\n                import_code += f\"global {alias.name}\\n\"\n            import_code += (\n                f\"from {from_module.module} import {', '.join([alias.name for alias in from_module.names])}\\n\"\n            )\n        exec(import_code, globals())\n        exec(tool_code, globals(), local_namespace)\n\n        class PythonCodeToolFunc:\n            params: dict = {}\n\n            def run(**kwargs):\n                for key in kwargs:\n                    if key not in PythonCodeToolFunc.params:\n                        PythonCodeToolFunc.params[key] = kwargs[key]\n                return local_namespace[self.tool_function](**PythonCodeToolFunc.params)\n\n        _globals = globals()\n        _local = {}\n        _local[self.tool_function] = PythonCodeToolFunc\n        _globals.update(_local)\n\n        if isinstance(self.global_variables, list):\n            for data in self.global_variables:\n                if isinstance(data, Data):\n                    _globals.update(data.data)\n        elif isinstance(self.global_variables, dict):\n            _globals.update(self.global_variables)\n\n        named_functions = json.loads(self._attributes[\"_functions\"])\n        schema_fields = {}\n\n        for attr in self._attributes:\n            if attr in self.DEFAULT_KEYS:\n                continue\n\n            func_name = attr.split(\"|\")[0]\n            field_name = attr.split(\"|\")[1]\n            func_arg = self._find_arg(named_functions, func_name, field_name)\n            if func_arg is None:\n                raise Exception(f\"Failed to find arg: {field_name}\")\n\n            field_annotations = func_arg[\"annotations\"]\n\n            field_value = self._get_value(self._attributes[attr], str)\n            schema_annotations = str\n            is_annotated = False\n            for field_annotation in field_annotations:\n                if field_annotation not in self.AVAILABLE_TYPES:\n                    raise Exception(f\"Unsupported type: {field_name} - {field_annotation}\")\n                if not is_annotated:\n                    schema_annotations = self.AVAILABLE_TYPES[field_annotation][\"annotation\"]\n                    is_annotated = True\n                else:\n                    schema_annotations |= self.AVAILABLE_TYPES[field_annotation][\"annotation\"]\n            schema_fields[field_name] = (\n                schema_annotations,\n                Field(default=func_arg[\"default\"] if \"default\" in func_arg else Undefined, description=field_value),\n            )\n\n        PythonCodeToolSchema = None\n        if schema_fields:\n            PythonCodeToolSchema = create_model(\"PythonCodeToolSchema\", **schema_fields)  # type: ignore\n\n        tool = StructuredTool.from_function(\n            func=_local[self.tool_function].run,\n            args_schema=PythonCodeToolSchema,\n            name=self.tool_name,\n            description=self.tool_description,\n            return_direct=self.return_direct,\n        )\n        return tool  # type: ignore\n\n    def post_code_processing(self, new_frontend_node: dict, current_frontend_node: dict):\n        \"\"\"\n        This function is called after the code validation is done.\n        \"\"\"\n        frontend_node = super().post_code_processing(new_frontend_node, current_frontend_node)\n        frontend_node[\"template\"] = self.update_build_config(\n            frontend_node[\"template\"], frontend_node[\"template\"][\"tool_code\"][\"value\"], \"tool_code\"\n        )\n        frontend_node = super().post_code_processing(new_frontend_node, current_frontend_node)\n        for key in frontend_node[\"template\"]:\n            if key in self.DEFAULT_KEYS:\n                continue\n            frontend_node[\"template\"] = self.update_build_config(\n                frontend_node[\"template\"], frontend_node[\"template\"][key][\"value\"], key\n            )\n            frontend_node = super().post_code_processing(new_frontend_node, current_frontend_node)\n        return frontend_node\n\n    def _parse_functions(self, code: str) -> list:\n        parsed_code = ast.parse(code)\n        functions = []\n        for node in parsed_code.body:\n            if not isinstance(node, ast.FunctionDef):\n                continue\n            func = {\"name\": node.name, \"args\": []}\n            for arg in node.args.args:\n                func_arg = {\"name\": arg.arg, \"annotations\": None}\n\n                for default in node.args.defaults:\n                    if (\n                        arg.lineno > default.lineno\n                        or arg.col_offset > default.col_offset\n                        or arg.end_lineno < default.end_lineno\n                        or arg.end_col_offset < default.end_col_offset\n                    ):\n                        continue\n\n                    if isinstance(default, ast.Name):\n                        func_arg[\"default\"] = default.id\n                    elif isinstance(default, ast.Constant):\n                        func_arg[\"default\"] = default.value\n\n                if arg.annotation:\n                    func_arg[\"annotations\"] = self._traverse_annotation(arg.annotation)\n\n                func[\"args\"].append(func_arg)\n            functions.append(func)\n\n        return functions\n\n    def _traverse_annotation(self, annotation: Any) -> list:\n        annotation_list = []\n        if isinstance(annotation, ast.BinOp):\n            if not isinstance(annotation.op, ast.BitOr):\n                raise Exception(f\"Unsupported operator: {annotation.op}\")\n            annotation_list.extend(self._traverse_annotation(annotation.left))\n            annotation_list.extend(self._traverse_annotation(annotation.right))\n        elif isinstance(annotation, ast.Name):\n            annotation_list.append(annotation.id)\n        elif isinstance(annotation, ast.Constant):\n            if annotation.value is None:\n                annotation_list.append(\"NoneType\")\n            else:\n                annotation_list.append(annotation.kind)\n        return annotation_list\n\n    def _find_imports(self, code: str) -> dotdict:\n        imports = []\n        from_imports = []\n        parsed_code = ast.parse(code)\n        for node in parsed_code.body:\n            if isinstance(node, ast.Import):\n                for alias in node.names:\n                    imports.append(alias.name)\n            elif isinstance(node, ast.ImportFrom):\n                from_imports.append(node)\n        return {\"imports\": imports, \"from_imports\": from_imports}\n\n    def _get_value(self, value: Any, annotation: Any) -> Any:\n        return value if isinstance(value, annotation) else value[\"value\"]\n\n    def _find_arg(self, named_functions: dict, func_name: str, arg_name: str) -> dict | None:\n        for arg in named_functions[func_name][\"args\"]:\n            if arg[\"name\"] == arg_name:\n                return arg\n        return None\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "global_variables": {
+                  "trace_as_metadata": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "global_variables",
+                  "display_name": "Global Variables",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter the global variables or Create Data Component.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "HandleInput"
+                },
+                "return_direct": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "return_direct",
+                  "display_name": "Return Directly",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Should the tool return the function output directly?",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "tool_code": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "def my_function(args):\n    pass",
+                  "show": true,
+                  "value": "",
+                  "name": "tool_code",
+                  "display_name": "Tool Code",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter the dataclass code.",
+                  "real_time_refresh": true,
+                  "refresh_button": true,
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "tool_description": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "tool_description",
+                  "display_name": "Description",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter the description of the tool.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "tool_function": {
+                  "combobox": false,
+                  "trace_as_metadata": true,
+                  "options": [],
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "tool_function",
+                  "display_name": "Tool Function",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Select the function for additional expressions.",
+                  "real_time_refresh": true,
+                  "refresh_button": true,
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "tool_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "tool_name",
+                  "display_name": "Tool Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter the name of the tool.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Python method to tool",
+              "icon": "🐍",
+              "base_classes": [
+                "Tool"
+              ],
+              "display_name": "Python Method Tool",
+              "documentation": "https://python.langchain.com/docs/modules/tools/custom_tools/#structuredtool-dataclass",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "result_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "tool_code",
+                "tool_name",
+                "tool_description",
+                "return_direct",
+                "tool_function",
+                "global_variables",
+                "_functions"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-NbEGx"
+          },
+          "id": "CustomComponent-NbEGx",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-07-29T06:56:35.902Z",
+    "date_updated": "2024-07-29T06:56:35.958Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "23c5d1e9-66fe-4789-85da-d07be25ec3cc",
+    "user_created": {
+      "username": "yamon",
+      "first_name": "YamonCompany",
+      "last_name": "kim",
+      "id": "23c5d1e9-66fe-4789-85da-d07be25ec3cc"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:08.825Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

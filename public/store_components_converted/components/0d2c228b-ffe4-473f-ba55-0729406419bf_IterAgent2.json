@@ -1,0 +1,377 @@
+{
+  "id": "0d2c228b-ffe4-473f-ba55-0729406419bf",
+  "name": "IterAgent2",
+  "description": "Conversational Agent that can use OpenAI's function calling API (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "yamon",
+    "first_name": "YamonCompany",
+    "last_name": "kim",
+    "id": "23c5d1e9-66fe-4789-85da-d07be25ec3cc",
+    "full_name": "YamonCompany kim"
+  },
+  "store_url": "https://www.langflow.store/store/component/0d2c228b-ffe4-473f-ba55-0729406419bf",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-02-20T05:00:39.972Z",
+    "updated": "2024-02-20T05:00:40.133Z",
+    "downloaded": "2025-08-19T17:50:05.175Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Agent",
+        "id": "ccabb590-c9e8-4e56-9d6c-309955936c6c"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "0.6.6",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Data",
+          "node": {
+            "template": {
+              "llm": {
+                "type": "BaseLanguageModel",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "llm",
+                "display_name": "LLM",
+                "advanced": false,
+                "dynamic": false,
+                "info": ""
+              },
+              "memories_component": {
+                "type": "BaseMemory",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "memories_component",
+                "display_name": "Memory Container",
+                "advanced": false,
+                "dynamic": false,
+                "info": ""
+              },
+              "system_message": {
+                "type": "SystemMessagePromptTemplate",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "system_message",
+                "display_name": "system_message PromptTemplate",
+                "advanced": false,
+                "dynamic": false,
+                "info": ""
+              },
+              "tools": {
+                "type": "Tool",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "tools",
+                "display_name": "Multi Tools",
+                "advanced": false,
+                "dynamic": false,
+                "info": ""
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List, Optional\r\nfrom axiestudio import CustomComponent\r\nfrom langchain.tools import Tool\r\nfrom langchain.schema.memory import BaseMemory\r\nfrom langchain.llms.base import BaseLanguageModel\r\nfrom langchain.prompts import ChatPromptTemplate\r\nfrom langchain.agents.agent import AgentExecutor\r\nfrom langchain.agents.conversational.base import ConversationalAgent\r\nfrom langchain.memory import CombinedMemory\r\nfrom langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import (\r\n    _get_default_system_message,\r\n)\r\nfrom langchain.prompts import SystemMessagePromptTemplate\r\nfrom langchain.schema import BasePromptTemplate\r\nfrom langchain.prompts.chat import MessagesPlaceholder\r\nfrom pprint import pprint\r\nfrom axiestudio.interface.utils import extract_input_variables_from_prompt\r\nfrom langchain.callbacks.streaming_stdout_final_only import (\r\n    FinalStreamingStdOutCallbackHandler,\r\n)\r\nfrom langchain.chains import LLMChain\r\n\r\n\r\nclass IterAgent2(CustomComponent):\r\n    display_name: str = \"IterAgent2\"\r\n    description: str = \"Conversational Agent that can use OpenAI's function calling API\"\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"llm\": {\"display_name\": \"LLM\"},\r\n            \"memories_component\": {\"display_name\": \"Memory Container\"},\r\n            \"tools\": {\"is_list\": True, \"display_name\": \"Multi Tools\"},\r\n            \"system_message\": {\"display_name\": \"system_message PromptTemplate\"},\r\n            \"max_iterations\": {\"display_name\": \"Max Iterations\"},\r\n        }\r\n\r\n    def build(\r\n        self,\r\n        llm: BaseLanguageModel,\r\n        tools: List[Tool],\r\n        max_iterations: int = 4,\r\n        memories_component: Optional[List[BaseMemory]] = None,\r\n        system_message: Optional[SystemMessagePromptTemplate] = None,\r\n    ) -> AgentExecutor:\r\n\r\n        memory_key: List[str] = []\r\n\r\n        if memories_component:\r\n            for memory in memories_component:\r\n                memory_key.extend(memory.memory_variables)\r\n\r\n        # Create a list of BaseMessagePromptTemplate instances with variable_name set\r\n        # to memory_key\r\n\r\n        memory = CombinedMemory(memories=memories_component or [])\r\n\r\n     #   prompt = ConversationalAgent.create_prompt(tools=tools, prefix='Assistant is a large language model trained by OpenAI.\\n\\nAssistant is designed to be able to assist with a wide range of tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. As a language model, Assistant is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.\\n\\nAssistant is constantly learning and improving, and its capabilities are constantly evolving. It is able to process and understand large amounts of text, and can use this knowledge to provide accurate and informative responses to a wide range of questions. Additionally, Assistant is able to generate its own text based on the input it receives, allowing it to engage in discussions and provide explanations and descriptions on a wide range of topics.\\n\\nOverall, Assistant is a powerful tool that can help with a wide range of tasks and provide valuable insights and information on a wide range of topics. Whether you need help with a specific question or just want to have a conversation about a particular topic, Assistant is here to assist.\\n\\nTOOLS:\\n------\\n\\nAssistant has access to the following tools:')\r\n\r\n        prompt = ChatPromptTemplate.from_messages([\r\n            (\"system\", \"You are a helpful chatbot\"),\r\n            (\"human\", \"Tell me a joke about {topic}\"),\r\n        ])\r\n\r\n        LlmChain = prompt | llm\r\n\r\n        agent = ConversationalAgent(llm=LlmChain, prompt=prompt)\r\n\r\n        return AgentExecutor(\r\n            agent=agent,\r\n\r\n            memory=memory,\r\n            max_iterations=max_iterations,\r\n            verbose=True,\r\n            return_intermediate_steps=True,\r\n        )\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": false,
+                "dynamic": true,
+                "info": ""
+              },
+              "max_iterations": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 4,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "max_iterations",
+                "display_name": "Max Iterations",
+                "advanced": false,
+                "dynamic": false,
+                "info": ""
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Conversational Agent that can use OpenAI's function calling API",
+            "base_classes": [
+              "AgentExecutor",
+              "Chain"
+            ],
+            "display_name": "IterAgent2",
+            "documentation": "",
+            "custom_fields": {
+              "llm": null,
+              "max_iterations": null,
+              "memories_component": null,
+              "system_message": null,
+              "tools": null
+            },
+            "output_types": [
+              "AgentExecutor"
+            ],
+            "field_formatters": {},
+            "beta": true,
+            "official": false
+          },
+          "id": "Data-bSQDx",
+          "description": "Conversational Agent that can use OpenAI's function calling API",
+          "display_name": "IterAgent2"
+        },
+        "id": "Data-bSQDx",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Data": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "0d2c228b-ffe4-473f-ba55-0729406419bf",
+    "name": "IterAgent2",
+    "description": "Conversational Agent that can use OpenAI's function calling API",
+    "is_component": true,
+    "liked_by_count": "0",
+    "downloads_count": "3",
+    "metadata": {
+      "Data": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "0.6.6",
+    "private": true,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Data",
+            "node": {
+              "template": {
+                "llm": {
+                  "type": "BaseLanguageModel",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "llm",
+                  "display_name": "LLM",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": ""
+                },
+                "memories_component": {
+                  "type": "BaseMemory",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "memories_component",
+                  "display_name": "Memory Container",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": ""
+                },
+                "system_message": {
+                  "type": "SystemMessagePromptTemplate",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "system_message",
+                  "display_name": "system_message PromptTemplate",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": ""
+                },
+                "tools": {
+                  "type": "Tool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "tools",
+                  "display_name": "Multi Tools",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": ""
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List, Optional\r\nfrom axiestudio import CustomComponent\r\nfrom langchain.tools import Tool\r\nfrom langchain.schema.memory import BaseMemory\r\nfrom langchain.llms.base import BaseLanguageModel\r\nfrom langchain.prompts import ChatPromptTemplate\r\nfrom langchain.agents.agent import AgentExecutor\r\nfrom langchain.agents.conversational.base import ConversationalAgent\r\nfrom langchain.memory import CombinedMemory\r\nfrom langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import (\r\n    _get_default_system_message,\r\n)\r\nfrom langchain.prompts import SystemMessagePromptTemplate\r\nfrom langchain.schema import BasePromptTemplate\r\nfrom langchain.prompts.chat import MessagesPlaceholder\r\nfrom pprint import pprint\r\nfrom axiestudio.interface.utils import extract_input_variables_from_prompt\r\nfrom langchain.callbacks.streaming_stdout_final_only import (\r\n    FinalStreamingStdOutCallbackHandler,\r\n)\r\nfrom langchain.chains import LLMChain\r\n\r\n\r\nclass IterAgent2(CustomComponent):\r\n    display_name: str = \"IterAgent2\"\r\n    description: str = \"Conversational Agent that can use OpenAI's function calling API\"\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"llm\": {\"display_name\": \"LLM\"},\r\n            \"memories_component\": {\"display_name\": \"Memory Container\"},\r\n            \"tools\": {\"is_list\": True, \"display_name\": \"Multi Tools\"},\r\n            \"system_message\": {\"display_name\": \"system_message PromptTemplate\"},\r\n            \"max_iterations\": {\"display_name\": \"Max Iterations\"},\r\n        }\r\n\r\n    def build(\r\n        self,\r\n        llm: BaseLanguageModel,\r\n        tools: List[Tool],\r\n        max_iterations: int = 4,\r\n        memories_component: Optional[List[BaseMemory]] = None,\r\n        system_message: Optional[SystemMessagePromptTemplate] = None,\r\n    ) -> AgentExecutor:\r\n\r\n        memory_key: List[str] = []\r\n\r\n        if memories_component:\r\n            for memory in memories_component:\r\n                memory_key.extend(memory.memory_variables)\r\n\r\n        # Create a list of BaseMessagePromptTemplate instances with variable_name set\r\n        # to memory_key\r\n\r\n        memory = CombinedMemory(memories=memories_component or [])\r\n\r\n     #   prompt = ConversationalAgent.create_prompt(tools=tools, prefix='Assistant is a large language model trained by OpenAI.\\n\\nAssistant is designed to be able to assist with a wide range of tasks, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics. As a language model, Assistant is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.\\n\\nAssistant is constantly learning and improving, and its capabilities are constantly evolving. It is able to process and understand large amounts of text, and can use this knowledge to provide accurate and informative responses to a wide range of questions. Additionally, Assistant is able to generate its own text based on the input it receives, allowing it to engage in discussions and provide explanations and descriptions on a wide range of topics.\\n\\nOverall, Assistant is a powerful tool that can help with a wide range of tasks and provide valuable insights and information on a wide range of topics. Whether you need help with a specific question or just want to have a conversation about a particular topic, Assistant is here to assist.\\n\\nTOOLS:\\n------\\n\\nAssistant has access to the following tools:')\r\n\r\n        prompt = ChatPromptTemplate.from_messages([\r\n            (\"system\", \"You are a helpful chatbot\"),\r\n            (\"human\", \"Tell me a joke about {topic}\"),\r\n        ])\r\n\r\n        LlmChain = prompt | llm\r\n\r\n        agent = ConversationalAgent(llm=LlmChain, prompt=prompt)\r\n\r\n        return AgentExecutor(\r\n            agent=agent,\r\n\r\n            memory=memory,\r\n            max_iterations=max_iterations,\r\n            verbose=True,\r\n            return_intermediate_steps=True,\r\n        )\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": ""
+                },
+                "max_iterations": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 4,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "max_iterations",
+                  "display_name": "Max Iterations",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": ""
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Conversational Agent that can use OpenAI's function calling API",
+              "base_classes": [
+                "AgentExecutor",
+                "Chain"
+              ],
+              "display_name": "IterAgent2",
+              "documentation": "",
+              "custom_fields": {
+                "llm": null,
+                "max_iterations": null,
+                "memories_component": null,
+                "system_message": null,
+                "tools": null
+              },
+              "output_types": [
+                "AgentExecutor"
+              ],
+              "field_formatters": {},
+              "beta": true,
+              "official": false
+            },
+            "id": "Data-bSQDx",
+            "description": "Conversational Agent that can use OpenAI's function calling API",
+            "display_name": "IterAgent2"
+          },
+          "id": "Data-bSQDx",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-02-20T05:00:39.972Z",
+    "date_updated": "2024-02-20T05:00:40.133Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "23c5d1e9-66fe-4789-85da-d07be25ec3cc",
+    "user_created": {
+      "username": "yamon",
+      "first_name": "YamonCompany",
+      "last_name": "kim",
+      "id": "23c5d1e9-66fe-4789-85da-d07be25ec3cc"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Agent",
+          "id": "ccabb590-c9e8-4e56-9d6c-309955936c6c"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:08.922Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 4,
+    "converter_version": "1.0.0"
+  }
+}

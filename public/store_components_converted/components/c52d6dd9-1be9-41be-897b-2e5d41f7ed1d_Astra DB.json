@@ -1,0 +1,883 @@
+{
+  "id": "c52d6dd9-1be9-41be-897b-2e5d41f7ed1d",
+  "name": "Astra DB",
+  "description": "Builds or loads an Astra DB Vector Store. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "mendonk",
+    "first_name": "Mendon",
+    "last_name": "Kissling",
+    "id": "b9737c10-65d3-4338-8911-0b4d5d7e85bf",
+    "full_name": "Mendon Kissling"
+  },
+  "store_url": "https://www.langflow.store/store/component/c52d6dd9-1be9-41be-897b-2e5d41f7ed1d",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-06-17T23:28:58.167Z",
+    "updated": "2024-06-17T23:28:58.196Z",
+    "downloaded": "2025-08-19T17:50:05.747Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "0.0.11",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "AstraDB",
+          "node": {
+            "template": {
+              "embedding": {
+                "type": "Embeddings",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "embedding",
+                "display_name": "Embedding",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Embedding to use",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "inputs": {
+                "type": "Record",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "inputs",
+                "display_name": "Inputs",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Optional list of records to be processed and stored in the vector store.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "api_endpoint": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "api_endpoint",
+                "display_name": "API Endpoint",
+                "advanced": false,
+                "dynamic": false,
+                "info": "API endpoint URL for the Astra DB service.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "batch_size": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "batch_size",
+                "display_name": "Batch Size",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Optional number of records to process in a single batch.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "bulk_delete_concurrency": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "bulk_delete_concurrency",
+                "display_name": "Bulk Delete Concurrency",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Optional concurrency level for bulk delete operations.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "bulk_insert_batch_concurrency": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "bulk_insert_batch_concurrency",
+                "display_name": "Bulk Insert Batch Concurrency",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Optional concurrency level for bulk insert operations.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "bulk_insert_overwrite_concurrency": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "bulk_insert_overwrite_concurrency",
+                "display_name": "Bulk Insert Overwrite Concurrency",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Optional concurrency level for bulk insert operations that overwrite existing records.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List, Optional, Union\nfrom langchain_astradb import AstraDBVectorStore\nfrom langchain_astradb.utils.astradb import SetupMode\n\nfrom axiestudio.custom import CustomComponent\nfrom axiestudio.field_typing import Embeddings, VectorStore\nfrom axiestudio.schema import Record\nfrom langchain_core.retrievers import BaseRetriever\n\n\nclass AstraDBVectorStoreComponent(CustomComponent):\n    display_name = \"Astra DB\"\n    description = \"Builds or loads an Astra DB Vector Store.\"\n    icon = \"AstraDB\"\n    field_order = [\"token\", \"api_endpoint\", \"collection_name\", \"inputs\", \"embedding\"]\n\n    def build_config(self):\n        return {\n            \"inputs\": {\n                \"display_name\": \"Inputs\",\n                \"info\": \"Optional list of records to be processed and stored in the vector store.\",\n            },\n            \"embedding\": {\"display_name\": \"Embedding\", \"info\": \"Embedding to use\"},\n            \"collection_name\": {\n                \"display_name\": \"Collection Name\",\n                \"info\": \"The name of the collection within Astra DB where the vectors will be stored.\",\n            },\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"info\": \"Authentication token for accessing Astra DB.\",\n                \"password\": True,\n            },\n            \"api_endpoint\": {\n                \"display_name\": \"API Endpoint\",\n                \"info\": \"API endpoint URL for the Astra DB service.\",\n            },\n            \"namespace\": {\n                \"display_name\": \"Namespace\",\n                \"info\": \"Optional namespace within Astra DB to use for the collection.\",\n                \"advanced\": True,\n            },\n            \"metric\": {\n                \"display_name\": \"Metric\",\n                \"info\": \"Optional distance metric for vector comparisons in the vector store.\",\n                \"advanced\": True,\n            },\n            \"batch_size\": {\n                \"display_name\": \"Batch Size\",\n                \"info\": \"Optional number of records to process in a single batch.\",\n                \"advanced\": True,\n            },\n            \"bulk_insert_batch_concurrency\": {\n                \"display_name\": \"Bulk Insert Batch Concurrency\",\n                \"info\": \"Optional concurrency level for bulk insert operations.\",\n                \"advanced\": True,\n            },\n            \"bulk_insert_overwrite_concurrency\": {\n                \"display_name\": \"Bulk Insert Overwrite Concurrency\",\n                \"info\": \"Optional concurrency level for bulk insert operations that overwrite existing records.\",\n                \"advanced\": True,\n            },\n            \"bulk_delete_concurrency\": {\n                \"display_name\": \"Bulk Delete Concurrency\",\n                \"info\": \"Optional concurrency level for bulk delete operations.\",\n                \"advanced\": True,\n            },\n            \"setup_mode\": {\n                \"display_name\": \"Setup Mode\",\n                \"info\": \"Configuration mode for setting up the vector store, with options like “Sync”, “Async”, or “Off”.\",\n                \"options\": [\"Sync\", \"Async\", \"Off\"],\n                \"advanced\": True,\n            },\n            \"pre_delete_collection\": {\n                \"display_name\": \"Pre Delete Collection\",\n                \"info\": \"Boolean flag to determine whether to delete the collection before creating a new one.\",\n                \"advanced\": True,\n            },\n            \"metadata_indexing_include\": {\n                \"display_name\": \"Metadata Indexing Include\",\n                \"info\": \"Optional list of metadata fields to include in the indexing.\",\n                \"advanced\": True,\n            },\n            \"metadata_indexing_exclude\": {\n                \"display_name\": \"Metadata Indexing Exclude\",\n                \"info\": \"Optional list of metadata fields to exclude from the indexing.\",\n                \"advanced\": True,\n            },\n            \"collection_indexing_policy\": {\n                \"display_name\": \"Collection Indexing Policy\",\n                \"info\": \"Optional dictionary defining the indexing policy for the collection.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        embedding: Embeddings,\n        token: str,\n        api_endpoint: str,\n        collection_name: str,\n        inputs: Optional[List[Record]] = None,\n        namespace: Optional[str] = None,\n        metric: Optional[str] = None,\n        batch_size: Optional[int] = None,\n        bulk_insert_batch_concurrency: Optional[int] = None,\n        bulk_insert_overwrite_concurrency: Optional[int] = None,\n        bulk_delete_concurrency: Optional[int] = None,\n        setup_mode: str = \"Sync\",\n        pre_delete_collection: bool = False,\n        metadata_indexing_include: Optional[List[str]] = None,\n        metadata_indexing_exclude: Optional[List[str]] = None,\n        collection_indexing_policy: Optional[dict] = None,\n    ) -> Union[VectorStore, BaseRetriever]:\n        try:\n            setup_mode_value = SetupMode[setup_mode.upper()]\n        except KeyError:\n            raise ValueError(f\"Invalid setup mode: {setup_mode}\")\n        if inputs:\n            documents = [_input.to_lc_document() for _input in inputs]\n\n            vector_store = AstraDBVectorStore.from_documents(\n                documents=documents,\n                embedding=embedding,\n                collection_name=collection_name,\n                token=token,\n                api_endpoint=api_endpoint,\n                namespace=namespace,\n                metric=metric,\n                batch_size=batch_size,\n                bulk_insert_batch_concurrency=bulk_insert_batch_concurrency,\n                bulk_insert_overwrite_concurrency=bulk_insert_overwrite_concurrency,\n                bulk_delete_concurrency=bulk_delete_concurrency,\n                setup_mode=setup_mode_value,\n                pre_delete_collection=pre_delete_collection,\n                metadata_indexing_include=metadata_indexing_include,\n                metadata_indexing_exclude=metadata_indexing_exclude,\n                collection_indexing_policy=collection_indexing_policy,\n            )\n        else:\n            vector_store = AstraDBVectorStore(\n                embedding=embedding,\n                collection_name=collection_name,\n                token=token,\n                api_endpoint=api_endpoint,\n                namespace=namespace,\n                metric=metric,\n                batch_size=batch_size,\n                bulk_insert_batch_concurrency=bulk_insert_batch_concurrency,\n                bulk_insert_overwrite_concurrency=bulk_insert_overwrite_concurrency,\n                bulk_delete_concurrency=bulk_delete_concurrency,\n                setup_mode=setup_mode_value,\n                pre_delete_collection=pre_delete_collection,\n                metadata_indexing_include=metadata_indexing_include,\n                metadata_indexing_exclude=metadata_indexing_exclude,\n                collection_indexing_policy=collection_indexing_policy,\n            )\n\n        return vector_store\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "collection_indexing_policy": {
+                "type": "dict",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "collection_indexing_policy",
+                "display_name": "Collection Indexing Policy",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Optional dictionary defining the indexing policy for the collection.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "collection_name": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "collection_name",
+                "display_name": "Collection Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The name of the collection within Astra DB where the vectors will be stored.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "axiestudio"
+              },
+              "metadata_indexing_exclude": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "metadata_indexing_exclude",
+                "display_name": "Metadata Indexing Exclude",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Optional list of metadata fields to exclude from the indexing.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "metadata_indexing_include": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "metadata_indexing_include",
+                "display_name": "Metadata Indexing Include",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Optional list of metadata fields to include in the indexing.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "metric": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "metric",
+                "display_name": "Metric",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Optional distance metric for vector comparisons in the vector store.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "namespace": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "namespace",
+                "display_name": "Namespace",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Optional namespace within Astra DB to use for the collection.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "pre_delete_collection": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "pre_delete_collection",
+                "display_name": "Pre Delete Collection",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Boolean flag to determine whether to delete the collection before creating a new one.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "setup_mode": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "Sync",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Sync",
+                  "Async",
+                  "Off"
+                ],
+                "name": "setup_mode",
+                "display_name": "Setup Mode",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Configuration mode for setting up the vector store, with options like “Sync”, “Async”, or “Off”.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "token": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "token",
+                "display_name": "Token",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Authentication token for accessing Astra DB.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Builds or loads an Astra DB Vector Store.",
+            "icon": "AstraDB",
+            "base_classes": [
+              "VectorStore"
+            ],
+            "display_name": "Astra DB",
+            "documentation": "",
+            "custom_fields": {
+              "embedding": null,
+              "token": null,
+              "api_endpoint": null,
+              "collection_name": null,
+              "inputs": null,
+              "namespace": null,
+              "metric": null,
+              "batch_size": null,
+              "bulk_insert_batch_concurrency": null,
+              "bulk_insert_overwrite_concurrency": null,
+              "bulk_delete_concurrency": null,
+              "setup_mode": null,
+              "pre_delete_collection": null,
+              "metadata_indexing_include": null,
+              "metadata_indexing_exclude": null,
+              "collection_indexing_policy": null
+            },
+            "output_types": [
+              "VectorStore"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "token",
+              "api_endpoint",
+              "collection_name",
+              "inputs",
+              "embedding"
+            ],
+            "beta": false,
+            "official": false
+          },
+          "id": "AstraDB-u741S"
+        },
+        "id": "AstraDB-u741S",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "AstraDB": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "c52d6dd9-1be9-41be-897b-2e5d41f7ed1d",
+    "name": "Astra DB",
+    "description": "Builds or loads an Astra DB Vector Store.",
+    "is_component": true,
+    "liked_by_count": "0",
+    "downloads_count": "0",
+    "metadata": {
+      "AstraDB": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "0.0.11",
+    "private": true,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "AstraDB",
+            "node": {
+              "template": {
+                "embedding": {
+                  "type": "Embeddings",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "embedding",
+                  "display_name": "Embedding",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Embedding to use",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "inputs": {
+                  "type": "Record",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "inputs",
+                  "display_name": "Inputs",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Optional list of records to be processed and stored in the vector store.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "api_endpoint": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "api_endpoint",
+                  "display_name": "API Endpoint",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "API endpoint URL for the Astra DB service.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "batch_size": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "batch_size",
+                  "display_name": "Batch Size",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Optional number of records to process in a single batch.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "bulk_delete_concurrency": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "bulk_delete_concurrency",
+                  "display_name": "Bulk Delete Concurrency",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Optional concurrency level for bulk delete operations.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "bulk_insert_batch_concurrency": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "bulk_insert_batch_concurrency",
+                  "display_name": "Bulk Insert Batch Concurrency",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Optional concurrency level for bulk insert operations.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "bulk_insert_overwrite_concurrency": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "bulk_insert_overwrite_concurrency",
+                  "display_name": "Bulk Insert Overwrite Concurrency",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Optional concurrency level for bulk insert operations that overwrite existing records.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List, Optional, Union\nfrom langchain_astradb import AstraDBVectorStore\nfrom langchain_astradb.utils.astradb import SetupMode\n\nfrom axiestudio.custom import CustomComponent\nfrom axiestudio.field_typing import Embeddings, VectorStore\nfrom axiestudio.schema import Record\nfrom langchain_core.retrievers import BaseRetriever\n\n\nclass AstraDBVectorStoreComponent(CustomComponent):\n    display_name = \"Astra DB\"\n    description = \"Builds or loads an Astra DB Vector Store.\"\n    icon = \"AstraDB\"\n    field_order = [\"token\", \"api_endpoint\", \"collection_name\", \"inputs\", \"embedding\"]\n\n    def build_config(self):\n        return {\n            \"inputs\": {\n                \"display_name\": \"Inputs\",\n                \"info\": \"Optional list of records to be processed and stored in the vector store.\",\n            },\n            \"embedding\": {\"display_name\": \"Embedding\", \"info\": \"Embedding to use\"},\n            \"collection_name\": {\n                \"display_name\": \"Collection Name\",\n                \"info\": \"The name of the collection within Astra DB where the vectors will be stored.\",\n            },\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"info\": \"Authentication token for accessing Astra DB.\",\n                \"password\": True,\n            },\n            \"api_endpoint\": {\n                \"display_name\": \"API Endpoint\",\n                \"info\": \"API endpoint URL for the Astra DB service.\",\n            },\n            \"namespace\": {\n                \"display_name\": \"Namespace\",\n                \"info\": \"Optional namespace within Astra DB to use for the collection.\",\n                \"advanced\": True,\n            },\n            \"metric\": {\n                \"display_name\": \"Metric\",\n                \"info\": \"Optional distance metric for vector comparisons in the vector store.\",\n                \"advanced\": True,\n            },\n            \"batch_size\": {\n                \"display_name\": \"Batch Size\",\n                \"info\": \"Optional number of records to process in a single batch.\",\n                \"advanced\": True,\n            },\n            \"bulk_insert_batch_concurrency\": {\n                \"display_name\": \"Bulk Insert Batch Concurrency\",\n                \"info\": \"Optional concurrency level for bulk insert operations.\",\n                \"advanced\": True,\n            },\n            \"bulk_insert_overwrite_concurrency\": {\n                \"display_name\": \"Bulk Insert Overwrite Concurrency\",\n                \"info\": \"Optional concurrency level for bulk insert operations that overwrite existing records.\",\n                \"advanced\": True,\n            },\n            \"bulk_delete_concurrency\": {\n                \"display_name\": \"Bulk Delete Concurrency\",\n                \"info\": \"Optional concurrency level for bulk delete operations.\",\n                \"advanced\": True,\n            },\n            \"setup_mode\": {\n                \"display_name\": \"Setup Mode\",\n                \"info\": \"Configuration mode for setting up the vector store, with options like “Sync”, “Async”, or “Off”.\",\n                \"options\": [\"Sync\", \"Async\", \"Off\"],\n                \"advanced\": True,\n            },\n            \"pre_delete_collection\": {\n                \"display_name\": \"Pre Delete Collection\",\n                \"info\": \"Boolean flag to determine whether to delete the collection before creating a new one.\",\n                \"advanced\": True,\n            },\n            \"metadata_indexing_include\": {\n                \"display_name\": \"Metadata Indexing Include\",\n                \"info\": \"Optional list of metadata fields to include in the indexing.\",\n                \"advanced\": True,\n            },\n            \"metadata_indexing_exclude\": {\n                \"display_name\": \"Metadata Indexing Exclude\",\n                \"info\": \"Optional list of metadata fields to exclude from the indexing.\",\n                \"advanced\": True,\n            },\n            \"collection_indexing_policy\": {\n                \"display_name\": \"Collection Indexing Policy\",\n                \"info\": \"Optional dictionary defining the indexing policy for the collection.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        embedding: Embeddings,\n        token: str,\n        api_endpoint: str,\n        collection_name: str,\n        inputs: Optional[List[Record]] = None,\n        namespace: Optional[str] = None,\n        metric: Optional[str] = None,\n        batch_size: Optional[int] = None,\n        bulk_insert_batch_concurrency: Optional[int] = None,\n        bulk_insert_overwrite_concurrency: Optional[int] = None,\n        bulk_delete_concurrency: Optional[int] = None,\n        setup_mode: str = \"Sync\",\n        pre_delete_collection: bool = False,\n        metadata_indexing_include: Optional[List[str]] = None,\n        metadata_indexing_exclude: Optional[List[str]] = None,\n        collection_indexing_policy: Optional[dict] = None,\n    ) -> Union[VectorStore, BaseRetriever]:\n        try:\n            setup_mode_value = SetupMode[setup_mode.upper()]\n        except KeyError:\n            raise ValueError(f\"Invalid setup mode: {setup_mode}\")\n        if inputs:\n            documents = [_input.to_lc_document() for _input in inputs]\n\n            vector_store = AstraDBVectorStore.from_documents(\n                documents=documents,\n                embedding=embedding,\n                collection_name=collection_name,\n                token=token,\n                api_endpoint=api_endpoint,\n                namespace=namespace,\n                metric=metric,\n                batch_size=batch_size,\n                bulk_insert_batch_concurrency=bulk_insert_batch_concurrency,\n                bulk_insert_overwrite_concurrency=bulk_insert_overwrite_concurrency,\n                bulk_delete_concurrency=bulk_delete_concurrency,\n                setup_mode=setup_mode_value,\n                pre_delete_collection=pre_delete_collection,\n                metadata_indexing_include=metadata_indexing_include,\n                metadata_indexing_exclude=metadata_indexing_exclude,\n                collection_indexing_policy=collection_indexing_policy,\n            )\n        else:\n            vector_store = AstraDBVectorStore(\n                embedding=embedding,\n                collection_name=collection_name,\n                token=token,\n                api_endpoint=api_endpoint,\n                namespace=namespace,\n                metric=metric,\n                batch_size=batch_size,\n                bulk_insert_batch_concurrency=bulk_insert_batch_concurrency,\n                bulk_insert_overwrite_concurrency=bulk_insert_overwrite_concurrency,\n                bulk_delete_concurrency=bulk_delete_concurrency,\n                setup_mode=setup_mode_value,\n                pre_delete_collection=pre_delete_collection,\n                metadata_indexing_include=metadata_indexing_include,\n                metadata_indexing_exclude=metadata_indexing_exclude,\n                collection_indexing_policy=collection_indexing_policy,\n            )\n\n        return vector_store\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "collection_indexing_policy": {
+                  "type": "dict",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "collection_indexing_policy",
+                  "display_name": "Collection Indexing Policy",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Optional dictionary defining the indexing policy for the collection.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "collection_name": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "collection_name",
+                  "display_name": "Collection Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The name of the collection within Astra DB where the vectors will be stored.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "axiestudio"
+                },
+                "metadata_indexing_exclude": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "metadata_indexing_exclude",
+                  "display_name": "Metadata Indexing Exclude",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Optional list of metadata fields to exclude from the indexing.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "metadata_indexing_include": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "metadata_indexing_include",
+                  "display_name": "Metadata Indexing Include",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Optional list of metadata fields to include in the indexing.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "metric": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "metric",
+                  "display_name": "Metric",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Optional distance metric for vector comparisons in the vector store.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "namespace": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "namespace",
+                  "display_name": "Namespace",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Optional namespace within Astra DB to use for the collection.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "pre_delete_collection": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "pre_delete_collection",
+                  "display_name": "Pre Delete Collection",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Boolean flag to determine whether to delete the collection before creating a new one.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "setup_mode": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "Sync",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Sync",
+                    "Async",
+                    "Off"
+                  ],
+                  "name": "setup_mode",
+                  "display_name": "Setup Mode",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Configuration mode for setting up the vector store, with options like “Sync”, “Async”, or “Off”.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "token": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "token",
+                  "display_name": "Token",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Authentication token for accessing Astra DB.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Builds or loads an Astra DB Vector Store.",
+              "icon": "AstraDB",
+              "base_classes": [
+                "VectorStore"
+              ],
+              "display_name": "Astra DB",
+              "documentation": "",
+              "custom_fields": {
+                "embedding": null,
+                "token": null,
+                "api_endpoint": null,
+                "collection_name": null,
+                "inputs": null,
+                "namespace": null,
+                "metric": null,
+                "batch_size": null,
+                "bulk_insert_batch_concurrency": null,
+                "bulk_insert_overwrite_concurrency": null,
+                "bulk_delete_concurrency": null,
+                "setup_mode": null,
+                "pre_delete_collection": null,
+                "metadata_indexing_include": null,
+                "metadata_indexing_exclude": null,
+                "collection_indexing_policy": null
+              },
+              "output_types": [
+                "VectorStore"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "token",
+                "api_endpoint",
+                "collection_name",
+                "inputs",
+                "embedding"
+              ],
+              "beta": false,
+              "official": false
+            },
+            "id": "AstraDB-u741S"
+          },
+          "id": "AstraDB-u741S",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-06-17T23:28:58.167Z",
+    "date_updated": "2024-06-17T23:28:58.196Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "b9737c10-65d3-4338-8911-0b4d5d7e85bf",
+    "user_created": {
+      "username": "mendonk",
+      "first_name": "Mendon",
+      "last_name": "Kissling",
+      "id": "b9737c10-65d3-4338-8911-0b4d5d7e85bf"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.700Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

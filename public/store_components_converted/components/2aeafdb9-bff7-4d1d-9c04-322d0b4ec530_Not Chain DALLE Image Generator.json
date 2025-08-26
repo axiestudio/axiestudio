@@ -1,0 +1,539 @@
+{
+  "id": "2aeafdb9-bff7-4d1d-9c04-322d0b4ec530",
+  "name": "(Not Chain) DALL·E Image Generator",
+  "description": "Generates new images based on text prompts, edits existing images, or creates variations of an image.(Not Chain) (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "yamon",
+    "first_name": "YamonCompany",
+    "last_name": "kim",
+    "id": "23c5d1e9-66fe-4789-85da-d07be25ec3cc",
+    "full_name": "YamonCompany kim"
+  },
+  "store_url": "https://www.langflow.store/store/component/2aeafdb9-bff7-4d1d-9c04-322d0b4ec530",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-04-01T13:49:19.663Z",
+    "updated": "2024-04-01T13:49:19.722Z",
+    "downloaded": "2025-08-19T17:50:05.095Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "0.6.9",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Data",
+          "node": {
+            "template": {
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper\r\nfrom axiestudio import CustomComponent\r\nfrom typing import Optional, Any\r\nfrom openai import OpenAI\r\nfrom langchain.schema import BasePromptTemplate\r\nfrom axiestudio.field_typing import RangeSpec\r\nimport json\r\nfrom langchain_community.tools.json.tool import JsonSpec\r\nfrom langchain.schema import Document\r\n\r\nclass DallEImageGenerator(CustomComponent):\r\n    display_name: str = \"(Not Chain) DALL·E Image Generator\"\r\n    description: str = \"Generates new images based on text prompts, edits existing images, or creates variations of an image.(Not Chain)\"\r\n    icon = \"🖌️️\"\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"openai_api_key\": {\r\n                \"display_name\": \"OpenAI API Key\",\r\n                \"info\": \"OpenAI API key for authentication.\",\r\n                \"required\": True,\r\n                \"password\": True,\r\n            },\r\n            \"prompt\": {\r\n                \"info\": \"A text description of the desired image(s). The maximum length is 1000 characters for dall-e-2 and 4000 characters for dall-e-3.\",\r\n                \"required\": True,\r\n            },\r\n            \"model\": {\r\n                \"options\": [\"dall-e-2\", \"dall-e-3\"],\r\n                \"value\": \"dall-e-2\",\r\n                \"info\": \"The model to use for image generation.\",\r\n            },\r\n            \"n\": {\r\n                \"info\": \"The number of images to generate. Must be between 1 and 10. For dall-e-3, only n=1 is supported.\",\r\n                \"default\": 1,\r\n                \"range_spec\": RangeSpec(min=1, max=10, step=1),\r\n            },\r\n            \"quality\": {\r\n                \"options\": [\"standard\", \"hd\"],\r\n                \"default\": \"standard\",\r\n                \"info\": \"The quality of the image that will be generated. This parameter is only supported for dall-e-3.\",\r\n            },\r\n            \"response_format\": {\r\n                \"options\": [\"url\", \"b64_json\"],\r\n                \"default\": \"url\",\r\n                \"info\": \"The format in which the generated images are returned.\",\r\n            },\r\n            \"size\": {\r\n                \"options\": [\"256x256\", \"512x512\", \"1024x1024\", \"1792x1024\", \"1024x1792\"],\r\n                \"default\": \"1024x1024\",\r\n                \"info\": \"The size of the generated images. Varies based on the selected model.\",\r\n            },\r\n            \"style\": {\r\n                \"options\": [\"vivid\", \"natural\"],\r\n                \"default\": \"vivid\",\r\n                \"info\": \"The style of the generated images. This parameter is only supported for dall-e-3.\",\r\n            },\r\n        }\r\n\r\n    def build(self, openai_api_key: str, prompt: str, model: str, n: float, quality: str, response_format: str, size: str, style: Optional[str] = None) -> Document:\r\n\r\n        openai = OpenAI(api_key=openai_api_key)\r\n\r\n\r\n\r\n        if model == \"dall-e-3\":\r\n            if n != 1:\r\n                raise ValueError(\"For dall-e-3, only n=1 is supported.\")\r\n            if size not in [\"1024x1024\", \"1792x1024\", \"1024x1792\"]:\r\n                raise ValueError(\r\n                    \"For dall-e-3, supported sizes are 1024x1024, 1792x1024, or 1024x1792.\")\r\n            if quality not in [\"standard\", \"hd\"]:\r\n                raise ValueError(\r\n                    \"For dall-e-3, quality must be either 'standard' or 'hd'.\")\r\n            if style not in [None, \"vivid\", \"natural\"]:\r\n                raise ValueError(\r\n                    \"For dall-e-3, style must be either 'vivid', 'natural', or None.\")\r\n\r\n            response = openai.images.generate(\r\n                \r\n                model=model,\r\n                prompt=prompt,\r\n                n=int(n),\r\n                size=size,\r\n                quality=quality,\r\n                response_format=response_format,\r\n                style=style,\r\n            )\r\n        else:  # dall-e-2\r\n            if size not in [\"256x256\", \"512x512\", \"1024x1024\"]:\r\n                raise ValueError(\r\n                    \"For dall-e-2, supported sizes are 256x256, 512x512, or 1024x1024.\")\r\n            if n < 1 or n > 10:\r\n                raise ValueError(\"n must be between 1 and 10 for dall-e-2.\")\r\n\r\n            response = openai.images.generate(\r\n\r\n                model=model,\r\n                prompt=prompt,\r\n                n=int(n),\r\n                size=size,\r\n                response_format=response_format,\r\n            )\r\n\r\n\r\n        return response  # 다른 포맷 반환 (예: b64_json)",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "model": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "dall-e-3",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "dall-e-2",
+                  "dall-e-3"
+                ],
+                "name": "model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The model to use for image generation.",
+                "title_case": true
+              },
+              "n": {
+                "type": "float",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "n",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The number of images to generate. Must be between 1 and 10. For dall-e-3, only n=1 is supported.",
+                "rangeSpec": {
+                  "min": 1,
+                  "max": 10,
+                  "step": 1
+                },
+                "title_case": true,
+                "value": "1"
+              },
+              "openai_api_key": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "openai_api_key",
+                "display_name": "OpenAI API Key",
+                "advanced": false,
+                "dynamic": false,
+                "info": "OpenAI API key for authentication.",
+                "title_case": true,
+                "value": ""
+              },
+              "prompt": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "prompt",
+                "advanced": false,
+                "dynamic": false,
+                "info": "A text description of the desired image(s). The maximum length is 1000 characters for dall-e-2 and 4000 characters for dall-e-3.",
+                "title_case": true,
+                "value": "Cat,Black"
+              },
+              "quality": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "standard",
+                  "hd"
+                ],
+                "name": "quality",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The quality of the image that will be generated. This parameter is only supported for dall-e-3.",
+                "title_case": true,
+                "value": "standard"
+              },
+              "response_format": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "url",
+                  "b64_json"
+                ],
+                "name": "response_format",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The format in which the generated images are returned.",
+                "title_case": true,
+                "value": "url"
+              },
+              "size": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "256x256",
+                  "512x512",
+                  "1024x1024",
+                  "1792x1024",
+                  "1024x1792"
+                ],
+                "name": "size",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The size of the generated images. Varies based on the selected model.",
+                "title_case": true,
+                "value": "1024x1024"
+              },
+              "style": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "vivid",
+                  "natural"
+                ],
+                "name": "style",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The style of the generated images. This parameter is only supported for dall-e-3.",
+                "title_case": true,
+                "value": "vivid"
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Generates new images based on text prompts, edits existing images, or creates variations of an image.(Not Chain)",
+            "icon": "🖌️️",
+            "base_classes": [
+              "Document"
+            ],
+            "display_name": "(Not Chain) DALL·E Image Generator",
+            "documentation": "",
+            "custom_fields": {
+              "openai_api_key": null,
+              "prompt": null,
+              "model": null,
+              "n": null,
+              "quality": null,
+              "response_format": null,
+              "size": null,
+              "style": null
+            },
+            "output_types": [
+              "Document"
+            ],
+            "field_formatters": {},
+            "beta": true,
+            "official": false
+          },
+          "id": "Data-5Wqzw",
+          "description": "Generates new images based on text prompts, edits existing images, or creates variations of an image.(Not Chain)",
+          "display_name": "(Not Chain) DALL·E Image Generator"
+        },
+        "id": "Data-5Wqzw",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Data": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "2aeafdb9-bff7-4d1d-9c04-322d0b4ec530",
+    "name": "(Not Chain) DALL·E Image Generator",
+    "description": "Generates new images based on text prompts, edits existing images, or creates variations of an image.(Not Chain)",
+    "is_component": true,
+    "liked_by_count": "13",
+    "downloads_count": "153",
+    "metadata": {
+      "Data": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "0.6.9",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Data",
+            "node": {
+              "template": {
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper\r\nfrom axiestudio import CustomComponent\r\nfrom typing import Optional, Any\r\nfrom openai import OpenAI\r\nfrom langchain.schema import BasePromptTemplate\r\nfrom axiestudio.field_typing import RangeSpec\r\nimport json\r\nfrom langchain_community.tools.json.tool import JsonSpec\r\nfrom langchain.schema import Document\r\n\r\nclass DallEImageGenerator(CustomComponent):\r\n    display_name: str = \"(Not Chain) DALL·E Image Generator\"\r\n    description: str = \"Generates new images based on text prompts, edits existing images, or creates variations of an image.(Not Chain)\"\r\n    icon = \"🖌️️\"\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"openai_api_key\": {\r\n                \"display_name\": \"OpenAI API Key\",\r\n                \"info\": \"OpenAI API key for authentication.\",\r\n                \"required\": True,\r\n                \"password\": True,\r\n            },\r\n            \"prompt\": {\r\n                \"info\": \"A text description of the desired image(s). The maximum length is 1000 characters for dall-e-2 and 4000 characters for dall-e-3.\",\r\n                \"required\": True,\r\n            },\r\n            \"model\": {\r\n                \"options\": [\"dall-e-2\", \"dall-e-3\"],\r\n                \"value\": \"dall-e-2\",\r\n                \"info\": \"The model to use for image generation.\",\r\n            },\r\n            \"n\": {\r\n                \"info\": \"The number of images to generate. Must be between 1 and 10. For dall-e-3, only n=1 is supported.\",\r\n                \"default\": 1,\r\n                \"range_spec\": RangeSpec(min=1, max=10, step=1),\r\n            },\r\n            \"quality\": {\r\n                \"options\": [\"standard\", \"hd\"],\r\n                \"default\": \"standard\",\r\n                \"info\": \"The quality of the image that will be generated. This parameter is only supported for dall-e-3.\",\r\n            },\r\n            \"response_format\": {\r\n                \"options\": [\"url\", \"b64_json\"],\r\n                \"default\": \"url\",\r\n                \"info\": \"The format in which the generated images are returned.\",\r\n            },\r\n            \"size\": {\r\n                \"options\": [\"256x256\", \"512x512\", \"1024x1024\", \"1792x1024\", \"1024x1792\"],\r\n                \"default\": \"1024x1024\",\r\n                \"info\": \"The size of the generated images. Varies based on the selected model.\",\r\n            },\r\n            \"style\": {\r\n                \"options\": [\"vivid\", \"natural\"],\r\n                \"default\": \"vivid\",\r\n                \"info\": \"The style of the generated images. This parameter is only supported for dall-e-3.\",\r\n            },\r\n        }\r\n\r\n    def build(self, openai_api_key: str, prompt: str, model: str, n: float, quality: str, response_format: str, size: str, style: Optional[str] = None) -> Document:\r\n\r\n        openai = OpenAI(api_key=openai_api_key)\r\n\r\n\r\n\r\n        if model == \"dall-e-3\":\r\n            if n != 1:\r\n                raise ValueError(\"For dall-e-3, only n=1 is supported.\")\r\n            if size not in [\"1024x1024\", \"1792x1024\", \"1024x1792\"]:\r\n                raise ValueError(\r\n                    \"For dall-e-3, supported sizes are 1024x1024, 1792x1024, or 1024x1792.\")\r\n            if quality not in [\"standard\", \"hd\"]:\r\n                raise ValueError(\r\n                    \"For dall-e-3, quality must be either 'standard' or 'hd'.\")\r\n            if style not in [None, \"vivid\", \"natural\"]:\r\n                raise ValueError(\r\n                    \"For dall-e-3, style must be either 'vivid', 'natural', or None.\")\r\n\r\n            response = openai.images.generate(\r\n                \r\n                model=model,\r\n                prompt=prompt,\r\n                n=int(n),\r\n                size=size,\r\n                quality=quality,\r\n                response_format=response_format,\r\n                style=style,\r\n            )\r\n        else:  # dall-e-2\r\n            if size not in [\"256x256\", \"512x512\", \"1024x1024\"]:\r\n                raise ValueError(\r\n                    \"For dall-e-2, supported sizes are 256x256, 512x512, or 1024x1024.\")\r\n            if n < 1 or n > 10:\r\n                raise ValueError(\"n must be between 1 and 10 for dall-e-2.\")\r\n\r\n            response = openai.images.generate(\r\n\r\n                model=model,\r\n                prompt=prompt,\r\n                n=int(n),\r\n                size=size,\r\n                response_format=response_format,\r\n            )\r\n\r\n\r\n        return response  # 다른 포맷 반환 (예: b64_json)",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "model": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "dall-e-3",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "dall-e-2",
+                    "dall-e-3"
+                  ],
+                  "name": "model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The model to use for image generation.",
+                  "title_case": true
+                },
+                "n": {
+                  "type": "float",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "n",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The number of images to generate. Must be between 1 and 10. For dall-e-3, only n=1 is supported.",
+                  "rangeSpec": {
+                    "min": 1,
+                    "max": 10,
+                    "step": 1
+                  },
+                  "title_case": true,
+                  "value": "1"
+                },
+                "openai_api_key": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "openai_api_key",
+                  "display_name": "OpenAI API Key",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "OpenAI API key for authentication.",
+                  "title_case": true,
+                  "value": ""
+                },
+                "prompt": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "prompt",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "A text description of the desired image(s). The maximum length is 1000 characters for dall-e-2 and 4000 characters for dall-e-3.",
+                  "title_case": true,
+                  "value": "Cat,Black"
+                },
+                "quality": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "standard",
+                    "hd"
+                  ],
+                  "name": "quality",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The quality of the image that will be generated. This parameter is only supported for dall-e-3.",
+                  "title_case": true,
+                  "value": "standard"
+                },
+                "response_format": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "url",
+                    "b64_json"
+                  ],
+                  "name": "response_format",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The format in which the generated images are returned.",
+                  "title_case": true,
+                  "value": "url"
+                },
+                "size": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "256x256",
+                    "512x512",
+                    "1024x1024",
+                    "1792x1024",
+                    "1024x1792"
+                  ],
+                  "name": "size",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The size of the generated images. Varies based on the selected model.",
+                  "title_case": true,
+                  "value": "1024x1024"
+                },
+                "style": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "vivid",
+                    "natural"
+                  ],
+                  "name": "style",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The style of the generated images. This parameter is only supported for dall-e-3.",
+                  "title_case": true,
+                  "value": "vivid"
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Generates new images based on text prompts, edits existing images, or creates variations of an image.(Not Chain)",
+              "icon": "🖌️️",
+              "base_classes": [
+                "Document"
+              ],
+              "display_name": "(Not Chain) DALL·E Image Generator",
+              "documentation": "",
+              "custom_fields": {
+                "openai_api_key": null,
+                "prompt": null,
+                "model": null,
+                "n": null,
+                "quality": null,
+                "response_format": null,
+                "size": null,
+                "style": null
+              },
+              "output_types": [
+                "Document"
+              ],
+              "field_formatters": {},
+              "beta": true,
+              "official": false
+            },
+            "id": "Data-5Wqzw",
+            "description": "Generates new images based on text prompts, edits existing images, or creates variations of an image.(Not Chain)",
+            "display_name": "(Not Chain) DALL·E Image Generator"
+          },
+          "id": "Data-5Wqzw",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-04-01T13:49:19.663Z",
+    "date_updated": "2024-04-01T13:49:19.722Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "23c5d1e9-66fe-4789-85da-d07be25ec3cc",
+    "user_created": {
+      "username": "yamon",
+      "first_name": "YamonCompany",
+      "last_name": "kim",
+      "id": "23c5d1e9-66fe-4789-85da-d07be25ec3cc"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.386Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 4,
+    "converter_version": "1.0.0"
+  }
+}

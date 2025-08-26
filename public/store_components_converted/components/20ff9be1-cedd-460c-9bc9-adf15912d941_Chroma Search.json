@@ -1,0 +1,665 @@
+{
+  "id": "20ff9be1-cedd-460c-9bc9-adf15912d941",
+  "name": "Chroma Search",
+  "description": "Search a Chroma collection for similar documents. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "yikcarson",
+    "first_name": "c",
+    "last_name": "yi",
+    "id": "ac7c23a8-d167-4465-b191-928909c4aa08",
+    "full_name": "c yi"
+  },
+  "store_url": "https://www.langflow.store/store/component/20ff9be1-cedd-460c-9bc9-adf15912d941",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-05-14T07:43:19.005Z",
+    "updated": "2024-05-14T07:43:19.065Z",
+    "downloaded": "2025-08-19T17:50:06.238Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "0.6.19",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "ChromaSearch",
+          "node": {
+            "template": {
+              "embedding": {
+                "type": "Embeddings",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "embedding",
+                "display_name": "Embedding",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Embedding model to vectorize inputs (make sure to use same as index)",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Input",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "chroma_server_cors_allow_origins": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "chroma_server_cors_allow_origins",
+                "display_name": "Server CORS Allow Origins",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "chroma_server_grpc_port": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "chroma_server_grpc_port",
+                "display_name": "Server gRPC Port",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "chroma_server_host": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "chroma_server_host",
+                "display_name": "Server Host",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "chroma_server_port": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "chroma_server_port",
+                "display_name": "Server Port",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "chroma_server_ssl_enabled": {
+                "type": "bool",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "chroma_server_ssl_enabled",
+                "display_name": "Server SSL Enabled",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List, Optional\n\nimport chromadb  # type: ignore\nfrom langchain_community.vectorstores.chroma import Chroma\n\nfrom axiestudio.components.vectorstores.base.model import LCVectorStoreComponent\nfrom axiestudio.field_typing import Embeddings, Text\nfrom axiestudio.schema import Record\n\n\nclass ChromaSearchComponent(LCVectorStoreComponent):\n    display_name: str = \"Chroma Search\"\n    description: str = \"Search a Chroma collection for similar documents.\"\n    icon = \"Chroma\"\n\n    def build_config(self):\n        \"\"\"\n        Builds the configuration for the component.\n\n        Returns:\n        - dict: A dictionary containing the configuration options for the component.\n        \"\"\"\n        return {\n            \"input_value\": {\"display_name\": \"Input\"},\n            \"search_type\": {\n                \"display_name\": \"Search Type\",\n                \"options\": [\"Similarity\", \"MMR\"],\n            },\n            \"collection_name\": {\"display_name\": \"Collection Name\", \"value\": \"axiestudio\"},\n            # \"persist\": {\"display_name\": \"Persist\"},\n            \"index_directory\": {\"display_name\": \"Index Directory\"},\n            \"code\": {\"show\": False, \"display_name\": \"Code\"},\n            \"embedding\": {\n                \"display_name\": \"Embedding\",\n                \"info\": \"Embedding model to vectorize inputs (make sure to use same as index)\",\n            },\n            \"chroma_server_cors_allow_origins\": {\n                \"display_name\": \"Server CORS Allow Origins\",\n                \"advanced\": True,\n            },\n            \"chroma_server_host\": {\"display_name\": \"Server Host\", \"advanced\": True},\n            \"chroma_server_port\": {\"display_name\": \"Server Port\", \"advanced\": True},\n            \"chroma_server_grpc_port\": {\n                \"display_name\": \"Server gRPC Port\",\n                \"advanced\": True,\n            },\n            \"chroma_server_ssl_enabled\": {\n                \"display_name\": \"Server SSL Enabled\",\n                \"advanced\": True,\n            },\n            \"number_of_results\": {\n                \"display_name\": \"Number of Results\",\n                \"info\": \"Number of results to return.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        input_value: Text,\n        search_type: str,\n        collection_name: str,\n        embedding: Embeddings,\n        chroma_server_ssl_enabled: bool,\n        number_of_results: int = 4,\n        index_directory: Optional[str] = None,\n        chroma_server_cors_allow_origins: Optional[str] = None,\n        chroma_server_host: Optional[str] = None,\n        chroma_server_port: Optional[int] = None,\n        chroma_server_grpc_port: Optional[int] = None,\n    ) -> List[Record]:\n        \"\"\"\n        Builds the Vector Store or BaseRetriever object.\n\n        Args:\n        - collection_name (str): The name of the collection.\n        - persist_directory (Optional[str]): The directory to persist the Vector Store to.\n        - chroma_server_ssl_enabled (bool): Whether to enable SSL for the Chroma server.\n        - persist (bool): Whether to persist the Vector Store or not.\n        - embedding (Optional[Embeddings]): The embeddings to use for the Vector Store.\n        - documents (Optional[Document]): The documents to use for the Vector Store.\n        - chroma_server_cors_allow_origins (Optional[str]): The CORS allow origins for the Chroma server.\n        - chroma_server_host (Optional[str]): The host for the Chroma server.\n        - chroma_server_port (Optional[int]): The port for the Chroma server.\n        - chroma_server_grpc_port (Optional[int]): The gRPC port for the Chroma server.\n\n        Returns:\n        - Union[VectorStore, BaseRetriever]: The Vector Store or BaseRetriever object.\n        \"\"\"\n\n        # Chroma settings\n        chroma_settings = None\n\n        if chroma_server_host is not None:\n            chroma_settings = chromadb.config.Settings(\n                chroma_server_cors_allow_origins=chroma_server_cors_allow_origins or None,\n                chroma_server_host=chroma_server_host,\n                chroma_server_port=chroma_server_port or None,\n                chroma_server_grpc_port=chroma_server_grpc_port or None,\n                chroma_server_ssl_enabled=chroma_server_ssl_enabled,\n            )\n        if index_directory:\n            index_directory = self.resolve_path(index_directory)\n        vector_store = Chroma(\n            embedding_function=embedding,\n            collection_name=collection_name,\n            persist_directory=index_directory,\n            client_settings=chroma_settings,\n        )\n\n        return self.search_with_vector_store(input_value, search_type, vector_store, k=number_of_results)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "collection_name": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "axiestudio",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "collection_name",
+                "display_name": "Collection Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "index_directory": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "index_directory",
+                "display_name": "Index Directory",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "number_of_results": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 4,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "number_of_results",
+                "display_name": "Number of Results",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Number of results to return.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "search_type": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Similarity",
+                  "MMR"
+                ],
+                "name": "search_type",
+                "display_name": "Search Type",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "Similarity"
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Search a Chroma collection for similar documents.",
+            "icon": "Chroma",
+            "base_classes": [
+              "Record"
+            ],
+            "display_name": "Chroma Search",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null,
+              "search_type": null,
+              "collection_name": null,
+              "embedding": null,
+              "chroma_server_ssl_enabled": null,
+              "number_of_results": null,
+              "index_directory": null,
+              "chroma_server_cors_allow_origins": null,
+              "chroma_server_host": null,
+              "chroma_server_port": null,
+              "chroma_server_grpc_port": null
+            },
+            "output_types": [
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false,
+            "official": false
+          },
+          "id": "ChromaSearch-gvrfa"
+        },
+        "id": "ChromaSearch-gvrfa",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "ChromaSearch": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "20ff9be1-cedd-460c-9bc9-adf15912d941",
+    "name": "Chroma Search",
+    "description": "Search a Chroma collection for similar documents.",
+    "is_component": true,
+    "liked_by_count": "24",
+    "downloads_count": "301",
+    "metadata": {
+      "ChromaSearch": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "0.6.19",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "ChromaSearch",
+            "node": {
+              "template": {
+                "embedding": {
+                  "type": "Embeddings",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "embedding",
+                  "display_name": "Embedding",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Embedding model to vectorize inputs (make sure to use same as index)",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "chroma_server_cors_allow_origins": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "chroma_server_cors_allow_origins",
+                  "display_name": "Server CORS Allow Origins",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "chroma_server_grpc_port": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "chroma_server_grpc_port",
+                  "display_name": "Server gRPC Port",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "chroma_server_host": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "chroma_server_host",
+                  "display_name": "Server Host",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "chroma_server_port": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "chroma_server_port",
+                  "display_name": "Server Port",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "chroma_server_ssl_enabled": {
+                  "type": "bool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "chroma_server_ssl_enabled",
+                  "display_name": "Server SSL Enabled",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List, Optional\n\nimport chromadb  # type: ignore\nfrom langchain_community.vectorstores.chroma import Chroma\n\nfrom axiestudio.components.vectorstores.base.model import LCVectorStoreComponent\nfrom axiestudio.field_typing import Embeddings, Text\nfrom axiestudio.schema import Record\n\n\nclass ChromaSearchComponent(LCVectorStoreComponent):\n    display_name: str = \"Chroma Search\"\n    description: str = \"Search a Chroma collection for similar documents.\"\n    icon = \"Chroma\"\n\n    def build_config(self):\n        \"\"\"\n        Builds the configuration for the component.\n\n        Returns:\n        - dict: A dictionary containing the configuration options for the component.\n        \"\"\"\n        return {\n            \"input_value\": {\"display_name\": \"Input\"},\n            \"search_type\": {\n                \"display_name\": \"Search Type\",\n                \"options\": [\"Similarity\", \"MMR\"],\n            },\n            \"collection_name\": {\"display_name\": \"Collection Name\", \"value\": \"axiestudio\"},\n            # \"persist\": {\"display_name\": \"Persist\"},\n            \"index_directory\": {\"display_name\": \"Index Directory\"},\n            \"code\": {\"show\": False, \"display_name\": \"Code\"},\n            \"embedding\": {\n                \"display_name\": \"Embedding\",\n                \"info\": \"Embedding model to vectorize inputs (make sure to use same as index)\",\n            },\n            \"chroma_server_cors_allow_origins\": {\n                \"display_name\": \"Server CORS Allow Origins\",\n                \"advanced\": True,\n            },\n            \"chroma_server_host\": {\"display_name\": \"Server Host\", \"advanced\": True},\n            \"chroma_server_port\": {\"display_name\": \"Server Port\", \"advanced\": True},\n            \"chroma_server_grpc_port\": {\n                \"display_name\": \"Server gRPC Port\",\n                \"advanced\": True,\n            },\n            \"chroma_server_ssl_enabled\": {\n                \"display_name\": \"Server SSL Enabled\",\n                \"advanced\": True,\n            },\n            \"number_of_results\": {\n                \"display_name\": \"Number of Results\",\n                \"info\": \"Number of results to return.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        input_value: Text,\n        search_type: str,\n        collection_name: str,\n        embedding: Embeddings,\n        chroma_server_ssl_enabled: bool,\n        number_of_results: int = 4,\n        index_directory: Optional[str] = None,\n        chroma_server_cors_allow_origins: Optional[str] = None,\n        chroma_server_host: Optional[str] = None,\n        chroma_server_port: Optional[int] = None,\n        chroma_server_grpc_port: Optional[int] = None,\n    ) -> List[Record]:\n        \"\"\"\n        Builds the Vector Store or BaseRetriever object.\n\n        Args:\n        - collection_name (str): The name of the collection.\n        - persist_directory (Optional[str]): The directory to persist the Vector Store to.\n        - chroma_server_ssl_enabled (bool): Whether to enable SSL for the Chroma server.\n        - persist (bool): Whether to persist the Vector Store or not.\n        - embedding (Optional[Embeddings]): The embeddings to use for the Vector Store.\n        - documents (Optional[Document]): The documents to use for the Vector Store.\n        - chroma_server_cors_allow_origins (Optional[str]): The CORS allow origins for the Chroma server.\n        - chroma_server_host (Optional[str]): The host for the Chroma server.\n        - chroma_server_port (Optional[int]): The port for the Chroma server.\n        - chroma_server_grpc_port (Optional[int]): The gRPC port for the Chroma server.\n\n        Returns:\n        - Union[VectorStore, BaseRetriever]: The Vector Store or BaseRetriever object.\n        \"\"\"\n\n        # Chroma settings\n        chroma_settings = None\n\n        if chroma_server_host is not None:\n            chroma_settings = chromadb.config.Settings(\n                chroma_server_cors_allow_origins=chroma_server_cors_allow_origins or None,\n                chroma_server_host=chroma_server_host,\n                chroma_server_port=chroma_server_port or None,\n                chroma_server_grpc_port=chroma_server_grpc_port or None,\n                chroma_server_ssl_enabled=chroma_server_ssl_enabled,\n            )\n        if index_directory:\n            index_directory = self.resolve_path(index_directory)\n        vector_store = Chroma(\n            embedding_function=embedding,\n            collection_name=collection_name,\n            persist_directory=index_directory,\n            client_settings=chroma_settings,\n        )\n\n        return self.search_with_vector_store(input_value, search_type, vector_store, k=number_of_results)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "collection_name": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "axiestudio",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "collection_name",
+                  "display_name": "Collection Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "index_directory": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "index_directory",
+                  "display_name": "Index Directory",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "number_of_results": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 4,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "number_of_results",
+                  "display_name": "Number of Results",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Number of results to return.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "search_type": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Similarity",
+                    "MMR"
+                  ],
+                  "name": "search_type",
+                  "display_name": "Search Type",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "Similarity"
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Search a Chroma collection for similar documents.",
+              "icon": "Chroma",
+              "base_classes": [
+                "Record"
+              ],
+              "display_name": "Chroma Search",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null,
+                "search_type": null,
+                "collection_name": null,
+                "embedding": null,
+                "chroma_server_ssl_enabled": null,
+                "number_of_results": null,
+                "index_directory": null,
+                "chroma_server_cors_allow_origins": null,
+                "chroma_server_host": null,
+                "chroma_server_port": null,
+                "chroma_server_grpc_port": null
+              },
+              "output_types": [
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false,
+              "official": false
+            },
+            "id": "ChromaSearch-gvrfa"
+          },
+          "id": "ChromaSearch-gvrfa",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-05-14T07:43:19.005Z",
+    "date_updated": "2024-05-14T07:43:19.065Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "ac7c23a8-d167-4465-b191-928909c4aa08",
+    "user_created": {
+      "username": "yikcarson",
+      "first_name": "c",
+      "last_name": "yi",
+      "id": "ac7c23a8-d167-4465-b191-928909c4aa08"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.238Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,345 @@
+{
+  "id": "3d210fc5-a441-45c3-861a-1bd8c3eb3990",
+  "name": "List Pages [Notion] ",
+  "description": "Query a Notion database with filtering and sorting. The input should be a JSON string containing the 'filter' and 'sorts' objects.  (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "NamastexLabs",
+    "first_name": "Felipe",
+    "last_name": "Rosa",
+    "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "full_name": "Felipe Rosa"
+  },
+  "store_url": "https://www.langflow.store/store/component/3d210fc5-a441-45c3-861a-1bd8c3eb3990",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-05-20T23:59:59.939Z",
+    "updated": "2024-05-23T21:01:55.981Z",
+    "downloaded": "2025-08-19T17:50:05.895Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import requests\r\nimport json\r\nfrom typing import Dict, Any, List\r\nfrom axiestudio.custom import CustomComponent\r\nfrom axiestudio.schema import Record\r\n\r\nclass NotionListPages(CustomComponent):\r\n    display_name = \"List Pages [Notion]\"\r\n    description = (\r\n        \"Query a Notion database with filtering and sorting. \"\r\n        \"The input should be a JSON string containing the 'filter' and 'sorts' objects. \"\r\n        \"Example input:\\n\"\r\n        '{\"filter\": {\"property\": \"Status\", \"select\": {\"equals\": \"Done\"}}, \"sorts\": [{\"timestamp\": \"created_time\", \"direction\": \"descending\"}]}'\r\n    )\r\n    documentation: str = \"https://docs.axiestudio.org/integrations/notion/list-pages\"\r\n    icon = \"NotionDirectoryLoader\"\r\n\r\n    field_order = [\r\n        \"notion_secret\",\r\n        \"database_id\",\r\n        \"query_payload\",\r\n    ]\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"notion_secret\": {\r\n                \"display_name\": \"Notion Secret\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The Notion integration token.\",\r\n                \"password\": True,\r\n            },\r\n            \"database_id\": {\r\n                \"display_name\": \"Database ID\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The ID of the Notion database to query.\",\r\n            },\r\n            \"query_payload\": {\r\n                \"display_name\": \"Database query\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"A JSON string containing the filters that will be used for querying the database. EG: {'filter': {'property': 'Status', 'status': {'equals': 'In progress'}}}\",\r\n            },\r\n        }\r\n\r\n    def build(\r\n        self,\r\n        notion_secret: str,\r\n        database_id: str,\r\n        query_payload: str = \"{}\",\r\n    ) -> List[Record]:\r\n        try:\r\n            query_data = json.loads(query_payload)\r\n            filter_obj = query_data.get(\"filter\")\r\n            sorts = query_data.get(\"sorts\", [])\r\n\r\n            url = f\"https://api.notion.com/v1/databases/{database_id}/query\"\r\n            headers = {\r\n                \"Authorization\": f\"Bearer {notion_secret}\",\r\n                \"Content-Type\": \"application/json\",\r\n                \"Notion-Version\": \"2022-06-28\",\r\n            }\r\n\r\n            data = {\r\n                \"sorts\": sorts,\r\n            }\r\n\r\n            if filter_obj:\r\n                data[\"filter\"] = filter_obj\r\n\r\n            response = requests.post(url, headers=headers, json=data)\r\n            response.raise_for_status()\r\n\r\n            results = response.json()\r\n            records = []\r\n            combined_text = f\"Pages found: {len(results['results'])}\\n\\n\"\r\n            for page in results['results']:\r\n                page_data = {\r\n                    'id': page['id'],\r\n                    'url': page['url'],\r\n                    'created_time': page['created_time'],\r\n                    'last_edited_time': page['last_edited_time'],\r\n                    'properties': page['properties'],\r\n                }\r\n\r\n                text = (\r\n                    f\"id: {page['id']}\\n\"\r\n                    f\"url: {page['url']}\\n\"\r\n                    f\"created_time: {page['created_time']}\\n\"\r\n                    f\"last_edited_time: {page['last_edited_time']}\\n\"\r\n                    f\"properties: {json.dumps(page['properties'], indent=2)}\\n\\n\"\r\n                )\r\n\r\n                combined_text += text\r\n                records.append(Record(text=text, data=page_data))\r\n            \r\n            self.status = combined_text.strip()\r\n            return records\r\n\r\n        except Exception as e:\r\n            self.status = f\"An error occurred: {str(e)}\"\r\n            return [Record(text=self.status, data=[])]",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "database_id": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "database_id",
+                "display_name": "Database ID",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The ID of the Notion database to query.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "notion_secret": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "notion_secret",
+                "display_name": "Notion Secret",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The Notion integration token.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "query_payload": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "{}",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "query_payload",
+                "display_name": "Database query",
+                "advanced": false,
+                "dynamic": false,
+                "info": "A JSON string containing the filters that will be used for querying the database. EG: {'filter': {'property': 'Status', 'status': {'equals': 'In progress'}}}",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Query a Notion database with filtering and sorting. The input should be a JSON string containing the 'filter' and 'sorts' objects. ",
+            "icon": "NotionDirectoryLoader",
+            "base_classes": [
+              "Record"
+            ],
+            "display_name": "List Pages [Notion] ",
+            "documentation": "https://docs.axiestudio.org/integrations/notion/list-pages",
+            "custom_fields": {
+              "notion_secret": null,
+              "database_id": null,
+              "query_payload": null
+            },
+            "output_types": [
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "notion_secret",
+              "database_id",
+              "query_payload"
+            ],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-Pn52w",
+          "description": "Query a Notion database with filtering and sorting. The input should be a JSON string containing the 'filter' and 'sorts' objects. Example input:\n{\"filter\": {\"property\": \"Status\", \"select\": {\"equals\": \"Done\"}}, \"sorts\": [{\"timestamp\": \"created_time\", \"direction\": \"descending\"}]}",
+          "display_name": "List Pages [Notion] "
+        },
+        "id": "CustomComponent-Pn52w",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "3d210fc5-a441-45c3-861a-1bd8c3eb3990",
+    "name": "List Pages [Notion] ",
+    "description": "Query a Notion database with filtering and sorting. The input should be a JSON string containing the 'filter' and 'sorts' objects. ",
+    "is_component": true,
+    "liked_by_count": "13",
+    "downloads_count": "61",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import requests\r\nimport json\r\nfrom typing import Dict, Any, List\r\nfrom axiestudio.custom import CustomComponent\r\nfrom axiestudio.schema import Record\r\n\r\nclass NotionListPages(CustomComponent):\r\n    display_name = \"List Pages [Notion]\"\r\n    description = (\r\n        \"Query a Notion database with filtering and sorting. \"\r\n        \"The input should be a JSON string containing the 'filter' and 'sorts' objects. \"\r\n        \"Example input:\\n\"\r\n        '{\"filter\": {\"property\": \"Status\", \"select\": {\"equals\": \"Done\"}}, \"sorts\": [{\"timestamp\": \"created_time\", \"direction\": \"descending\"}]}'\r\n    )\r\n    documentation: str = \"https://docs.axiestudio.org/integrations/notion/list-pages\"\r\n    icon = \"NotionDirectoryLoader\"\r\n\r\n    field_order = [\r\n        \"notion_secret\",\r\n        \"database_id\",\r\n        \"query_payload\",\r\n    ]\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"notion_secret\": {\r\n                \"display_name\": \"Notion Secret\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The Notion integration token.\",\r\n                \"password\": True,\r\n            },\r\n            \"database_id\": {\r\n                \"display_name\": \"Database ID\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The ID of the Notion database to query.\",\r\n            },\r\n            \"query_payload\": {\r\n                \"display_name\": \"Database query\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"A JSON string containing the filters that will be used for querying the database. EG: {'filter': {'property': 'Status', 'status': {'equals': 'In progress'}}}\",\r\n            },\r\n        }\r\n\r\n    def build(\r\n        self,\r\n        notion_secret: str,\r\n        database_id: str,\r\n        query_payload: str = \"{}\",\r\n    ) -> List[Record]:\r\n        try:\r\n            query_data = json.loads(query_payload)\r\n            filter_obj = query_data.get(\"filter\")\r\n            sorts = query_data.get(\"sorts\", [])\r\n\r\n            url = f\"https://api.notion.com/v1/databases/{database_id}/query\"\r\n            headers = {\r\n                \"Authorization\": f\"Bearer {notion_secret}\",\r\n                \"Content-Type\": \"application/json\",\r\n                \"Notion-Version\": \"2022-06-28\",\r\n            }\r\n\r\n            data = {\r\n                \"sorts\": sorts,\r\n            }\r\n\r\n            if filter_obj:\r\n                data[\"filter\"] = filter_obj\r\n\r\n            response = requests.post(url, headers=headers, json=data)\r\n            response.raise_for_status()\r\n\r\n            results = response.json()\r\n            records = []\r\n            combined_text = f\"Pages found: {len(results['results'])}\\n\\n\"\r\n            for page in results['results']:\r\n                page_data = {\r\n                    'id': page['id'],\r\n                    'url': page['url'],\r\n                    'created_time': page['created_time'],\r\n                    'last_edited_time': page['last_edited_time'],\r\n                    'properties': page['properties'],\r\n                }\r\n\r\n                text = (\r\n                    f\"id: {page['id']}\\n\"\r\n                    f\"url: {page['url']}\\n\"\r\n                    f\"created_time: {page['created_time']}\\n\"\r\n                    f\"last_edited_time: {page['last_edited_time']}\\n\"\r\n                    f\"properties: {json.dumps(page['properties'], indent=2)}\\n\\n\"\r\n                )\r\n\r\n                combined_text += text\r\n                records.append(Record(text=text, data=page_data))\r\n            \r\n            self.status = combined_text.strip()\r\n            return records\r\n\r\n        except Exception as e:\r\n            self.status = f\"An error occurred: {str(e)}\"\r\n            return [Record(text=self.status, data=[])]",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "database_id": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "database_id",
+                  "display_name": "Database ID",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The ID of the Notion database to query.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "notion_secret": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "notion_secret",
+                  "display_name": "Notion Secret",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The Notion integration token.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "query_payload": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "{}",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "query_payload",
+                  "display_name": "Database query",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "A JSON string containing the filters that will be used for querying the database. EG: {'filter': {'property': 'Status', 'status': {'equals': 'In progress'}}}",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Query a Notion database with filtering and sorting. The input should be a JSON string containing the 'filter' and 'sorts' objects. ",
+              "icon": "NotionDirectoryLoader",
+              "base_classes": [
+                "Record"
+              ],
+              "display_name": "List Pages [Notion] ",
+              "documentation": "https://docs.axiestudio.org/integrations/notion/list-pages",
+              "custom_fields": {
+                "notion_secret": null,
+                "database_id": null,
+                "query_payload": null
+              },
+              "output_types": [
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "notion_secret",
+                "database_id",
+                "query_payload"
+              ],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-Pn52w",
+            "description": "Query a Notion database with filtering and sorting. The input should be a JSON string containing the 'filter' and 'sorts' objects. Example input:\n{\"filter\": {\"property\": \"Status\", \"select\": {\"equals\": \"Done\"}}, \"sorts\": [{\"timestamp\": \"created_time\", \"direction\": \"descending\"}]}",
+            "display_name": "List Pages [Notion] "
+          },
+          "id": "CustomComponent-Pn52w",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-05-20T23:59:59.939Z",
+    "date_updated": "2024-05-23T21:01:55.981Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "user_created": {
+      "username": "NamastexLabs",
+      "first_name": "Felipe",
+      "last_name": "Rosa",
+      "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.735Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

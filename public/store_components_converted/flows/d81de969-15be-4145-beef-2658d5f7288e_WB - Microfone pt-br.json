@@ -1,0 +1,285 @@
+{
+  "id": "d81de969-15be-4145-beef-2658d5f7288e",
+  "name": "WB - Microfone pt-br",
+  "description": "Aguarda um comando de voz \"Computador\", para prosseguir com o fluxo. Necessário: pip install pyttsx3\n (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "wagner",
+    "first_name": "Wagner",
+    "last_name": "Bittencourt",
+    "id": "00808143-7274-457d-a5b8-75c89231a3dd",
+    "full_name": "Wagner Bittencourt"
+  },
+  "store_url": "https://www.langflow.store/store/component/d81de969-15be-4145-beef-2658d5f7288e",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-11T23:31:53.923Z",
+    "updated": "2024-09-11T23:31:53.956Z",
+    "downloaded": "2025-08-19T17:50:07.006Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "VoiceCommandComponent-Vvkg6",
+        "type": "genericNode",
+        "position": {
+          "x": 773,
+          "y": 287.21875
+        },
+        "data": {
+          "type": "VoiceCommandComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import speech_recognition as sr\r\nimport pyttsx3\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.inputs import DropdownInput\r\nfrom axiestudio.template import Output\r\nfrom axiestudio.schema import Data\r\n\r\nclass VoiceCommandComponent(Component):\r\n    display_name = \"Voice Command\"\r\n    description = \"Fica ouvindo continuamente e ativa a transcrição ao ouvir a palavra 'Computador', respondendo verbalmente.\"\r\n    icon = \"microphone\"\r\n\r\n    inputs = [\r\n        DropdownInput(\r\n            name=\"language_choice\",\r\n            display_name=\"Escolha o Idioma\",\r\n            options=[\"pt-BR\", \"en-US\", \"es-ES\", \"fr-FR\"],\r\n            info=\"Selecione o idioma para o reconhecimento de voz.\"\r\n            )\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Texto Convertido\", name=\"converted_text\", method=\"listen_for_keyword\"),\r\n    ]\r\n\r\n    def listen_for_keyword(self) -> Data:\r\n        language = self.language_choice\r\n        recognizer = sr.Recognizer()\r\n        engine = pyttsx3.init()\r\n        keyword_detected = False\r\n        texto = \"\"\r\n\r\n        # Configurações de voz de acordo com o idioma escolhido\r\n        voices = engine.getProperty('voices')\r\n        if language == \"pt-BR\":\r\n            engine.setProperty('voice', 'brazil')\r\n        elif language == \"en-US\":\r\n            engine.setProperty('voice', voices[0].id)  # Voce padrão em inglês\r\n        elif language == \"es-ES\":\r\n            engine.setProperty('voice', 'spanish')\r\n        elif language == \"fr-FR\":\r\n            engine.setProperty('voice', 'french')\r\n\r\n        with sr.Microphone() as source:\r\n            print(f\"Ouvindo continuamente ({language})... Diga 'Computador' para ativar a transcrição.\")\r\n            while not keyword_detected:\r\n                audio = recognizer.listen(source)\r\n                try:\r\n                    detected_text = recognizer.recognize_google(audio, language=language)\r\n                    print(f\"Detectado: {detected_text}\")\r\n\r\n                    if \"computador\" in detected_text.lower():\r\n                        keyword_detected = True\r\n                        response_text = self.get_response_text(language)\r\n                        print(response_text)\r\n                        engine.say(response_text)\r\n                        engine.runAndWait()\r\n                        \r\n                        # Captura o próximo áudio para transcrição\r\n                        audio = recognizer.listen(source)\r\n                        texto = recognizer.recognize_google(audio, language=language)\r\n                        print(f\"Você disse: {texto}\")\r\n                except sr.UnknownValueError:\r\n                    print(\"Não foi possível entender o áudio.\")\r\n                except sr.RequestError:\r\n                    texto = \"Erro na solicitação ao serviço de reconhecimento de voz.\"\r\n                    break\r\n\r\n        self.status = texto\r\n        return Data(data={\"result\": texto})\r\n\r\n    def get_response_text(self, language: str) -> str:\r\n        responses = {\r\n            \"pt-BR\": \"Estou aqui, pode falar!\",\r\n            \"en-US\": \"I'm here, you can talk!\",\r\n            \"es-ES\": \"Estoy aquí, puedes hablar!\",\r\n            \"fr-FR\": \"Je suis ici, vous pouvez parler!\",\r\n        }\r\n        return responses.get(language, \"Estou aqui, pode falar!\")\r\n\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "language_choice": {
+                "trace_as_metadata": true,
+                "options": [
+                  "pt-BR",
+                  "en-US",
+                  "es-ES",
+                  "fr-FR"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "language_choice",
+                "value": "pt-BR",
+                "display_name": "Escolha o Idioma",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Selecione o idioma para o reconhecimento de voz.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              }
+            },
+            "description": "Fica ouvindo continuamente e ativa a transcrição ao ouvir a palavra 'Computador', respondendo verbalmente. Necessário: pip install pyttsx3\n",
+            "icon": "microphone",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "WB - Microfone",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "converted_text",
+                "display_name": "Texto Convertido",
+                "method": "listen_for_keyword",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "language_choice"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.16",
+            "official": false
+          },
+          "id": "VoiceCommandComponent-Vvkg6"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 380,
+        "positionAbsolute": {
+          "x": 773,
+          "y": 287.21875
+        },
+        "dragging": false
+      }
+    ],
+    "edges": [],
+    "viewport": {
+      "x": -717.3665388646045,
+      "y": -403.8982022759743,
+      "zoom": 1.7944153496694744
+    }
+  },
+  "metadata": {
+    "VoiceCommandComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "d81de969-15be-4145-beef-2658d5f7288e",
+    "name": "WB - Microfone pt-br",
+    "description": "Aguarda um comando de voz \"Computador\", para prosseguir com o fluxo. Necessário: pip install pyttsx3\n",
+    "is_component": false,
+    "liked_by_count": "3",
+    "downloads_count": "21",
+    "metadata": {
+      "VoiceCommandComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "VoiceCommandComponent-Vvkg6",
+          "type": "genericNode",
+          "position": {
+            "x": 773,
+            "y": 287.21875
+          },
+          "data": {
+            "type": "VoiceCommandComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import speech_recognition as sr\r\nimport pyttsx3\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.inputs import DropdownInput\r\nfrom axiestudio.template import Output\r\nfrom axiestudio.schema import Data\r\n\r\nclass VoiceCommandComponent(Component):\r\n    display_name = \"Voice Command\"\r\n    description = \"Fica ouvindo continuamente e ativa a transcrição ao ouvir a palavra 'Computador', respondendo verbalmente.\"\r\n    icon = \"microphone\"\r\n\r\n    inputs = [\r\n        DropdownInput(\r\n            name=\"language_choice\",\r\n            display_name=\"Escolha o Idioma\",\r\n            options=[\"pt-BR\", \"en-US\", \"es-ES\", \"fr-FR\"],\r\n            info=\"Selecione o idioma para o reconhecimento de voz.\"\r\n            )\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Texto Convertido\", name=\"converted_text\", method=\"listen_for_keyword\"),\r\n    ]\r\n\r\n    def listen_for_keyword(self) -> Data:\r\n        language = self.language_choice\r\n        recognizer = sr.Recognizer()\r\n        engine = pyttsx3.init()\r\n        keyword_detected = False\r\n        texto = \"\"\r\n\r\n        # Configurações de voz de acordo com o idioma escolhido\r\n        voices = engine.getProperty('voices')\r\n        if language == \"pt-BR\":\r\n            engine.setProperty('voice', 'brazil')\r\n        elif language == \"en-US\":\r\n            engine.setProperty('voice', voices[0].id)  # Voce padrão em inglês\r\n        elif language == \"es-ES\":\r\n            engine.setProperty('voice', 'spanish')\r\n        elif language == \"fr-FR\":\r\n            engine.setProperty('voice', 'french')\r\n\r\n        with sr.Microphone() as source:\r\n            print(f\"Ouvindo continuamente ({language})... Diga 'Computador' para ativar a transcrição.\")\r\n            while not keyword_detected:\r\n                audio = recognizer.listen(source)\r\n                try:\r\n                    detected_text = recognizer.recognize_google(audio, language=language)\r\n                    print(f\"Detectado: {detected_text}\")\r\n\r\n                    if \"computador\" in detected_text.lower():\r\n                        keyword_detected = True\r\n                        response_text = self.get_response_text(language)\r\n                        print(response_text)\r\n                        engine.say(response_text)\r\n                        engine.runAndWait()\r\n                        \r\n                        # Captura o próximo áudio para transcrição\r\n                        audio = recognizer.listen(source)\r\n                        texto = recognizer.recognize_google(audio, language=language)\r\n                        print(f\"Você disse: {texto}\")\r\n                except sr.UnknownValueError:\r\n                    print(\"Não foi possível entender o áudio.\")\r\n                except sr.RequestError:\r\n                    texto = \"Erro na solicitação ao serviço de reconhecimento de voz.\"\r\n                    break\r\n\r\n        self.status = texto\r\n        return Data(data={\"result\": texto})\r\n\r\n    def get_response_text(self, language: str) -> str:\r\n        responses = {\r\n            \"pt-BR\": \"Estou aqui, pode falar!\",\r\n            \"en-US\": \"I'm here, you can talk!\",\r\n            \"es-ES\": \"Estoy aquí, puedes hablar!\",\r\n            \"fr-FR\": \"Je suis ici, vous pouvez parler!\",\r\n        }\r\n        return responses.get(language, \"Estou aqui, pode falar!\")\r\n\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "language_choice": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "pt-BR",
+                    "en-US",
+                    "es-ES",
+                    "fr-FR"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "language_choice",
+                  "value": "pt-BR",
+                  "display_name": "Escolha o Idioma",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Selecione o idioma para o reconhecimento de voz.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                }
+              },
+              "description": "Fica ouvindo continuamente e ativa a transcrição ao ouvir a palavra 'Computador', respondendo verbalmente. Necessário: pip install pyttsx3\n",
+              "icon": "microphone",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "WB - Microfone",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "converted_text",
+                  "display_name": "Texto Convertido",
+                  "method": "listen_for_keyword",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "language_choice"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.16",
+              "official": false
+            },
+            "id": "VoiceCommandComponent-Vvkg6"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 380,
+          "positionAbsolute": {
+            "x": 773,
+            "y": 287.21875
+          },
+          "dragging": false
+        }
+      ],
+      "edges": [],
+      "viewport": {
+        "x": -717.3665388646045,
+        "y": -403.8982022759743,
+        "zoom": 1.7944153496694744
+      }
+    },
+    "date_created": "2024-09-11T23:31:53.923Z",
+    "date_updated": "2024-09-11T23:31:53.956Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "00808143-7274-457d-a5b8-75c89231a3dd",
+    "user_created": {
+      "username": "wagner",
+      "first_name": "Wagner",
+      "last_name": "Bittencourt",
+      "id": "00808143-7274-457d-a5b8-75c89231a3dd"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:06.323Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

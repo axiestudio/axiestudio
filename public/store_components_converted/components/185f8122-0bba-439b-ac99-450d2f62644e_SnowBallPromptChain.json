@@ -1,0 +1,543 @@
+{
+  "id": "185f8122-0bba-439b-ac99-450d2f62644e",
+  "name": "SnowBallPromptChain",
+  "description": "This component is an implementation of SnowBall Prompt Chaining (Compatible with different LLM models), which consists in creating an answer with a sequence of tasks -> return in json] (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "joaoguilhermeS",
+    "first_name": "João",
+    "last_name": "Oliveira",
+    "id": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "full_name": "João Oliveira"
+  },
+  "store_url": "https://www.langflow.store/store/component/185f8122-0bba-439b-ac99-450d2f62644e",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-04-22T20:07:09.879Z",
+    "updated": "2024-04-22T20:07:09.909Z",
+    "downloaded": "2025-08-19T17:50:04.962Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.0a24",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "API_MODEL_KEY": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "API_MODEL_KEY",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n        subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n        return 1\n    \ninstall(\"llm\")\n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"Prompt Chains\"\n    description = \"This component is an implementation of SnowBall Prompt Chaining (Compatible with different LLM models), which consists in creating an answer with a sequence of tasks -> return in json]\"\n    \n    def build_config(self):\n        return {\n            \"theme\": {\n                \"display_name\": \"Theme\",\n                \"advanced\": False,\n                \"required\": True,\n                \"display_name\": \"Input\"\n            },\n            \"model\":{\n                \"display_name\": \"Model\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"claude-3-haiku\",\n                    \"claude-3-sonnet\",\n                    \"claude-3-opus\",\n                    \"gpt-4-turbo\",\n                    \"gpt-4-0125-preview\",\n                    \"gpt-3.5-turbo\",\n                ],\n                \n            },\n            \"detail_text\":{\n                \"display_name\": \"Detail Text\",\n                \"advanced\": False,\n                \"required\": True,\n                \"default\": \"No\",\n                \"options\": [\n                    \"Yes\",\n                    \"No\"\n                ],\n            },\n            \"internal_prompt_theme\":{\n                \"display_name\": \"Internal Prompt Theme\",\n                \"required\": False,\n                \"default\": \"Generate a clickworthy title about this topic\"\n            },\n            \"internal_prompt_instruction\":{\n                \"display_name\": \"Internal Prompt Instruction\",\n                \"required\": False,\n                \"default\": \"Generate a compelling 3 section outline given this information\"\n            },\n            \"internal_prompt_output\":{\n                \"display_name\": \"Internal Prompt Output\",\n                \"required\": False,\n                \"default\": \"Generate 1 paragraph of content for each section outline given this information\"\n            },\n            \"API_MODEL_KEY\":{\n                \"password\": True,\n                \"required\": True,\n            }\n        }\n    \n    def build(self, theme: str, model: str, API_MODEL_KEY: str, detail_text: str, internal_prompt_theme: str = '', internal_prompt_instruction: str = '' , internal_prompt_output: str = '') -> str:\n        \"\"\"\n            Snowball Chain: Start with a small topic and then the chains expand it. The workflow is as follows:\n            [User provide a topic -> chain 1 make a title -> chain 2 get the title and suggest sections -> chain 3 create content for each section -> return in json]\n        \"\"\"\n        def install(package):\n            subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n            return 1\n        install(\"llm\")\n        import llm\n        \n        # It is that way to allow you changing it to use more models if you need it ;)\n        model1 = llm.get_model(model) \n        model2 = llm.get_model(model)\n        model3 = llm.get_model(model)\n        \n        model1.key = API_MODEL_KEY\n        model2.key = API_MODEL_KEY\n        model3.key = API_MODEL_KEY\n        \n        if(len(internal_prompt_theme) <= 1):\n            internal_prompt_theme = \"Generate a clickworthy title about this topic\"\n        if(len(internal_prompt_instruction) <= 1):\n            internal_prompt_instruction = \"Generate a compelling 3 section outline given this information\"\n        if(len(internal_prompt_output) <= 1):\n            internal_prompt_output = \"Generate a markdown formatted blog post given this information\"\n    \n        snowball_prompt_response_1 = model1.prompt(\n            f\"{internal_prompt_theme}: '{theme}'. Respond in JSON format {{title: 'title', topic: '{theme}'}}\"\n        )\n        snowball_prompt_response_2 = model1.prompt(\n            f\"{internal_prompt_instruction}: '{snowball_prompt_response_1.text()}'. Respond in JSON format {{title: '<title>', topic: '<topic>', sections: ['<section1>', '<section2>', '<section3>']}}\"\n        )\n        snowball_prompt_response_3 = model1.prompt(\n            f\"{internal_prompt_output}: '{snowball_prompt_response_2.text()}'. Respond in JSON format {{title: '<title>', topic: '<topic>', sections: ['<section1>', '<section2>', '<section3>'], content: ['<content1>', '<content2>', '<content3>']}}\"\n        )\n        \n        if(\"detail_text\" == \"Yes\"):\n            snowball_prompt_response_4 = model1.prompt(\n            f\"I want you to add more text for each section of my text, bringing more details, you will recieve $1000 tip for each new insight/paragraph you can add to enchance my text: {snowball_prompt_response_3.text()}. Be sure to keep its original format\"\n        )\n            snowball_markdown_prompt = model1.prompt(\n                f\"Generate a markdown formatted blog post given this information: '{snowball_prompt_response_4.text()}'. You MUST return the information in a plain markdown text, not as a code but as pure markdown text.\"\n            )\n            \n            return snowball_markdown_prompt.json()['content']\n        \n        snowball_markdown_prompt = model1.prompt(\n                f\"Generate a markdown formatted blog post given this information: '{snowball_prompt_response_3.text()}'. You MUST return the information in a plain markdown text, not as a code but as pure markdown text.\"\n            )\n            \n        return snowball_markdown_prompt.json()['content']\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "detail_text": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Yes",
+                  "No"
+                ],
+                "name": "detail_text",
+                "display_name": "Detail Text",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "Yes"
+              },
+              "internal_prompt_instruction": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "internal_prompt_instruction",
+                "display_name": "Internal Prompt Instruction",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "internal_prompt_output": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "internal_prompt_output",
+                "display_name": "Internal Prompt Output",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "internal_prompt_theme": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "internal_prompt_theme",
+                "display_name": "Internal Prompt Theme",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "model": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "claude-3-haiku",
+                  "claude-3-sonnet",
+                  "claude-3-opus",
+                  "gpt-4-turbo",
+                  "gpt-4-0125-preview",
+                  "gpt-3.5-turbo"
+                ],
+                "name": "model",
+                "display_name": "Model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "gpt-3.5-turbo"
+              },
+              "theme": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "theme",
+                "display_name": "Input",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "This component is an implementation of SnowBall Prompt Chaining (Compatible with different LLM models), which consists in creating an answer with a sequence of tasks -> return in json]",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "SnowBallPromptChain",
+            "documentation": "",
+            "custom_fields": {
+              "theme": null,
+              "model": null,
+              "API_MODEL_KEY": null,
+              "detail_text": null,
+              "internal_prompt_theme": null,
+              "internal_prompt_instruction": null,
+              "internal_prompt_output": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-Ik35q",
+          "description": "This component is an implementation of SnowBall Prompt Chaining (Compatible with different LLM models), which consists in creating an answer with a sequence of tasks -> return in json]",
+          "display_name": "SnowBallPromptChain"
+        },
+        "id": "CustomComponent-Ik35q",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "185f8122-0bba-439b-ac99-450d2f62644e",
+    "name": "SnowBallPromptChain",
+    "description": "This component is an implementation of SnowBall Prompt Chaining (Compatible with different LLM models), which consists in creating an answer with a sequence of tasks -> return in json]",
+    "is_component": true,
+    "liked_by_count": "13",
+    "downloads_count": "118",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.0a24",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "API_MODEL_KEY": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "API_MODEL_KEY",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n        subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n        return 1\n    \ninstall(\"llm\")\n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"Prompt Chains\"\n    description = \"This component is an implementation of SnowBall Prompt Chaining (Compatible with different LLM models), which consists in creating an answer with a sequence of tasks -> return in json]\"\n    \n    def build_config(self):\n        return {\n            \"theme\": {\n                \"display_name\": \"Theme\",\n                \"advanced\": False,\n                \"required\": True,\n                \"display_name\": \"Input\"\n            },\n            \"model\":{\n                \"display_name\": \"Model\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"claude-3-haiku\",\n                    \"claude-3-sonnet\",\n                    \"claude-3-opus\",\n                    \"gpt-4-turbo\",\n                    \"gpt-4-0125-preview\",\n                    \"gpt-3.5-turbo\",\n                ],\n                \n            },\n            \"detail_text\":{\n                \"display_name\": \"Detail Text\",\n                \"advanced\": False,\n                \"required\": True,\n                \"default\": \"No\",\n                \"options\": [\n                    \"Yes\",\n                    \"No\"\n                ],\n            },\n            \"internal_prompt_theme\":{\n                \"display_name\": \"Internal Prompt Theme\",\n                \"required\": False,\n                \"default\": \"Generate a clickworthy title about this topic\"\n            },\n            \"internal_prompt_instruction\":{\n                \"display_name\": \"Internal Prompt Instruction\",\n                \"required\": False,\n                \"default\": \"Generate a compelling 3 section outline given this information\"\n            },\n            \"internal_prompt_output\":{\n                \"display_name\": \"Internal Prompt Output\",\n                \"required\": False,\n                \"default\": \"Generate 1 paragraph of content for each section outline given this information\"\n            },\n            \"API_MODEL_KEY\":{\n                \"password\": True,\n                \"required\": True,\n            }\n        }\n    \n    def build(self, theme: str, model: str, API_MODEL_KEY: str, detail_text: str, internal_prompt_theme: str = '', internal_prompt_instruction: str = '' , internal_prompt_output: str = '') -> str:\n        \"\"\"\n            Snowball Chain: Start with a small topic and then the chains expand it. The workflow is as follows:\n            [User provide a topic -> chain 1 make a title -> chain 2 get the title and suggest sections -> chain 3 create content for each section -> return in json]\n        \"\"\"\n        def install(package):\n            subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n            return 1\n        install(\"llm\")\n        import llm\n        \n        # It is that way to allow you changing it to use more models if you need it ;)\n        model1 = llm.get_model(model) \n        model2 = llm.get_model(model)\n        model3 = llm.get_model(model)\n        \n        model1.key = API_MODEL_KEY\n        model2.key = API_MODEL_KEY\n        model3.key = API_MODEL_KEY\n        \n        if(len(internal_prompt_theme) <= 1):\n            internal_prompt_theme = \"Generate a clickworthy title about this topic\"\n        if(len(internal_prompt_instruction) <= 1):\n            internal_prompt_instruction = \"Generate a compelling 3 section outline given this information\"\n        if(len(internal_prompt_output) <= 1):\n            internal_prompt_output = \"Generate a markdown formatted blog post given this information\"\n    \n        snowball_prompt_response_1 = model1.prompt(\n            f\"{internal_prompt_theme}: '{theme}'. Respond in JSON format {{title: 'title', topic: '{theme}'}}\"\n        )\n        snowball_prompt_response_2 = model1.prompt(\n            f\"{internal_prompt_instruction}: '{snowball_prompt_response_1.text()}'. Respond in JSON format {{title: '<title>', topic: '<topic>', sections: ['<section1>', '<section2>', '<section3>']}}\"\n        )\n        snowball_prompt_response_3 = model1.prompt(\n            f\"{internal_prompt_output}: '{snowball_prompt_response_2.text()}'. Respond in JSON format {{title: '<title>', topic: '<topic>', sections: ['<section1>', '<section2>', '<section3>'], content: ['<content1>', '<content2>', '<content3>']}}\"\n        )\n        \n        if(\"detail_text\" == \"Yes\"):\n            snowball_prompt_response_4 = model1.prompt(\n            f\"I want you to add more text for each section of my text, bringing more details, you will recieve $1000 tip for each new insight/paragraph you can add to enchance my text: {snowball_prompt_response_3.text()}. Be sure to keep its original format\"\n        )\n            snowball_markdown_prompt = model1.prompt(\n                f\"Generate a markdown formatted blog post given this information: '{snowball_prompt_response_4.text()}'. You MUST return the information in a plain markdown text, not as a code but as pure markdown text.\"\n            )\n            \n            return snowball_markdown_prompt.json()['content']\n        \n        snowball_markdown_prompt = model1.prompt(\n                f\"Generate a markdown formatted blog post given this information: '{snowball_prompt_response_3.text()}'. You MUST return the information in a plain markdown text, not as a code but as pure markdown text.\"\n            )\n            \n        return snowball_markdown_prompt.json()['content']\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "detail_text": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Yes",
+                    "No"
+                  ],
+                  "name": "detail_text",
+                  "display_name": "Detail Text",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "Yes"
+                },
+                "internal_prompt_instruction": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "internal_prompt_instruction",
+                  "display_name": "Internal Prompt Instruction",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "internal_prompt_output": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "internal_prompt_output",
+                  "display_name": "Internal Prompt Output",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "internal_prompt_theme": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "internal_prompt_theme",
+                  "display_name": "Internal Prompt Theme",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "model": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "claude-3-haiku",
+                    "claude-3-sonnet",
+                    "claude-3-opus",
+                    "gpt-4-turbo",
+                    "gpt-4-0125-preview",
+                    "gpt-3.5-turbo"
+                  ],
+                  "name": "model",
+                  "display_name": "Model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "gpt-3.5-turbo"
+                },
+                "theme": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "theme",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "This component is an implementation of SnowBall Prompt Chaining (Compatible with different LLM models), which consists in creating an answer with a sequence of tasks -> return in json]",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "SnowBallPromptChain",
+              "documentation": "",
+              "custom_fields": {
+                "theme": null,
+                "model": null,
+                "API_MODEL_KEY": null,
+                "detail_text": null,
+                "internal_prompt_theme": null,
+                "internal_prompt_instruction": null,
+                "internal_prompt_output": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-Ik35q",
+            "description": "This component is an implementation of SnowBall Prompt Chaining (Compatible with different LLM models), which consists in creating an answer with a sequence of tasks -> return in json]",
+            "display_name": "SnowBallPromptChain"
+          },
+          "id": "CustomComponent-Ik35q",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-04-22T20:07:09.879Z",
+    "date_updated": "2024-04-22T20:07:09.909Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "user_created": {
+      "username": "joaoguilhermeS",
+      "first_name": "João",
+      "last_name": "Oliveira",
+      "id": "94b2e207-1a44-4905-856c-4f5a69c168ce"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.075Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

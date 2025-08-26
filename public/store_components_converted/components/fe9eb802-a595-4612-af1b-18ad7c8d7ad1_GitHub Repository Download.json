@@ -1,0 +1,441 @@
+{
+  "id": "fe9eb802-a595-4612-af1b-18ad7c8d7ad1",
+  "name": "GitHub Repository Download",
+  "description": "Downlooad specific repository from a GitHub. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "Fabricando Sua Ideia",
+    "first_name": "Fabricando Sua Ideia",
+    "last_name": "Sua Ideia",
+    "id": "f2e77b57-53b7-49b9-babd-9d6ec3aecb00",
+    "full_name": "Fabricando Sua Ideia Sua Ideia"
+  },
+  "store_url": "https://www.langflow.store/store/component/fe9eb802-a595-4612-af1b-18ad7c8d7ad1",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-02T00:44:34.800Z",
+    "updated": "2024-08-06T14:04:10.565Z",
+    "downloaded": "2025-08-19T17:50:06.270Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.13",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "GitHubFileLoaderComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "access_token": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "access_token",
+                "display_name": "Access Token",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "branch": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "main",
+                "name": "branch",
+                "display_name": "Branch",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import os\r\nimport requests\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import MessageTextInput, Output\r\n\r\n# Component Create By Fabricando Sua Ideia: https://www.youtube.com/@fabricandosuaideiatutoriais\r\n\r\nclass GitHubFileLoaderComponent(Component):\r\n    display_name = \"GitHub Repository Download\"\r\n    description = \"Downlooad specific repository from a GitHub.\"\r\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\r\n    icon = \"github\"\r\n\r\n    inputs = [\r\n        MessageTextInput(name=\"repo\", display_name=\"Repository Name\", value=\"your-username/your-repository\"),\r\n        MessageTextInput(name=\"access_token\", display_name=\"Access Token\", value=\"\"),\r\n        MessageTextInput(name=\"github_api_url\", display_name=\"GitHub API URL\", value=\"https://api.github.com\"),\r\n        MessageTextInput(name=\"branch\", display_name=\"Branch\", value=\"main\"),\r\n        MessageTextInput(name=\"save_dir\", display_name=\"Save Directory\", value=\"axiestudio/Github\")\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Output\", name=\"output\", method=\"build_output\"),\r\n    ]\r\n\r\n    def build_output(self) -> Data:\r\n        repo = self.repo\r\n        access_token = self.access_token\r\n        github_api_url = self.github_api_url\r\n        branch = self.branch\r\n        save_dir = self.save_dir\r\n\r\n        headers = {\"Authorization\": f\"token {access_token}\"}\r\n        try:\r\n            # Get the list of files in the repository\r\n            response = requests.get(f\"{github_api_url}/repos/{repo}/git/trees/{branch}?recursive=1\", headers=headers)\r\n            response.raise_for_status()\r\n            tree = response.json().get('tree', [])\r\n\r\n            if not os.path.exists(save_dir):\r\n                os.makedirs(save_dir)\r\n\r\n            for file_info in tree:\r\n                if file_info['type'] == 'blob':\r\n                    file_path = file_info['path']\r\n                    file_url = f\"{github_api_url}/repos/{repo}/contents/{file_path}?ref={branch}\"\r\n                    file_response = requests.get(file_url, headers=headers)\r\n                    file_response.raise_for_status()\r\n                    file_content = file_response.json().get('content', '')\r\n                    \r\n                    # Decode base64 content\r\n                    import base64\r\n                    file_data = base64.b64decode(file_content)\r\n                    \r\n                    full_path = os.path.join(save_dir, file_path)\r\n                    os.makedirs(os.path.dirname(full_path), exist_ok=True)\r\n                    \r\n                    with open(full_path, 'wb') as file:\r\n                        file.write(file_data)\r\n\r\n            data = Data(value=f\"Repository saved to {save_dir}\")\r\n            self.status = data\r\n            return data\r\n\r\n        except requests.exceptions.HTTPError as e:\r\n            error_message = f\"HTTP error occurred: {e}\"\r\n            print(error_message)\r\n            data = Data(value=error_message)\r\n            self.status = data\r\n            return data\r\n        except Exception as e:\r\n            error_message = f\"An error occurred: {e}\"\r\n            print(error_message)\r\n            data = Data(value=error_message)\r\n            self.status = data\r\n            return data\r\n\r\n# Example usage\r\ncomponent = GitHubFileLoaderComponent()\r\ncomponent.repo = \"your-username/your-repository\"\r\ncomponent.access_token = \"your-access-token\"\r\ncomponent.github_api_url = \"https://api.github.com\"\r\ncomponent.branch = \"main\"\r\ncomponent.save_dir = \"axiestudio/Github\"\r\n\r\noutput_data = component.build_output()\r\nprint(output_data.value)\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "github_api_url": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "https://api.github.com",
+                "name": "github_api_url",
+                "display_name": "GitHub API URL",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "repo": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "repo",
+                "display_name": "Repository Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "save_dir": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "axiestudio/Github",
+                "name": "save_dir",
+                "display_name": "Save Directory",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Downlooad specific repository from a GitHub.",
+            "icon": "github",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "GitHub Repository Download",
+            "documentation": "http://docs.axiestudio.org/components/custom",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "output",
+                "display_name": "Output",
+                "method": "build_output",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "repo",
+              "access_token",
+              "github_api_url",
+              "branch",
+              "save_dir"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "GitHubFileLoaderComponent-9EqOj"
+        },
+        "id": "GitHubFileLoaderComponent-9EqOj",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "GitHubFileLoaderComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "fe9eb802-a595-4612-af1b-18ad7c8d7ad1",
+    "name": "GitHub Repository Download",
+    "description": "Downlooad specific repository from a GitHub.",
+    "is_component": true,
+    "liked_by_count": "11",
+    "downloads_count": "100",
+    "metadata": {
+      "GitHubFileLoaderComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.13",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "GitHubFileLoaderComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "access_token": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "access_token",
+                  "display_name": "Access Token",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "branch": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "main",
+                  "name": "branch",
+                  "display_name": "Branch",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import os\r\nimport requests\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import MessageTextInput, Output\r\n\r\n# Component Create By Fabricando Sua Ideia: https://www.youtube.com/@fabricandosuaideiatutoriais\r\n\r\nclass GitHubFileLoaderComponent(Component):\r\n    display_name = \"GitHub Repository Download\"\r\n    description = \"Downlooad specific repository from a GitHub.\"\r\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\r\n    icon = \"github\"\r\n\r\n    inputs = [\r\n        MessageTextInput(name=\"repo\", display_name=\"Repository Name\", value=\"your-username/your-repository\"),\r\n        MessageTextInput(name=\"access_token\", display_name=\"Access Token\", value=\"\"),\r\n        MessageTextInput(name=\"github_api_url\", display_name=\"GitHub API URL\", value=\"https://api.github.com\"),\r\n        MessageTextInput(name=\"branch\", display_name=\"Branch\", value=\"main\"),\r\n        MessageTextInput(name=\"save_dir\", display_name=\"Save Directory\", value=\"axiestudio/Github\")\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Output\", name=\"output\", method=\"build_output\"),\r\n    ]\r\n\r\n    def build_output(self) -> Data:\r\n        repo = self.repo\r\n        access_token = self.access_token\r\n        github_api_url = self.github_api_url\r\n        branch = self.branch\r\n        save_dir = self.save_dir\r\n\r\n        headers = {\"Authorization\": f\"token {access_token}\"}\r\n        try:\r\n            # Get the list of files in the repository\r\n            response = requests.get(f\"{github_api_url}/repos/{repo}/git/trees/{branch}?recursive=1\", headers=headers)\r\n            response.raise_for_status()\r\n            tree = response.json().get('tree', [])\r\n\r\n            if not os.path.exists(save_dir):\r\n                os.makedirs(save_dir)\r\n\r\n            for file_info in tree:\r\n                if file_info['type'] == 'blob':\r\n                    file_path = file_info['path']\r\n                    file_url = f\"{github_api_url}/repos/{repo}/contents/{file_path}?ref={branch}\"\r\n                    file_response = requests.get(file_url, headers=headers)\r\n                    file_response.raise_for_status()\r\n                    file_content = file_response.json().get('content', '')\r\n                    \r\n                    # Decode base64 content\r\n                    import base64\r\n                    file_data = base64.b64decode(file_content)\r\n                    \r\n                    full_path = os.path.join(save_dir, file_path)\r\n                    os.makedirs(os.path.dirname(full_path), exist_ok=True)\r\n                    \r\n                    with open(full_path, 'wb') as file:\r\n                        file.write(file_data)\r\n\r\n            data = Data(value=f\"Repository saved to {save_dir}\")\r\n            self.status = data\r\n            return data\r\n\r\n        except requests.exceptions.HTTPError as e:\r\n            error_message = f\"HTTP error occurred: {e}\"\r\n            print(error_message)\r\n            data = Data(value=error_message)\r\n            self.status = data\r\n            return data\r\n        except Exception as e:\r\n            error_message = f\"An error occurred: {e}\"\r\n            print(error_message)\r\n            data = Data(value=error_message)\r\n            self.status = data\r\n            return data\r\n\r\n# Example usage\r\ncomponent = GitHubFileLoaderComponent()\r\ncomponent.repo = \"your-username/your-repository\"\r\ncomponent.access_token = \"your-access-token\"\r\ncomponent.github_api_url = \"https://api.github.com\"\r\ncomponent.branch = \"main\"\r\ncomponent.save_dir = \"axiestudio/Github\"\r\n\r\noutput_data = component.build_output()\r\nprint(output_data.value)\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "github_api_url": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "https://api.github.com",
+                  "name": "github_api_url",
+                  "display_name": "GitHub API URL",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "repo": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "repo",
+                  "display_name": "Repository Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "save_dir": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "axiestudio/Github",
+                  "name": "save_dir",
+                  "display_name": "Save Directory",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Downlooad specific repository from a GitHub.",
+              "icon": "github",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "GitHub Repository Download",
+              "documentation": "http://docs.axiestudio.org/components/custom",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "output",
+                  "display_name": "Output",
+                  "method": "build_output",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "repo",
+                "access_token",
+                "github_api_url",
+                "branch",
+                "save_dir"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "GitHubFileLoaderComponent-9EqOj"
+          },
+          "id": "GitHubFileLoaderComponent-9EqOj",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-02T00:44:34.800Z",
+    "date_updated": "2024-08-06T14:04:10.565Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "f2e77b57-53b7-49b9-babd-9d6ec3aecb00",
+    "user_created": {
+      "username": "Fabricando Sua Ideia",
+      "first_name": "Fabricando Sua Ideia",
+      "last_name": "Sua Ideia",
+      "id": "f2e77b57-53b7-49b9-babd-9d6ec3aecb00"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:12.737Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 16,
+    "converter_version": "1.0.0"
+  }
+}

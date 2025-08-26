@@ -1,0 +1,409 @@
+{
+  "id": "7b6553c5-c91b-493c-af56-ae465b0d5574",
+  "name": " ScrapeGraph Search",
+  "description": "Search and Scrape web content using ScrapeGraphAI _SearchGraph_, multi-page scrapper.\n\n Requires installation of scrapegraphai and playwright. Read more on [documentation](https://github.com/ScrapeGraphAI/Scrapegraph-ai).\n\n Could not make the tool output work. Help is appreciated. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "appoks",
+    "first_name": "Johnathan Radünz",
+    "last_name": "Radünz",
+    "id": "91fd1e9c-c965-4845-a8ce-b81d962e690b",
+    "full_name": "Johnathan Radünz Radünz"
+  },
+  "store_url": "https://www.langflow.store/store/component/7b6553c5-c91b-493c-af56-ae465b0d5574",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-18T23:33:52.330Z",
+    "updated": "2024-08-18T23:33:52.353Z",
+    "downloaded": "2025-08-19T17:50:05.190Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "ScrapeGraphSearcher",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "additional_config": {
+                "trace_as_input": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "additional_config",
+                "value": {},
+                "display_name": "Additional Configuration",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Additional configuration options for ScrapeGraphAI.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom axiestudio.inputs import MessageTextInput, StrInput, DictInput, SecretStrInput\nfrom axiestudio.schema import Data\nfrom axiestudio.field_typing import Tool\nfrom langchain.tools import StructuredTool\nfrom pydantic import BaseModel, Field\n\n# NOTE: This component requires you to install the scrapegraphai, scrapegraphai[burr] (Use 'Pip Install' component from store)\n#       and the playwright. I'm not sure on how to properly install Playwright for this case because I'm using the one I already\n#       have installed on my machine for e2e testing. I _think_ `pip install playwright && playwright install` should work.\n#       You may also install the playwright dependencies with playwright install-deps. Works on docker containers.\n\nclass ScrapeGraphAIComponent(LCToolComponent):\n    display_name: str = \"ScrapeGraph Searcher\"\n    description: str = \"Search and Scrape web content using ScrapeGraphAI _SearchGraph_, multi-page scrapper.\\n\\n Requires installation of scrapegraphai and playwright. Read more on [documentation](https://github.com/ScrapeGraphAI/Scrapegraph-ai).\\n\\n Could not make the tool output work. Help is appreciated.\"\n    name = \"ScrapeGraphSearcher\"\n    documentation: str = \"https://github.com/scrapegraph/scrapegraphai\"\n    icon = \"🕷️\"\n    beta = True\n\n    inputs = [\n        SecretStrInput(\n            name=\"openai_api_key\",\n            display_name=\"OpenAI API Key\",\n            info=\"Your OpenAI API key for the LLM.\",\n        ),\n        MessageTextInput(\n            name=\"prompt\",\n            display_name=\"Search Prompt\",\n            info=\"The prompt describing what information to extract.\",\n        ),\n        StrInput(\n            name=\"model\",\n            display_name=\"LLM Model\",\n            info=\"The OpenAI model to use (e.g., 'gpt-4', 'gpt-3.5-turbo').\",\n        ),\n        DictInput(\n            name=\"additional_config\",\n            display_name=\"Additional Configuration\",\n            info=\"Additional configuration options for ScrapeGraphAI.\",\n            advanced=True,\n            is_list=True,\n        ),\n    ]\n\n    class ScrapeGraphAISchema(BaseModel):\n        prompt: str = Field(..., description=\"The prompt describing what information to extract\")\n        model: str = Field(default=\"gpt-3.5-turbo\", description=\"The OpenAI model to use\")\n        additional_config: Optional[dict] = Field(default=None, description=\"Additional configuration options\")\n\n    def run_model(self) -> Data:\n        try:\n            from scrapegraphai.graphs import SearchGraph\n        except ImportError:\n            raise ImportError(\n                \"Could not import scrapegraphai package. \"\n                \"Please install it with `pip install scrapegraphai`.\"\n            )\n\n        graph_config = {\n            \"llm\": {\n                \"api_key\": self.openai_api_key,\n                \"model\": self.model,\n                \"temperature\": 0,\n            },\n            \"verbose\": True,\n            \"headless\": True,\n        }\n\n        if self.additional_config:\n            graph_config.update(self.additional_config)\n\n        search_graph = SearchGraph(\n            prompt=self.prompt,\n            config=graph_config\n        )\n\n        result = search_graph.run()\n        data = Data(data=result)\n        self.status = data\n        return data\n\n    def build_tool(self) -> Tool:\n        return StructuredTool.from_function(\n            name=\"ScrapeGraphSearcher\",\n            description=\"Search and Scrape web content using ScrapeGraphAI. Input should be a dictionary with 'prompt', optional 'model', and optional 'additional_config'.\",\n            func=self._search_with_scrapegraphai,\n            args_schema=self.ScrapeGraphAISchema,\n        )\n\n    def _search_with_scrapegraphai(self, prompt: str, model: str = \"gpt-3.5-turbo\", additionalConfig: Optional[dict] = None) -> dict:\n        try:\n            from scrapegraphai.graphs import SearchGraph\n        except ImportError:\n            raise ImportError(\n                \"Could not import scrapegraphai package. \"\n                \"Please install it with `pip install scrapegraphai`.\"\n            )\n\n        graph_config = {\n            \"llm\": {\n                \"api_key\": self.openai_api_key,\n                \"model\": model,\n                \"temperature\": 0\n            },\n            \"verbose\": True,\n            \"headless\": True,\n        }\n\n        if additionalConfig:\n            graph_config.update(additionalConfig)\n\n        search_graph = SmartScraperGraph(\n            prompt=prompt,\n            config=graph_config\n        )\n\n        return search_graph.run()\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "model": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "model",
+                "value": "gpt-3.5-turbo",
+                "display_name": "LLM Model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The OpenAI model to use (e.g., 'gpt-4', 'gpt-3.5-turbo').",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "openai_api_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "openai_api_key",
+                "value": "",
+                "display_name": "OpenAI API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Your OpenAI API key for the LLM.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "prompt": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "prompt",
+                "value": "",
+                "display_name": "Search Prompt",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The prompt describing what information to extract.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Search and Scrape web content using ScrapeGraphAI _SearchGraph_, multi-page scrapper.\n\n Requires installation of scrapegraphai and playwright. Read more on [documentation](https://github.com/ScrapeGraphAI/Scrapegraph-ai).\n\n Could not make the tool output work. Help is appreciated.",
+            "icon": "🕷️",
+            "base_classes": [
+              "Data",
+              "list",
+              "Sequence",
+              "Tool"
+            ],
+            "display_name": " ScrapeGraph Search",
+            "documentation": "https://github.com/scrapegraph/scrapegraphai",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data",
+                  "list"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Sequence",
+                  "Tool"
+                ],
+                "selected": "Sequence",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "openai_api_key",
+              "prompt",
+              "model",
+              "additional_config"
+            ],
+            "beta": true,
+            "edited": true,
+            "lf_version": "1.0.15",
+            "official": false
+          },
+          "id": "scrapegraphai_searcher-8dRRw"
+        },
+        "id": "scrapegraphai_searcher-8dRRw",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "scrapegraphai_searcher": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "7b6553c5-c91b-493c-af56-ae465b0d5574",
+    "name": " ScrapeGraph Search",
+    "description": "Search and Scrape web content using ScrapeGraphAI _SearchGraph_, multi-page scrapper.\n\n Requires installation of scrapegraphai and playwright. Read more on [documentation](https://github.com/ScrapeGraphAI/Scrapegraph-ai).\n\n Could not make the tool output work. Help is appreciated.",
+    "is_component": true,
+    "liked_by_count": "15",
+    "downloads_count": "116",
+    "metadata": {
+      "scrapegraphai_searcher": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "ScrapeGraphSearcher",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "additional_config": {
+                  "trace_as_input": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "additional_config",
+                  "value": {},
+                  "display_name": "Additional Configuration",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Additional configuration options for ScrapeGraphAI.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom axiestudio.inputs import MessageTextInput, StrInput, DictInput, SecretStrInput\nfrom axiestudio.schema import Data\nfrom axiestudio.field_typing import Tool\nfrom langchain.tools import StructuredTool\nfrom pydantic import BaseModel, Field\n\n# NOTE: This component requires you to install the scrapegraphai, scrapegraphai[burr] (Use 'Pip Install' component from store)\n#       and the playwright. I'm not sure on how to properly install Playwright for this case because I'm using the one I already\n#       have installed on my machine for e2e testing. I _think_ `pip install playwright && playwright install` should work.\n#       You may also install the playwright dependencies with playwright install-deps. Works on docker containers.\n\nclass ScrapeGraphAIComponent(LCToolComponent):\n    display_name: str = \"ScrapeGraph Searcher\"\n    description: str = \"Search and Scrape web content using ScrapeGraphAI _SearchGraph_, multi-page scrapper.\\n\\n Requires installation of scrapegraphai and playwright. Read more on [documentation](https://github.com/ScrapeGraphAI/Scrapegraph-ai).\\n\\n Could not make the tool output work. Help is appreciated.\"\n    name = \"ScrapeGraphSearcher\"\n    documentation: str = \"https://github.com/scrapegraph/scrapegraphai\"\n    icon = \"🕷️\"\n    beta = True\n\n    inputs = [\n        SecretStrInput(\n            name=\"openai_api_key\",\n            display_name=\"OpenAI API Key\",\n            info=\"Your OpenAI API key for the LLM.\",\n        ),\n        MessageTextInput(\n            name=\"prompt\",\n            display_name=\"Search Prompt\",\n            info=\"The prompt describing what information to extract.\",\n        ),\n        StrInput(\n            name=\"model\",\n            display_name=\"LLM Model\",\n            info=\"The OpenAI model to use (e.g., 'gpt-4', 'gpt-3.5-turbo').\",\n        ),\n        DictInput(\n            name=\"additional_config\",\n            display_name=\"Additional Configuration\",\n            info=\"Additional configuration options for ScrapeGraphAI.\",\n            advanced=True,\n            is_list=True,\n        ),\n    ]\n\n    class ScrapeGraphAISchema(BaseModel):\n        prompt: str = Field(..., description=\"The prompt describing what information to extract\")\n        model: str = Field(default=\"gpt-3.5-turbo\", description=\"The OpenAI model to use\")\n        additional_config: Optional[dict] = Field(default=None, description=\"Additional configuration options\")\n\n    def run_model(self) -> Data:\n        try:\n            from scrapegraphai.graphs import SearchGraph\n        except ImportError:\n            raise ImportError(\n                \"Could not import scrapegraphai package. \"\n                \"Please install it with `pip install scrapegraphai`.\"\n            )\n\n        graph_config = {\n            \"llm\": {\n                \"api_key\": self.openai_api_key,\n                \"model\": self.model,\n                \"temperature\": 0,\n            },\n            \"verbose\": True,\n            \"headless\": True,\n        }\n\n        if self.additional_config:\n            graph_config.update(self.additional_config)\n\n        search_graph = SearchGraph(\n            prompt=self.prompt,\n            config=graph_config\n        )\n\n        result = search_graph.run()\n        data = Data(data=result)\n        self.status = data\n        return data\n\n    def build_tool(self) -> Tool:\n        return StructuredTool.from_function(\n            name=\"ScrapeGraphSearcher\",\n            description=\"Search and Scrape web content using ScrapeGraphAI. Input should be a dictionary with 'prompt', optional 'model', and optional 'additional_config'.\",\n            func=self._search_with_scrapegraphai,\n            args_schema=self.ScrapeGraphAISchema,\n        )\n\n    def _search_with_scrapegraphai(self, prompt: str, model: str = \"gpt-3.5-turbo\", additionalConfig: Optional[dict] = None) -> dict:\n        try:\n            from scrapegraphai.graphs import SearchGraph\n        except ImportError:\n            raise ImportError(\n                \"Could not import scrapegraphai package. \"\n                \"Please install it with `pip install scrapegraphai`.\"\n            )\n\n        graph_config = {\n            \"llm\": {\n                \"api_key\": self.openai_api_key,\n                \"model\": model,\n                \"temperature\": 0\n            },\n            \"verbose\": True,\n            \"headless\": True,\n        }\n\n        if additionalConfig:\n            graph_config.update(additionalConfig)\n\n        search_graph = SmartScraperGraph(\n            prompt=prompt,\n            config=graph_config\n        )\n\n        return search_graph.run()\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "model": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "model",
+                  "value": "gpt-3.5-turbo",
+                  "display_name": "LLM Model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The OpenAI model to use (e.g., 'gpt-4', 'gpt-3.5-turbo').",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "openai_api_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "openai_api_key",
+                  "value": "",
+                  "display_name": "OpenAI API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Your OpenAI API key for the LLM.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "prompt": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "prompt",
+                  "value": "",
+                  "display_name": "Search Prompt",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The prompt describing what information to extract.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Search and Scrape web content using ScrapeGraphAI _SearchGraph_, multi-page scrapper.\n\n Requires installation of scrapegraphai and playwright. Read more on [documentation](https://github.com/ScrapeGraphAI/Scrapegraph-ai).\n\n Could not make the tool output work. Help is appreciated.",
+              "icon": "🕷️",
+              "base_classes": [
+                "Data",
+                "list",
+                "Sequence",
+                "Tool"
+              ],
+              "display_name": " ScrapeGraph Search",
+              "documentation": "https://github.com/scrapegraph/scrapegraphai",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data",
+                    "list"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Sequence",
+                    "Tool"
+                  ],
+                  "selected": "Sequence",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "openai_api_key",
+                "prompt",
+                "model",
+                "additional_config"
+              ],
+              "beta": true,
+              "edited": true,
+              "lf_version": "1.0.15",
+              "official": false
+            },
+            "id": "scrapegraphai_searcher-8dRRw"
+          },
+          "id": "scrapegraphai_searcher-8dRRw",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-18T23:33:52.330Z",
+    "date_updated": "2024-08-18T23:33:52.353Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "91fd1e9c-c965-4845-a8ce-b81d962e690b",
+    "user_created": {
+      "username": "appoks",
+      "first_name": "Johnathan Radünz",
+      "last_name": "Radünz",
+      "id": "91fd1e9c-c965-4845-a8ce-b81d962e690b"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.710Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

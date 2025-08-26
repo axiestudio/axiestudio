@@ -1,0 +1,375 @@
+{
+  "id": "f6f85b75-6edf-4a4a-b923-111125216d3b",
+  "name": "Apex Search Catalog Tool",
+  "description": "This tool calls Apex Catalog api. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "DP",
+    "first_name": "Devika",
+    "last_name": "Paranjpe",
+    "id": "e883f0a0-2d5f-4b02-a8f9-999462d56956",
+    "full_name": "Devika Paranjpe"
+  },
+  "store_url": "https://www.langflow.store/store/component/f6f85b75-6edf-4a4a-b923-111125216d3b",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-07T09:24:00.244Z",
+    "updated": "2024-10-07T09:24:00.282Z",
+    "downloaded": "2025-08-19T17:50:07.475Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "ApexSearchCatalog",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "catalog_url": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "catalog_url",
+                "value": "https://apexsandy.symphonysummit.com/copilot/api/object/searchcatalog?tenantId=0c80b689-8884-4294-939e-1b4ab13aed65&searchKey=",
+                "display_name": "catalog_url",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "catalog_url_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "catalog_url_key",
+                "value": "",
+                "display_name": "catalog_url_key",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import cast\r\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\r\nfrom axiestudio.field_typing import Tool\r\nfrom axiestudio.inputs import MultilineInput, MessageTextInput, SecretStrInput, MessageInput\r\nfrom axiestudio.schema import Data\r\nfrom langchain.pydantic_v1 import BaseModel, Field\r\nfrom langchain.tools import BaseTool\r\nfrom typing import Optional, Type\r\nfrom langchain.callbacks.manager import CallbackManagerForToolRun\r\nimport requests\r\nimport json\r\n\r\n\r\n\r\nclass SearchCatalog(LCToolComponent):\r\n\r\n    display_name = \"Apex SearchCatalog Tool\"\r\n    description = \"This tool calls Apex Catalog api.\" # This is displayed on the UI of tool for user to understand what this tools does.\r\n    name = \"ApexSearchCatalog\"\r\n\r\n    inputs = [MultilineInput(name=\"query\", display_name=\"query\"),\r\n              MessageTextInput(name=\"catalog_url\", display_name=\"catalog_url\", advanced=True),\r\n              SecretStrInput(name=\"catalog_url_key\", display_name=\"catalog_url_key\", advanced=True)] \r\n\r\n    class SCTool(BaseTool):\r\n\r\n        class FunctionInput(BaseModel): \r\n            ''' Define here all the function arguments and detailed description of them that LLM has to extract from user query. '''\r\n            search_query: str = Field(description=\"keywords to search for matching catalog e.g: vpn access, keyboard, laptop.\")\r\n           \r\n        name = \"SCTool\"\r\n        description = \"search for the catalog forms for the given request. This function should not be called for raising service request queries.\"\r\n        # This is the first function that needs to be called for raising service request/SR related tasks.\" # This is used by LLM to decide when to call this tool, so this has to be well described.\r\n        args_schema: Type[BaseModel] = FunctionInput\r\n\r\n        class APIWrapper(BaseModel):\r\n            \"\"\" Wrapper around Tool to call the tool with arguments and return result \"\"\"  \r\n\r\n            # Define all variables here as class variabels that are required by function but LLM doesnt has to extract, rather user will provide from the tool UI. \r\n            catalog_url : str\r\n            catalog_url_key : str\r\n            \r\n            \r\n            def run(self, search_query: str) -> str:   \r\n                \"\"\" Define actual code logic here. \"\"\"\r\n\r\n                headers = {\r\n                        \"x-api-key\": self.catalog_url_key\r\n                        }\r\n                \r\n                url = str(self.catalog_url) + search_query\r\n                print(\"url:\", url)\r\n                response = requests.get(url=url, headers=headers, verify=False)\r\n\r\n                if response.status_code==200:\r\n                    api_data = response.json()\r\n                    knowledge_info = json.dumps(api_data)\r\n                else:\r\n                    knowledge_info = f\"Error in catalog api: {response.status_code}\"\r\n\r\n                return knowledge_info\r\n\r\n\r\n        api_wrapper: APIWrapper\r\n\r\n        def _run(self, search_query: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:\r\n            return self.api_wrapper.run(search_query)\r\n        \r\n\r\n    def run_model(self) -> list[Data]:\r\n        wrapper = self._build_wrapper()   \r\n        data = [Data(data=wrapper.run(self.query))]\r\n        return data\r\n\r\n    def build_tool(self) -> Tool:\r\n        wrapper = self._build_wrapper()\r\n        return cast(Tool, self.SCTool(api_wrapper=wrapper))\r\n\r\n    def _build_wrapper(self):    \r\n        return self.SCTool.APIWrapper(catalog_url=self.catalog_url,\r\n                                       catalog_url_key=self.catalog_url_key)",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "query": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "query",
+                "value": "",
+                "display_name": "query",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "This tool calls Apex Catalog api.",
+            "base_classes": [
+              "Data",
+              "Tool"
+            ],
+            "display_name": "Apex Search Catalog Tool",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "query",
+              "catalog_url",
+              "catalog_url_key"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.18",
+            "official": false
+          },
+          "id": "SearchCatalog-Reo4y"
+        },
+        "id": "SearchCatalog-Reo4y",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "SearchCatalog": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "f6f85b75-6edf-4a4a-b923-111125216d3b",
+    "name": "Apex Search Catalog Tool",
+    "description": "This tool calls Apex Catalog api.",
+    "is_component": true,
+    "liked_by_count": "1",
+    "downloads_count": "6",
+    "metadata": {
+      "SearchCatalog": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "ApexSearchCatalog",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "catalog_url": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "catalog_url",
+                  "value": "https://apexsandy.symphonysummit.com/copilot/api/object/searchcatalog?tenantId=0c80b689-8884-4294-939e-1b4ab13aed65&searchKey=",
+                  "display_name": "catalog_url",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "catalog_url_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "catalog_url_key",
+                  "value": "",
+                  "display_name": "catalog_url_key",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import cast\r\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\r\nfrom axiestudio.field_typing import Tool\r\nfrom axiestudio.inputs import MultilineInput, MessageTextInput, SecretStrInput, MessageInput\r\nfrom axiestudio.schema import Data\r\nfrom langchain.pydantic_v1 import BaseModel, Field\r\nfrom langchain.tools import BaseTool\r\nfrom typing import Optional, Type\r\nfrom langchain.callbacks.manager import CallbackManagerForToolRun\r\nimport requests\r\nimport json\r\n\r\n\r\n\r\nclass SearchCatalog(LCToolComponent):\r\n\r\n    display_name = \"Apex SearchCatalog Tool\"\r\n    description = \"This tool calls Apex Catalog api.\" # This is displayed on the UI of tool for user to understand what this tools does.\r\n    name = \"ApexSearchCatalog\"\r\n\r\n    inputs = [MultilineInput(name=\"query\", display_name=\"query\"),\r\n              MessageTextInput(name=\"catalog_url\", display_name=\"catalog_url\", advanced=True),\r\n              SecretStrInput(name=\"catalog_url_key\", display_name=\"catalog_url_key\", advanced=True)] \r\n\r\n    class SCTool(BaseTool):\r\n\r\n        class FunctionInput(BaseModel): \r\n            ''' Define here all the function arguments and detailed description of them that LLM has to extract from user query. '''\r\n            search_query: str = Field(description=\"keywords to search for matching catalog e.g: vpn access, keyboard, laptop.\")\r\n           \r\n        name = \"SCTool\"\r\n        description = \"search for the catalog forms for the given request. This function should not be called for raising service request queries.\"\r\n        # This is the first function that needs to be called for raising service request/SR related tasks.\" # This is used by LLM to decide when to call this tool, so this has to be well described.\r\n        args_schema: Type[BaseModel] = FunctionInput\r\n\r\n        class APIWrapper(BaseModel):\r\n            \"\"\" Wrapper around Tool to call the tool with arguments and return result \"\"\"  \r\n\r\n            # Define all variables here as class variabels that are required by function but LLM doesnt has to extract, rather user will provide from the tool UI. \r\n            catalog_url : str\r\n            catalog_url_key : str\r\n            \r\n            \r\n            def run(self, search_query: str) -> str:   \r\n                \"\"\" Define actual code logic here. \"\"\"\r\n\r\n                headers = {\r\n                        \"x-api-key\": self.catalog_url_key\r\n                        }\r\n                \r\n                url = str(self.catalog_url) + search_query\r\n                print(\"url:\", url)\r\n                response = requests.get(url=url, headers=headers, verify=False)\r\n\r\n                if response.status_code==200:\r\n                    api_data = response.json()\r\n                    knowledge_info = json.dumps(api_data)\r\n                else:\r\n                    knowledge_info = f\"Error in catalog api: {response.status_code}\"\r\n\r\n                return knowledge_info\r\n\r\n\r\n        api_wrapper: APIWrapper\r\n\r\n        def _run(self, search_query: str, run_manager: Optional[CallbackManagerForToolRun] = None) -> str:\r\n            return self.api_wrapper.run(search_query)\r\n        \r\n\r\n    def run_model(self) -> list[Data]:\r\n        wrapper = self._build_wrapper()   \r\n        data = [Data(data=wrapper.run(self.query))]\r\n        return data\r\n\r\n    def build_tool(self) -> Tool:\r\n        wrapper = self._build_wrapper()\r\n        return cast(Tool, self.SCTool(api_wrapper=wrapper))\r\n\r\n    def _build_wrapper(self):    \r\n        return self.SCTool.APIWrapper(catalog_url=self.catalog_url,\r\n                                       catalog_url_key=self.catalog_url_key)",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "query": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "query",
+                  "value": "",
+                  "display_name": "query",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "This tool calls Apex Catalog api.",
+              "base_classes": [
+                "Data",
+                "Tool"
+              ],
+              "display_name": "Apex Search Catalog Tool",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "query",
+                "catalog_url",
+                "catalog_url_key"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.18",
+              "official": false
+            },
+            "id": "SearchCatalog-Reo4y"
+          },
+          "id": "SearchCatalog-Reo4y",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-07T09:24:00.244Z",
+    "date_updated": "2024-10-07T09:24:00.282Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "e883f0a0-2d5f-4b02-a8f9-999462d56956",
+    "user_created": {
+      "username": "DP",
+      "first_name": "Devika",
+      "last_name": "Paranjpe",
+      "id": "e883f0a0-2d5f-4b02-a8f9-999462d56956"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:12.595Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

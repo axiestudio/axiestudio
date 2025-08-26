@@ -1,0 +1,555 @@
+{
+  "id": "ccebb9d3-c48d-4ca0-812f-e393e31691cd",
+  "name": "SEPER.DEV - NEWS SEARCH REQUEST",
+  "description": "This component allows you to make a POST request to the SEPER.DEV News API. You can provide the query and other parameters for the request. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "avenca",
+    "first_name": "Avenca",
+    "last_name": "Digital",
+    "id": "9ee6d695-b67f-421c-bcf4-7db4716448e3",
+    "full_name": "Avenca Digital"
+  },
+  "store_url": "https://www.langflow.store/store/component/ccebb9d3-c48d-4ca0-812f-e393e31691cd",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-14T21:01:28.076Z",
+    "updated": "2024-08-14T21:01:28.105Z",
+    "downloaded": "2025-08-19T17:50:05.403Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "SEPER.DEV - Search News Request",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "api_key": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "SERPER.DEV",
+                "display_name": "API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter the API key for the SEPER.DEV News API.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import asyncio\r\nimport json\r\nfrom typing import Any, List, Optional\r\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\r\n\r\nimport httpx\r\nfrom loguru import logger\r\n\r\nfrom axiestudio.base.curl.parse import parse_context\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, NestedDictInput, Output\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.schema.dotdict import dotdict\r\n\r\n\r\nclass SerperNewsAPIRequestComponent(Component):\r\n    display_name = \"SEPER.DEV - Search News Request\"\r\n    description = (\r\n        \"This component allows you to make a POST request to the SEPER.DEV News API. You can provide the query and other parameters for the request.\"\r\n        \r\n    )\r\n    icon = \"newspaper\"\r\n    name = \"SEPER.DEV - Search News Request\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"query\",\r\n            display_name=\"Query\",\r\n            info=\"Enter the query string for the news search.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"location\",\r\n            display_name=\"Location\",\r\n            value=\"Brazil\",\r\n            info=\"Specify the location for the news search.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"gl\",\r\n            display_name=\"Geolocation\",\r\n            value=\"br\",\r\n            info=\"Specify the geolocation (country code) for the news search.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"hl\",\r\n            display_name=\"Language\",\r\n            value=\"pt-br\",\r\n            info=\"Specify the language for the news search.\",\r\n        ),\r\n        IntInput(\r\n            name=\"num\",\r\n            display_name=\"Number of Results\",\r\n            value=100,\r\n            info=\"Specify the number of news results to retrieve. (10, 20, 30, 40, 50, 100)\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"tbs\",\r\n            display_name=\"Time Restriction\",\r\n            value=\"qdr:w\",\r\n            info=\"Specify the time restriction for the news search (e.g., 'qdr:w' for past week).\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"api_key\",\r\n            display_name=\"API Key\",\r\n            info=\"Enter the API key for the SEPER.DEV News API.\",\r\n        ),\r\n        IntInput(\r\n            name=\"timeout\",\r\n            display_name=\"Timeout\",\r\n            value=5,\r\n            info=\"The timeout to use for the request.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Data\", name=\"data\", method=\"make_requests\"),\r\n    ]\r\n\r\n    async def make_request(\r\n        self,\r\n        client: httpx.AsyncClient,\r\n        query: str,\r\n        location: str,\r\n        gl: str,\r\n        hl: str,\r\n        num: int,\r\n        tbs: str,\r\n        api_key: str,\r\n        timeout: int = 5,\r\n    ) -> Data:\r\n        url = \"https://google.serper.dev/news\"\r\n        headers = {\r\n            'X-API-KEY': api_key,\r\n            'Content-Type': 'application/json'\r\n        }\r\n        body = json.dumps({\r\n            \"q\": query,\r\n            \"location\": location,\r\n            \"gl\": gl,\r\n            \"hl\": hl,\r\n            \"num\": num,\r\n            \"tbs\": tbs\r\n        })\r\n\r\n        try:\r\n            response = await client.post(url, headers=headers, data=body, timeout=timeout)\r\n            try:\r\n                result = response.json()\r\n            except Exception:\r\n                result = response.text\r\n            return Data(\r\n                data={\r\n                    \"source\": url,\r\n                    \"headers\": headers,\r\n                    \"status_code\": response.status_code,\r\n                    \"result\": result,\r\n                },\r\n            )\r\n        except httpx.TimeoutException:\r\n            return Data(\r\n                data={\r\n                    \"source\": url,\r\n                    \"headers\": headers,\r\n                    \"status_code\": 408,\r\n                    \"error\": \"Request timed out\",\r\n                },\r\n            )\r\n        except Exception as exc:\r\n            return Data(\r\n                data={\r\n                    \"source\": url,\r\n                    \"headers\": headers,\r\n                    \"status_code\": 500,\r\n                    \"error\": str(exc),\r\n                },\r\n            )\r\n\r\n    async def make_requests(self) -> List[Data]:\r\n        query = self.query\r\n        location = self.location\r\n        gl = self.gl\r\n        hl = self.hl\r\n        num = self.num\r\n        tbs = self.tbs\r\n        api_key = self.api_key\r\n        timeout = self.timeout\r\n\r\n        async with httpx.AsyncClient() as client:\r\n            results = await asyncio.gather(\r\n                self.make_request(client, query, location, gl, hl, num, tbs, api_key, timeout)\r\n            )\r\n        self.status = results\r\n        return results\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "gl": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "gl",
+                "value": "br",
+                "display_name": "Geolocation",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Specify the geolocation (country code) for the news search.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "hl": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "hl",
+                "value": "pt-br",
+                "display_name": "Language",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Specify the language for the news search.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "location": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "location",
+                "value": "Brazil",
+                "display_name": "Location",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Specify the location for the news search.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "num": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "num",
+                "value": "20",
+                "display_name": "Number of Results",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Specify the number of news results to retrieve. (10, 20, 30, 40, 50, 100)",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "query": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "query",
+                "value": "",
+                "display_name": "Query",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter the query string for the news search.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "tbs": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "tbs",
+                "value": "qdr:w",
+                "display_name": "Time Restriction",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Specify the time restriction for the news search (e.g., 'qdr:w' for past week).",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "timeout",
+                "value": 5,
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The timeout to use for the request.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              }
+            },
+            "description": "This component allows you to make a POST request to the SEPER.DEV News API. You can provide the query and other parameters for the request.",
+            "icon": "newspaper",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "SEPER.DEV - NEWS SEARCH REQUEST",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "make_requests",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "query",
+              "location",
+              "gl",
+              "hl",
+              "num",
+              "tbs",
+              "api_key",
+              "timeout"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "APIRequest-wqFAF"
+        },
+        "id": "APIRequest-wqFAF",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "APIRequest": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "ccebb9d3-c48d-4ca0-812f-e393e31691cd",
+    "name": "SEPER.DEV - NEWS SEARCH REQUEST",
+    "description": "This component allows you to make a POST request to the SEPER.DEV News API. You can provide the query and other parameters for the request.",
+    "is_component": true,
+    "liked_by_count": "6",
+    "downloads_count": "21",
+    "metadata": {
+      "APIRequest": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "SEPER.DEV - Search News Request",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "api_key": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "SERPER.DEV",
+                  "display_name": "API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter the API key for the SEPER.DEV News API.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import asyncio\r\nimport json\r\nfrom typing import Any, List, Optional\r\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\r\n\r\nimport httpx\r\nfrom loguru import logger\r\n\r\nfrom axiestudio.base.curl.parse import parse_context\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, NestedDictInput, Output\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.schema.dotdict import dotdict\r\n\r\n\r\nclass SerperNewsAPIRequestComponent(Component):\r\n    display_name = \"SEPER.DEV - Search News Request\"\r\n    description = (\r\n        \"This component allows you to make a POST request to the SEPER.DEV News API. You can provide the query and other parameters for the request.\"\r\n        \r\n    )\r\n    icon = \"newspaper\"\r\n    name = \"SEPER.DEV - Search News Request\"\r\n\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"query\",\r\n            display_name=\"Query\",\r\n            info=\"Enter the query string for the news search.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"location\",\r\n            display_name=\"Location\",\r\n            value=\"Brazil\",\r\n            info=\"Specify the location for the news search.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"gl\",\r\n            display_name=\"Geolocation\",\r\n            value=\"br\",\r\n            info=\"Specify the geolocation (country code) for the news search.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"hl\",\r\n            display_name=\"Language\",\r\n            value=\"pt-br\",\r\n            info=\"Specify the language for the news search.\",\r\n        ),\r\n        IntInput(\r\n            name=\"num\",\r\n            display_name=\"Number of Results\",\r\n            value=100,\r\n            info=\"Specify the number of news results to retrieve. (10, 20, 30, 40, 50, 100)\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"tbs\",\r\n            display_name=\"Time Restriction\",\r\n            value=\"qdr:w\",\r\n            info=\"Specify the time restriction for the news search (e.g., 'qdr:w' for past week).\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"api_key\",\r\n            display_name=\"API Key\",\r\n            info=\"Enter the API key for the SEPER.DEV News API.\",\r\n        ),\r\n        IntInput(\r\n            name=\"timeout\",\r\n            display_name=\"Timeout\",\r\n            value=5,\r\n            info=\"The timeout to use for the request.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Data\", name=\"data\", method=\"make_requests\"),\r\n    ]\r\n\r\n    async def make_request(\r\n        self,\r\n        client: httpx.AsyncClient,\r\n        query: str,\r\n        location: str,\r\n        gl: str,\r\n        hl: str,\r\n        num: int,\r\n        tbs: str,\r\n        api_key: str,\r\n        timeout: int = 5,\r\n    ) -> Data:\r\n        url = \"https://google.serper.dev/news\"\r\n        headers = {\r\n            'X-API-KEY': api_key,\r\n            'Content-Type': 'application/json'\r\n        }\r\n        body = json.dumps({\r\n            \"q\": query,\r\n            \"location\": location,\r\n            \"gl\": gl,\r\n            \"hl\": hl,\r\n            \"num\": num,\r\n            \"tbs\": tbs\r\n        })\r\n\r\n        try:\r\n            response = await client.post(url, headers=headers, data=body, timeout=timeout)\r\n            try:\r\n                result = response.json()\r\n            except Exception:\r\n                result = response.text\r\n            return Data(\r\n                data={\r\n                    \"source\": url,\r\n                    \"headers\": headers,\r\n                    \"status_code\": response.status_code,\r\n                    \"result\": result,\r\n                },\r\n            )\r\n        except httpx.TimeoutException:\r\n            return Data(\r\n                data={\r\n                    \"source\": url,\r\n                    \"headers\": headers,\r\n                    \"status_code\": 408,\r\n                    \"error\": \"Request timed out\",\r\n                },\r\n            )\r\n        except Exception as exc:\r\n            return Data(\r\n                data={\r\n                    \"source\": url,\r\n                    \"headers\": headers,\r\n                    \"status_code\": 500,\r\n                    \"error\": str(exc),\r\n                },\r\n            )\r\n\r\n    async def make_requests(self) -> List[Data]:\r\n        query = self.query\r\n        location = self.location\r\n        gl = self.gl\r\n        hl = self.hl\r\n        num = self.num\r\n        tbs = self.tbs\r\n        api_key = self.api_key\r\n        timeout = self.timeout\r\n\r\n        async with httpx.AsyncClient() as client:\r\n            results = await asyncio.gather(\r\n                self.make_request(client, query, location, gl, hl, num, tbs, api_key, timeout)\r\n            )\r\n        self.status = results\r\n        return results\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "gl": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "gl",
+                  "value": "br",
+                  "display_name": "Geolocation",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Specify the geolocation (country code) for the news search.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "hl": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "hl",
+                  "value": "pt-br",
+                  "display_name": "Language",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Specify the language for the news search.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "location": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "location",
+                  "value": "Brazil",
+                  "display_name": "Location",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Specify the location for the news search.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "num": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "num",
+                  "value": "20",
+                  "display_name": "Number of Results",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Specify the number of news results to retrieve. (10, 20, 30, 40, 50, 100)",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "query": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "query",
+                  "value": "",
+                  "display_name": "Query",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter the query string for the news search.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "tbs": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "tbs",
+                  "value": "qdr:w",
+                  "display_name": "Time Restriction",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Specify the time restriction for the news search (e.g., 'qdr:w' for past week).",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "timeout",
+                  "value": 5,
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The timeout to use for the request.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                }
+              },
+              "description": "This component allows you to make a POST request to the SEPER.DEV News API. You can provide the query and other parameters for the request.",
+              "icon": "newspaper",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "SEPER.DEV - NEWS SEARCH REQUEST",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "make_requests",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "query",
+                "location",
+                "gl",
+                "hl",
+                "num",
+                "tbs",
+                "api_key",
+                "timeout"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "APIRequest-wqFAF"
+          },
+          "id": "APIRequest-wqFAF",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-14T21:01:28.076Z",
+    "date_updated": "2024-08-14T21:01:28.105Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "9ee6d695-b67f-421c-bcf4-7db4716448e3",
+    "user_created": {
+      "username": "avenca",
+      "first_name": "Avenca",
+      "last_name": "Digital",
+      "id": "9ee6d695-b67f-421c-bcf4-7db4716448e3"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.872Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

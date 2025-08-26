@@ -1,0 +1,549 @@
+{
+  "id": "34f2645d-5724-4393-9c5f-9d6536f83067",
+  "name": "Directory",
+  "description": "Recursively load files from a directory. OCR is used to extract text from images. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "rianne",
+    "first_name": "Rianne",
+    "last_name": "Tseng",
+    "id": "1b50f995-7227-4491-bcd4-de9f1ff82fdc",
+    "full_name": "Rianne Tseng"
+  },
+  "store_url": "https://www.langflow.store/store/component/34f2645d-5724-4393-9c5f-9d6536f83067",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-16T08:35:26.758Z",
+    "updated": "2024-10-16T08:35:26.801Z",
+    "downloaded": "2025-08-19T17:50:06.865Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Directory",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List\n\nfrom axiestudio.base.data.utils import parallel_load_data, parse_text_file_to_data, retrieve_file_paths\nfrom axiestudio.custom import Component\nfrom axiestudio.io import BoolInput, IntInput, MessageTextInput\nfrom axiestudio.schema import Data\nfrom axiestudio.template import Output\n\n\nclass DirectoryComponent(Component):\n    display_name = \"Directory\"\n    description = \"Recursively load files from a directory. OCR is used to extract text from images.\"\n    icon = \"folder\"\n    name = \"Directory\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"path\",\n            display_name=\"Path\",\n            info=\"Path to the directory to load files from.\",\n        ),\n        MessageTextInput(\n            name=\"types\",\n            display_name=\"Types\",\n            info=\"File types to load. Leave empty to load all types.\",\n            is_list=True,\n        ),\n        IntInput(\n            name=\"depth\",\n            display_name=\"Depth\",\n            info=\"Depth to search for files.\",\n            value=0,\n        ),\n        IntInput(\n            name=\"max_concurrency\",\n            display_name=\"Max Concurrency\",\n            advanced=True,\n            info=\"Maximum concurrency for loading files.\",\n            value=2,\n        ),\n        BoolInput(\n            name=\"load_hidden\",\n            display_name=\"Load Hidden\",\n            advanced=True,\n            info=\"If true, hidden files will be loaded.\",\n        ),\n        BoolInput(\n            name=\"recursive\",\n            display_name=\"Recursive\",\n            advanced=True,\n            info=\"If true, the search will be recursive.\",\n        ),\n        BoolInput(\n            name=\"silent_errors\",\n            display_name=\"Silent Errors\",\n            advanced=True,\n            info=\"If true, errors will not raise an exception.\",\n        ),\n        BoolInput(\n            name=\"use_multithreading\",\n            display_name=\"Use Multithreading\",\n            advanced=True,\n            info=\"If true, multithreading will be used.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            info=\"The maximum time spent to recognize the text embedded in an image using OCR.\",\n            value=3,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"load_directory\"),\n    ]\n\n    def load_directory(self) -> List[Data]:\n        path = self.path\n        types = self.types or []  # self.types is already a list due to is_list=True\n        depth = self.depth\n        max_concurrency = self.max_concurrency\n        load_hidden = self.load_hidden\n        recursive = self.recursive\n        silent_errors = self.silent_errors\n        use_multithreading = self.use_multithreading\n\n        resolved_path = self.resolve_path(path)\n        file_paths = retrieve_file_paths(resolved_path, load_hidden, recursive, depth)\n\n        if types:\n            file_paths = [fp for fp in file_paths if any(fp.endswith(ext) for ext in types)]\n\n        loaded_data = []\n        for file_path in file_paths:\n            silent_errors = self.silent_errors\n            resolved_path = self.resolve_path(file_path)\n            silent_errors = self.silent_errors\n    \n            extension = Path(resolved_path).suffix[1:].lower()\n            text = \"\"\n            \n            if extension in IMG_FILE_TYPES:\n                image = Image.open(self.path)\n                text += pytesseract.image_to_string(image, lang='chi_tra+eng')\n                append_data = Data(file_path=resolved_path, text=str(text))\n            elif extension == \"pdf\":\n                pdf_path = resolved_path\n                pdf_document = fitz.open(pdf_path)\n            \n                for page_num in range(pdf_document.page_count):\n                    page = pdf_document.load_page(page_num)\n                    page_text = page.get_text(\"text\")\n                    text += page_text + \"\\n\"\n                    image_list = page.get_images(full=True)\n                    for img in image_list:\n                        xref = img[0]\n                        base_image = pdf_document.extract_image(xref)\n                        image_bytes = base_image[\"image\"]\n                        image_ext = base_image[\"ext\"]\n                        image = Image.open(io.BytesIO(image_bytes))\n                        try:\n                            ocr_text = pytesseract.image_to_string(image, lang='chi_tra+eng', timeout=self.timeout)\n                        except RuntimeError as timeout_error:\n                            ocr_text = \"\"\n                        text += ocr_text + \"\\n\"\n            \n                pdf_document.close()\n                append_data = Data(file_path=resolved_path, text=str(text))\n            elif extension in TEXT_FILE_TYPES:\n                append_data = parse_text_file_to_data(resolved_path, silent_errors)\n            else:\n                append_data = 0\n            loaded_data.append(append_data)\n            \n        loaded_data = list(filter(None, loaded_data))\n        self.status = loaded_data\n        return loaded_data  # type: ignore\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "depth": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "depth",
+                "value": 0,
+                "display_name": "Depth",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Depth to search for files.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "load_hidden": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "load_hidden",
+                "value": false,
+                "display_name": "Load Hidden",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, hidden files will be loaded.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "max_concurrency": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_concurrency",
+                "value": 2,
+                "display_name": "Max Concurrency",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Maximum concurrency for loading files.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "path": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "path",
+                "value": "/mnt/c/Users/riann/Downloads/測試",
+                "display_name": "Path",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Path to the directory to load files from.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "recursive": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "recursive",
+                "value": false,
+                "display_name": "Recursive",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, the search will be recursive.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "silent_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "silent_errors",
+                "value": false,
+                "display_name": "Silent Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, errors will not raise an exception.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "timeout",
+                "value": 3,
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The maximum time spent to recognize the text embedded in an image using OCR.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "types": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "types",
+                "value": "",
+                "display_name": "Types",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "File types to load. Leave empty to load all types.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "use_multithreading": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "use_multithreading",
+                "value": false,
+                "display_name": "Use Multithreading",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, multithreading will be used.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Recursively load files from a directory. OCR is used to extract text from images.",
+            "icon": "folder",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Directory",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "load_directory",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "path",
+              "types",
+              "depth",
+              "max_concurrency",
+              "load_hidden",
+              "recursive",
+              "silent_errors",
+              "use_multithreading",
+              "timeout"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.16",
+            "official": false
+          },
+          "id": "Directory-62GNm"
+        },
+        "id": "Directory-62GNm",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Directory": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "34f2645d-5724-4393-9c5f-9d6536f83067",
+    "name": "Directory",
+    "description": "Recursively load files from a directory. OCR is used to extract text from images.",
+    "is_component": true,
+    "liked_by_count": "5",
+    "downloads_count": "112",
+    "metadata": {
+      "Directory": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Directory",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List\n\nfrom axiestudio.base.data.utils import parallel_load_data, parse_text_file_to_data, retrieve_file_paths\nfrom axiestudio.custom import Component\nfrom axiestudio.io import BoolInput, IntInput, MessageTextInput\nfrom axiestudio.schema import Data\nfrom axiestudio.template import Output\n\n\nclass DirectoryComponent(Component):\n    display_name = \"Directory\"\n    description = \"Recursively load files from a directory. OCR is used to extract text from images.\"\n    icon = \"folder\"\n    name = \"Directory\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"path\",\n            display_name=\"Path\",\n            info=\"Path to the directory to load files from.\",\n        ),\n        MessageTextInput(\n            name=\"types\",\n            display_name=\"Types\",\n            info=\"File types to load. Leave empty to load all types.\",\n            is_list=True,\n        ),\n        IntInput(\n            name=\"depth\",\n            display_name=\"Depth\",\n            info=\"Depth to search for files.\",\n            value=0,\n        ),\n        IntInput(\n            name=\"max_concurrency\",\n            display_name=\"Max Concurrency\",\n            advanced=True,\n            info=\"Maximum concurrency for loading files.\",\n            value=2,\n        ),\n        BoolInput(\n            name=\"load_hidden\",\n            display_name=\"Load Hidden\",\n            advanced=True,\n            info=\"If true, hidden files will be loaded.\",\n        ),\n        BoolInput(\n            name=\"recursive\",\n            display_name=\"Recursive\",\n            advanced=True,\n            info=\"If true, the search will be recursive.\",\n        ),\n        BoolInput(\n            name=\"silent_errors\",\n            display_name=\"Silent Errors\",\n            advanced=True,\n            info=\"If true, errors will not raise an exception.\",\n        ),\n        BoolInput(\n            name=\"use_multithreading\",\n            display_name=\"Use Multithreading\",\n            advanced=True,\n            info=\"If true, multithreading will be used.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            info=\"The maximum time spent to recognize the text embedded in an image using OCR.\",\n            value=3,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"load_directory\"),\n    ]\n\n    def load_directory(self) -> List[Data]:\n        path = self.path\n        types = self.types or []  # self.types is already a list due to is_list=True\n        depth = self.depth\n        max_concurrency = self.max_concurrency\n        load_hidden = self.load_hidden\n        recursive = self.recursive\n        silent_errors = self.silent_errors\n        use_multithreading = self.use_multithreading\n\n        resolved_path = self.resolve_path(path)\n        file_paths = retrieve_file_paths(resolved_path, load_hidden, recursive, depth)\n\n        if types:\n            file_paths = [fp for fp in file_paths if any(fp.endswith(ext) for ext in types)]\n\n        loaded_data = []\n        for file_path in file_paths:\n            silent_errors = self.silent_errors\n            resolved_path = self.resolve_path(file_path)\n            silent_errors = self.silent_errors\n    \n            extension = Path(resolved_path).suffix[1:].lower()\n            text = \"\"\n            \n            if extension in IMG_FILE_TYPES:\n                image = Image.open(self.path)\n                text += pytesseract.image_to_string(image, lang='chi_tra+eng')\n                append_data = Data(file_path=resolved_path, text=str(text))\n            elif extension == \"pdf\":\n                pdf_path = resolved_path\n                pdf_document = fitz.open(pdf_path)\n            \n                for page_num in range(pdf_document.page_count):\n                    page = pdf_document.load_page(page_num)\n                    page_text = page.get_text(\"text\")\n                    text += page_text + \"\\n\"\n                    image_list = page.get_images(full=True)\n                    for img in image_list:\n                        xref = img[0]\n                        base_image = pdf_document.extract_image(xref)\n                        image_bytes = base_image[\"image\"]\n                        image_ext = base_image[\"ext\"]\n                        image = Image.open(io.BytesIO(image_bytes))\n                        try:\n                            ocr_text = pytesseract.image_to_string(image, lang='chi_tra+eng', timeout=self.timeout)\n                        except RuntimeError as timeout_error:\n                            ocr_text = \"\"\n                        text += ocr_text + \"\\n\"\n            \n                pdf_document.close()\n                append_data = Data(file_path=resolved_path, text=str(text))\n            elif extension in TEXT_FILE_TYPES:\n                append_data = parse_text_file_to_data(resolved_path, silent_errors)\n            else:\n                append_data = 0\n            loaded_data.append(append_data)\n            \n        loaded_data = list(filter(None, loaded_data))\n        self.status = loaded_data\n        return loaded_data  # type: ignore\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "depth": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "depth",
+                  "value": 0,
+                  "display_name": "Depth",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Depth to search for files.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "load_hidden": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "load_hidden",
+                  "value": false,
+                  "display_name": "Load Hidden",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, hidden files will be loaded.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "max_concurrency": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_concurrency",
+                  "value": 2,
+                  "display_name": "Max Concurrency",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Maximum concurrency for loading files.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "path": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "path",
+                  "value": "/mnt/c/Users/riann/Downloads/測試",
+                  "display_name": "Path",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Path to the directory to load files from.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "recursive": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "recursive",
+                  "value": false,
+                  "display_name": "Recursive",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, the search will be recursive.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "silent_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "silent_errors",
+                  "value": false,
+                  "display_name": "Silent Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, errors will not raise an exception.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "timeout",
+                  "value": 3,
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The maximum time spent to recognize the text embedded in an image using OCR.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "types": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "types",
+                  "value": "",
+                  "display_name": "Types",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "File types to load. Leave empty to load all types.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "use_multithreading": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "use_multithreading",
+                  "value": false,
+                  "display_name": "Use Multithreading",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, multithreading will be used.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Recursively load files from a directory. OCR is used to extract text from images.",
+              "icon": "folder",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Directory",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "load_directory",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "path",
+                "types",
+                "depth",
+                "max_concurrency",
+                "load_hidden",
+                "recursive",
+                "silent_errors",
+                "use_multithreading",
+                "timeout"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.16",
+              "official": false
+            },
+            "id": "Directory-62GNm"
+          },
+          "id": "Directory-62GNm",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-16T08:35:26.758Z",
+    "date_updated": "2024-10-16T08:35:26.801Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "1b50f995-7227-4491-bcd4-de9f1ff82fdc",
+    "user_created": {
+      "username": "rianne",
+      "first_name": "Rianne",
+      "last_name": "Tseng",
+      "id": "1b50f995-7227-4491-bcd4-de9f1ff82fdc"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.542Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,329 @@
+{
+  "id": "5a2725aa-35ca-4071-8f1e-890b0ad4f8e4",
+  "name": "YouTube Transcriber",
+  "description": "Extracts and transcribes spoken content from YouTube videos. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "joaoguilhermeS",
+    "first_name": "João",
+    "last_name": "Oliveira",
+    "id": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "full_name": "João Oliveira"
+  },
+  "store_url": "https://www.langflow.store/store/component/5a2725aa-35ca-4071-8f1e-890b0ad4f8e4",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-16T19:18:42.083Z",
+    "updated": "2024-10-29T14:15:04.357Z",
+    "downloaded": "2025-08-19T17:50:07.422Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "YouTubeTranscriberComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "chunk_size": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "chunk_size",
+                "value": 30,
+                "display_name": "Chunk Size",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The Video Chunk Size in seconds.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.inputs import MultilineInput\nfrom axiestudio.schema import Data\nfrom axiestudio.template import Output\nfrom langchain_community.document_loaders import YoutubeLoader\nfrom axiestudio.field_typing import Tool\nfrom langchain.tools import StructuredTool\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom pydantic import BaseModel, Field\n\nclass YouTubeTranscriberComponent(LCToolComponent):\n    \"\"\"\n    A component that converts spoken content from YouTube videos into text transcription.\n    \"\"\"\n    display_name: str = \"YouTube Transcriber\"\n    description: str = \"Extracts and transcribes spoken content from YouTube videos.\"\n    icon: str = \"tools\"\n\n    # Define inputs - the URL of the YouTube video\n    inputs = [\n        MultilineInput(name=\"url\", display_name=\"Video URL\", info=\"Enter the YouTube video URL to transcribe.\"),\n        IntInput(name=\"chunk_size\", display_name=\"Chunk Size\", value=30, info=\"The Video Chunk Size in seconds.\")\n    ]\n\n    # Define outputs - the transcription as data and a transcription tool\n    outputs = [\n        Output(name=\"transcription\", display_name=\"Data\", method=\"build_youtube_transcription\"),\n        Output(name=\"transcription_tool\", display_name=\"Tool\", method=\"build_youtube_tool\")\n    ]\n    \n    class YoutubeApiSchema(BaseModel):\n        \"\"\"Schema to define the input structure for the tool.\"\"\"\n        url: str = Field(..., description=\"The YouTube URL to transcribe.\")\n\n    def build_youtube_transcription(self) -> Data:\n        \"\"\"\n        Method to build transcription from the provided YouTube URL.\n        Returns:\n            Data: The transcription of the video.\n        \"\"\"\n        try:\n            from langchain_community.document_loaders.youtube import TranscriptFormat\n\n            # Load the transcription from the provided YouTube URL\n            loader = YoutubeLoader.from_youtube_url(\n                self.url,  # YouTube video URL\n                add_video_info=False,\n                transcript_format=TranscriptFormat.CHUNKS,  # Splitting the transcript into chunks\n                chunk_size_seconds=self.chunk_size, \n            )\n\n            # Combine the transcript into one text\n            transcription_text = \"\\n\\n\".join(map(repr, loader.load()))\n\n            return Data(data={\"transcription\": transcription_text})\n        \n        except Exception as e:\n            return Data(data={\"error\": f\"Failed to transcribe YouTube video: {str(e)}\"})\n\n    def youtube_transcription(self, url: str = \"\") -> Data:\n        \"\"\"\n        Helper method to handle transcription outside of component calls.\n        Args:\n            url (str): The YouTube URL to transcribe.\n        Returns:\n            Data: The transcription of the video.\n        \"\"\"\n        try:\n            from langchain_community.document_loaders.youtube import TranscriptFormat\n\n            # Load the transcription from the provided YouTube URL\n            loader = YoutubeLoader.from_youtube_url(\n                url,\n                add_video_info=False,\n                transcript_format=TranscriptFormat.CHUNKS,\n                chunk_size_seconds=self.chunk_size,\n            )\n\n            transcription_text = \"\\n\\n\".join(map(repr, loader.load()))\n\n            return Data(data={\"transcription\": transcription_text})\n\n        except Exception as e:\n            return Data(data={\"error\": f\"Failed to transcribe YouTube video: {str(e)}\"})\n\n    def build_youtube_tool(self) -> Tool:\n        \"\"\"\n        Method to build the transcription tool.\n        Returns:\n            Tool: A structured tool that uses the transcription method.\n        \"\"\"\n        try:\n            # Return a structured tool that uses the youtube_transcription function\n            return StructuredTool.from_function(\n                name=\"youtube_transcription\",\n                description=\"Get YouTube video transcriptions when available.\",\n                func=self.youtube_transcription,\n                args_schema=self.YoutubeApiSchema,\n            )\n\n        except Exception as e:\n            raise RuntimeError(f\"Failed to build the YouTube transcription tool: {str(e)}\")\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "url": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "url",
+                "value": "",
+                "display_name": "Video URL",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter the YouTube video URL to transcribe.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "Extracts and transcribes spoken content from YouTube videos.",
+            "icon": "tools",
+            "base_classes": [
+              "Data",
+              "Tool"
+            ],
+            "display_name": "YouTube Transcriber",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "transcription",
+                "display_name": "Data",
+                "method": "build_youtube_transcription",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "transcription_tool",
+                "display_name": "Tool",
+                "method": "build_youtube_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "url",
+              "chunk_size"
+            ],
+            "beta": false,
+            "edited": true,
+            "metadata": {},
+            "lf_version": "1.0.19",
+            "official": false
+          },
+          "id": "CreateList-qyBMJ"
+        },
+        "id": "CreateList-qyBMJ",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CreateList": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "5a2725aa-35ca-4071-8f1e-890b0ad4f8e4",
+    "name": "YouTube Transcriber",
+    "description": "Extracts and transcribes spoken content from YouTube videos.",
+    "is_component": true,
+    "liked_by_count": "11",
+    "downloads_count": "119",
+    "metadata": {
+      "CreateList": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.19.post2",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "YouTubeTranscriberComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "chunk_size": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "chunk_size",
+                  "value": 30,
+                  "display_name": "Chunk Size",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The Video Chunk Size in seconds.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.inputs import MultilineInput\nfrom axiestudio.schema import Data\nfrom axiestudio.template import Output\nfrom langchain_community.document_loaders import YoutubeLoader\nfrom axiestudio.field_typing import Tool\nfrom langchain.tools import StructuredTool\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom pydantic import BaseModel, Field\n\nclass YouTubeTranscriberComponent(LCToolComponent):\n    \"\"\"\n    A component that converts spoken content from YouTube videos into text transcription.\n    \"\"\"\n    display_name: str = \"YouTube Transcriber\"\n    description: str = \"Extracts and transcribes spoken content from YouTube videos.\"\n    icon: str = \"tools\"\n\n    # Define inputs - the URL of the YouTube video\n    inputs = [\n        MultilineInput(name=\"url\", display_name=\"Video URL\", info=\"Enter the YouTube video URL to transcribe.\"),\n        IntInput(name=\"chunk_size\", display_name=\"Chunk Size\", value=30, info=\"The Video Chunk Size in seconds.\")\n    ]\n\n    # Define outputs - the transcription as data and a transcription tool\n    outputs = [\n        Output(name=\"transcription\", display_name=\"Data\", method=\"build_youtube_transcription\"),\n        Output(name=\"transcription_tool\", display_name=\"Tool\", method=\"build_youtube_tool\")\n    ]\n    \n    class YoutubeApiSchema(BaseModel):\n        \"\"\"Schema to define the input structure for the tool.\"\"\"\n        url: str = Field(..., description=\"The YouTube URL to transcribe.\")\n\n    def build_youtube_transcription(self) -> Data:\n        \"\"\"\n        Method to build transcription from the provided YouTube URL.\n        Returns:\n            Data: The transcription of the video.\n        \"\"\"\n        try:\n            from langchain_community.document_loaders.youtube import TranscriptFormat\n\n            # Load the transcription from the provided YouTube URL\n            loader = YoutubeLoader.from_youtube_url(\n                self.url,  # YouTube video URL\n                add_video_info=False,\n                transcript_format=TranscriptFormat.CHUNKS,  # Splitting the transcript into chunks\n                chunk_size_seconds=self.chunk_size, \n            )\n\n            # Combine the transcript into one text\n            transcription_text = \"\\n\\n\".join(map(repr, loader.load()))\n\n            return Data(data={\"transcription\": transcription_text})\n        \n        except Exception as e:\n            return Data(data={\"error\": f\"Failed to transcribe YouTube video: {str(e)}\"})\n\n    def youtube_transcription(self, url: str = \"\") -> Data:\n        \"\"\"\n        Helper method to handle transcription outside of component calls.\n        Args:\n            url (str): The YouTube URL to transcribe.\n        Returns:\n            Data: The transcription of the video.\n        \"\"\"\n        try:\n            from langchain_community.document_loaders.youtube import TranscriptFormat\n\n            # Load the transcription from the provided YouTube URL\n            loader = YoutubeLoader.from_youtube_url(\n                url,\n                add_video_info=False,\n                transcript_format=TranscriptFormat.CHUNKS,\n                chunk_size_seconds=self.chunk_size,\n            )\n\n            transcription_text = \"\\n\\n\".join(map(repr, loader.load()))\n\n            return Data(data={\"transcription\": transcription_text})\n\n        except Exception as e:\n            return Data(data={\"error\": f\"Failed to transcribe YouTube video: {str(e)}\"})\n\n    def build_youtube_tool(self) -> Tool:\n        \"\"\"\n        Method to build the transcription tool.\n        Returns:\n            Tool: A structured tool that uses the transcription method.\n        \"\"\"\n        try:\n            # Return a structured tool that uses the youtube_transcription function\n            return StructuredTool.from_function(\n                name=\"youtube_transcription\",\n                description=\"Get YouTube video transcriptions when available.\",\n                func=self.youtube_transcription,\n                args_schema=self.YoutubeApiSchema,\n            )\n\n        except Exception as e:\n            raise RuntimeError(f\"Failed to build the YouTube transcription tool: {str(e)}\")\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "url": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "url",
+                  "value": "",
+                  "display_name": "Video URL",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter the YouTube video URL to transcribe.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "Extracts and transcribes spoken content from YouTube videos.",
+              "icon": "tools",
+              "base_classes": [
+                "Data",
+                "Tool"
+              ],
+              "display_name": "YouTube Transcriber",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "transcription",
+                  "display_name": "Data",
+                  "method": "build_youtube_transcription",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "transcription_tool",
+                  "display_name": "Tool",
+                  "method": "build_youtube_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "url",
+                "chunk_size"
+              ],
+              "beta": false,
+              "edited": true,
+              "metadata": {},
+              "lf_version": "1.0.19",
+              "official": false
+            },
+            "id": "CreateList-qyBMJ"
+          },
+          "id": "CreateList-qyBMJ",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-16T19:18:42.083Z",
+    "date_updated": "2024-10-29T14:15:04.357Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "user_created": {
+      "username": "joaoguilhermeS",
+      "first_name": "João",
+      "last_name": "Oliveira",
+      "id": "94b2e207-1a44-4905-856c-4f5a69c168ce"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.204Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 12,
+    "converter_version": "1.0.0"
+  }
+}

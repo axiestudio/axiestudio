@@ -1,0 +1,469 @@
+{
+  "id": "87c3af5c-ce96-4a91-9bb3-d62e2d59fb59",
+  "name": "Get Astra Non-Vector DB Table",
+  "description": "Get Table from a non-vector Astra DB (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "brianogrady",
+    "first_name": "Brian",
+    "last_name": "O'Grady",
+    "id": "ee29ced5-8eaa-408b-b9db-2c24e2c94ee9",
+    "full_name": "Brian O'Grady"
+  },
+  "store_url": "https://www.langflow.store/store/component/87c3af5c-ce96-4a91-9bb3-d62e2d59fb59",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-03T19:25:03.615Z",
+    "updated": "2024-10-03T19:25:03.683Z",
+    "downloaded": "2025-08-19T17:50:07.417Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "GetSchemaCassandraDatabaseTool",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.inputs import StrInput, MultilineInput, SecretStrInput, IntInput, DropdownInput\nfrom axiestudio.schema.message import Message\nfrom langchain_community.utilities.cassandra_database import CassandraDatabase\nfrom langchain_core.tools import Tool\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom typing import Union\nfrom axiestudio.schema import Data\n\nclass AstraNonVectorDB(LCToolComponent):\n    display_name: str = \"Astra Non Vector DB Schema Tool\"\n    description: str = \"Get Table from a non-vector Astra DB\"\n    documentation: str = \"https://python.langchain.com/docs/integrations/tools/cassandra_database/\"\n    name: str = \"GetSchemaCassandraDatabaseTool\"\n    icon: str = \"AstraDB\"\n\n    inputs = [\n        SecretStrInput(\n            name=\"token\",\n            display_name=\"Astra DB Application Token\",\n            info=\"Enter your application token.\",\n            required=True\n        ),\n        SecretStrInput(\n            name=\"database_id\",\n            display_name=\"Astra DB Database ID\",\n            info=\"Enter your database ID.\",\n            required=True\n        ),\n        StrInput(\n            name=\"keyspace\",\n            display_name=\"Astra DB Keyspace\",\n            info=\"Enter your keyspace.\",\n            required=True\n        ),\n        StrInput(\n            name=\"table\",\n            display_name=\"Table Name\",\n            info=\"Enter your table name.\",\n            required=True\n        ),\n        IntInput(\n            name=\"limit\",\n            display_name=\"Limit Rows\",\n            info=\"Limit the rows of the output\",\n            required=False\n        ),\n        StrInput(\n            name=\"predicate\",\n            display_name=\"Predicate\",\n            info=\"Enter your predicate.\",\n            required=True\n        )\n    ]\n    \n    def run_model(self) -> Union[Data, list[Data]]:\n        wrapper = self._build_wrapper()\n        data = wrapper.run(\n            {\"keyspace\": self.keyspace, \"table\": self.table, \"limit\": self.limit,\n                \"predicate\": self.predicate\n            }\n            )\n        self.status = data\n        return data\n    \n    def build_tool(self) -> Tool:\n        wrapper = self._build_wrapper()\n        return Tool(\n            name=\"cassandra_query\",\n            description=\"Query Cassandra for whatever\",\n            func=wrapper.run,\n        )\n\n    def _build_wrapper(self):\n        try:\n            import cassio\n        except ImportError:\n            raise ImportError(\n                \"Could not import cassio package. \"\n                \"Please install it with `pip install cassio`.\"\n            )\n        try:\n            from langchain_community.utilities.cassandra_database import CassandraDatabase\n            from langchain_community.tools.cassandra_database.tool import (\n                GetSchemaCassandraDatabaseTool,\n                GetTableDataCassandraDatabaseTool,\n                QueryCassandraDatabaseTool,\n            )\n        except ImportError:\n            raise ImportError(\n                \"Could not import langchain CassandraDB integration package. \"\n                \"Please install it with `pip install langchain-community`.\"\n            )\n        \n        cassio_init_kwargs = {\n            \"token\": self.token,\n            \"database_id\": self.database_id,\n            \"keyspace\": self.keyspace,\n        }\n\n        cassio.init(**cassio_init_kwargs)\n        session = cassio.config.resolve_session()\n        if not session:\n            raise Exception(\n                \"Check environment configuration or manually configure cassio connection parameters\"\n                )\n        db = CassandraDatabase()\n        select_data_tool = GetTableDataCassandraDatabaseTool(db=db)\n        session.set_keyspace(self.keyspace)\n        \n        return select_data_tool\n\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "database_id": {
+                "load_from_db": true,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "database_id",
+                "value": "",
+                "display_name": "Astra DB Database ID",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter your database ID.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "keyspace": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "keyspace",
+                "value": "",
+                "display_name": "Astra DB Keyspace",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Enter your keyspace.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "limit": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "limit",
+                "value": 5,
+                "display_name": "Limit Rows",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Limit the rows of the output",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "predicate": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "predicate",
+                "value": "",
+                "display_name": "Predicate",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Enter your predicate.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "table": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "table",
+                "value": "",
+                "display_name": "Table Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Enter your table name.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "token": {
+                "load_from_db": true,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "token",
+                "value": "",
+                "display_name": "Astra DB Application Token",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter your application token.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              }
+            },
+            "description": "Get Table from a non-vector Astra DB",
+            "icon": "AstraDB",
+            "base_classes": [
+              "Data",
+              "Tool"
+            ],
+            "display_name": "Get Astra Non-Vector DB Table",
+            "documentation": "https://python.langchain.com/docs/integrations/tools/cassandra_database/",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "token",
+              "database_id",
+              "keyspace",
+              "table",
+              "limit",
+              "predicate"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "AstraDB-xBohh"
+        },
+        "id": "AstraDB-xBohh",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "AstraDB": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "87c3af5c-ce96-4a91-9bb3-d62e2d59fb59",
+    "name": "Get Astra Non-Vector DB Table",
+    "description": "Get Table from a non-vector Astra DB",
+    "is_component": true,
+    "liked_by_count": "2",
+    "downloads_count": "25",
+    "metadata": {
+      "AstraDB": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "GetSchemaCassandraDatabaseTool",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.inputs import StrInput, MultilineInput, SecretStrInput, IntInput, DropdownInput\nfrom axiestudio.schema.message import Message\nfrom langchain_community.utilities.cassandra_database import CassandraDatabase\nfrom langchain_core.tools import Tool\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom typing import Union\nfrom axiestudio.schema import Data\n\nclass AstraNonVectorDB(LCToolComponent):\n    display_name: str = \"Astra Non Vector DB Schema Tool\"\n    description: str = \"Get Table from a non-vector Astra DB\"\n    documentation: str = \"https://python.langchain.com/docs/integrations/tools/cassandra_database/\"\n    name: str = \"GetSchemaCassandraDatabaseTool\"\n    icon: str = \"AstraDB\"\n\n    inputs = [\n        SecretStrInput(\n            name=\"token\",\n            display_name=\"Astra DB Application Token\",\n            info=\"Enter your application token.\",\n            required=True\n        ),\n        SecretStrInput(\n            name=\"database_id\",\n            display_name=\"Astra DB Database ID\",\n            info=\"Enter your database ID.\",\n            required=True\n        ),\n        StrInput(\n            name=\"keyspace\",\n            display_name=\"Astra DB Keyspace\",\n            info=\"Enter your keyspace.\",\n            required=True\n        ),\n        StrInput(\n            name=\"table\",\n            display_name=\"Table Name\",\n            info=\"Enter your table name.\",\n            required=True\n        ),\n        IntInput(\n            name=\"limit\",\n            display_name=\"Limit Rows\",\n            info=\"Limit the rows of the output\",\n            required=False\n        ),\n        StrInput(\n            name=\"predicate\",\n            display_name=\"Predicate\",\n            info=\"Enter your predicate.\",\n            required=True\n        )\n    ]\n    \n    def run_model(self) -> Union[Data, list[Data]]:\n        wrapper = self._build_wrapper()\n        data = wrapper.run(\n            {\"keyspace\": self.keyspace, \"table\": self.table, \"limit\": self.limit,\n                \"predicate\": self.predicate\n            }\n            )\n        self.status = data\n        return data\n    \n    def build_tool(self) -> Tool:\n        wrapper = self._build_wrapper()\n        return Tool(\n            name=\"cassandra_query\",\n            description=\"Query Cassandra for whatever\",\n            func=wrapper.run,\n        )\n\n    def _build_wrapper(self):\n        try:\n            import cassio\n        except ImportError:\n            raise ImportError(\n                \"Could not import cassio package. \"\n                \"Please install it with `pip install cassio`.\"\n            )\n        try:\n            from langchain_community.utilities.cassandra_database import CassandraDatabase\n            from langchain_community.tools.cassandra_database.tool import (\n                GetSchemaCassandraDatabaseTool,\n                GetTableDataCassandraDatabaseTool,\n                QueryCassandraDatabaseTool,\n            )\n        except ImportError:\n            raise ImportError(\n                \"Could not import langchain CassandraDB integration package. \"\n                \"Please install it with `pip install langchain-community`.\"\n            )\n        \n        cassio_init_kwargs = {\n            \"token\": self.token,\n            \"database_id\": self.database_id,\n            \"keyspace\": self.keyspace,\n        }\n\n        cassio.init(**cassio_init_kwargs)\n        session = cassio.config.resolve_session()\n        if not session:\n            raise Exception(\n                \"Check environment configuration or manually configure cassio connection parameters\"\n                )\n        db = CassandraDatabase()\n        select_data_tool = GetTableDataCassandraDatabaseTool(db=db)\n        session.set_keyspace(self.keyspace)\n        \n        return select_data_tool\n\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "database_id": {
+                  "load_from_db": true,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "database_id",
+                  "value": "",
+                  "display_name": "Astra DB Database ID",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter your database ID.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "keyspace": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "keyspace",
+                  "value": "",
+                  "display_name": "Astra DB Keyspace",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Enter your keyspace.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "limit": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "limit",
+                  "value": 5,
+                  "display_name": "Limit Rows",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Limit the rows of the output",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "predicate": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "predicate",
+                  "value": "",
+                  "display_name": "Predicate",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Enter your predicate.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "table": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "table",
+                  "value": "",
+                  "display_name": "Table Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Enter your table name.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "token": {
+                  "load_from_db": true,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "token",
+                  "value": "",
+                  "display_name": "Astra DB Application Token",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter your application token.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                }
+              },
+              "description": "Get Table from a non-vector Astra DB",
+              "icon": "AstraDB",
+              "base_classes": [
+                "Data",
+                "Tool"
+              ],
+              "display_name": "Get Astra Non-Vector DB Table",
+              "documentation": "https://python.langchain.com/docs/integrations/tools/cassandra_database/",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "token",
+                "database_id",
+                "keyspace",
+                "table",
+                "limit",
+                "predicate"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "AstraDB-xBohh"
+          },
+          "id": "AstraDB-xBohh",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-03T19:25:03.615Z",
+    "date_updated": "2024-10-03T19:25:03.683Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "ee29ced5-8eaa-408b-b9db-2c24e2c94ee9",
+    "user_created": {
+      "username": "brianogrady",
+      "first_name": "Brian",
+      "last_name": "O'Grady",
+      "id": "ee29ced5-8eaa-408b-b9db-2c24e2c94ee9"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.896Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

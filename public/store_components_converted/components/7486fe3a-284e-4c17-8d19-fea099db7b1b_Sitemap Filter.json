@@ -1,0 +1,323 @@
+{
+  "id": "7486fe3a-284e-4c17-8d19-fea099db7b1b",
+  "name": "Sitemap Filter",
+  "description": "Fetchs an XML sitemap, parses the URLs and allows you to filter the results. (e.g., '/blog/') (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "Roy",
+    "first_name": "Roy",
+    "last_name": "Barber",
+    "id": "d37448a0-3dae-485a-8bce-0671ce46cf30",
+    "full_name": "Roy Barber"
+  },
+  "store_url": "https://www.langflow.store/store/component/7486fe3a-284e-4c17-8d19-fea099db7b1b",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-27T19:41:18.696Z",
+    "updated": "2024-09-27T19:41:18.745Z",
+    "downloaded": "2025-08-19T17:50:07.298Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Chain",
+        "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "SitemapFilter",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import xml.etree.ElementTree as ET\nfrom typing import List\nimport httpx\n\nfrom axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, Output\nfrom axiestudio.schema import Data\n\nclass SitemapFilterComponent(Component):\n    display_name = \"Sitemap Fetch & Filter\"\n    description = \"Fetchs an XML sitemap, parses the URLs and allows you to filter the results. (e.g., '/blog/')\"\n    icon = \"book-open-text\"\n    name = \"SitemapFilter\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"sitemap_url\",\n            display_name=\"Sitemap URL\",\n            info=\"Enter the URL of the sitemap to process, including http(s)://\",\n        ),\n        MessageTextInput(\n            name=\"filter_criteria\",\n            display_name=\"Filter\",\n            info=\"Value to filter URLs by (e.g., '/blog/').\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Filtered URLs\", name=\"filtered_urls\", method=\"process_sitemap\"),\n    ]\n\n    def parse_xml(self, xml_data: str) -> List[str]:\n        \"\"\"Parses the XML data and extracts all URLs from <loc> elements.\"\"\"\n        try:\n            root = ET.fromstring(xml_data)\n            urls = [url.find(\"{http://www.sitemaps.org/schemas/sitemap/0.9}loc\").text \n                    for url in root.findall(\"{http://www.sitemaps.org/schemas/sitemap/0.9}url\")]\n            return urls\n        except ET.ParseError as e:\n            raise ValueError(f\"Error parsing XML: {e}\")\n\n    async def process_sitemap(self) -> List[Data]:\n        sitemap_url = self.sitemap_url\n        filter_criteria = self.filter_criteria\n\n        async with httpx.AsyncClient() as client:\n            # Fetch the sitemap\n            try:\n                response = await client.get(sitemap_url)\n                sitemap_content = response.text\n            except Exception as e:\n                return [Data(data={\"error\": f\"Failed to fetch sitemap: {e}\"})]\n\n            # Parse and filter URLs\n            try:\n                all_urls = self.parse_xml(sitemap_content)\n                filtered_urls = [url for url in all_urls if filter_criteria in url]\n            except Exception as e:\n                return [Data(data={\"error\": f\"Failed to parse or filter sitemap: {e}\"})]\n\n        # Create a list of Data objects, each containing a filtered URL\n        result = [Data(data={\"link\": url}) for url in filtered_urls]\n        \n        self.status = result\n        return result",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "filter_criteria": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "filter_criteria",
+                "value": "/blog/posts/why-is-seo-so-essential",
+                "display_name": "Filter",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Value to filter URLs by (e.g., '/blog/').",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "sitemap_url": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sitemap_url",
+                "value": "",
+                "display_name": "Sitemap URL",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter the URL of the sitemap to process, including http(s)://",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Fetchs an XML sitemap, parses the URLs and allows you to filter the results. (e.g., '/blog/')",
+            "icon": "book-open-text",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Sitemap Filter",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "filtered_urls",
+                "display_name": "Filtered URLs",
+                "method": "process_sitemap",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "sitemap_url",
+              "filter_criteria"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-516Um"
+        },
+        "id": "CustomComponent-516Um",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "7486fe3a-284e-4c17-8d19-fea099db7b1b",
+    "name": "Sitemap Filter",
+    "description": "Fetchs an XML sitemap, parses the URLs and allows you to filter the results. (e.g., '/blog/')",
+    "is_component": true,
+    "liked_by_count": "6",
+    "downloads_count": "34",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "SitemapFilter",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import xml.etree.ElementTree as ET\nfrom typing import List\nimport httpx\n\nfrom axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, Output\nfrom axiestudio.schema import Data\n\nclass SitemapFilterComponent(Component):\n    display_name = \"Sitemap Fetch & Filter\"\n    description = \"Fetchs an XML sitemap, parses the URLs and allows you to filter the results. (e.g., '/blog/')\"\n    icon = \"book-open-text\"\n    name = \"SitemapFilter\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"sitemap_url\",\n            display_name=\"Sitemap URL\",\n            info=\"Enter the URL of the sitemap to process, including http(s)://\",\n        ),\n        MessageTextInput(\n            name=\"filter_criteria\",\n            display_name=\"Filter\",\n            info=\"Value to filter URLs by (e.g., '/blog/').\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Filtered URLs\", name=\"filtered_urls\", method=\"process_sitemap\"),\n    ]\n\n    def parse_xml(self, xml_data: str) -> List[str]:\n        \"\"\"Parses the XML data and extracts all URLs from <loc> elements.\"\"\"\n        try:\n            root = ET.fromstring(xml_data)\n            urls = [url.find(\"{http://www.sitemaps.org/schemas/sitemap/0.9}loc\").text \n                    for url in root.findall(\"{http://www.sitemaps.org/schemas/sitemap/0.9}url\")]\n            return urls\n        except ET.ParseError as e:\n            raise ValueError(f\"Error parsing XML: {e}\")\n\n    async def process_sitemap(self) -> List[Data]:\n        sitemap_url = self.sitemap_url\n        filter_criteria = self.filter_criteria\n\n        async with httpx.AsyncClient() as client:\n            # Fetch the sitemap\n            try:\n                response = await client.get(sitemap_url)\n                sitemap_content = response.text\n            except Exception as e:\n                return [Data(data={\"error\": f\"Failed to fetch sitemap: {e}\"})]\n\n            # Parse and filter URLs\n            try:\n                all_urls = self.parse_xml(sitemap_content)\n                filtered_urls = [url for url in all_urls if filter_criteria in url]\n            except Exception as e:\n                return [Data(data={\"error\": f\"Failed to parse or filter sitemap: {e}\"})]\n\n        # Create a list of Data objects, each containing a filtered URL\n        result = [Data(data={\"link\": url}) for url in filtered_urls]\n        \n        self.status = result\n        return result",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "filter_criteria": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "filter_criteria",
+                  "value": "/blog/posts/why-is-seo-so-essential",
+                  "display_name": "Filter",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Value to filter URLs by (e.g., '/blog/').",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "sitemap_url": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sitemap_url",
+                  "value": "",
+                  "display_name": "Sitemap URL",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter the URL of the sitemap to process, including http(s)://",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Fetchs an XML sitemap, parses the URLs and allows you to filter the results. (e.g., '/blog/')",
+              "icon": "book-open-text",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Sitemap Filter",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "filtered_urls",
+                  "display_name": "Filtered URLs",
+                  "method": "process_sitemap",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "sitemap_url",
+                "filter_criteria"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-516Um"
+          },
+          "id": "CustomComponent-516Um",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-27T19:41:18.696Z",
+    "date_updated": "2024-09-27T19:41:18.745Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "d37448a0-3dae-485a-8bce-0671ce46cf30",
+    "user_created": {
+      "username": "Roy",
+      "first_name": "Roy",
+      "last_name": "Barber",
+      "id": "d37448a0-3dae-485a-8bce-0671ce46cf30"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Chain",
+          "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.623Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

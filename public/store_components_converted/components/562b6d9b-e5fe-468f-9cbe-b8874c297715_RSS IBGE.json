@@ -1,0 +1,325 @@
+{
+  "id": "562b6d9b-e5fe-468f-9cbe-b8874c297715",
+  "name": "RSS IBGE",
+  "description": "Notícias do feed RSS do IBGE (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "VagnerBessa",
+    "first_name": "Vagner",
+    "last_name": "Bessa",
+    "id": "8bbf3043-8b9a-4803-a844-1b4a4e6c990b",
+    "full_name": "Vagner Bessa"
+  },
+  "store_url": "https://www.langflow.store/store/component/562b6d9b-e5fe-468f-9cbe-b8874c297715",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-04T18:16:16.819Z",
+    "updated": "2024-09-04T18:16:16.841Z",
+    "downloaded": "2025-08-19T17:50:06.223Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "IBGEFeed",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Dict, Any\r\nfrom langchain.tools import BaseTool\r\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\r\nfrom axiestudio.field_typing import Tool\r\nfrom axiestudio.inputs import IntInput, MessageTextInput\r\nimport feedparser\r\nimport logging\r\n\r\nlogging.basicConfig(level=logging.INFO)\r\nlogger = logging.getLogger(__name__)\r\n\r\nclass IBGERSSComponent(LCToolComponent):  # Altere o nome da classe para ser consistente\r\n    display_name = \"IBGE RSS Feed\"\r\n    description = \"Notícias do feed RSS do IBGE\"\r\n    name = \"IBGEFeed\"\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"ibge_feed_address\",  # Corrija o nome do input\r\n            display_name=\"IBGE Feed Address\",\r\n            required=True,\r\n        ),\r\n        IntInput(name=\"num_results\", display_name=\"Número de resultados\", value=5, required=True),\r\n    ]\r\n\r\n    def __init__(self, **data):\r\n        super().__init__(**data)\r\n        self.ibge_feed_address = self.ibge_feed_address or \"https://agenciadenoticias.ibge.gov.br/agencia-rss\"  # Corrija a referência ao input\r\n\r\n    def extract_entries(self, entries, num_results):\r\n        results = []\r\n        for entry in entries:\r\n            entry_data = self.extract_entry_data(entry)\r\n            results.append(entry_data)\r\n            if len(results) >= num_results:\r\n                break\r\n        return results[:num_results]\r\n\r\n    def extract_entry_data(self, entry):\r\n        return {\r\n            \"title\": entry.get(\"title\", \"No title\"),\r\n            \"link\": entry.get(\"link\", \"No link\"),\r\n            \"published\": entry.get(\"published\", entry.get(\"updated\", \"No date\")),\r\n            \"summary\": entry.get(\"summary\", \"No summary\")\r\n        }\r\n\r\n    def build_tool(self) -> Tool:\r\n        class IBGERSSTool(BaseTool):  # Corrigir nome da classe interna\r\n            name = \"IBGE RSS Feed\"\r\n            description = \"Obtém notícias do feed RSS do IBGE.\"\r\n            ibge_feed_address: str\r\n            num_results: int\r\n\r\n            def _run(self, **kwargs: Dict[str, Any]) -> str:\r\n                try:\r\n                    feed = feedparser.parse(self.ibge_feed_address)  # Corrigir para ibge_feed_address\r\n                    component = IBGERSSComponent()  # Instanciar a classe correta\r\n                    results = component.extract_entries(feed.entries, self.num_results)\r\n                    \r\n                    formatted_results = \"\"\r\n                    for i, result in enumerate(results, 1):\r\n                        formatted_results += f\"{i}. Título: {result['title']}\\n\"\r\n                        formatted_results += f\"   Link: {result['link']}\\n\"\r\n                        formatted_results += f\"   Publicado: {result['published']}\\n\"\r\n                        formatted_results += f\"   Resumo: {result['summary']}\\n\\n\"\r\n                    \r\n                    return formatted_results if formatted_results else \"Nenhuma notícia encontrada no feed RSS.\"\r\n                except Exception as e:\r\n                    logger.error(f\"Error in _run: {str(e)}\")\r\n                    return f\"Failed to fetch or process RSS feed: {str(e)}\"\r\n\r\n        return IBGERSSTool(ibge_feed_address=self.ibge_feed_address, num_results=self.num_results)  # Certifique-se de passar os atributos corretos\r\n\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "ibge_feed_address": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "ibge_feed_address",
+                "value": "https://agenciadenoticias.ibge.gov.br/agencia-rss",
+                "display_name": "IBGE Feed Address",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "num_results": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "num_results",
+                "value": 30,
+                "display_name": "Número de resultados",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              }
+            },
+            "description": "Notícias do feed RSS do IBGE",
+            "base_classes": [
+              "Data",
+              "Tool"
+            ],
+            "display_name": "RSS IBGE",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "ibge_feed_address",
+              "num_results"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.17",
+            "official": false
+          },
+          "id": "BCBRSSFeed-lvXYR"
+        },
+        "id": "BCBRSSFeed-lvXYR",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "BCBRSSFeed": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "562b6d9b-e5fe-468f-9cbe-b8874c297715",
+    "name": "RSS IBGE",
+    "description": "Notícias do feed RSS do IBGE",
+    "is_component": true,
+    "liked_by_count": "3",
+    "downloads_count": "29",
+    "metadata": {
+      "BCBRSSFeed": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "IBGEFeed",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Dict, Any\r\nfrom langchain.tools import BaseTool\r\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\r\nfrom axiestudio.field_typing import Tool\r\nfrom axiestudio.inputs import IntInput, MessageTextInput\r\nimport feedparser\r\nimport logging\r\n\r\nlogging.basicConfig(level=logging.INFO)\r\nlogger = logging.getLogger(__name__)\r\n\r\nclass IBGERSSComponent(LCToolComponent):  # Altere o nome da classe para ser consistente\r\n    display_name = \"IBGE RSS Feed\"\r\n    description = \"Notícias do feed RSS do IBGE\"\r\n    name = \"IBGEFeed\"\r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"ibge_feed_address\",  # Corrija o nome do input\r\n            display_name=\"IBGE Feed Address\",\r\n            required=True,\r\n        ),\r\n        IntInput(name=\"num_results\", display_name=\"Número de resultados\", value=5, required=True),\r\n    ]\r\n\r\n    def __init__(self, **data):\r\n        super().__init__(**data)\r\n        self.ibge_feed_address = self.ibge_feed_address or \"https://agenciadenoticias.ibge.gov.br/agencia-rss\"  # Corrija a referência ao input\r\n\r\n    def extract_entries(self, entries, num_results):\r\n        results = []\r\n        for entry in entries:\r\n            entry_data = self.extract_entry_data(entry)\r\n            results.append(entry_data)\r\n            if len(results) >= num_results:\r\n                break\r\n        return results[:num_results]\r\n\r\n    def extract_entry_data(self, entry):\r\n        return {\r\n            \"title\": entry.get(\"title\", \"No title\"),\r\n            \"link\": entry.get(\"link\", \"No link\"),\r\n            \"published\": entry.get(\"published\", entry.get(\"updated\", \"No date\")),\r\n            \"summary\": entry.get(\"summary\", \"No summary\")\r\n        }\r\n\r\n    def build_tool(self) -> Tool:\r\n        class IBGERSSTool(BaseTool):  # Corrigir nome da classe interna\r\n            name = \"IBGE RSS Feed\"\r\n            description = \"Obtém notícias do feed RSS do IBGE.\"\r\n            ibge_feed_address: str\r\n            num_results: int\r\n\r\n            def _run(self, **kwargs: Dict[str, Any]) -> str:\r\n                try:\r\n                    feed = feedparser.parse(self.ibge_feed_address)  # Corrigir para ibge_feed_address\r\n                    component = IBGERSSComponent()  # Instanciar a classe correta\r\n                    results = component.extract_entries(feed.entries, self.num_results)\r\n                    \r\n                    formatted_results = \"\"\r\n                    for i, result in enumerate(results, 1):\r\n                        formatted_results += f\"{i}. Título: {result['title']}\\n\"\r\n                        formatted_results += f\"   Link: {result['link']}\\n\"\r\n                        formatted_results += f\"   Publicado: {result['published']}\\n\"\r\n                        formatted_results += f\"   Resumo: {result['summary']}\\n\\n\"\r\n                    \r\n                    return formatted_results if formatted_results else \"Nenhuma notícia encontrada no feed RSS.\"\r\n                except Exception as e:\r\n                    logger.error(f\"Error in _run: {str(e)}\")\r\n                    return f\"Failed to fetch or process RSS feed: {str(e)}\"\r\n\r\n        return IBGERSSTool(ibge_feed_address=self.ibge_feed_address, num_results=self.num_results)  # Certifique-se de passar os atributos corretos\r\n\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "ibge_feed_address": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "ibge_feed_address",
+                  "value": "https://agenciadenoticias.ibge.gov.br/agencia-rss",
+                  "display_name": "IBGE Feed Address",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "num_results": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "num_results",
+                  "value": 30,
+                  "display_name": "Número de resultados",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                }
+              },
+              "description": "Notícias do feed RSS do IBGE",
+              "base_classes": [
+                "Data",
+                "Tool"
+              ],
+              "display_name": "RSS IBGE",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "ibge_feed_address",
+                "num_results"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.17",
+              "official": false
+            },
+            "id": "BCBRSSFeed-lvXYR"
+          },
+          "id": "BCBRSSFeed-lvXYR",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-04T18:16:16.819Z",
+    "date_updated": "2024-09-04T18:16:16.841Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "8bbf3043-8b9a-4803-a844-1b4a4e6c990b",
+    "user_created": {
+      "username": "VagnerBessa",
+      "first_name": "Vagner",
+      "last_name": "Bessa",
+      "id": "8bbf3043-8b9a-4803-a844-1b4a4e6c990b"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.111Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

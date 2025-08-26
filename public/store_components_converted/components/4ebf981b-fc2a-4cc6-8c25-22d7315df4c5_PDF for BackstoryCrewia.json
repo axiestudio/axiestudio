@@ -1,0 +1,315 @@
+{
+  "id": "4ebf981b-fc2a-4cc6-8c25-22d7315df4c5",
+  "name": "PDF for BackstoryCrewia",
+  "description": "Create a prompt template by adding the content of a PDF. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "gabrieltrs",
+    "first_name": "Gabriel",
+    "last_name": "Terra",
+    "id": "aaaa2d66-7d9c-4e5e-a66a-e0a3956eaf0f",
+    "full_name": "Gabriel Terra"
+  },
+  "store_url": "https://www.langflow.store/store/component/4ebf981b-fc2a-4cc6-8c25-22d7315df4c5",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-10T19:17:17.338Z",
+    "updated": "2024-08-10T19:17:17.374Z",
+    "downloaded": "2025-08-19T17:50:06.151Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Chain",
+        "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "PDFPrompt",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "pdf_path": {
+                "trace_as_metadata": true,
+                "file_path": "2b51628b-a445-42b2-9e88-67a2a7308b76\\Marketing de Conteúdo Épico - Joe Pulizzi.pdf",
+                "fileTypes": [
+                  "pdf"
+                ],
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "pdf_path",
+                "display_name": "PDF Path",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Upload a PDF file to use its content in the template.",
+                "title_case": false,
+                "type": "file",
+                "_input_type": "FileInput"
+              },
+              "append_pdf_content": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "append_pdf_content",
+                "display_name": "Append PDF Content",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If true, the content of the PDF will be appended to the template.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from pathlib import Path\r\nfrom langchain_community.document_loaders import PyMuPDFLoader\r\nfrom axiestudio.base.prompts.api_utils import process_prompt_template\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import Output, FileInput, BoolInput\r\nfrom axiestudio.schema.message import Message\r\nfrom axiestudio.template.utils import update_template_values\r\n\r\nclass PDFPromptComponent(Component):\r\n    display_name: str = \"PDF Prompt\"\r\n    description: str = \"Create a prompt template by adding the content of a PDF.\"\r\n    icon = \"prompts\"\r\n    trace_type = \"prompt\"\r\n    name = \"PDFPrompt\"\r\n\r\n    inputs = [\r\n        FileInput(\r\n            name=\"pdf_path\",\r\n            display_name=\"PDF Path\",\r\n            file_types=[\"pdf\"],\r\n            info=\"Upload a PDF file to use its content in the template.\",\r\n            required=True,\r\n        ),\r\n        BoolInput(\r\n            name=\"append_pdf_content\",\r\n            display_name=\"Append PDF Content\",\r\n            advanced=True,\r\n            info=\"If true, the content of the PDF will be appended to the template.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Prompt Message\", name=\"prompt\", method=\"build_prompt_with_pdf\"),\r\n    ]\r\n\r\n    async def build_prompt_with_pdf(self) -> Message:\r\n        # Certifica-se de que o template é sempre inicializado\r\n        if 'template' not in self._attributes:\r\n            self._attributes['template'] = ''\r\n\r\n        # Verifica se o caminho do PDF foi fornecido\r\n        if not self.pdf_path:\r\n            raise ValueError(\"Please, upload a PDF to use this component.\")\r\n\r\n        # Carrega e processa o PDF\r\n        resolved_path = self.resolve_path(self.pdf_path)\r\n        extension = Path(resolved_path).suffix[1:].lower()\r\n\r\n        if extension != \"pdf\":\r\n            raise ValueError(f\"Unsupported file type: {extension}\")\r\n\r\n        loader = PyMuPDFLoader(str(resolved_path))\r\n        try:\r\n            pdf_text = \" \".join(document.page_content for document in loader.load())\r\n        except Exception as e:\r\n            raise ValueError(f\"Failed to load PDF: {e}\")\r\n\r\n        # Define o template como o conteúdo do PDF ou o combina com o existente\r\n        if self.append_pdf_content:\r\n            combined_template = f\"{self._attributes['template']}\\n{pdf_text}\"\r\n        else:\r\n            combined_template = pdf_text\r\n\r\n        self._attributes['template'] = combined_template\r\n\r\n        # Processa o template final para gerar a mensagem de prompt\r\n        prompt = await Message.from_template_and_variables(**self._attributes)\r\n        self.status = prompt.text\r\n        return prompt\r\n\r\n    def post_code_processing(self, new_frontend_node: dict, current_frontend_node: dict):\r\n        frontend_node = super().post_code_processing(new_frontend_node, current_frontend_node)\r\n        template = frontend_node.get(\"template\", {}).get(\"template\", {}).get(\"value\", \"\")\r\n        _ = process_prompt_template(\r\n            template=template,\r\n            name=\"template\",\r\n            custom_fields=frontend_node.get(\"custom_fields\", {}),\r\n            frontend_node_template=frontend_node.get(\"template\", {}),\r\n        )\r\n        update_template_values(new_template=frontend_node, previous_template=current_frontend_node.get(\"template\", {}))\r\n        return frontend_node\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              }
+            },
+            "description": "Create a prompt template by adding the content of a PDF.",
+            "icon": "prompts",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "PDF for BackstoryCrewia",
+            "documentation": "",
+            "custom_fields": {
+              "template": []
+            },
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "prompt",
+                "display_name": "Prompt Message",
+                "method": "build_prompt_with_pdf",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "pdf_path",
+              "append_pdf_content"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-rUvO1"
+        },
+        "id": "CustomComponent-rUvO1",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "4ebf981b-fc2a-4cc6-8c25-22d7315df4c5",
+    "name": "PDF for BackstoryCrewia",
+    "description": "Create a prompt template by adding the content of a PDF.",
+    "is_component": true,
+    "liked_by_count": "8",
+    "downloads_count": "59",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "PDFPrompt",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "pdf_path": {
+                  "trace_as_metadata": true,
+                  "file_path": "2b51628b-a445-42b2-9e88-67a2a7308b76\\Marketing de Conteúdo Épico - Joe Pulizzi.pdf",
+                  "fileTypes": [
+                    "pdf"
+                  ],
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "pdf_path",
+                  "display_name": "PDF Path",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Upload a PDF file to use its content in the template.",
+                  "title_case": false,
+                  "type": "file",
+                  "_input_type": "FileInput"
+                },
+                "append_pdf_content": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "append_pdf_content",
+                  "display_name": "Append PDF Content",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If true, the content of the PDF will be appended to the template.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from pathlib import Path\r\nfrom langchain_community.document_loaders import PyMuPDFLoader\r\nfrom axiestudio.base.prompts.api_utils import process_prompt_template\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import Output, FileInput, BoolInput\r\nfrom axiestudio.schema.message import Message\r\nfrom axiestudio.template.utils import update_template_values\r\n\r\nclass PDFPromptComponent(Component):\r\n    display_name: str = \"PDF Prompt\"\r\n    description: str = \"Create a prompt template by adding the content of a PDF.\"\r\n    icon = \"prompts\"\r\n    trace_type = \"prompt\"\r\n    name = \"PDFPrompt\"\r\n\r\n    inputs = [\r\n        FileInput(\r\n            name=\"pdf_path\",\r\n            display_name=\"PDF Path\",\r\n            file_types=[\"pdf\"],\r\n            info=\"Upload a PDF file to use its content in the template.\",\r\n            required=True,\r\n        ),\r\n        BoolInput(\r\n            name=\"append_pdf_content\",\r\n            display_name=\"Append PDF Content\",\r\n            advanced=True,\r\n            info=\"If true, the content of the PDF will be appended to the template.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Prompt Message\", name=\"prompt\", method=\"build_prompt_with_pdf\"),\r\n    ]\r\n\r\n    async def build_prompt_with_pdf(self) -> Message:\r\n        # Certifica-se de que o template é sempre inicializado\r\n        if 'template' not in self._attributes:\r\n            self._attributes['template'] = ''\r\n\r\n        # Verifica se o caminho do PDF foi fornecido\r\n        if not self.pdf_path:\r\n            raise ValueError(\"Please, upload a PDF to use this component.\")\r\n\r\n        # Carrega e processa o PDF\r\n        resolved_path = self.resolve_path(self.pdf_path)\r\n        extension = Path(resolved_path).suffix[1:].lower()\r\n\r\n        if extension != \"pdf\":\r\n            raise ValueError(f\"Unsupported file type: {extension}\")\r\n\r\n        loader = PyMuPDFLoader(str(resolved_path))\r\n        try:\r\n            pdf_text = \" \".join(document.page_content for document in loader.load())\r\n        except Exception as e:\r\n            raise ValueError(f\"Failed to load PDF: {e}\")\r\n\r\n        # Define o template como o conteúdo do PDF ou o combina com o existente\r\n        if self.append_pdf_content:\r\n            combined_template = f\"{self._attributes['template']}\\n{pdf_text}\"\r\n        else:\r\n            combined_template = pdf_text\r\n\r\n        self._attributes['template'] = combined_template\r\n\r\n        # Processa o template final para gerar a mensagem de prompt\r\n        prompt = await Message.from_template_and_variables(**self._attributes)\r\n        self.status = prompt.text\r\n        return prompt\r\n\r\n    def post_code_processing(self, new_frontend_node: dict, current_frontend_node: dict):\r\n        frontend_node = super().post_code_processing(new_frontend_node, current_frontend_node)\r\n        template = frontend_node.get(\"template\", {}).get(\"template\", {}).get(\"value\", \"\")\r\n        _ = process_prompt_template(\r\n            template=template,\r\n            name=\"template\",\r\n            custom_fields=frontend_node.get(\"custom_fields\", {}),\r\n            frontend_node_template=frontend_node.get(\"template\", {}),\r\n        )\r\n        update_template_values(new_template=frontend_node, previous_template=current_frontend_node.get(\"template\", {}))\r\n        return frontend_node\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                }
+              },
+              "description": "Create a prompt template by adding the content of a PDF.",
+              "icon": "prompts",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "PDF for BackstoryCrewia",
+              "documentation": "",
+              "custom_fields": {
+                "template": []
+              },
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "prompt",
+                  "display_name": "Prompt Message",
+                  "method": "build_prompt_with_pdf",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "pdf_path",
+                "append_pdf_content"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-rUvO1"
+          },
+          "id": "CustomComponent-rUvO1",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-10T19:17:17.338Z",
+    "date_updated": "2024-08-10T19:17:17.374Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "aaaa2d66-7d9c-4e5e-a66a-e0a3956eaf0f",
+    "user_created": {
+      "username": "gabrieltrs",
+      "first_name": "Gabriel",
+      "last_name": "Terra",
+      "id": "aaaa2d66-7d9c-4e5e-a66a-e0a3956eaf0f"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Chain",
+          "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.970Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

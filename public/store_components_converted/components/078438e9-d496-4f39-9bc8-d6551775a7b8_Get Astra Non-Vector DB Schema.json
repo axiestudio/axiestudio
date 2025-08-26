@@ -1,0 +1,369 @@
+{
+  "id": "078438e9-d496-4f39-9bc8-d6551775a7b8",
+  "name": "Get Astra Non-Vector DB Schema",
+  "description": "Get Schema from a non-vector Astra DB (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "brianogrady",
+    "first_name": "Brian",
+    "last_name": "O'Grady",
+    "id": "ee29ced5-8eaa-408b-b9db-2c24e2c94ee9",
+    "full_name": "Brian O'Grady"
+  },
+  "store_url": "https://www.langflow.store/store/component/078438e9-d496-4f39-9bc8-d6551775a7b8",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-03T19:23:30.100Z",
+    "updated": "2024-10-09T04:29:19.751Z",
+    "downloaded": "2025-08-19T17:50:07.444Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "AstraDB",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.inputs import StrInput, MultilineInput, SecretStrInput, IntInput, DropdownInput\nfrom axiestudio.schema.message import Message\nfrom langchain_community.utilities.cassandra_database import CassandraDatabase\nfrom langchain_core.tools import Tool\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom typing import Union\nfrom axiestudio.schema import Data\n\nclass AstraNonVectorDB(LCToolComponent):\n    display_name: str = \"Astra Non Vector DB Schema Tool\"\n    description: str = \"Get Schema from a non-vector Astra DB\"\n    documentation: str = \"https://python.langchain.com/docs/integrations/tools/cassandra_database/\"\n    name: str = \"AstraDB\"\n    icon: str = \"AstraDB\"\n\n    inputs = [\n        SecretStrInput(\n            name=\"token\",\n            display_name=\"Astra DB Application Token\",\n            info=\"Enter your application token.\",\n            required=True\n        ),\n        SecretStrInput(\n            name=\"database_id\",\n            display_name=\"Astra DB Database ID\",\n            info=\"Enter your database ID.\",\n            required=True\n        ),\n        MessageTextInput(\n            name=\"keyspace\",\n            display_name=\"Astra DB Keyspace\",\n            info=\"Enter your keyspace.\",\n            required=True\n        ),\n    ]\n    \n    def run_model(self) -> Union[Data, list[Data]]:\n        wrapper = self._build_wrapper()\n        results = wrapper.run({\"keyspace\": self.keyspace})\n        self.status = results\n        return results\n    \n    def build_tool(self) -> Tool:\n        wrapper = self._build_wrapper()\n        return Tool(\n            name=\"cassandra_query\",\n            description=\"Query Cassandra for whatever\",\n            func=wrapper.run,\n        )\n\n    def _build_wrapper(self):\n        try:\n            import cassio\n        except ImportError:\n            raise ImportError(\n                \"Could not import cassio package. \"\n                \"Please install it with `pip install cassio`.\"\n            )\n        try:\n            from langchain_community.utilities.cassandra_database import CassandraDatabase\n            from langchain_community.tools.cassandra_database.tool import (\n                GetSchemaCassandraDatabaseTool,\n                GetTableDataCassandraDatabaseTool,\n                QueryCassandraDatabaseTool,\n            )\n        except ImportError:\n            raise ImportError(\n                \"Could not import langchain CassandraDB integration package. \"\n                \"Please install it with `pip install langchain-community`.\"\n            )\n        \n        cassio_init_kwargs = {\n            \"token\": self.token,\n            \"database_id\": self.database_id,\n            \"keyspace\": self.keyspace,\n        }\n\n        cassio.init(**cassio_init_kwargs)\n        session = cassio.config.resolve_session()\n        if not session:\n            raise Exception(\n                \"Check environment configuration or manually configure cassio connection parameters\"\n                )\n        db = CassandraDatabase()\n        schema_tool = GetSchemaCassandraDatabaseTool(db=db)\n        session.set_keyspace(self.keyspace)\n        \n        return schema_tool\n\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "database_id": {
+                "load_from_db": true,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "database_id",
+                "value": "",
+                "display_name": "Astra DB Database ID",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter your database ID.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "keyspace": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "keyspace",
+                "value": "",
+                "display_name": "Astra DB Keyspace",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter your keyspace.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "token": {
+                "load_from_db": true,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "token",
+                "value": "",
+                "display_name": "Astra DB Application Token",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter your application token.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              }
+            },
+            "description": "Get Schema from a non-vector Astra DB",
+            "icon": "AstraDB",
+            "base_classes": [
+              "Data",
+              "Tool"
+            ],
+            "display_name": "Get Astra Non-Vector DB Schema",
+            "documentation": "https://python.langchain.com/docs/integrations/tools/cassandra_database/",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "token",
+              "database_id",
+              "keyspace"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "AstraDB-xoH28"
+        },
+        "id": "AstraDB-xoH28",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "AstraDB": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "078438e9-d496-4f39-9bc8-d6551775a7b8",
+    "name": "Get Astra Non-Vector DB Schema",
+    "description": "Get Schema from a non-vector Astra DB",
+    "is_component": true,
+    "liked_by_count": "2",
+    "downloads_count": "17",
+    "metadata": {
+      "AstraDB": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "AstraDB",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.inputs import StrInput, MultilineInput, SecretStrInput, IntInput, DropdownInput\nfrom axiestudio.schema.message import Message\nfrom langchain_community.utilities.cassandra_database import CassandraDatabase\nfrom langchain_core.tools import Tool\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom typing import Union\nfrom axiestudio.schema import Data\n\nclass AstraNonVectorDB(LCToolComponent):\n    display_name: str = \"Astra Non Vector DB Schema Tool\"\n    description: str = \"Get Schema from a non-vector Astra DB\"\n    documentation: str = \"https://python.langchain.com/docs/integrations/tools/cassandra_database/\"\n    name: str = \"AstraDB\"\n    icon: str = \"AstraDB\"\n\n    inputs = [\n        SecretStrInput(\n            name=\"token\",\n            display_name=\"Astra DB Application Token\",\n            info=\"Enter your application token.\",\n            required=True\n        ),\n        SecretStrInput(\n            name=\"database_id\",\n            display_name=\"Astra DB Database ID\",\n            info=\"Enter your database ID.\",\n            required=True\n        ),\n        MessageTextInput(\n            name=\"keyspace\",\n            display_name=\"Astra DB Keyspace\",\n            info=\"Enter your keyspace.\",\n            required=True\n        ),\n    ]\n    \n    def run_model(self) -> Union[Data, list[Data]]:\n        wrapper = self._build_wrapper()\n        results = wrapper.run({\"keyspace\": self.keyspace})\n        self.status = results\n        return results\n    \n    def build_tool(self) -> Tool:\n        wrapper = self._build_wrapper()\n        return Tool(\n            name=\"cassandra_query\",\n            description=\"Query Cassandra for whatever\",\n            func=wrapper.run,\n        )\n\n    def _build_wrapper(self):\n        try:\n            import cassio\n        except ImportError:\n            raise ImportError(\n                \"Could not import cassio package. \"\n                \"Please install it with `pip install cassio`.\"\n            )\n        try:\n            from langchain_community.utilities.cassandra_database import CassandraDatabase\n            from langchain_community.tools.cassandra_database.tool import (\n                GetSchemaCassandraDatabaseTool,\n                GetTableDataCassandraDatabaseTool,\n                QueryCassandraDatabaseTool,\n            )\n        except ImportError:\n            raise ImportError(\n                \"Could not import langchain CassandraDB integration package. \"\n                \"Please install it with `pip install langchain-community`.\"\n            )\n        \n        cassio_init_kwargs = {\n            \"token\": self.token,\n            \"database_id\": self.database_id,\n            \"keyspace\": self.keyspace,\n        }\n\n        cassio.init(**cassio_init_kwargs)\n        session = cassio.config.resolve_session()\n        if not session:\n            raise Exception(\n                \"Check environment configuration or manually configure cassio connection parameters\"\n                )\n        db = CassandraDatabase()\n        schema_tool = GetSchemaCassandraDatabaseTool(db=db)\n        session.set_keyspace(self.keyspace)\n        \n        return schema_tool\n\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "database_id": {
+                  "load_from_db": true,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "database_id",
+                  "value": "",
+                  "display_name": "Astra DB Database ID",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter your database ID.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "keyspace": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "keyspace",
+                  "value": "",
+                  "display_name": "Astra DB Keyspace",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter your keyspace.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "token": {
+                  "load_from_db": true,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "token",
+                  "value": "",
+                  "display_name": "Astra DB Application Token",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter your application token.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                }
+              },
+              "description": "Get Schema from a non-vector Astra DB",
+              "icon": "AstraDB",
+              "base_classes": [
+                "Data",
+                "Tool"
+              ],
+              "display_name": "Get Astra Non-Vector DB Schema",
+              "documentation": "https://python.langchain.com/docs/integrations/tools/cassandra_database/",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "token",
+                "database_id",
+                "keyspace"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "AstraDB-xoH28"
+          },
+          "id": "AstraDB-xoH28",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-03T19:23:30.100Z",
+    "date_updated": "2024-10-09T04:29:19.751Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "ee29ced5-8eaa-408b-b9db-2c24e2c94ee9",
+    "user_created": {
+      "username": "brianogrady",
+      "first_name": "Brian",
+      "last_name": "O'Grady",
+      "id": "ee29ced5-8eaa-408b-b9db-2c24e2c94ee9"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:08.852Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}
