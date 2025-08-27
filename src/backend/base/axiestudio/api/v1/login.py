@@ -81,7 +81,7 @@ async def login_to_get_access_token(
         # Add password change requirement to response
         if password_change_required:
             tokens["password_change_required"] = True
-            tokens["message"] = "Password change required. Please update your password."
+            tokens["message"] = "Lösenordsändring krävs. Vänligen uppdatera ditt lösenord."
         response.set_cookie(
             "refresh_token_as",
             tokens["refresh_token"],
@@ -226,7 +226,7 @@ async def change_password(
         if len(request.new_password) < 8:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Password must be at least 8 characters long"
+                detail="Lösenordet måste vara minst 8 tecken långt"
             )
 
         # Check for password complexity
@@ -234,25 +234,25 @@ async def change_password(
         if not re.search(r'[A-Z]', request.new_password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Password must contain at least one uppercase letter"
+                detail="Lösenordet måste innehålla minst en stor bokstav"
             )
 
         if not re.search(r'[a-z]', request.new_password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Password must contain at least one lowercase letter"
+                detail="Lösenordet måste innehålla minst en liten bokstav"
             )
 
         if not re.search(r'\d', request.new_password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Password must contain at least one number"
+                detail="Lösenordet måste innehålla minst en siffra"
             )
 
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', request.new_password):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Password must contain at least one special character"
+                detail="Lösenordet måste innehålla minst ett specialtecken"
             )
 
         # If current_password is provided, verify it
@@ -260,7 +260,7 @@ async def change_password(
             if not verify_password(request.current_password, current_user.password):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Current password is incorrect"
+                    detail="Nuvarande lösenord är felaktigt"
                 )
 
         # Hash new password
@@ -284,7 +284,7 @@ async def change_password(
 
         return ChangePasswordResponse(
             success=True,
-            message="Password changed successfully"
+            message="Lösenordet ändrades framgångsrikt"
         )
 
     except HTTPException:
@@ -292,5 +292,5 @@ async def change_password(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to change password: {str(e)}"
+            detail=f"Misslyckades med att ändra lösenord: {str(e)}"
         )

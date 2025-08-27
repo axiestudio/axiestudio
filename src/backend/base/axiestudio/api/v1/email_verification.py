@@ -63,7 +63,7 @@ async def verify_email(
 
     if not token:
         logger.warning("Email verification attempted without token")
-        raise HTTPException(status_code=400, detail="Verification token is required")
+        raise HTTPException(status_code=400, detail="Verifieringstoken krävs")
 
     logger.info(f"🔍 Email verification attempt with token: {token[:8]}...")
 
@@ -75,7 +75,7 @@ async def verify_email(
         logger.warning(f"❌ Invalid verification token: {token[:8]}...")
         raise HTTPException(
             status_code=400,
-            detail="Invalid or expired verification token. If you already verified your email, please try logging in directly."
+            detail="Ogiltig eller utgången verifieringstoken. Om du redan har verifierat din e-post, försök logga in direkt."
         )
 
     logger.info(f"✅ Found user for verification: {user.username} (email: {user.email})")
@@ -85,7 +85,7 @@ async def verify_email(
         user_expires = ensure_timezone_aware(user.email_verification_expires)
         if user_expires and user_expires < datetime.now(timezone.utc):
             logger.warning(f"⏰ Expired verification token for user: {user.username}")
-            raise HTTPException(status_code=400, detail="Verification token has expired")
+            raise HTTPException(status_code=400, detail="Verifieringstoken har gått ut")
 
     # Log current state BEFORE verification
     logger.info(f"📊 BEFORE verification - User: {user.username}, is_active: {user.is_active}, email_verified: {user.email_verified}")
@@ -128,7 +128,7 @@ async def verify_email(
     except Exception as e:
         logger.error(f"❌ FAILED to verify user {user.username}: {e}")
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"Database error during verification: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Databasfel under verifiering: {str(e)}")
 
     # Generate access token for automatic login
     try:
@@ -137,7 +137,7 @@ async def verify_email(
         logger.info(f"🔑 Generated access tokens for {user.username}")
 
         return {
-            "message": "🎉 Email verified successfully! Your account is now active and you are logged in.",
+            "message": "🎉 E-post verifierad framgångsrikt! Ditt konto är nu aktivt och du är inloggad.",
             "verified": True,
             "activated": True,
             "access_token": tokens["access_token"],
@@ -154,7 +154,7 @@ async def verify_email(
         logger.error(f"❌ Failed to generate tokens for {user.username}: {e}")
         # Don't fail verification if token generation fails
         return {
-            "message": "Email verified successfully! Your account is active. Please log in manually.",
+            "message": "E-post verifierad framgångsrikt! Ditt konto är aktivt. Vänligen logga in manuellt.",
             "verified": True,
             "activated": True,
             "auto_login": False,
@@ -179,12 +179,12 @@ async def resend_verification_email(
         # Always return success to prevent revealing if email exists
         logger.warning(f"❌ Forgot password attempted for non-existent email: {request.email}")
         return {
-            "message": "If this email exists in our system, you will receive a password reset link.",
+            "message": "Om denna e-post finns i vårt system kommer du att få en länk för lösenordsåterställning.",
             "success": True
         }
     
     if user.email_verified:
-        raise HTTPException(status_code=400, detail="Email is already verified")
+        raise HTTPException(status_code=400, detail="E-posten är redan verifierad")
     
     # Generate new verification token
     token = email_service.generate_verification_token()
@@ -201,10 +201,10 @@ async def resend_verification_email(
     email_sent = await email_service.send_verification_email(user.email, user.username, token)
     
     if not email_sent:
-        raise HTTPException(status_code=500, detail="Failed to send verification email")
-    
+        raise HTTPException(status_code=500, detail="Misslyckades med att skicka verifieringse-post")
+
     return {
-        "message": "Verification email sent successfully",
+        "message": "Verifieringse-post skickad framgångsrikt",
         "email": user.email
     }
 

@@ -227,7 +227,7 @@ async def read_flows(
         if not starter_folder and not default_folder:
             raise HTTPException(
                 status_code=404,
-                detail="Starter project and default project not found. Please create a project and add flows to it.",
+                detail="Startprojekt och standardprojekt hittades inte. Vänligen skapa ett projekt och lägg till flöden till det.",
             )
 
         if not folder_id:
@@ -296,7 +296,7 @@ async def read_flow(
     """Read a flow."""
     if user_flow := await _read_flow(session, flow_id, current_user.id):
         return user_flow
-    raise HTTPException(status_code=404, detail="Flow not found")
+    raise HTTPException(status_code=404, detail="Flöde hittades inte")
 
 
 @router.get("/public_flow/{flow_id}", response_model=FlowRead, status_code=200)
@@ -308,7 +308,7 @@ async def read_public_flow(
     """Read a public flow."""
     access_type = (await session.exec(select(Flow.access_type).where(Flow.id == flow_id))).first()
     if access_type is not AccessTypeEnum.PUBLIC:
-        raise HTTPException(status_code=403, detail="Flow is not public")
+        raise HTTPException(status_code=403, detail="Flödet är inte offentligt")
 
     current_user = await get_user_by_flow_id_or_endpoint_name(str(flow_id))
     return await read_flow(session=session, flow_id=flow_id, current_user=current_user)
@@ -332,7 +332,7 @@ async def update_flow(
         )
 
         if not db_flow:
-            raise HTTPException(status_code=404, detail="Flow not found")
+            raise HTTPException(status_code=404, detail="Flöde hittades inte")
 
         update_data = flow.model_dump(exclude_unset=True, exclude_none=True)
 
@@ -396,10 +396,10 @@ async def delete_flow(
         user_id=current_user.id,
     )
     if not flow:
-        raise HTTPException(status_code=404, detail="Flow not found")
+        raise HTTPException(status_code=404, detail="Flöde hittades inte")
     await cascade_delete_flow(session, flow.id)
     await session.commit()
-    return {"message": "Flow deleted successfully"}
+    return {"message": "Flöde borttaget framgångsrikt"}
 
 
 @router.post("/batch/", response_model=list[FlowRead], status_code=201)
@@ -507,7 +507,7 @@ async def download_multiple_file(
     flows = (await db.exec(select(Flow).where(and_(Flow.user_id == user.id, Flow.id.in_(flow_ids))))).all()  # type: ignore[attr-defined]
 
     if not flows:
-        raise HTTPException(status_code=404, detail="No flows found.")
+        raise HTTPException(status_code=404, detail="Inga flöden hittades.")
 
     flows_without_api_keys = [remove_api_keys(flow.model_dump()) for flow in flows]
 
