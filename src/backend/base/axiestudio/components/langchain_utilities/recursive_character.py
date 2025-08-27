@@ -10,7 +10,7 @@ from axiestudio.utils.util import unescape_string
 class RecursiveCharacterTextSplitterComponent(LCTextSplitterComponent):
     display_name: str = "Rekursiv tecken textdelare"
     description: str = "Dela upp text och försök hålla all relaterad text tillsammans."
-    documentation: str = "https://docs.axiestudio.se/components
+    documentation: str = "https://docs.axiestudio.se/components"
     name = "RecursiveCharacterTextSplitter"
     icon = "LangChain"
 
