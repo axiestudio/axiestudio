@@ -110,7 +110,7 @@ async def update_message(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
     if not db_message:
-        raise HTTPException(status_code=404, detail="Message not found")
+        raise HTTPException(status_code=404, detail="Meddelande hittades inte")
 
     try:
         message_dict = message.model_dump(exclude_unset=True, exclude_none=True)
@@ -142,7 +142,7 @@ async def update_session_id(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
     if not messages:
-        raise HTTPException(status_code=404, detail="No messages found with the given session ID")
+        raise HTTPException(status_code=404, detail="Inga meddelanden hittades med det angivna sessions-ID:t")
 
     try:
         # Update all messages with the new session ID
@@ -177,7 +177,7 @@ async def delete_messages_session(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
-    return {"message": "Messages deleted successfully"}
+    return {"message": "Meddelanden borttagna framgångsrikt"}
 
 
 @router.get("/transactions")

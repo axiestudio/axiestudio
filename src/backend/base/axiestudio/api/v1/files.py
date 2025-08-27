@@ -31,9 +31,9 @@ async def get_flow(
     # AttributeError: 'SelectOfScalar' object has no attribute 'first'
     flow = await session.get(Flow, flow_id)
     if not flow:
-        raise HTTPException(status_code=404, detail="Flow not found")
+        raise HTTPException(status_code=404, detail="Flöde hittades inte")
     if flow.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="You don't have access to this flow")
+        raise HTTPException(status_code=403, detail="Du har inte åtkomst till detta flöde")
     return flow
 
 
@@ -53,11 +53,11 @@ async def upload_file(
 
     if file.size > max_file_size_upload * 1024 * 1024:
         raise HTTPException(
-            status_code=413, detail=f"File size is larger than the maximum file size {max_file_size_upload}MB."
+            status_code=413, detail=f"Filstorleken är större än den maximala filstorleken {max_file_size_upload}MB."
         )
 
     if flow.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="You don't have access to this flow")
+        raise HTTPException(status_code=403, detail="Du har inte åtkomst till detta flöde")
 
     try:
         file_content = await file.read()
@@ -79,14 +79,14 @@ async def download_file(
     extension = file_name.split(".")[-1]
 
     if not extension:
-        raise HTTPException(status_code=500, detail=f"Extension not found for file {file_name}")
+        raise HTTPException(status_code=500, detail=f"Filändelse hittades inte för fil {file_name}")
     try:
         content_type = build_content_type_from_extension(extension)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
     if not content_type:
-        raise HTTPException(status_code=500, detail=f"Content type not found for extension {extension}")
+        raise HTTPException(status_code=500, detail=f"Innehållstyp hittades inte för filändelse {extension}")
 
     try:
         file_content = await storage_service.get_file(flow_id=flow_id_str, file_name=file_name)
@@ -190,4 +190,4 @@ async def delete_file(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
-    return {"message": f"File {file_name} deleted successfully"}
+    return {"message": f"Fil {file_name} borttagen framgångsrikt"}

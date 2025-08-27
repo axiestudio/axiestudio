@@ -181,7 +181,7 @@ async def build_flow(
     async with session_scope() as session:
         flow = await session.get(Flow, flow_id)
         if not flow:
-            raise HTTPException(status_code=404, detail=f"Flow with id {flow_id} not found")
+            raise HTTPException(status_code=404, detail=f"Flöde med id {flow_id} hittades inte")
 
     job_id = await start_flow_build(
         flow_id=flow_id,
@@ -234,13 +234,13 @@ async def cancel_build(
 
         if cancellation_success:
             # Cancellation succeeded or wasn't needed
-            return CancelFlowResponse(success=True, message="Flow build cancelled successfully")
+            return CancelFlowResponse(success=True, message="Flödesbygge avbrutet framgångsrikt")
         # Cancellation was attempted but failed
-        return CancelFlowResponse(success=False, message="Failed to cancel flow build")
+        return CancelFlowResponse(success=False, message="Misslyckades med att avbryta flödesbygge")
     except asyncio.CancelledError:
         # If CancelledError reaches here, it means the task was not successfully cancelled
         logger.error(f"Failed to cancel flow build for job_id {job_id} (CancelledError caught)")
-        return CancelFlowResponse(success=False, message="Failed to cancel flow build")
+        return CancelFlowResponse(success=False, message="Misslyckades med att avbryta flödesbygge")
     except ValueError as exc:
         # Job not found
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
@@ -291,7 +291,7 @@ async def build_vertex(
     try:
         graph: Graph = await chat_service.get_cache(flow_id_str)
     except KeyError as exc:
-        raise HTTPException(status_code=404, detail="Graph not found") from exc
+        raise HTTPException(status_code=404, detail="Graf hittades inte") from exc
 
     try:
         cache = await chat_service.get_cache(flow_id_str)
@@ -537,7 +537,7 @@ async def build_vertex_stream(
             media_type="text/event-stream",
         )
     except Exception as exc:
-        raise HTTPException(status_code=500, detail="Error building Component") from exc
+        raise HTTPException(status_code=500, detail="Fel vid byggande av komponent") from exc
 
 
 async def build_flow_and_stream(flow_id, inputs, background_tasks, current_user):

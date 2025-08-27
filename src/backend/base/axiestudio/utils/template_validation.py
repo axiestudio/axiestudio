@@ -30,21 +30,21 @@ def validate_template_structure(template_data: dict[str, Any], filename: str) ->
 
     # Check required fields
     if "nodes" not in data:
-        errors.append(f"{filename}: Missing 'nodes' field")
+        errors.append(f"{filename}: Saknar 'nodes'-fält")
     elif not isinstance(data["nodes"], list):
-        errors.append(f"{filename}: 'nodes' must be a list")
+        errors.append(f"{filename}: 'nodes' måste vara en lista")
 
     if "edges" not in data:
-        errors.append(f"{filename}: Missing 'edges' field")
+        errors.append(f"{filename}: Saknar 'edges'-fält")
     elif not isinstance(data["edges"], list):
-        errors.append(f"{filename}: 'edges' must be a list")
+        errors.append(f"{filename}: 'edges' måste vara en lista")
 
     # Check nodes have required fields
     for i, node in enumerate(data.get("nodes", [])):
         if "id" not in node:
-            errors.append(f"{filename}: Node {i} missing 'id'")
+            errors.append(f"{filename}: Nod {i} saknar 'id'")
         if "data" not in node:
-            errors.append(f"{filename}: Node {i} missing 'data'")
+            errors.append(f"{filename}: Nod {i} saknar 'data'")
 
     return errors
 
@@ -117,7 +117,7 @@ def validate_flow_code(template_data: dict[str, Any], filename: str) -> list[str
                         if validation_result.get("imports", {}).get("errors"):
                             errors.extend(
                                 [
-                                    f"{filename}: Import error in node {node_data.get('id', 'unknown')}: {error}"
+                                    f"{filename}: Importfel i nod {node_data.get('id', 'okänd')}: {error}"
                                     for error in validation_result["imports"]["errors"]
                                 ]
                             )
@@ -126,7 +126,7 @@ def validate_flow_code(template_data: dict[str, Any], filename: str) -> list[str
                         if validation_result.get("function", {}).get("errors"):
                             errors.extend(
                                 [
-                                    f"{filename}: Function error in node {node_data.get('id', 'unknown')}: {error}"
+                                    f"{filename}: Funktionsfel i nod {node_data.get('id', 'okänd')}: {error}"
                                     for error in validation_result["function"]["errors"]
                                 ]
                             )
@@ -235,7 +235,7 @@ async def _validate_event_stream(response, job_id: str, filename: str, errors: l
 
                 # Verify job_id in events
                 if "job_id" in parsed and parsed["job_id"] != job_id:
-                    errors.append(f"{filename}: Job ID mismatch in event stream")
+                    errors.append(f"{filename}: Jobb-ID matchar inte i händelseström")
                     continue
 
                 event_type = parsed.get("event")
@@ -243,12 +243,12 @@ async def _validate_event_stream(response, job_id: str, filename: str, errors: l
                 if event_type == "vertices_sorted":
                     vertices_sorted_seen = True
                     if not parsed.get("data", {}).get("ids"):
-                        errors.append(f"{filename}: Missing vertex IDs in vertices_sorted event")
+                        errors.append(f"{filename}: Saknar vertex-ID:n i vertices_sorted-händelse")
 
                 elif event_type == "end_vertex":
                     vertex_count += 1
                     if not parsed.get("data", {}).get("build_data"):
-                        errors.append(f"{filename}: Missing build_data in end_vertex event")
+                        errors.append(f"{filename}: Saknar build_data i end_vertex-händelse")
 
                 elif event_type == "end":
                     end_event_seen = True
@@ -259,11 +259,11 @@ async def _validate_event_stream(response, job_id: str, filename: str, errors: l
                         error_msg = error_data.get("error", "Unknown error")
                         # Skip if error is just "False" which is not a real error
                         if error_msg != "False" and error_msg is not False:
-                            errors.append(f"{filename}: Flow execution error: {error_msg}")
+                            errors.append(f"{filename}: Flödesexekveringsfel: {error_msg}")
                     else:
                         error_msg = str(error_data)
                         if error_msg != "False":
-                            errors.append(f"{filename}: Flow execution error: {error_msg}")
+                            errors.append(f"{filename}: Flödesexekveringsfel: {error_msg}")
 
                 elif event_type == "message":
                     # Handle message events (normal part of flow execution)

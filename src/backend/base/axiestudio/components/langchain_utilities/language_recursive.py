@@ -9,7 +9,7 @@ from axiestudio.inputs.inputs import DataInput, DropdownInput, IntInput
 class LanguageRecursiveTextSplitterComponent(LCTextSplitterComponent):
     display_name: str = "Språkrekursiv textdelare"
     description: str = "Dela upp text i delar av angiven längd baserat på språk."
-    documentation: str = "https://docs.axiestudio.se/components
+    documentation: str = "https://docs.axiestudio.se/components"
     name = "LanguageRecursiveTextSplitter"
     icon = "LangChain"
 

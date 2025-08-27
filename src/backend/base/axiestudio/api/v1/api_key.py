@@ -50,7 +50,7 @@ async def delete_api_key_route(
         await delete_api_key(db, api_key_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
-    return {"detail": "API Key deleted"}
+    return {"detail": "API-nyckel borttagen"}
 
 
 @router.post("/store")
@@ -85,4 +85,4 @@ async def save_store_api_key(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
-    return {"detail": "API Key saved"}
+    return {"detail": "API-nyckel sparad"}

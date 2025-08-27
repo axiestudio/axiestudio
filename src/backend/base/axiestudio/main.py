@@ -110,7 +110,7 @@ class RequestCancelledMiddleware(BaseHTTPMiddleware):
             task.cancel()
 
         if cancel_task in done:
-            return Response("Request was cancelled", status_code=499)
+            return Response("Begäran avbröts", status_code=499)
         return await handler_task
 
 
@@ -121,8 +121,8 @@ class JavaScriptMIMETypeMiddleware(BaseHTTPMiddleware):
         except Exception as exc:
             if isinstance(exc, PydanticSerializationError):
                 message = (
-                    "Something went wrong while serializing the response. "
-                    "Please share this error on our GitHub repository."
+                    "Något gick fel vid serialisering av svaret. "
+                    "Vänligen dela detta fel på vårt GitHub-repository."
                 )
                 error_messages = json.dumps([message, str(exc)])
                 raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=error_messages) from exc
@@ -394,7 +394,7 @@ def create_app():
             if not content_type or "multipart/form-data" not in content_type or "boundary=" not in content_type:
                 return JSONResponse(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    content={"detail": "Content-Type header must be 'multipart/form-data' with a boundary parameter."},
+                    content={"detail": "Content-Type header måste vara 'multipart/form-data' med en boundary-parameter."},
                 )
 
             boundary = content_type.split("boundary=")[-1].strip()
@@ -402,7 +402,7 @@ def create_app():
             if not re.match(r"^[\w\-]{1,70}$", boundary):
                 return JSONResponse(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    content={"detail": "Invalid boundary format"},
+                    content={"detail": "Ogiltigt boundary-format"},
                 )
 
             body = await request.body()
@@ -416,7 +416,7 @@ def create_app():
             if not body.startswith(boundary_start) or not body.endswith((boundary_end, boundary_end_no_newline)):
                 return JSONResponse(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    content={"detail": "Invalid multipart formatting"},
+                    content={"detail": "Ogiltig multipart-formatering"},
                 )
 
         return await call_next(request)

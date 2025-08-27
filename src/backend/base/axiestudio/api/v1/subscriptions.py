@@ -127,7 +127,7 @@ async def create_checkout_session(
         
     except Exception as e:
         logger.error(f"Failed to create checkout session for user {current_user.id}: {e}")
-        raise HTTPException(status_code=500, detail="Failed to create checkout session. Please try again or contact support.")
+        raise HTTPException(status_code=500, detail="Misslyckades med att skapa checkout-session. Vänligen försök igen eller kontakta support.")
 
 
 @router.post("/customer-portal", response_model=CustomerPortalResponse)
@@ -140,11 +140,11 @@ async def create_customer_portal(
     if not check_rate_limit(str(current_user.id), "customer-portal"):
         raise HTTPException(
             status_code=429,
-            detail="Too many portal requests. Please wait a few minutes before trying again."
+            detail="För många portalförfrågningar. Vänligen vänta några minuter innan du försöker igen."
         )
 
     if not stripe_service.is_configured():
-        raise HTTPException(status_code=503, detail="Stripe is not configured. Please contact support.")
+        raise HTTPException(status_code=503, detail="Stripe är inte konfigurerat. Vänligen kontakta support.")
 
     try:
         # Create Stripe customer if not exists
@@ -292,7 +292,7 @@ async def migrate_subscription_schema(session: DbSession):
 
     except Exception as e:
         logger.error(f"Migration failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Migration failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Migrering misslyckades: {str(e)}")
 
 
 @router.get("/debug/schema")
@@ -434,7 +434,7 @@ async def stripe_webhook(request: Request, session: DbSession):
         webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
         
         if not webhook_secret:
-            raise HTTPException(status_code=500, detail="Webhook secret not configured")
+            raise HTTPException(status_code=500, detail="Webhook-hemlighet inte konfigurerad")
         
         # Verify webhook signature
         import stripe
@@ -443,9 +443,9 @@ async def stripe_webhook(request: Request, session: DbSession):
                 payload, sig_header, webhook_secret
             )
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid payload")
+            raise HTTPException(status_code=400, detail="Ogiltig nyttolast")
         except stripe.error.SignatureVerificationError:
-            raise HTTPException(status_code=400, detail="Invalid signature")
+            raise HTTPException(status_code=400, detail="Ogiltig signatur")
         
         # Handle the event
         success = await stripe_service.handle_webhook_event(event, session)

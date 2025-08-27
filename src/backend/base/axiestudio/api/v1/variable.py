@@ -22,16 +22,16 @@ async def create_variable(
     """Create a new variable."""
     variable_service = get_variable_service()
     if not variable.name and not variable.value:
-        raise HTTPException(status_code=400, detail="Variable name and value cannot be empty")
+        raise HTTPException(status_code=400, detail="Variabelnamn och värde kan inte vara tomma")
 
     if not variable.name:
-        raise HTTPException(status_code=400, detail="Variable name cannot be empty")
+        raise HTTPException(status_code=400, detail="Variabelnamn kan inte vara tomt")
 
     if not variable.value:
-        raise HTTPException(status_code=400, detail="Variable value cannot be empty")
+        raise HTTPException(status_code=400, detail="Variabelvärde kan inte vara tomt")
 
     if variable.name in await variable_service.list_variables(user_id=current_user.id, session=session):
-        raise HTTPException(status_code=400, detail="Variable name already exists")
+        raise HTTPException(status_code=400, detail="Variabelnamn finns redan")
     try:
         return await variable_service.create_variable(
             user_id=current_user.id,
@@ -47,7 +47,7 @@ async def create_variable(
         # Log the actual error for debugging
         from loguru import logger
         logger.error(f"Variable creation error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to create variable: {str(e)}") from e
+        raise HTTPException(status_code=500, detail=f"Misslyckades med att skapa variabel: {str(e)}") from e
 
 
 @router.get("/", response_model=list[VariableRead], status_code=200)
@@ -71,7 +71,7 @@ async def read_variables(
         if "decrypt" in str(e).lower() or "fernet" in str(e).lower():
             logger.warning("Decryption error detected, returning empty variables list")
             return []
-        raise HTTPException(status_code=500, detail=f"Failed to read variables: {str(e)}") from e
+        raise HTTPException(status_code=500, detail=f"Misslyckades med att läsa variabler: {str(e)}") from e
 
 
 @router.patch("/{variable_id}", response_model=VariableRead, status_code=200)
@@ -95,7 +95,7 @@ async def update_variable(
             session=session,
         )
     except NoResultFound as e:
-        raise HTTPException(status_code=404, detail="Variable not found") from e
+        raise HTTPException(status_code=404, detail="Variabel hittades inte") from e
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

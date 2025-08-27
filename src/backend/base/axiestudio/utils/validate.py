@@ -148,7 +148,7 @@ def eval_function(function_string: str):
         None,
     )
     if function_object is None:
-        msg = "Function string does not contain a function"
+        msg = "Funktionssträngen innehåller ingen funktion"
         raise ValueError(msg)
     return function_object
 
@@ -170,7 +170,7 @@ def execute_function(code, function_name, *args, **kwargs):
                     )
                     exec_globals[alias.asname or alias.name] = importlib.import_module(alias.name)
                 except ModuleNotFoundError as e:
-                    msg = f"Module {alias.name} not found. Please install it and try again."
+                    msg = f"Modul {alias.name} hittades inte. Vänligen installera den och försök igen."
                     raise ModuleNotFoundError(msg) from e
 
     function_code = next(
@@ -182,7 +182,7 @@ def execute_function(code, function_name, *args, **kwargs):
     try:
         exec(code_obj, exec_globals, exec_locals)
     except Exception as exc:
-        msg = "Function string does not contain a function"
+        msg = "Funktionssträngen innehåller ingen funktion"
         raise ValueError(msg) from exc
 
     # Add the function to the exec_globals dictionary
@@ -215,7 +215,7 @@ def create_function(code, function_name):
                         module_name = alias.name
                         exec_globals[alias.asname or alias.name] = importlib.import_module(module_name)
                 except ModuleNotFoundError as e:
-                    msg = f"Module {alias.name} not found. Please install it and try again."
+                    msg = f"Modul {alias.name} hittades inte. Vänligen installera den och försök igen."
                     raise ModuleNotFoundError(msg) from e
 
     function_code = next(
@@ -272,17 +272,17 @@ def create_class(code, class_name):
         return build_class_constructor(compiled_class, exec_globals, class_name)
 
     except SyntaxError as e:
-        msg = f"Syntax error in code: {e!s}"
+        msg = f"Syntaxfel i kod: {e!s}"
         raise ValueError(msg) from e
     except NameError as e:
-        msg = f"Name error (possibly undefined variable): {e!s}"
+        msg = f"Namnfel (möjligen odefinierad variabel): {e!s}"
         raise ValueError(msg) from e
     except ValidationError as e:
         messages = [error["msg"].split(",", 1) for error in e.errors()]
         error_message = "\n".join([message[1] if len(message) > 1 else message[0] for message in messages])
         raise ValueError(error_message) from e
     except Exception as e:
-        msg = f"Error creating class: {e!s}"
+        msg = f"Fel vid skapande av klass: {e!s}"
         raise ValueError(msg) from e
 
 
@@ -331,7 +331,7 @@ def prepare_global_scope(module):
                 variable_name = alias.asname or alias.name
                 exec_globals[variable_name] = importlib.import_module(module_name)
             except ModuleNotFoundError as e:
-                msg = f"Module {alias.name} not found. Please install it and try again."
+                msg = f"Modul {alias.name} hittades inte. Vänligen installera den och försök igen."
                 raise ModuleNotFoundError(msg) from e
 
     for node in import_froms:
@@ -354,7 +354,7 @@ def prepare_global_scope(module):
                     full_module_path = f"{module_name}.{alias.name}"
                     exec_globals[alias.name] = importlib.import_module(full_module_path)
         except ModuleNotFoundError as e:
-            msg = f"Module {node.module} not found. Please install it and try again"
+            msg = f"Modul {node.module} hittades inte. Vänligen installera den och försök igen"
             raise ModuleNotFoundError(msg) from e
 
     if definitions:
@@ -454,7 +454,7 @@ def extract_function_name(code):
     for node in module.body:
         if isinstance(node, ast.FunctionDef):
             return node.name
-    msg = "No function definition found in the code string"
+    msg = "Ingen funktionsdefinition hittades i kodsträngen"
     raise ValueError(msg)
 
 
@@ -482,8 +482,8 @@ def extract_class_name(code: str) -> str:
                 if isinstance(base, ast.Name) and any(pattern in base.id for pattern in ["Component", "LC"]):
                     return node.name
 
-        msg = f"No Component subclass found in the code string. Code snippet: {code[:100]}"
+        msg = f"Ingen komponentsubklass hittades i kodsträngen. Kodutdrag: {code[:100]}"
         raise TypeError(msg)
     except SyntaxError as e:
-        msg = f"Invalid Python code: {e!s}"
+        msg = f"Ogiltig Python-kod: {e!s}"
         raise ValueError(msg) from e

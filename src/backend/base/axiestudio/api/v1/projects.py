@@ -135,11 +135,11 @@ async def read_project(
         ).first()
     except Exception as e:
         if "No result found" in str(e):
-            raise HTTPException(status_code=404, detail="Project not found") from e
+            raise HTTPException(status_code=404, detail="Projekt hittades inte") from e
         raise HTTPException(status_code=500, detail=str(e)) from e
 
     if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+        raise HTTPException(status_code=404, detail="Projekt hittades inte")
 
     try:
         if params and params.page and params.size:
@@ -187,7 +187,7 @@ async def update_project(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
     if not existing_project:
-        raise HTTPException(status_code=404, detail="Project not found")
+        raise HTTPException(status_code=404, detail="Projekt hittades inte")
 
     try:
         if project.name and project.name != existing_project.name:
@@ -254,7 +254,7 @@ async def delete_project(
         raise HTTPException(status_code=500, detail=str(e)) from e
 
     if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
+        raise HTTPException(status_code=404, detail="Projekt hittades inte")
 
     try:
         await session.delete(project)
@@ -278,14 +278,14 @@ async def download_file(
         project = result.first()
 
         if not project:
-            raise HTTPException(status_code=404, detail="Project not found")
+            raise HTTPException(status_code=404, detail="Projekt hittades inte")
 
         flows_query = select(Flow).where(Flow.folder_id == project_id)
         flows_result = await session.exec(flows_query)
         flows = [FlowRead.model_validate(flow, from_attributes=True) for flow in flows_result.all()]
 
         if not flows:
-            raise HTTPException(status_code=404, detail="No flows found in project")
+            raise HTTPException(status_code=404, detail="Inga flöden hittades i projektet")
 
         flows_without_api_keys = [remove_api_keys(flow.model_dump()) for flow in flows]
         zip_stream = io.BytesIO()
@@ -311,7 +311,7 @@ async def download_file(
 
     except Exception as e:
         if "No result found" in str(e):
-            raise HTTPException(status_code=404, detail="Project not found") from e
+            raise HTTPException(status_code=404, detail="Projekt hittades inte") from e
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
@@ -327,7 +327,7 @@ async def upload_file(
     data = orjson.loads(contents)
 
     if not data:
-        raise HTTPException(status_code=400, detail="No flows found in the file")
+        raise HTTPException(status_code=400, detail="Inga flöden hittades i filen")
 
     project_name = await generate_unique_folder_name(data["folder_name"], current_user.id, session)
 
@@ -348,7 +348,7 @@ async def upload_file(
     if "flows" in data:
         flow_list = FlowListCreate(flows=[FlowCreate(**flow) for flow in data["flows"]])
     else:
-        raise HTTPException(status_code=400, detail="No flows found in the data")
+        raise HTTPException(status_code=400, detail="Inga flöden hittades i datan")
     # Now we set the user_id for all flows
     for flow in flow_list.flows:
         flow_name = await generate_unique_flow_name(flow.name, current_user.id, session)

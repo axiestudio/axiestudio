@@ -242,14 +242,14 @@ async def get_showcase_overview():
         showcase_data.update({
             "api_version": "v1",
             "showcase_version": "2.0.0",
-            "description": "AxieStudio Component Showcase - Enterprise React/TypeScript Components",
+            "description": "AxieStudio Komponentutställning - Företags React/TypeScript Komponenter",
             "features": [
-                "1600+ React/TypeScript Components",
-                "Real-time Component Scanning",
-                "Category-based Organization", 
-                "Component Statistics",
-                "Code Analysis",
-                "Enterprise Architecture"
+                "1600+ React/TypeScript Komponenter",
+                "Realtids Komponentskanning",
+                "Kategoribaserad Organisation",
+                "Komponentstatistik",
+                "Kodanalys",
+                "Företagsarkitektur"
             ]
         })
         
