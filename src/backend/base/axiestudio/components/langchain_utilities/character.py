@@ -7,7 +7,7 @@ from axiestudio.inputs.inputs import DataInput, IntInput, MessageTextInput
 from axiestudio.utils.util import unescape_string
 
 
- class CharacterTextSplitterComponent(LCTextSplitterComponent):
+class CharacterTextSplitterComponent(LCTextSplitterComponent):
     display_name = "Tecken textdelare"
     description = "Dela upp text efter antal tecken."
     documentation = "https://docs.axiestudio.org/components/text-splitters#charactertextsplitter"
