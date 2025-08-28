@@ -855,6 +855,11 @@ Visit us at: https://axiestudio.se
             logger.info(f"EMAIL DEBUG - From Email: {self.settings.FROM_EMAIL}")
             logger.info(f"EMAIL DEBUG - Email Enabled: {getattr(self.settings, 'EMAIL_ENABLED', True)}")
 
+            # Check if email is disabled
+            if not getattr(self.settings, 'EMAIL_ENABLED', True):
+                logger.warning("Email sending is disabled (EMAIL_ENABLED=False)")
+                return False
+
             # Validate email settings
             if not self.settings.SMTP_USER or not self.settings.SMTP_PASSWORD:
                 logger.error("SMTP credentials not configured. Please set AXIESTUDIO_EMAIL_SMTP_USER and AXIESTUDIO_EMAIL_SMTP_PASSWORD")
@@ -863,6 +868,15 @@ Visit us at: https://axiestudio.se
             if not self.settings.FROM_EMAIL or "@" not in self.settings.FROM_EMAIL:
                 logger.error("Invalid FROM_EMAIL configuration")
                 return False
+
+            # Validate Resend configuration specifically
+            if self.settings.SMTP_HOST == "smtp.resend.com":
+                if self.settings.SMTP_USER != "resend":
+                    logger.error(f"For Resend SMTP, SMTP_USER must be 'resend', got: {self.settings.SMTP_USER}")
+                    return False
+                if not self.settings.SMTP_PASSWORD.startswith("re_"):
+                    logger.error("For Resend SMTP, SMTP_PASSWORD must be a Resend API key (starts with 're_')")
+                    return False
 
             # Create message
             msg = MIMEMultipart('alternative')
@@ -885,10 +899,13 @@ Visit us at: https://axiestudio.se
             logger.info(f"SMTP CONFIG - To: {to_email}")
             logger.info(f"EMAIL DEBUG - Connecting to SMTP server...")
             with smtplib.SMTP(self.settings.SMTP_HOST, self.settings.SMTP_PORT) as server:
+                logger.info(f"EMAIL DEBUG - Connection established successfully")
                 logger.info(f"EMAIL DEBUG - Starting TLS...")
                 server.starttls()
+                logger.info(f"EMAIL DEBUG - TLS started successfully")
                 logger.info(f"EMAIL DEBUG - Logging in with user: {self.settings.SMTP_USER}")
                 server.login(self.settings.SMTP_USER, self.settings.SMTP_PASSWORD)
+                logger.info(f"EMAIL DEBUG - Authentication successful")
                 logger.info(f"EMAIL DEBUG - Sending message...")
                 server.send_message(msg)
                 logger.info(f"EMAIL DEBUG - Message sent to SMTP server successfully")
@@ -898,6 +915,8 @@ Visit us at: https://axiestudio.se
 
         except smtplib.SMTPAuthenticationError as e:
             logger.error(f"SMTP authentication failed: {e}")
+            logger.error(f"SMTP AUTH DEBUG - Host: {self.settings.SMTP_HOST}, User: {self.settings.SMTP_USER}")
+            logger.error(f"SMTP AUTH DEBUG - Password length: {len(self.settings.SMTP_PASSWORD) if self.settings.SMTP_PASSWORD else 0}")
             return False
 
         except smtplib.SMTPRecipientsRefused as e:
@@ -908,8 +927,18 @@ Visit us at: https://axiestudio.se
             logger.error(f"SMTP error occurred: {e}")
             return False
 
+        except ConnectionError as e:
+            logger.error(f"Connection error to SMTP server: {e}")
+            return False
+
+        except TimeoutError as e:
+            logger.error(f"Timeout connecting to SMTP server: {e}")
+            return False
+
         except Exception as e:
             logger.exception(f"Unexpected error sending email to {to_email}: {e}")
+            logger.error(f"ERROR DEBUG - SMTP Config: {self.settings.SMTP_HOST}:{self.settings.SMTP_PORT}")
+            logger.error(f"ERROR DEBUG - From: {self.settings.FROM_EMAIL}, To: {to_email}")
             return False
 
 
