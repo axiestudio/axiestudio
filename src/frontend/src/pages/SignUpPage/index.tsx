@@ -237,7 +237,7 @@ export default function SignUp(): JSX.Element {
                   Verifying...
                 </>
               ) : (
-                'Verify & Activate Account'
+                'Verify Account'
               )}
             </Button>
 

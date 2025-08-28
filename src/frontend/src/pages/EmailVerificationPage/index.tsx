@@ -35,23 +35,6 @@ export default function EmailVerificationPage(): JSX.Element {
 
   const token = searchParams.get("token");
 
-  // 🚨 SECURITY: Account activation disabled to prevent subscription bypass
-  useEffect(() => {
-    navigate('/login');
-  }, [navigate]);
-
-  // Return minimal UI while redirecting
-  return (
-    <div className="flex h-screen w-full items-center justify-center bg-muted">
-      <div className="text-center">
-        <p className="text-muted-foreground">Redirecting to login...</p>
-      </div>
-    </div>
-  );
-
-  // ORIGINAL CODE DISABLED FOR SECURITY - DO NOT REMOVE COMMENTS
-  /*
-
   // Countdown timer for resend button
   useEffect(() => {
     if (countdown > 0) {
@@ -105,11 +88,11 @@ export default function EmailVerificationPage(): JSX.Element {
 
   const resendVerificationEmail = async () => {
     const email = prompt("Please enter your email address to resend verification:");
-    
+
     if (!email) return;
 
     setIsResending(true);
-    
+
     try {
       await api.post(`/api/v1/email/resend-verification`, { email });
       setMessage("Verification email sent! Please check your inbox.");
@@ -124,6 +107,26 @@ export default function EmailVerificationPage(): JSX.Element {
   const goToLogin = () => {
     navigate("/login");
   };
+
+  // Countdown timer for resend button
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  useEffect(() => {
+    if (token) {
+      // Legacy token-based verification
+      setCurrentStep({ step: 'token-verify' });
+      verifyEmail(token);
+    } else {
+      // New 6-digit code verification flow
+      setCurrentStep({ step: 'email' });
+      setStatus("loading"); // Reset status for code flow
+    }
+  }, [token]);
 
   // 🎯 NEW: 6-digit code verification functions
   const handleSendCode = async (e: React.FormEvent) => {
@@ -219,7 +222,8 @@ export default function EmailVerificationPage(): JSX.Element {
           onError={(e) => {
             // Fallback to text logo if image fails to load
             e.currentTarget.style.display = 'none';
-            e.currentTarget.nextElementSibling.style.display = 'flex';
+            const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+            if (nextElement) nextElement.style.display = 'flex';
           }}
         />
         <div className="mx-auto mb-4 w-12 h-12 bg-primary text-primary-foreground rounded-full items-center justify-center font-bold text-sm hidden">
@@ -296,7 +300,8 @@ export default function EmailVerificationPage(): JSX.Element {
           onError={(e) => {
             // Fallback to text logo if image fails to load
             e.currentTarget.style.display = 'none';
-            e.currentTarget.nextElementSibling.style.display = 'flex';
+            const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+            if (nextElement) nextElement.style.display = 'flex';
           }}
         />
         <div className="mx-auto mb-4 w-12 h-12 bg-primary text-primary-foreground rounded-full items-center justify-center font-bold text-sm hidden">
@@ -349,7 +354,7 @@ export default function EmailVerificationPage(): JSX.Element {
                 Verifying...
               </>
             ) : (
-              'Verify & Activate Account'
+              'Verify Account'
             )}
           </Button>
 
@@ -391,7 +396,8 @@ export default function EmailVerificationPage(): JSX.Element {
           onError={(e) => {
             // Fallback to text logo if image fails to load
             e.currentTarget.style.display = 'none';
-            e.currentTarget.nextElementSibling.style.display = 'flex';
+            const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+            if (nextElement) nextElement.style.display = 'flex';
           }}
         />
         <div className="mx-auto mb-4 w-12 h-12 bg-primary text-primary-foreground rounded-full items-center justify-center font-bold text-sm hidden">
@@ -424,7 +430,8 @@ export default function EmailVerificationPage(): JSX.Element {
             onError={(e) => {
               // Fallback to text logo if image fails to load
               e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling.style.display = 'flex';
+              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+              if (nextElement) nextElement.style.display = 'flex';
             }}
           />
           <div className="mx-auto w-16 h-16 bg-primary text-primary-foreground rounded-full items-center justify-center mb-4 font-bold text-xl hidden">
@@ -522,12 +529,10 @@ export default function EmailVerificationPage(): JSX.Element {
         )}
 
         {/* Help text */}
-        {/*
         <div className="text-center mt-6 text-sm text-gray-500">
           <p>Need help? Contact our support team</p>
         </div>
       </div>
     </div>
   );
-  */
 }
