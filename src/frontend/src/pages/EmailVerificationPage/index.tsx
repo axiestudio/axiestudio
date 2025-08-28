@@ -20,6 +20,21 @@ export default function EmailVerificationPage(): JSX.Element {
   const navigate = useCustomNavigate();
   const { login } = useContext(AuthContext);
 
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [message, setMessage] = useState("");
+  const [isResending, setIsResending] = useState(false);
+
+  // 🎯 NEW: 6-digit code verification state
+  const [currentStep, setCurrentStep] = useState<VerificationStep>({ step: 'email' });
+  const [email, setEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [countdown, setCountdown] = useState(0);
+
+  const token = searchParams.get("token");
+
   // 🚨 SECURITY: Account activation disabled to prevent subscription bypass
   useEffect(() => {
     navigate('/login');
@@ -36,20 +51,6 @@ export default function EmailVerificationPage(): JSX.Element {
 
   // ORIGINAL CODE DISABLED FOR SECURITY - DO NOT REMOVE COMMENTS
   /*
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [message, setMessage] = useState("");
-  const [isResending, setIsResending] = useState(false);
-
-  // 🎯 NEW: 6-digit code verification state
-  const [currentStep, setCurrentStep] = useState<VerificationStep>({ step: 'email' });
-  const [email, setEmail] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [countdown, setCountdown] = useState(0);
-
-  const token = searchParams.get("token");
 
   // Countdown timer for resend button
   useEffect(() => {
@@ -521,6 +522,7 @@ export default function EmailVerificationPage(): JSX.Element {
         )}
 
         {/* Help text */}
+        {/*
         <div className="text-center mt-6 text-sm text-gray-500">
           <p>Need help? Contact our support team</p>
         </div>
