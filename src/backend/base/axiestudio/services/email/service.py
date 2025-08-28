@@ -955,11 +955,23 @@ Visit us at: https://axiestudio.se
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(None, lambda: resend.Emails.send(params))
 
-            if response and hasattr(response, 'id'):
-                logger.info(f"✅ Resend SDK success - Email ID: {response.id}")
-                return True
+            # Handle both dict and object responses from Resend SDK
+            if response:
+                # Extract email ID from response (dict or object)
+                email_id = None
+                if isinstance(response, dict) and 'id' in response:
+                    email_id = response['id']
+                elif hasattr(response, 'id'):
+                    email_id = response.id
+
+                if email_id:
+                    logger.info(f"✅ Resend SDK success - Email ID: {email_id}")
+                    return True
+                else:
+                    logger.error(f"❌ Resend SDK failed - No ID in response: {response}")
+                    return False
             else:
-                logger.error(f"❌ Resend SDK failed - Invalid response: {response}")
+                logger.error(f"❌ Resend SDK failed - Empty response")
                 return False
 
         except Exception as e:
