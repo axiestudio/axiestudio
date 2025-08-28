@@ -1,0 +1,111 @@
+name: Clear GitHub Actions Cache
+run-name: Clear Cache by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      cache_pattern:
+        description: 'Cache pattern to delete (leave empty to delete all)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  clear-cache:
+    name: Clear GitHub Actions Cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Clear all caches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🧹 Clearing GitHub Actions cache..."
+          
+          # Get repository info
+          REPO="${{ github.repository }}"
+          echo "Repository: $REPO"
+          
+          # List all caches first
+          echo "📋 Current caches:"
+          gh cache list --repo $REPO || echo "No caches found or error listing caches"
+          
+          # Clear caches based on pattern or all
+          if [ -n "${{ inputs.cache_pattern }}" ]; then
+            echo "🎯 Clearing caches matching pattern: ${{ inputs.cache_pattern }}"
+            gh cache delete --all --repo $REPO --pattern "${{ inputs.cache_pattern }}" || echo "No matching caches found"
+          else
+            echo "🗑️ Clearing ALL caches..."
+            # Get all cache keys and delete them
+            cache_keys=$(gh cache list --repo $REPO --json key --jq '.[].key' 2>/dev/null || echo "")
+            
+            if [ -z "$cache_keys" ]; then
+              echo "No caches to delete"
+            else
+              echo "Found caches to delete:"
+              echo "$cache_keys"
+              
+              # Delete each cache
+              echo "$cache_keys" | while read -r key; do
+                if [ -n "$key" ]; then
+                  echo "Deleting cache: $key"
+                  gh cache delete "$key" --repo $REPO || echo "Failed to delete cache: $key"
+                fi
+              done
+            fi
+          fi
+          
+          echo "✅ Cache clearing completed!"
+          
+          # List remaining caches
+          echo "📋 Remaining caches:"
+          gh cache list --repo $REPO || echo "No caches remaining"
+
+  clear-docker-cache:
+    name: Clear Docker Build Cache
+    runs-on: ubuntu-latest
+    needs: clear-cache
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
+          driver: docker-container
+          install: true
+
+      - name: Clear Docker build cache
+        run: |
+          echo "🐳 Clearing Docker build cache..."
+          docker buildx prune --all --force || echo "No Docker cache to clear"
+          echo "✅ Docker cache cleared!"
+
+  trigger-fresh-build:
+    name: Trigger Fresh Build
+    runs-on: ubuntu-latest
+    needs: [clear-cache, clear-docker-cache]
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trigger Docker build workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🚀 Triggering fresh Docker build..."
+          
+          # Get current version from pyproject.toml
+          version=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "Current version: $version"
+          
+          # Trigger the docker build workflow
+          gh workflow run docker-build.yml \
+            --repo ${{ github.repository }} \
+            --ref ${{ github.ref_name }} \
+            --field release_type=main \
+            --field main_version="$version" || echo "Failed to trigger build workflow"
+          
+          echo "✅ Fresh build triggered!"
+          echo "🔗 Check the Actions tab to monitor the build progress"

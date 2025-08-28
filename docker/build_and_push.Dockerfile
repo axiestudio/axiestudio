@@ -54,11 +54,23 @@ COPY ./src /app/src
 
 COPY src/frontend /tmp/src/frontend
 WORKDIR /tmp/src/frontend
+
+# Add cache busting argument
+ARG CACHE_BUST=1
+
+# Clear npm cache and install dependencies with verbose logging
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci \
-    && NODE_OPTIONS="--max-old-space-size=8192" npm run build \
+    echo "🧹 Clearing npm cache..." \
+    && npm cache clean --force \
+    && echo "📦 Installing dependencies..." \
+    && npm ci --verbose \
+    && echo "🏗️ Building frontend..." \
+    && NODE_OPTIONS="--max-old-space-size=8192" npm run build --verbose \
+    && echo "📁 Copying build files..." \
     && cp -r build /app/src/backend/base/axiestudio/frontend \
-    && rm -rf /tmp/src/frontend
+    && echo "🗑️ Cleaning up..." \
+    && rm -rf /tmp/src/frontend \
+    && echo "✅ Frontend build completed successfully!"
 
 WORKDIR /app
 
