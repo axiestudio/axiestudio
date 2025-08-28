@@ -42,7 +42,7 @@ class AssemblyAIGetSubtitles(Component):
     ]
 
     outputs = [
-        Output(display_name="Subtitles", name="subtitles", method="get_subtitles"),
+        Output(display_name="Undertexter", name="subtitles", method="get_subtitles"),
     ]
 
     def get_subtitles(self) -> Data:

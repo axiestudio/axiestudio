@@ -47,7 +47,7 @@ class S3BucketUploaderComponent(Component):
         to work with File and Director components as inputs
     """
 
-    display_name = "S3 Bucket Uploader"
+    display_name = "S3 Bucket-uppladdare"
     description = "Uploads files to S3 bucket."
     icon = "Amazon"
     name = "s3bucketuploader"
@@ -55,27 +55,27 @@ class S3BucketUploaderComponent(Component):
     inputs = [
         SecretStrInput(
             name="aws_access_key_id",
-            display_name="AWS Access Key ID",
+            display_name="AWS åtkomstnyckel-ID",
             required=True,
             password=True,
             info="AWS Access key ID.",
         ),
         SecretStrInput(
             name="aws_secret_access_key",
-            display_name="AWS Secret Key",
+            display_name="AWS hemlig nyckel",
             required=True,
             password=True,
             info="AWS Secret Key.",
         ),
         StrInput(
             name="bucket_name",
-            display_name="Bucket Name",
+            display_name="Bucket-namn",
             info="Enter the name of the bucket.",
             advanced=False,
         ),
         DropdownInput(
             name="strategy",
-            display_name="Strategy for file upload",
+            display_name="Strategi för filuppladdning",
             options=["Store Data", "Store Original File"],
             value="By Data",
             info=(
@@ -86,7 +86,7 @@ class S3BucketUploaderComponent(Component):
         ),
         HandleInput(
             name="data_inputs",
-            display_name="Data Inputs",
+            display_name="Datainmatningar",
             info="The data to split.",
             input_types=["Data"],
             is_list=True,
@@ -94,13 +94,13 @@ class S3BucketUploaderComponent(Component):
         ),
         StrInput(
             name="s3_prefix",
-            display_name="S3 Prefix",
+            display_name="S3-prefix",
             info="Prefix for all files.",
             advanced=True,
         ),
         BoolInput(
             name="strip_path",
-            display_name="Strip Path",
+            display_name="Ta bort sökväg",
             info="Removes path from file path.",
             required=True,
             advanced=True,
@@ -108,7 +108,7 @@ class S3BucketUploaderComponent(Component):
     ]
 
     outputs = [
-        Output(display_name="Writes to AWS Bucket", name="data", method="process_files"),
+        Output(display_name="Skriver till AWS Bucket", name="data", method="process_files"),
     ]
 
     def process_files(self) -> None:

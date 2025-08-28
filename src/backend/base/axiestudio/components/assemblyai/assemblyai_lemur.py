@@ -15,21 +15,21 @@ class AssemblyAILeMUR(Component):
     inputs = [
         SecretStrInput(
             name="api_key",
-            display_name="Assembly API Key",
+            display_name="Assembly API-nyckel",
             info="Your AssemblyAI API key. You can get one from https://www.assemblyai.com/",
             advanced=False,
             required=True,
         ),
         DataInput(
             name="transcription_result",
-            display_name="Transcription Result",
+            display_name="Transkriptionsresultat",
             info="The transcription result from AssemblyAI",
             required=True,
         ),
-        MultilineInput(name="prompt", display_name="Input Prompt", info="The text to prompt the model", required=True),
+        MultilineInput(name="prompt", display_name="Inmatningsprompt", info="Texten att prompta modellen med", required=True),
         DropdownInput(
             name="final_model",
-            display_name="Final Model",
+            display_name="Slutlig modell",
             options=["claude3_5_sonnet", "claude3_opus", "claude3_haiku", "claude3_sonnet"],
             value="claude3_5_sonnet",
             info="The model that is used for the final prompt after compression is performed",
@@ -37,7 +37,7 @@ class AssemblyAILeMUR(Component):
         ),
         FloatInput(
             name="temperature",
-            display_name="Temperature",
+            display_name="Temperatur",
             advanced=True,
             value=0.0,
             info="The temperature to use for the model",
@@ -51,7 +51,7 @@ class AssemblyAILeMUR(Component):
         ),
         DropdownInput(
             name="endpoint",
-            display_name="Endpoint",
+            display_name="Slutpunkt",
             options=["task", "summary", "question-answer"],
             value="task",
             info=(
@@ -62,13 +62,13 @@ class AssemblyAILeMUR(Component):
         ),
         MultilineInput(
             name="questions",
-            display_name="Questions",
+            display_name="Frågor",
             info="Comma-separated list of your questions. Only used if Endpoint is 'question-answer'",
             advanced=True,
         ),
         MultilineInput(
             name="transcript_ids",
-            display_name="Transcript IDs",
+            display_name="Transkript-ID:n",
             info=(
                 "Comma-separated list of transcript IDs. LeMUR can perform actions over multiple transcripts."
                 " If provided, the Transcription Result is ignored."
@@ -78,7 +78,7 @@ class AssemblyAILeMUR(Component):
     ]
 
     outputs = [
-        Output(display_name="LeMUR Response", name="lemur_response", method="run_lemur"),
+        Output(display_name="LeMUR-svar", name="lemur_response", method="run_lemur"),
     ]
 
     def run_lemur(self) -> Data:

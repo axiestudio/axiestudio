@@ -41,14 +41,14 @@ class AssemblyAIListTranscripts(Component):
         ),
         BoolInput(
             name="throttled_only",
-            display_name="Throttled Only",
-            info="Only get throttled transcripts, overrides the status filter",
+            display_name="Endast begränsade",
+            info="Hämta endast begränsade transkriptioner, åsidosätter statusfiltret",
             advanced=True,
         ),
     ]
 
     outputs = [
-        Output(display_name="Transcript List", name="transcript_list", method="list_transcripts"),
+        Output(display_name="Transkriptlista", name="transcript_list", method="list_transcripts"),
     ]
 
     def list_transcripts(self) -> list[Data]:

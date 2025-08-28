@@ -52,45 +52,45 @@ class OpenAIModelComponent(LCModelComponent):
         ),
         StrInput(
             name="openai_api_base",
-            display_name="OpenAI API Base",
+            display_name="OpenAI API-bas",
             advanced=True,
-            info="The base URL of the OpenAI API. "
-            "Defaults to https://api.openai.com/v1. "
-            "You can change this to use other APIs like JinaChat, LocalAI and Prem.",
+            info="Bas-URL:en för OpenAI API. "
+            "Standard är https://api.openai.com/v1. "
+            "Du kan ändra detta för att använda andra API:er som JinaChat, LocalAI och Prem.",
         ),
         SecretStrInput(
             name="api_key",
-            display_name="OpenAI API Key",
-            info="The OpenAI API Key to use for the OpenAI model.",
+            display_name="OpenAI API-nyckel",
+            info="OpenAI API-nyckeln att använda för OpenAI-modellen.",
             advanced=False,
             value="OPENAI_API_KEY",
             required=True,
         ),
         SliderInput(
             name="temperature",
-            display_name="Temperature",
+            display_name="Temperatur",
             value=0.1,
             range_spec=RangeSpec(min=0, max=1, step=0.01),
             show=True,
         ),
         IntInput(
             name="seed",
-            display_name="Seed",
-            info="The seed controls the reproducibility of the job.",
+            display_name="Frö",
+            info="Fröet kontrollerar reproducerbarheten av jobbet.",
             advanced=True,
             value=1,
         ),
         IntInput(
             name="max_retries",
-            display_name="Max Retries",
-            info="The maximum number of retries to make when generating.",
+            display_name="Max återförsök",
+            info="Maximalt antal återförsök att göra vid generering.",
             advanced=True,
             value=5,
         ),
         IntInput(
             name="timeout",
             display_name="Timeout",
-            info="The timeout for requests to OpenAI completion API.",
+            info="Timeout för förfrågningar till OpenAI completion API.",
             advanced=True,
             value=700,
         ),

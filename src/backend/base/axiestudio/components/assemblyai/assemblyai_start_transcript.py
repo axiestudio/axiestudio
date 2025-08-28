@@ -96,41 +96,41 @@ class AssemblyAITranscriptionJobCreator(Component):
             display_name="Språk",
             info=(
                 """
-            The language of the audio file. Can be set manually if automatic language detection is disabled.
-            See https://www.assemblyai.com/docs/getting-started/supported-languages """
-                "for a list of supported language codes."
+            Språket för ljudfilen. Kan ställas in manuellt om automatisk språkdetektering är inaktiverad.
+            Se https://www.assemblyai.com/docs/getting-started/supported-languages """
+                "för en lista över språkkoder som stöds."
             ),
             advanced=True,
         ),
         BoolInput(
             name="speaker_labels",
-            display_name="Enable Speaker Labels",
-            info="Enable speaker diarization",
+            display_name="Aktivera talaretiketter",
+            info="Aktivera talaridentifiering",
         ),
         MessageTextInput(
             name="speakers_expected",
-            display_name="Expected Number of Speakers",
-            info="Set the expected number of speakers (optional, enter a number)",
+            display_name="Förväntat antal talare",
+            info="Ange förväntat antal talare (valfritt, ange ett nummer)",
             advanced=True,
         ),
         BoolInput(
             name="punctuate",
-            display_name="Punctuate",
-            info="Enable automatic punctuation",
+            display_name="Interpunktion",
+            info="Aktivera automatisk interpunktion",
             advanced=True,
             value=True,
         ),
         BoolInput(
             name="format_text",
-            display_name="Format Text",
-            info="Enable text formatting",
+            display_name="Formatera text",
+            info="Aktivera textformatering",
             advanced=True,
             value=True,
         ),
     ]
 
     outputs = [
-        Output(display_name="Transcript ID", name="transcript_id", method="create_transcription_job"),
+        Output(display_name="Transkript-ID", name="transcript_id", method="create_transcription_job"),
     ]
 
     def create_transcription_job(self) -> Data:
