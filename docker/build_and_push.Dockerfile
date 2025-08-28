@@ -54,32 +54,11 @@ COPY ./src /app/src
 
 COPY src/frontend /tmp/src/frontend
 WORKDIR /tmp/src/frontend
-
-# Add cache busting argument
-ARG CACHE_BUST=1
-
-# Create a minimal .env file for the build process
-RUN echo "# Minimal env for Docker build" > ../../.env
-
-# Install dependencies and build frontend with better error handling
 RUN --mount=type=cache,target=/root/.npm \
-    set -e && \
-    echo "🧹 Clearing npm cache..." && \
-    npm cache clean --force && \
-    echo "📦 Installing dependencies..." && \
-    npm ci && \
-    echo "🔍 Checking environment..." && \
-    pwd && \
-    ls -la ../../ && \
-    echo "🏗️ Building frontend..." && \
-    NODE_OPTIONS="--max-old-space-size=8192" npm run build 2>&1 | tee build.log && \
-    echo "📁 Checking build output..." && \
-    ls -la build/ && \
-    echo "📁 Copying build files..." && \
-    cp -r build /app/src/backend/base/axiestudio/frontend && \
-    echo "🗑️ Cleaning up..." && \
-    rm -rf /tmp/src/frontend && \
-    echo "✅ Frontend build completed successfully!"
+    npm ci \
+    && NODE_OPTIONS="--max-old-space-size=8192" npm run build \
+    && cp -r build /app/src/backend/base/axiestudio/frontend \
+    && rm -rf /tmp/src/frontend
 
 WORKDIR /app
 
