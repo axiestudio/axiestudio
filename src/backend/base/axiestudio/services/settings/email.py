@@ -31,8 +31,8 @@ class EmailSettings:
         self.SMTP_PASSWORD: Optional[str] = os.getenv("AXIESTUDIO_EMAIL_SMTP_PASSWORD")
         
         # Email Configuration
-        self.FROM_EMAIL: Optional[str] = os.getenv("AXIESTUDIO_EMAIL_FROM", self.SMTP_USER)
-        self.FROM_NAME: str = os.getenv("AXIESTUDIO_EMAIL_FROM_NAME", "AxieStudio")
+        self.FROM_EMAIL: Optional[str] = os.getenv("AXIESTUDIO_EMAIL_FROM_EMAIL")
+        self.FROM_NAME: str = os.getenv("AXIESTUDIO_EMAIL_FROM_NAME", "Axie Studio")
         
         # Email Templates Configuration
         self.COMPANY_NAME: str = os.getenv("AXIESTUDIO_COMPANY_NAME", "AxieStudio")
@@ -60,17 +60,24 @@ class EmailSettings:
     
     def _setup_fallback_config(self) -> None:
         """Setup fallback configuration for development environments"""
-        
+
         # If no SMTP configuration is provided, use development defaults
         if not self.SMTP_USER and not self.SMTP_PASSWORD:
             # Development mode - log emails instead of sending
             self.EMAIL_ENABLED = False
             self.DEBUG_EMAIL = True
-            
+
             # Set safe defaults
             self.FROM_EMAIL = "noreply@axiestudio.se"
             self.SMTP_HOST = "localhost"
             self.SMTP_PORT = 1025  # Common development SMTP port
+
+        # Ensure FROM_EMAIL is set if SMTP is configured but FROM_EMAIL is missing
+        elif self.SMTP_USER and self.SMTP_PASSWORD and not self.FROM_EMAIL:
+            # This should not happen in production - log a warning
+            import logging
+            logging.warning("SMTP configured but AXIESTUDIO_EMAIL_FROM_EMAIL not set. Email sending may fail.")
+            self.FROM_EMAIL = "noreply@axiestudio.se"  # Emergency fallback
     
     def is_configured(self) -> bool:
         """Check if email service is properly configured"""
@@ -126,7 +133,8 @@ EMAIL_ENV_VARS = {
     "AXIESTUDIO_EMAIL_SMTP_PORT": "SMTP server port (default: 587)",
     "AXIESTUDIO_EMAIL_SMTP_USER": "SMTP username/email address",
     "AXIESTUDIO_EMAIL_SMTP_PASSWORD": "SMTP password or app password",
-    "AXIESTUDIO_EMAIL_FROM": "From email address (default: same as SMTP_USER)",
+    "AXIESTUDIO_EMAIL_FROM_EMAIL": "From email address (preferred, default: same as SMTP_USER)",
+    "AXIESTUDIO_EMAIL_FROM": "From email address (legacy, use AXIESTUDIO_EMAIL_FROM_EMAIL instead)",
     "AXIESTUDIO_EMAIL_FROM_NAME": "From name (default: AxieStudio)",
     "AXIESTUDIO_COMPANY_NAME": "Company name for emails (default: AxieStudio)",
     "AXIESTUDIO_COMPANY_URL": "Company URL (default: https://axiestudio.se)",
