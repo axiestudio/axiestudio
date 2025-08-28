@@ -466,12 +466,14 @@ export default function SignUp(): JSX.Element {
               </Button>
             </CustomLink>
 
-            {/* 🎯 TERTIARY METHOD: Account not activated backup */}
-            <div className="text-center">
-              <CustomLink to="/verify-email" className="text-sm text-muted-foreground hover:text-primary">
-                Account not activated? <span className="underline">Click here</span>
-              </CustomLink>
-            </div>
+            {/* HIDDEN: Account activation link removed for security */}
+            {false && (
+              <div className="text-center">
+                <CustomLink to="/verify-email" className="text-sm text-muted-foreground hover:text-primary">
+                  Account not activated? <span className="underline">Click here</span>
+                </CustomLink>
+              </div>
+            )}
           </div>
         </div>
       </div>

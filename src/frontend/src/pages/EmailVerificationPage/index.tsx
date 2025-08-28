@@ -19,6 +19,23 @@ export default function EmailVerificationPage(): JSX.Element {
   const [searchParams] = useSearchParams();
   const navigate = useCustomNavigate();
   const { login } = useContext(AuthContext);
+
+  // 🚨 SECURITY: Account activation disabled to prevent subscription bypass
+  useEffect(() => {
+    navigate('/login');
+  }, [navigate]);
+
+  // Return minimal UI while redirecting
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-muted">
+      <div className="text-center">
+        <p className="text-muted-foreground">Redirecting to login...</p>
+      </div>
+    </div>
+  );
+
+  // ORIGINAL CODE DISABLED FOR SECURITY - DO NOT REMOVE COMMENTS
+  /*
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
   const [isResending, setIsResending] = useState(false);
@@ -510,4 +527,5 @@ export default function EmailVerificationPage(): JSX.Element {
       </div>
     </div>
   );
+  */
 }
