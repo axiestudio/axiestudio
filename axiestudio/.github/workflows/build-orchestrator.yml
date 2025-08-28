@@ -1,0 +1,91 @@
+name: 🎯 Build Orchestrator
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Select build type'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+        - full
+        - frontend
+        - backend
+        - all
+      deploy_to_railway:
+        description: 'Deploy to Railway after build'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  orchestrate-builds:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📋 Build Plan
+      run: |
+        echo "## 🎯 Build Orchestrator Plan" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Type:** ${{ github.event.inputs.build_type }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Deploy to Railway:** ${{ github.event.inputs.deploy_to_railway }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Triggered by:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+
+  build-full-system:
+    if: github.event.inputs.build_type == 'full' || github.event.inputs.build_type == 'all'
+    uses: ./.github/workflows/build-full-system.yml
+    secrets: inherit
+    with:
+      deploy_to_railway: ${{ github.event.inputs.deploy_to_railway == 'true' }}
+
+  build-frontend:
+    if: github.event.inputs.build_type == 'frontend' || github.event.inputs.build_type == 'all'
+    uses: ./.github/workflows/build-frontend.yml
+    secrets: inherit
+
+  build-backend:
+    if: github.event.inputs.build_type == 'backend' || github.event.inputs.build_type == 'all'
+    uses: ./.github/workflows/build-backend.yml
+    secrets: inherit
+
+  summary:
+    needs: [orchestrate-builds, build-full-system, build-frontend, build-backend]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📊 Final Summary
+      run: |
+        echo "## 🎉 Build Orchestrator Results" >> $GITHUB_STEP_SUMMARY
+        echo "### Build Status:" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ needs.build-full-system.result }}" == "success" ]]; then
+          echo "- 🏠 **Full System:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ needs.build-full-system.result }}" == "skipped" ]]; then
+          echo "- 🏠 **Full System:** ⏭️ Skipped" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- 🏠 **Full System:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [[ "${{ needs.build-frontend.result }}" == "success" ]]; then
+          echo "- 🌐 **Frontend:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ needs.build-frontend.result }}" == "skipped" ]]; then
+          echo "- 🌐 **Frontend:** ⏭️ Skipped" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- 🌐 **Frontend:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [[ "${{ needs.build-backend.result }}" == "success" ]]; then
+          echo "- ⚙️ **Backend:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ needs.build-backend.result }}" == "skipped" ]]; then
+          echo "- ⚙️ **Backend:** ⏭️ Skipped" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ⚙️ **Backend:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🚀 Deployment:" >> $GITHUB_STEP_SUMMARY
+        if [[ "${{ github.event.inputs.deploy_to_railway }}" == "true" ]]; then
+          echo "- Railway deployment triggered for mainbackup branch" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- No deployment requested" >> $GITHUB_STEP_SUMMARY
+        fi
