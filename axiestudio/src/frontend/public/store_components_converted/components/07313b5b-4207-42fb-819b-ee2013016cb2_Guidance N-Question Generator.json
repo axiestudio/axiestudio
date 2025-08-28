@@ -1,0 +1,505 @@
+{
+  "id": "07313b5b-4207-42fb-819b-ee2013016cb2",
+  "name": "Guidance N-Question Generator",
+  "description": "This component process information about a topic and returns N-Questions about it. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "joaoguilhermeS",
+    "first_name": "João",
+    "last_name": "Oliveira",
+    "id": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "full_name": "João Oliveira"
+  },
+  "store_url": "https://www.langflow.store/store/component/07313b5b-4207-42fb-819b-ee2013016cb2",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-03-18T01:23:01.887Z",
+    "updated": "2024-03-18T01:23:02.086Z",
+    "downloaded": "2025-08-19T17:50:05.771Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "0.7.0a0",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "MaxTokens": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "MaxTokens",
+                "display_name": "MaxTokens",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "value": "300"
+              },
+              "OpenAIKey": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "OpenAIKey",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "UseGPU": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Yes",
+                  "No"
+                ],
+                "name": "UseGPU",
+                "display_name": "UseGPU",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport urllib.request\n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"Guidance N-Question Generator\"\n    description = \"This component process information about a topic and returns N-Questions about it.\"\n    \n    def build_config(self):\n        return {\n            'numberOfQuestions': {\n                'default': 3\n            },\n            \"model\": {\n                \"display_name\": \"model\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"mistral-7b-instruct-v0.2.Q8_0.gguf\",\n                    \"gpt-3.5-turbo\",\n                    \"gpt-4\"\n                ],\n            },\n            \"MaxTokens\": {\n                \"display_name\": \"MaxTokens\",\n                \"advanced\": False,\n                \"required\": True,\n                \"default\": 512,\n            },\n            \"OpenAIKey\":{\n                \"password\": True,\n                \"required\": False\n            },\n            \"UseGPU\": {\n                \"display_name\": \"UseGPU\",\n                \"advanced\": False,\n                \"required\": False,\n                \"default\": False,\n                \"options\": [\n                    \"Yes\",\n                    \"No\"\n                ],\n            },\n            \"temperature\": {\n                \"display_name\": \"temperature\",\n                \"advanced\": True,\n                \"required\": False,\n                \"default\": 1,\n            }\n        }\n    \n    \n    def build(self, numberOfQuestions: int, model: str, MaxTokens: int, UseGPU: bool, query: str, temperature: float = 1.0,  OpenAIKey: str = \"\") -> str:\n        \n        def install(package, cmake_args=None):\n            try:\n                # Check if the package is already installed\n                subprocess.check_call([sys.executable, \"-m\", \"pip\", \"show\", package])\n                print(f\"{package} is already installed.\")\n            except subprocess.CalledProcessError:\n                # If not installed, then install the package\n                print(f\"{package} is not installed. Installing now...\")\n                env = os.environ.copy()\n                if cmake_args is not None:\n                    env[\"CMAKE_ARGS\"] = cmake_args\n                subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package], env=env)\n            return 1\n            \n        install(\"llama-cpp-python==0.2.26\", \"DLLAMA_CUBLAS=on\")\n        install(\"guidance\")\n        install(\"pybind11\")\n        \n        import guidance\n        from guidance import models, gen\n        from guidance import select\n        from guidance import system, user, assistant\n        \n        if(model == \"gpt-3.5-turbo\"):\n            gpt35 = models.OpenAI(\"gpt-3.5-turbo\", api_key=OpenAIKey)\n            lm = gpt35\n            with system():\n                lm += \"You are a question generation specialist, you can elaborate the more valuable questions for revision and reflection points about any topic.\"\n            \n            with user():\n                lm += f\"\"\"\\\n                I want you to generare {numberOfQuestions} questions about the topic\n                {query}\"\"\"\n            \n            with assistant():\n                lm += gen(name='experts', max_tokens=300)\n            \n            with user():\n                lm += f\"\"\"\\\n                Great, now please elaborate the questions considering your expertise on this theme.\n                Please start your answer with QUESTIONS, keeping the original language.\"\"\"\n            \n            with assistant():\n                lm += gen(name='questions', max_tokens=500)\n            \n            questions = lm\n            \n            def extract_questions(text):\n                start_index = text.find('QUESTIONS:')\n                questions_section = text[start_index:]\n                lines = questions_section.split('\\n')\n                questions = [line.strip() for line in lines if line.strip() and line[0].isdigit()]\n                return questions\n                \n            list_questions = extract_questions(str(questions))\n            \n            def format_questions(list_questions):\n                formatted_questions = \"\\n\".join([f\"{question}\" for i, question in enumerate(list_questions)])\n                return formatted_questions\n        \n            return str(format_questions(list_questions)).replace(\"<|im_end|>\", \"\")\n        \n        \n        if(model == \"gpt-4\"):\n            gpt35 = models.OpenAI(\"gpt-4\", api_key=OpenAIKey)\n            lm = gpt35\n            with system():\n                lm += \"You are a question generation specialist, you can elaborate the more valuable questions for revision and reflection points about any topic.\"\n            \n            with user():\n                lm += f\"\"\"\\\n                I want you to generare {numberOfQuestions} questions about the topic\n                {query}\"\"\"\n            \n            with assistant():\n                lm += gen(name='experts', max_tokens=300)\n            \n            with user():\n                lm += f\"\"\"\\\n                Great, now please elaborate the questions considering your expertise on this theme.\n                Please start your answer with QUESTIONS, keeping the original language.\"\"\"\n            \n            with assistant():\n                lm += gen(name='questions', max_tokens=500)\n            \n            questions = lm\n            \n            def extract_questions(text):\n                start_index = text.find('QUESTIONS:')\n                questions_section = text[start_index:]\n                lines = questions_section.split('\\n')\n                questions = [line.strip() for line in lines if line.strip() and line[0].isdigit()]\n                return questions\n                \n            list_questions = extract_questions(str(questions))\n            \n            def format_questions(list_questions):\n                formatted_questions = \"\\n\".join([f\"{question}\" for i, question in enumerate(list_questions)])\n                return formatted_questions\n        \n            return str(format_questions(list_questions)).replace(\"<|im_end|>\", \"\")\n\n        if(not UseGPU):\n            if(model == \"mistral-7b-instruct-v0.2.Q8_0.gguf\"):\n                file_name = \"mistral-7b-instruct-v0.2.Q8_0.gguf\"\n                url = \"https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q8_0.gguf?download=true\"\n                # Check if the file exists\n                if not os.path.exists(file_name):\n                    # Download the file (maybe in the future it is better change this to refer thorugh api for example or mapping the local file model path)\n                    urllib.request.urlretrieve(url, file_name)\n                mistral = models.LlamaCpp(model='./mistral-7b-instruct-v0.2.Q8_0.gguf')\n                lm = mistral + f'''\\\n                Generate question about: {query} \n                '''\n                lm += f\"Here are {numberOfQuestions} different questions:\\n\"\n                for i in range(numberOfQuestions):\n                    lm += f'''{i+1}. \"{gen(stop='\"', name=\"queries\", temperature=1.0, list_append=True)}\"\\n'''\n                return str(lm)\n        else:\n            if(model == \"mistral-7b-instruct-v0.2.Q8_0.gguf\"):\n                file_name = \"mistral-7b-instruct-v0.2.Q8_0.gguf\"\n                url = \"https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q8_0.gguf?download=true\"\n                if not os.path.exists(file_name):\n                    urllib.request.urlretrieve(url, file_name)\n                mistral = models.LlamaCpp(model='./mistral-7b-instruct-v0.2.Q8_0.gguf', n_gpu_layers=-1, n_ctx=4096)\n                lm = mistral + f'''\\\n                Generate question about: {query} \n                '''\n                lm += f\"Here are {numberOfQuestions} different questions:\\n\"\n                for i in range(numberOfQuestions):\n                    lm += f'''{i+1}. \"{gen(stop='\"', name=\"queries\", temperature=1.0, list_append=True)}\"\\n'''\n                return str(lm)\n            \n        return \"\"",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "title_case": false
+              },
+              "model": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "mistral-7b-instruct-v0.2.Q8_0.gguf",
+                  "gpt-3.5-turbo",
+                  "gpt-4"
+                ],
+                "name": "model",
+                "display_name": "model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "gpt-4"
+              },
+              "numberOfQuestions": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "numberOfQuestions",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "value": "3"
+              },
+              "query": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "query",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": " jurisprudência é uma expressão jurídica que se refere a um conjunto de decisões que foram tomadas por um Tribunal de Justiça sobre questões semelhante. Essas decisões devem ser coerentes entre si e devem interpretar a lei de maneira equivalente. O termo tem origem em duas palavras latinas: iuris, que significa “direito”, e prudentia, que significa \"sabedoria\"1. A jurisprudência serve como orientação sobre que tipo de decisão deve ser tomada em um caso ou sobre como uma lei deve ser interpretada1. Ela representa o entendimento adotado por um Tribunal sobre uma determinada questão1. Dessa forma, a jurisprudência é uma orientação que deve ser usada em outros casos semelhantes e que serve"
+              },
+              "temperature": {
+                "type": "float",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 1,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "temperature",
+                "display_name": "temperature",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "rangeSpec": {
+                  "min": -1,
+                  "max": 1,
+                  "step": 0.1
+                },
+                "title_case": false
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "This component process information about a topic and returns N-Questions about it.",
+            "base_classes": [
+              "Text",
+              "object",
+              "str"
+            ],
+            "display_name": "Guidance N-Question Generator",
+            "documentation": "",
+            "custom_fields": {
+              "numberOfQuestions": null,
+              "model": null,
+              "MaxTokens": null,
+              "UseGPU": null,
+              "query": null,
+              "temperature": null,
+              "OpenAIKey": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-1Gycw",
+          "description": "This component process information about a topic and returns N-Questions about it.",
+          "display_name": "Guidance N-Question Generator"
+        },
+        "id": "CustomComponent-1Gycw",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "07313b5b-4207-42fb-819b-ee2013016cb2",
+    "name": "Guidance N-Question Generator",
+    "description": "This component process information about a topic and returns N-Questions about it.",
+    "is_component": true,
+    "liked_by_count": "15",
+    "downloads_count": "100",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "0.7.0a0",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "MaxTokens": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "MaxTokens",
+                  "display_name": "MaxTokens",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "value": "300"
+                },
+                "OpenAIKey": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "OpenAIKey",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "UseGPU": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Yes",
+                    "No"
+                  ],
+                  "name": "UseGPU",
+                  "display_name": "UseGPU",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport urllib.request\n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"Guidance N-Question Generator\"\n    description = \"This component process information about a topic and returns N-Questions about it.\"\n    \n    def build_config(self):\n        return {\n            'numberOfQuestions': {\n                'default': 3\n            },\n            \"model\": {\n                \"display_name\": \"model\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"mistral-7b-instruct-v0.2.Q8_0.gguf\",\n                    \"gpt-3.5-turbo\",\n                    \"gpt-4\"\n                ],\n            },\n            \"MaxTokens\": {\n                \"display_name\": \"MaxTokens\",\n                \"advanced\": False,\n                \"required\": True,\n                \"default\": 512,\n            },\n            \"OpenAIKey\":{\n                \"password\": True,\n                \"required\": False\n            },\n            \"UseGPU\": {\n                \"display_name\": \"UseGPU\",\n                \"advanced\": False,\n                \"required\": False,\n                \"default\": False,\n                \"options\": [\n                    \"Yes\",\n                    \"No\"\n                ],\n            },\n            \"temperature\": {\n                \"display_name\": \"temperature\",\n                \"advanced\": True,\n                \"required\": False,\n                \"default\": 1,\n            }\n        }\n    \n    \n    def build(self, numberOfQuestions: int, model: str, MaxTokens: int, UseGPU: bool, query: str, temperature: float = 1.0,  OpenAIKey: str = \"\") -> str:\n        \n        def install(package, cmake_args=None):\n            try:\n                # Check if the package is already installed\n                subprocess.check_call([sys.executable, \"-m\", \"pip\", \"show\", package])\n                print(f\"{package} is already installed.\")\n            except subprocess.CalledProcessError:\n                # If not installed, then install the package\n                print(f\"{package} is not installed. Installing now...\")\n                env = os.environ.copy()\n                if cmake_args is not None:\n                    env[\"CMAKE_ARGS\"] = cmake_args\n                subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package], env=env)\n            return 1\n            \n        install(\"llama-cpp-python==0.2.26\", \"DLLAMA_CUBLAS=on\")\n        install(\"guidance\")\n        install(\"pybind11\")\n        \n        import guidance\n        from guidance import models, gen\n        from guidance import select\n        from guidance import system, user, assistant\n        \n        if(model == \"gpt-3.5-turbo\"):\n            gpt35 = models.OpenAI(\"gpt-3.5-turbo\", api_key=OpenAIKey)\n            lm = gpt35\n            with system():\n                lm += \"You are a question generation specialist, you can elaborate the more valuable questions for revision and reflection points about any topic.\"\n            \n            with user():\n                lm += f\"\"\"\\\n                I want you to generare {numberOfQuestions} questions about the topic\n                {query}\"\"\"\n            \n            with assistant():\n                lm += gen(name='experts', max_tokens=300)\n            \n            with user():\n                lm += f\"\"\"\\\n                Great, now please elaborate the questions considering your expertise on this theme.\n                Please start your answer with QUESTIONS, keeping the original language.\"\"\"\n            \n            with assistant():\n                lm += gen(name='questions', max_tokens=500)\n            \n            questions = lm\n            \n            def extract_questions(text):\n                start_index = text.find('QUESTIONS:')\n                questions_section = text[start_index:]\n                lines = questions_section.split('\\n')\n                questions = [line.strip() for line in lines if line.strip() and line[0].isdigit()]\n                return questions\n                \n            list_questions = extract_questions(str(questions))\n            \n            def format_questions(list_questions):\n                formatted_questions = \"\\n\".join([f\"{question}\" for i, question in enumerate(list_questions)])\n                return formatted_questions\n        \n            return str(format_questions(list_questions)).replace(\"<|im_end|>\", \"\")\n        \n        \n        if(model == \"gpt-4\"):\n            gpt35 = models.OpenAI(\"gpt-4\", api_key=OpenAIKey)\n            lm = gpt35\n            with system():\n                lm += \"You are a question generation specialist, you can elaborate the more valuable questions for revision and reflection points about any topic.\"\n            \n            with user():\n                lm += f\"\"\"\\\n                I want you to generare {numberOfQuestions} questions about the topic\n                {query}\"\"\"\n            \n            with assistant():\n                lm += gen(name='experts', max_tokens=300)\n            \n            with user():\n                lm += f\"\"\"\\\n                Great, now please elaborate the questions considering your expertise on this theme.\n                Please start your answer with QUESTIONS, keeping the original language.\"\"\"\n            \n            with assistant():\n                lm += gen(name='questions', max_tokens=500)\n            \n            questions = lm\n            \n            def extract_questions(text):\n                start_index = text.find('QUESTIONS:')\n                questions_section = text[start_index:]\n                lines = questions_section.split('\\n')\n                questions = [line.strip() for line in lines if line.strip() and line[0].isdigit()]\n                return questions\n                \n            list_questions = extract_questions(str(questions))\n            \n            def format_questions(list_questions):\n                formatted_questions = \"\\n\".join([f\"{question}\" for i, question in enumerate(list_questions)])\n                return formatted_questions\n        \n            return str(format_questions(list_questions)).replace(\"<|im_end|>\", \"\")\n\n        if(not UseGPU):\n            if(model == \"mistral-7b-instruct-v0.2.Q8_0.gguf\"):\n                file_name = \"mistral-7b-instruct-v0.2.Q8_0.gguf\"\n                url = \"https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q8_0.gguf?download=true\"\n                # Check if the file exists\n                if not os.path.exists(file_name):\n                    # Download the file (maybe in the future it is better change this to refer thorugh api for example or mapping the local file model path)\n                    urllib.request.urlretrieve(url, file_name)\n                mistral = models.LlamaCpp(model='./mistral-7b-instruct-v0.2.Q8_0.gguf')\n                lm = mistral + f'''\\\n                Generate question about: {query} \n                '''\n                lm += f\"Here are {numberOfQuestions} different questions:\\n\"\n                for i in range(numberOfQuestions):\n                    lm += f'''{i+1}. \"{gen(stop='\"', name=\"queries\", temperature=1.0, list_append=True)}\"\\n'''\n                return str(lm)\n        else:\n            if(model == \"mistral-7b-instruct-v0.2.Q8_0.gguf\"):\n                file_name = \"mistral-7b-instruct-v0.2.Q8_0.gguf\"\n                url = \"https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q8_0.gguf?download=true\"\n                if not os.path.exists(file_name):\n                    urllib.request.urlretrieve(url, file_name)\n                mistral = models.LlamaCpp(model='./mistral-7b-instruct-v0.2.Q8_0.gguf', n_gpu_layers=-1, n_ctx=4096)\n                lm = mistral + f'''\\\n                Generate question about: {query} \n                '''\n                lm += f\"Here are {numberOfQuestions} different questions:\\n\"\n                for i in range(numberOfQuestions):\n                    lm += f'''{i+1}. \"{gen(stop='\"', name=\"queries\", temperature=1.0, list_append=True)}\"\\n'''\n                return str(lm)\n            \n        return \"\"",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": false
+                },
+                "model": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "mistral-7b-instruct-v0.2.Q8_0.gguf",
+                    "gpt-3.5-turbo",
+                    "gpt-4"
+                  ],
+                  "name": "model",
+                  "display_name": "model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "gpt-4"
+                },
+                "numberOfQuestions": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "numberOfQuestions",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "value": "3"
+                },
+                "query": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "query",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": " jurisprudência é uma expressão jurídica que se refere a um conjunto de decisões que foram tomadas por um Tribunal de Justiça sobre questões semelhante. Essas decisões devem ser coerentes entre si e devem interpretar a lei de maneira equivalente. O termo tem origem em duas palavras latinas: iuris, que significa “direito”, e prudentia, que significa \"sabedoria\"1. A jurisprudência serve como orientação sobre que tipo de decisão deve ser tomada em um caso ou sobre como uma lei deve ser interpretada1. Ela representa o entendimento adotado por um Tribunal sobre uma determinada questão1. Dessa forma, a jurisprudência é uma orientação que deve ser usada em outros casos semelhantes e que serve"
+                },
+                "temperature": {
+                  "type": "float",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 1,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "temperature",
+                  "display_name": "temperature",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "rangeSpec": {
+                    "min": -1,
+                    "max": 1,
+                    "step": 0.1
+                  },
+                  "title_case": false
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "This component process information about a topic and returns N-Questions about it.",
+              "base_classes": [
+                "Text",
+                "object",
+                "str"
+              ],
+              "display_name": "Guidance N-Question Generator",
+              "documentation": "",
+              "custom_fields": {
+                "numberOfQuestions": null,
+                "model": null,
+                "MaxTokens": null,
+                "UseGPU": null,
+                "query": null,
+                "temperature": null,
+                "OpenAIKey": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-1Gycw",
+            "description": "This component process information about a topic and returns N-Questions about it.",
+            "display_name": "Guidance N-Question Generator"
+          },
+          "id": "CustomComponent-1Gycw",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-03-18T01:23:01.887Z",
+    "date_updated": "2024-03-18T01:23:02.086Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "user_created": {
+      "username": "joaoguilhermeS",
+      "first_name": "João",
+      "last_name": "Oliveira",
+      "id": "94b2e207-1a44-4905-856c-4f5a69c168ce"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:08.845Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

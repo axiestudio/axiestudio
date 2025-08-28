@@ -1,0 +1,523 @@
+{
+  "id": "9a84c6b9-3d7f-42a0-aae5-a8f2af6fd3db",
+  "name": "Tavily Search",
+  "description": "Perform web searches using the Tavily API. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "cezar@namastex.io",
+    "first_name": "Cezar Vasconcelos",
+    "last_name": "Vasconcelos",
+    "id": "f8f7e51b-603a-44bb-a1af-1328b2499e3d",
+    "full_name": "Cezar Vasconcelos Vasconcelos"
+  },
+  "store_url": "https://www.langflow.store/store/component/9a84c6b9-3d7f-42a0-aae5-a8f2af6fd3db",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-20T21:43:52.249Z",
+    "updated": "2024-08-20T21:43:52.287Z",
+    "downloaded": "2025-08-19T17:50:06.655Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "TavilySearch",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "api_key": {
+                "load_from_db": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "Tavily API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Your Tavily API Key.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import httpx\r\nfrom typing import List, Optional\r\nfrom pydantic import BaseModel, Field\r\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\r\nfrom axiestudio.inputs import SecretStrInput, MessageTextInput, DropdownInput, IntInput, BoolInput\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.field_typing import Tool\r\nfrom langchain.tools import StructuredTool\r\n\r\nclass TavilySearchToolComponent(LCToolComponent):\r\n    display_name = \"Tavily Search\"\r\n    description = \"Perform web searches using the Tavily API.\"\r\n    icon = \"search\"\r\n    name = \"TavilySearch\"\r\n    documentation = \"https://tavily.com/#api\"\r\n\r\n    inputs = [\r\n        SecretStrInput(\r\n            name=\"api_key\",\r\n            display_name=\"Tavily API Key\",\r\n            required=True,\r\n            info=\"Your Tavily API Key.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"query\",\r\n            display_name=\"Search Query\",\r\n            info=\"The search query you want to execute with Tavily.\",\r\n            required=True,\r\n        ),\r\n        DropdownInput(\r\n            name=\"search_depth\",\r\n            display_name=\"Search Depth\",\r\n            info=\"The depth of the search.\",\r\n            options=[\"basic\", \"advanced\"],\r\n            value=\"basic\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"topic\",\r\n            display_name=\"Search Topic\",\r\n            info=\"The category of the search.\",\r\n            options=[\"general\", \"news\"],\r\n            value=\"general\",\r\n        ),\r\n        IntInput(\r\n            name=\"max_results\",\r\n            display_name=\"Max Results\",\r\n            info=\"The maximum number of search results to return.\",\r\n            value=5,\r\n        ),\r\n        BoolInput(\r\n            name=\"include_images\",\r\n            display_name=\"Include Images\",\r\n            info=\"Include a list of query-related images in the response.\",\r\n            value=False,\r\n        ),\r\n        BoolInput(\r\n            name=\"include_answer\",\r\n            display_name=\"Include Answer\",\r\n            info=\"Include a short answer to original query.\",\r\n            value=False,\r\n        ),\r\n    ]\r\n\r\n    class TavilySearchSchema(BaseModel):\r\n        query: str = Field(..., description=\"The search query you want to execute with Tavily.\")\r\n        search_depth: str = Field(\"basic\", description=\"The depth of the search.\")\r\n        topic: str = Field(\"general\", description=\"The category of the search.\")\r\n        max_results: int = Field(5, description=\"The maximum number of search results to return.\")\r\n        include_images: bool = Field(False, description=\"Include a list of query-related images in the response.\")\r\n        include_answer: bool = Field(False, description=\"Include a short answer to original query.\")\r\n\r\n    def run_model(self) -> List[Data]:\r\n        return self._tavily_search(\r\n            self.query,\r\n            self.search_depth,\r\n            self.topic,\r\n            self.max_results,\r\n            self.include_images,\r\n            self.include_answer,\r\n        )\r\n\r\n    def build_tool(self) -> Tool:\r\n        return StructuredTool.from_function(\r\n            name=\"tavily_search\",\r\n            description=\"Perform a web search using the Tavily API.\",\r\n            func=self._tavily_search,\r\n            args_schema=self.TavilySearchSchema,\r\n        )\r\n\r\n    def _tavily_search(\r\n        self,\r\n        query: str,\r\n        search_depth: str = \"basic\",\r\n        topic: str = \"general\",\r\n        max_results: int = 5,\r\n        include_images: bool = False,\r\n        include_answer: bool = False,\r\n    ) -> List[Data]:\r\n        try:\r\n            url = \"https://api.tavily.com/search\"\r\n            headers = {\r\n                \"content-type\": \"application/json\",\r\n                \"accept\": \"application/json\",\r\n            }\r\n            payload = {\r\n                \"api_key\": self.api_key,\r\n                \"query\": query,\r\n                \"search_depth\": search_depth,\r\n                \"topic\": topic,\r\n                \"max_results\": max_results,\r\n                \"include_images\": include_images,\r\n                \"include_answer\": include_answer,\r\n            }\r\n\r\n            with httpx.Client() as client:\r\n                response = client.post(url, json=payload, headers=headers)\r\n            \r\n            response.raise_for_status()\r\n            search_results = response.json()\r\n\r\n            data_results = [\r\n                Data(\r\n                    data={\r\n                        \"title\": result.get(\"title\"),\r\n                        \"url\": result.get(\"url\"),\r\n                        \"content\": result.get(\"content\"),\r\n                        \"score\": result.get(\"score\"),\r\n                    }\r\n                )\r\n                for result in search_results.get(\"results\", [])\r\n            ]\r\n\r\n            if include_answer and search_results.get(\"answer\"):\r\n                data_results.insert(0, Data(data={\"answer\": search_results[\"answer\"]}))\r\n\r\n            if include_images and search_results.get(\"images\"):\r\n                data_results.append(Data(data={\"images\": search_results[\"images\"]}))\r\n\r\n            self.status = data_results\r\n            return data_results\r\n\r\n        except httpx.HTTPStatusError as e:\r\n            error_message = f\"HTTP error: {e.response.status_code} - {e.response.text}\"\r\n            self.status = error_message\r\n            return [Data(data={\"error\": error_message})]\r\n        except Exception as e:\r\n            error_message = f\"Unexpected error: {str(e)}\"\r\n            self.status = error_message\r\n            return [Data(data={\"error\": error_message})]",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "include_answer": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "include_answer",
+                "value": false,
+                "display_name": "Include Answer",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Include a short answer to original query.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "include_images": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "include_images",
+                "value": false,
+                "display_name": "Include Images",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Include a list of query-related images in the response.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "max_results": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_results",
+                "value": 5,
+                "display_name": "Max Results",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The maximum number of search results to return.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "query": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "query",
+                "value": "",
+                "display_name": "Search Query",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The search query you want to execute with Tavily.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "search_depth": {
+                "trace_as_metadata": true,
+                "options": [
+                  "basic",
+                  "advanced"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "search_depth",
+                "value": "basic",
+                "display_name": "Search Depth",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The depth of the search.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "topic": {
+                "trace_as_metadata": true,
+                "options": [
+                  "general",
+                  "news"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "topic",
+                "value": "general",
+                "display_name": "Search Topic",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The category of the search.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              }
+            },
+            "description": "Perform web searches using the Tavily API.",
+            "icon": "search",
+            "base_classes": [
+              "Data",
+              "list",
+              "Sequence",
+              "Tool"
+            ],
+            "display_name": "Tavily Search",
+            "documentation": "https://tavily.com/#api",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data",
+                  "list"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Tool",
+                  "Sequence"
+                ],
+                "selected": "Tool",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "api_key",
+              "query",
+              "search_depth",
+              "topic",
+              "max_results",
+              "include_images",
+              "include_answer"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CurrentDateComponent-91kme"
+        },
+        "id": "CurrentDateComponent-91kme",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CurrentDateComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "9a84c6b9-3d7f-42a0-aae5-a8f2af6fd3db",
+    "name": "Tavily Search",
+    "description": "Perform web searches using the Tavily API.",
+    "is_component": true,
+    "liked_by_count": "9",
+    "downloads_count": "41",
+    "metadata": {
+      "CurrentDateComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "TavilySearch",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "api_key": {
+                  "load_from_db": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "Tavily API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Your Tavily API Key.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import httpx\r\nfrom typing import List, Optional\r\nfrom pydantic import BaseModel, Field\r\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\r\nfrom axiestudio.inputs import SecretStrInput, MessageTextInput, DropdownInput, IntInput, BoolInput\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.field_typing import Tool\r\nfrom langchain.tools import StructuredTool\r\n\r\nclass TavilySearchToolComponent(LCToolComponent):\r\n    display_name = \"Tavily Search\"\r\n    description = \"Perform web searches using the Tavily API.\"\r\n    icon = \"search\"\r\n    name = \"TavilySearch\"\r\n    documentation = \"https://tavily.com/#api\"\r\n\r\n    inputs = [\r\n        SecretStrInput(\r\n            name=\"api_key\",\r\n            display_name=\"Tavily API Key\",\r\n            required=True,\r\n            info=\"Your Tavily API Key.\",\r\n        ),\r\n        MessageTextInput(\r\n            name=\"query\",\r\n            display_name=\"Search Query\",\r\n            info=\"The search query you want to execute with Tavily.\",\r\n            required=True,\r\n        ),\r\n        DropdownInput(\r\n            name=\"search_depth\",\r\n            display_name=\"Search Depth\",\r\n            info=\"The depth of the search.\",\r\n            options=[\"basic\", \"advanced\"],\r\n            value=\"basic\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"topic\",\r\n            display_name=\"Search Topic\",\r\n            info=\"The category of the search.\",\r\n            options=[\"general\", \"news\"],\r\n            value=\"general\",\r\n        ),\r\n        IntInput(\r\n            name=\"max_results\",\r\n            display_name=\"Max Results\",\r\n            info=\"The maximum number of search results to return.\",\r\n            value=5,\r\n        ),\r\n        BoolInput(\r\n            name=\"include_images\",\r\n            display_name=\"Include Images\",\r\n            info=\"Include a list of query-related images in the response.\",\r\n            value=False,\r\n        ),\r\n        BoolInput(\r\n            name=\"include_answer\",\r\n            display_name=\"Include Answer\",\r\n            info=\"Include a short answer to original query.\",\r\n            value=False,\r\n        ),\r\n    ]\r\n\r\n    class TavilySearchSchema(BaseModel):\r\n        query: str = Field(..., description=\"The search query you want to execute with Tavily.\")\r\n        search_depth: str = Field(\"basic\", description=\"The depth of the search.\")\r\n        topic: str = Field(\"general\", description=\"The category of the search.\")\r\n        max_results: int = Field(5, description=\"The maximum number of search results to return.\")\r\n        include_images: bool = Field(False, description=\"Include a list of query-related images in the response.\")\r\n        include_answer: bool = Field(False, description=\"Include a short answer to original query.\")\r\n\r\n    def run_model(self) -> List[Data]:\r\n        return self._tavily_search(\r\n            self.query,\r\n            self.search_depth,\r\n            self.topic,\r\n            self.max_results,\r\n            self.include_images,\r\n            self.include_answer,\r\n        )\r\n\r\n    def build_tool(self) -> Tool:\r\n        return StructuredTool.from_function(\r\n            name=\"tavily_search\",\r\n            description=\"Perform a web search using the Tavily API.\",\r\n            func=self._tavily_search,\r\n            args_schema=self.TavilySearchSchema,\r\n        )\r\n\r\n    def _tavily_search(\r\n        self,\r\n        query: str,\r\n        search_depth: str = \"basic\",\r\n        topic: str = \"general\",\r\n        max_results: int = 5,\r\n        include_images: bool = False,\r\n        include_answer: bool = False,\r\n    ) -> List[Data]:\r\n        try:\r\n            url = \"https://api.tavily.com/search\"\r\n            headers = {\r\n                \"content-type\": \"application/json\",\r\n                \"accept\": \"application/json\",\r\n            }\r\n            payload = {\r\n                \"api_key\": self.api_key,\r\n                \"query\": query,\r\n                \"search_depth\": search_depth,\r\n                \"topic\": topic,\r\n                \"max_results\": max_results,\r\n                \"include_images\": include_images,\r\n                \"include_answer\": include_answer,\r\n            }\r\n\r\n            with httpx.Client() as client:\r\n                response = client.post(url, json=payload, headers=headers)\r\n            \r\n            response.raise_for_status()\r\n            search_results = response.json()\r\n\r\n            data_results = [\r\n                Data(\r\n                    data={\r\n                        \"title\": result.get(\"title\"),\r\n                        \"url\": result.get(\"url\"),\r\n                        \"content\": result.get(\"content\"),\r\n                        \"score\": result.get(\"score\"),\r\n                    }\r\n                )\r\n                for result in search_results.get(\"results\", [])\r\n            ]\r\n\r\n            if include_answer and search_results.get(\"answer\"):\r\n                data_results.insert(0, Data(data={\"answer\": search_results[\"answer\"]}))\r\n\r\n            if include_images and search_results.get(\"images\"):\r\n                data_results.append(Data(data={\"images\": search_results[\"images\"]}))\r\n\r\n            self.status = data_results\r\n            return data_results\r\n\r\n        except httpx.HTTPStatusError as e:\r\n            error_message = f\"HTTP error: {e.response.status_code} - {e.response.text}\"\r\n            self.status = error_message\r\n            return [Data(data={\"error\": error_message})]\r\n        except Exception as e:\r\n            error_message = f\"Unexpected error: {str(e)}\"\r\n            self.status = error_message\r\n            return [Data(data={\"error\": error_message})]",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "include_answer": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "include_answer",
+                  "value": false,
+                  "display_name": "Include Answer",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Include a short answer to original query.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "include_images": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "include_images",
+                  "value": false,
+                  "display_name": "Include Images",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Include a list of query-related images in the response.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "max_results": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_results",
+                  "value": 5,
+                  "display_name": "Max Results",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The maximum number of search results to return.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "query": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "query",
+                  "value": "",
+                  "display_name": "Search Query",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The search query you want to execute with Tavily.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "search_depth": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "basic",
+                    "advanced"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "search_depth",
+                  "value": "basic",
+                  "display_name": "Search Depth",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The depth of the search.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "topic": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "general",
+                    "news"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "topic",
+                  "value": "general",
+                  "display_name": "Search Topic",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The category of the search.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                }
+              },
+              "description": "Perform web searches using the Tavily API.",
+              "icon": "search",
+              "base_classes": [
+                "Data",
+                "list",
+                "Sequence",
+                "Tool"
+              ],
+              "display_name": "Tavily Search",
+              "documentation": "https://tavily.com/#api",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data",
+                    "list"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Tool",
+                    "Sequence"
+                  ],
+                  "selected": "Tool",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "api_key",
+                "query",
+                "search_depth",
+                "topic",
+                "max_results",
+                "include_images",
+                "include_answer"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CurrentDateComponent-91kme"
+          },
+          "id": "CurrentDateComponent-91kme",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-20T21:43:52.249Z",
+    "date_updated": "2024-08-20T21:43:52.287Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "f8f7e51b-603a-44bb-a1af-1328b2499e3d",
+    "user_created": {
+      "username": "cezar@namastex.io",
+      "first_name": "Cezar Vasconcelos",
+      "last_name": "Vasconcelos",
+      "id": "f8f7e51b-603a-44bb-a1af-1328b2499e3d"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.117Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

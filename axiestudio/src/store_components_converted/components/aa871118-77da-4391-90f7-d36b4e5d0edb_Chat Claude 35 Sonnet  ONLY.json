@@ -1,0 +1,597 @@
+{
+  "id": "aa871118-77da-4391-90f7-d36b4e5d0edb",
+  "name": "Chat Claude 3.5 Sonnet  ONLY",
+  "description": "A custom model component that interacts with the Claude 3 API via Anthropic's Vertex SDK. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "viniciossilva3",
+    "first_name": "Vinicios",
+    "last_name": "Batista Da Silva",
+    "id": "6a3a88e2-cc6b-4f37-aebb-a747c97c7489",
+    "full_name": "Vinicios Batista Da Silva"
+  },
+  "store_url": "https://www.langflow.store/store/component/aa871118-77da-4391-90f7-d36b4e5d0edb",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-29T19:39:37.091Z",
+    "updated": "2024-09-13T19:44:43.365Z",
+    "downloaded": "2025-08-19T17:50:07.047Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "ChatClaudeComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "credentials": {
+                "trace_as_metadata": true,
+                "file_path": "9be62b6f-e4bf-41c4-871f-db3cbc5fcde4/2024-09-13_16-44-16_vertex-ai-433919-81a87066f46b.json",
+                "fileTypes": [
+                  "json"
+                ],
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "credentials",
+                "value": "",
+                "display_name": "Credentials",
+                "advanced": false,
+                "dynamic": false,
+                "info": "JSON credentials file. Leave empty to fallback to environment variables.",
+                "title_case": false,
+                "type": "file",
+                "_input_type": "FileInput",
+                "load_from_db": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import cast, Any\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.field_typing import LanguageModel, Text, BaseChatModel\nfrom axiestudio.inputs import MessageTextInput, FileInput, StrInput, IntInput, FloatInput, DropdownInput, BoolInput\nfrom axiestudio.template import Output\nfrom axiestudio.schema.message import Message\nimport json\n\nclass ChatClaudeComponent(LCModelComponent):\n    display_name = \"Chat Claude 3.5 Sonnet - Vertex SDK\"\n    description = \"A custom model component that interacts with the Claude 3 API via Anthropic's Vertex SDK.\"\n    documentation: str = \"https://console.cloud.google.com/vertex-ai/publishers/anthropic/model-garden/claude-3-5-sonnet\"\n    icon = \"bot\"\n    name = \"ChatClaudeComponent\"\n\n    inputs = [\n        MessageTextInput(name=\"input_value\", display_name=\"Input\"),\n        MessageTextInput(name=\"system_message\", display_name=\"System\"),\n        FileInput(\n            name=\"credentials\",\n            display_name=\"Credentials\",\n            info=\"JSON credentials file. Leave empty to fallback to environment variables.\",\n            file_types=[\"json\"],\n        ),\n        StrInput(\n            name=\"input_model\",\n            display_name=\"Model Name\",\n            info=\"Input the Model Name\",\n            value=\"claude-3-5-sonnet@20240620\",\n        ),\n        StrInput(name=\"location\", display_name=\"Location\", value=\"us-east5\"),\n        IntInput(name=\"max_tokens\", display_name=\"Max Tokens\", value=1024),\n        FloatInput(name=\"temperature\", value=0.0, display_name=\"Temperature\"),\n        FloatInput(name=\"top_p\", display_name=\"Top P\", value=0.95),\n        BoolInput(name=\"stream\", display_name=\"Stream\", value=False, advanced=True),\n        BoolInput(name=\"verbose\", display_name=\"Verbose\", value=False, advanced=True),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"generated_text_output\", method=\"build_model\"),\n        # Output(display_name=\"Model\", name=\"model_output\", method=\"get_model\"),\n    ]\n\n    def __init__(self, *args, **kwargs):\n        super().__init__(*args, **kwargs)\n        self.generated_text: str = \"\"  # Explicitly defined as a string\n        self.model = None\n\n    def build_model(self)  -> Message:\n        try:\n            from google.cloud import aiplatform\n            from google.oauth2 import service_account\n            from anthropic import AnthropicVertex\n        except ImportError as e:\n            if \"anthropic\" in str(e):\n                raise ImportError(\n                    \"The 'anthropic' library is not installed. Please install it with `python -m pip install -U 'anthropic[vertex]'`.\",\n                )\n            elif \"google\" in str(e):\n                raise ImportError(\n                    \"One or more Google Cloud libraries are not installed. Please verify if you have installed the 'google-cloud-aiplatform' package.\",\n                )\n\n        user_input = self.input_value\n        system_input = self.system_message\n        model =  self.input_model\n        region =  self.location\n        max_tokens = self.max_tokens\n        temperature =  self.temperature\n        top_p =  self.top_p\n        stream = self.stream\n\n        # Load credentials from file if provided\n        if self.credentials:\n            # Create credentials from the JSON object\n            credentials = service_account.Credentials.from_service_account_file(\n                self.credentials,\n                scopes=[\"https://www.googleapis.com/auth/cloud-platform\"]\n            )\n            project_id = credentials.project_id\n        else:\n            raise ValueError(\"Credentials not provided.\")\n\n        # Instantiate the AnthropicVertex client\n        client = AnthropicVertex(\n            project_id=project_id,\n            region=region,\n            credentials=credentials\n        )\n        self.model = client\n\n        # Sends a chat request to Claude 3.5 and returns the response message\n        response = client.messages.create(\n            system=system_input,\n            max_tokens=max_tokens,\n            messages=[\n                {\n                    \"role\": \"user\",\n                    \"content\": user_input,\n                }\n            ],\n            model=model,\n            top_p=top_p,\n            stream=stream,\n            temperature=temperature\n        )\n\n        # Save the response\n        response_to_json = json.loads(response.model_dump_json(indent=2))\n        generated_text = response_to_json[\"content\"][0][\"text\"]\n        print(generated_text)\n\n        self.generated_text = generated_text\n        self.status = self.generated_text\n        return self.generated_text\n        \n    def get_model(self) -> LanguageModel:\n        return cast(LanguageModel, self.build_model())\n\n    def process(self) -> dict:\n        return {\n            \"generated_text_output\": self.generated_text,\n            # \"model_output\": self.model_output,\n        }\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_model": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_model",
+                "value": "claude-3-5-sonnet@20240620",
+                "display_name": "Model Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Input the Model Name",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "What's up!  How are you bro?",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "location": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "location",
+                "value": "us-east5",
+                "display_name": "Location",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "max_tokens": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_tokens",
+                "value": 1024,
+                "display_name": "Max Tokens",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "stream": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "stream",
+                "value": false,
+                "display_name": "Stream",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "system_message": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "system_message",
+                "value": "",
+                "display_name": "System",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "temperature": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "temperature",
+                "value": 0,
+                "display_name": "Temperature",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "float",
+                "_input_type": "FloatInput"
+              },
+              "top_p": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "top_p",
+                "value": 0.95,
+                "display_name": "Top P",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "float",
+                "_input_type": "FloatInput"
+              },
+              "verbose": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "verbose",
+                "value": false,
+                "display_name": "Verbose",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "A custom model component that interacts with the Claude 3 API via Anthropic's Vertex SDK.",
+            "icon": "bot",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Chat Claude 3.5 Sonnet  ONLY",
+            "documentation": "https://console.cloud.google.com/vertex-ai/publishers/anthropic/model-garden/claude-3-5-sonnet",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "generated_text_output",
+                "display_name": "Text",
+                "method": "build_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "system_message",
+              "credentials",
+              "input_model",
+              "location",
+              "max_tokens",
+              "temperature",
+              "top_p",
+              "stream",
+              "verbose"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.18",
+            "official": false
+          },
+          "id": "ChatClaudeComponent-TVfOP"
+        },
+        "id": "ChatClaudeComponent-TVfOP",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "ChatClaudeComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "aa871118-77da-4391-90f7-d36b4e5d0edb",
+    "name": "Chat Claude 3.5 Sonnet  ONLY",
+    "description": "A custom model component that interacts with the Claude 3 API via Anthropic's Vertex SDK.",
+    "is_component": true,
+    "liked_by_count": "8",
+    "downloads_count": "41",
+    "metadata": {
+      "ChatClaudeComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "ChatClaudeComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "credentials": {
+                  "trace_as_metadata": true,
+                  "file_path": "9be62b6f-e4bf-41c4-871f-db3cbc5fcde4/2024-09-13_16-44-16_vertex-ai-433919-81a87066f46b.json",
+                  "fileTypes": [
+                    "json"
+                  ],
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "credentials",
+                  "value": "",
+                  "display_name": "Credentials",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "JSON credentials file. Leave empty to fallback to environment variables.",
+                  "title_case": false,
+                  "type": "file",
+                  "_input_type": "FileInput",
+                  "load_from_db": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import cast, Any\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.field_typing import LanguageModel, Text, BaseChatModel\nfrom axiestudio.inputs import MessageTextInput, FileInput, StrInput, IntInput, FloatInput, DropdownInput, BoolInput\nfrom axiestudio.template import Output\nfrom axiestudio.schema.message import Message\nimport json\n\nclass ChatClaudeComponent(LCModelComponent):\n    display_name = \"Chat Claude 3.5 Sonnet - Vertex SDK\"\n    description = \"A custom model component that interacts with the Claude 3 API via Anthropic's Vertex SDK.\"\n    documentation: str = \"https://console.cloud.google.com/vertex-ai/publishers/anthropic/model-garden/claude-3-5-sonnet\"\n    icon = \"bot\"\n    name = \"ChatClaudeComponent\"\n\n    inputs = [\n        MessageTextInput(name=\"input_value\", display_name=\"Input\"),\n        MessageTextInput(name=\"system_message\", display_name=\"System\"),\n        FileInput(\n            name=\"credentials\",\n            display_name=\"Credentials\",\n            info=\"JSON credentials file. Leave empty to fallback to environment variables.\",\n            file_types=[\"json\"],\n        ),\n        StrInput(\n            name=\"input_model\",\n            display_name=\"Model Name\",\n            info=\"Input the Model Name\",\n            value=\"claude-3-5-sonnet@20240620\",\n        ),\n        StrInput(name=\"location\", display_name=\"Location\", value=\"us-east5\"),\n        IntInput(name=\"max_tokens\", display_name=\"Max Tokens\", value=1024),\n        FloatInput(name=\"temperature\", value=0.0, display_name=\"Temperature\"),\n        FloatInput(name=\"top_p\", display_name=\"Top P\", value=0.95),\n        BoolInput(name=\"stream\", display_name=\"Stream\", value=False, advanced=True),\n        BoolInput(name=\"verbose\", display_name=\"Verbose\", value=False, advanced=True),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"generated_text_output\", method=\"build_model\"),\n        # Output(display_name=\"Model\", name=\"model_output\", method=\"get_model\"),\n    ]\n\n    def __init__(self, *args, **kwargs):\n        super().__init__(*args, **kwargs)\n        self.generated_text: str = \"\"  # Explicitly defined as a string\n        self.model = None\n\n    def build_model(self)  -> Message:\n        try:\n            from google.cloud import aiplatform\n            from google.oauth2 import service_account\n            from anthropic import AnthropicVertex\n        except ImportError as e:\n            if \"anthropic\" in str(e):\n                raise ImportError(\n                    \"The 'anthropic' library is not installed. Please install it with `python -m pip install -U 'anthropic[vertex]'`.\",\n                )\n            elif \"google\" in str(e):\n                raise ImportError(\n                    \"One or more Google Cloud libraries are not installed. Please verify if you have installed the 'google-cloud-aiplatform' package.\",\n                )\n\n        user_input = self.input_value\n        system_input = self.system_message\n        model =  self.input_model\n        region =  self.location\n        max_tokens = self.max_tokens\n        temperature =  self.temperature\n        top_p =  self.top_p\n        stream = self.stream\n\n        # Load credentials from file if provided\n        if self.credentials:\n            # Create credentials from the JSON object\n            credentials = service_account.Credentials.from_service_account_file(\n                self.credentials,\n                scopes=[\"https://www.googleapis.com/auth/cloud-platform\"]\n            )\n            project_id = credentials.project_id\n        else:\n            raise ValueError(\"Credentials not provided.\")\n\n        # Instantiate the AnthropicVertex client\n        client = AnthropicVertex(\n            project_id=project_id,\n            region=region,\n            credentials=credentials\n        )\n        self.model = client\n\n        # Sends a chat request to Claude 3.5 and returns the response message\n        response = client.messages.create(\n            system=system_input,\n            max_tokens=max_tokens,\n            messages=[\n                {\n                    \"role\": \"user\",\n                    \"content\": user_input,\n                }\n            ],\n            model=model,\n            top_p=top_p,\n            stream=stream,\n            temperature=temperature\n        )\n\n        # Save the response\n        response_to_json = json.loads(response.model_dump_json(indent=2))\n        generated_text = response_to_json[\"content\"][0][\"text\"]\n        print(generated_text)\n\n        self.generated_text = generated_text\n        self.status = self.generated_text\n        return self.generated_text\n        \n    def get_model(self) -> LanguageModel:\n        return cast(LanguageModel, self.build_model())\n\n    def process(self) -> dict:\n        return {\n            \"generated_text_output\": self.generated_text,\n            # \"model_output\": self.model_output,\n        }\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_model": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_model",
+                  "value": "claude-3-5-sonnet@20240620",
+                  "display_name": "Model Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Input the Model Name",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "What's up!  How are you bro?",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "location": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "location",
+                  "value": "us-east5",
+                  "display_name": "Location",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "max_tokens": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_tokens",
+                  "value": 1024,
+                  "display_name": "Max Tokens",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "stream": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "stream",
+                  "value": false,
+                  "display_name": "Stream",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "system_message": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "system_message",
+                  "value": "",
+                  "display_name": "System",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "temperature": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "temperature",
+                  "value": 0,
+                  "display_name": "Temperature",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "float",
+                  "_input_type": "FloatInput"
+                },
+                "top_p": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "top_p",
+                  "value": 0.95,
+                  "display_name": "Top P",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "float",
+                  "_input_type": "FloatInput"
+                },
+                "verbose": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "verbose",
+                  "value": false,
+                  "display_name": "Verbose",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "A custom model component that interacts with the Claude 3 API via Anthropic's Vertex SDK.",
+              "icon": "bot",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Chat Claude 3.5 Sonnet  ONLY",
+              "documentation": "https://console.cloud.google.com/vertex-ai/publishers/anthropic/model-garden/claude-3-5-sonnet",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "generated_text_output",
+                  "display_name": "Text",
+                  "method": "build_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "system_message",
+                "credentials",
+                "input_model",
+                "location",
+                "max_tokens",
+                "temperature",
+                "top_p",
+                "stream",
+                "verbose"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.18",
+              "official": false
+            },
+            "id": "ChatClaudeComponent-TVfOP"
+          },
+          "id": "ChatClaudeComponent-TVfOP",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-29T19:39:37.091Z",
+    "date_updated": "2024-09-13T19:44:43.365Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "6a3a88e2-cc6b-4f37-aebb-a747c97c7489",
+    "user_created": {
+      "username": "viniciossilva3",
+      "first_name": "Vinicios",
+      "last_name": "Batista Da Silva",
+      "id": "6a3a88e2-cc6b-4f37-aebb-a747c97c7489"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.359Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,479 @@
+{
+  "id": "7097c268-d31f-4d93-a856-2b4593a1d55b",
+  "name": "Custom Python Tool",
+  "description": "Structuredtool dataclass code tool (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "YeiferMunozTelintel",
+    "first_name": "Yeifer",
+    "last_name": "Muñoz",
+    "id": "8968c0c8-c3a6-46b0-93d4-bd811e5286f0",
+    "full_name": "Yeifer Muñoz"
+  },
+  "store_url": "https://www.langflow.store/store/component/7097c268-d31f-4d93-a856-2b4593a1d55b",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-04T01:07:06.765Z",
+    "updated": "2024-08-04T01:07:06.790Z",
+    "downloaded": "2025-08-19T17:50:06.675Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomPythonTool",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import ast\nfrom typing import Any, Dict, List, Optional\n\nfrom axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, MultilineInput, BoolInput, DropdownInput, Output\nfrom axiestudio.schema import Data\n\nfrom langchain.agents import Tool\nfrom langchain_core.tools import StructuredTool\n\nfrom axiestudio.schema.dotdict import dotdict\n\nclass CustomPythonTool(Component):\n    display_name = \"Custom Python Tool\"\n    description = \"Structuredtool dataclass code tool\"\n    documentation = \"https://python.langchain.com/docs/modules/tools/custom_tools/#structuredtool-dataclass\"\n    icon = \"🐍\"\n    name = \"CustomPythonTool\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"tool_name\",\n            display_name=\"Tool Name\",\n            info=\"Enter the name of the tool.\",\n            placeholder=\"My Tool\",\n            required=True,\n        ),\n        MessageTextInput(\n            name=\"description\",\n            display_name=\"Description\",\n            info=\"Provide a brief description of what the tool does.\",\n            placeholder=\"This tool does something.\",\n            required=True,\n        ),\n        MultilineInput(\n            name=\"tool_code\",\n            display_name=\"Tool Code\",\n            info=\"Enter the dataclass code here.\",\n            placeholder=\"def my_function():\\n    pass\",\n            required=True,\n            refresh_button=True,\n        ),\n        BoolInput(\n            name=\"return_direct\",\n            display_name=\"Return Direct\",\n            info=\"Return the output directly.\",\n            value=True,\n        ),\n        DropdownInput(\n            name=\"tool_function\",\n            display_name=\"Tool Function\",\n            info=\"Select the function for additional expressions.\",\n            placeholder=\"my_function\",\n            options=[],\n            refresh_button=True,\n        ),\n        DropdownInput(\n            name=\"tool_class\",\n            display_name=\"Tool Class\",\n            info=\"Select the class for additional expressions.\",\n            placeholder=\"MyClass\",\n            options=[],\n            refresh_button=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Tool\", name=\"tool\", method=\"build_tool\"),\n    ]\n    \n    def parse_source_name(self, code: str) -> Dict:\n        self.log(\"Parsing source code\")\n        parsed_code = ast.parse(code)\n        class_names = [node.name for node in parsed_code.body if isinstance(node, ast.ClassDef)]\n        function_names = [node.name for node in parsed_code.body if isinstance(node, ast.FunctionDef)]\n        return {\"class\": class_names, \"function\": function_names}\n    \n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None) -> dotdict:\n        self.log(\"Updating build config A\")\n        if field_name == \"tool_code\" or field_name == \"tool_function\" or field_name == \"tool_class\":\n            try:\n                names = self.parse_source_name(build_config.tool_code.value)\n                build_config.tool_class.options = names[\"class\"]\n                build_config.tool_function.options = names[\"function\"]\n            except Exception as e:\n                self.status = f\"Failed to extract class names: {str(e)}\"\n                build_config.tool_class.options = [\"Failed to parse\", str(e)]\n                build_config.tool_function.options = []\n        return build_config\n\n    def build_output(self) -> Data:\n        self.log(\"Building output 1\")\n        self.log(\"Building output 2\")\n        data = Data(value=self.tool_name)\n        self.status = data\n        return data\n    \n    def build_tool(self) -> Tool:\n        self.log(\"Building tool\")\n        local_namespace = {}  # type: ignore\n        exec(self.tool_code, globals(), local_namespace)\n        \n        func = local_namespace[self.tool_function]\n        _class = None\n        \n        if self.tool_class:\n            _class = local_namespace[self.tool_class]\n        \n        tool = StructuredTool.from_function(\n            func=func,\n            args_schema=_class,\n            name=self.tool_name,\n            description=self.description,\n            return_direct=self.return_direct,\n        )\n        \n        return tool",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "description": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "This tool does something.",
+                "show": true,
+                "value": "Applies a magic and mysterious operation between two numbers",
+                "name": "description",
+                "display_name": "Description",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Provide a brief description of what the tool does.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "return_direct": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": true,
+                "name": "return_direct",
+                "display_name": "Return Direct",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Return the output directly.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "tool_class": {
+                "trace_as_metadata": true,
+                "options": [
+                  "MagicOperationInput"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "MyClass",
+                "show": true,
+                "value": "MagicOperationInput",
+                "name": "tool_class",
+                "display_name": "Tool Class",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Select the class for additional expressions.",
+                "refresh_button": true,
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput",
+                "load_from_db": false
+              },
+              "tool_code": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "def my_function():\n    pass",
+                "show": true,
+                "value": "from langchain_core.tools import ToolException\nfrom pydantic import BaseModel, Field\n\nclass MagicOperationInput(BaseModel):\n    a: int = Field(description=\"First number\")\n    b: int = Field(description=\"Second number\")\n\ndef magic_operation(a: int, b: int) -> int:\n    \"\"\"Applies a magic and mysterious operation between two numbers\"\"\"\n    \n    try:\n        return (2 * a * b) / (a + b)\n    except ZeroDivisionError:\n        raise ToolException(f\"Division by zero, this is caused because the sum of the two numbers is zero, {a} + {b} = 0, then x / ({a} + {b}) is undefined\")\n    except Exception as e:\n        raise ToolException(str(e))\n",
+                "name": "tool_code",
+                "display_name": "Tool Code",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter the dataclass code here.",
+                "refresh_button": true,
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "tool_function": {
+                "trace_as_metadata": true,
+                "options": [
+                  "magic_operation"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "my_function",
+                "show": true,
+                "value": "magic_operation",
+                "name": "tool_function",
+                "display_name": "Tool Function",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Select the function for additional expressions.",
+                "refresh_button": true,
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput",
+                "load_from_db": false
+              },
+              "tool_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "My Tool",
+                "show": true,
+                "value": "magic_operation",
+                "name": "tool_name",
+                "display_name": "Tool Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter the name of the tool.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Structuredtool dataclass code tool",
+            "icon": "🐍",
+            "base_classes": [
+              "Tool"
+            ],
+            "display_name": "Custom Python Tool",
+            "documentation": "https://python.langchain.com/docs/modules/tools/custom_tools/#structuredtool-dataclass",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "tool_name",
+              "description",
+              "tool_code",
+              "return_direct",
+              "tool_function",
+              "tool_class"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-qBHOF"
+        },
+        "id": "CustomComponent-qBHOF",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "7097c268-d31f-4d93-a856-2b4593a1d55b",
+    "name": "Custom Python Tool",
+    "description": "Structuredtool dataclass code tool",
+    "is_component": true,
+    "liked_by_count": "12",
+    "downloads_count": "243",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.14",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomPythonTool",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import ast\nfrom typing import Any, Dict, List, Optional\n\nfrom axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, MultilineInput, BoolInput, DropdownInput, Output\nfrom axiestudio.schema import Data\n\nfrom langchain.agents import Tool\nfrom langchain_core.tools import StructuredTool\n\nfrom axiestudio.schema.dotdict import dotdict\n\nclass CustomPythonTool(Component):\n    display_name = \"Custom Python Tool\"\n    description = \"Structuredtool dataclass code tool\"\n    documentation = \"https://python.langchain.com/docs/modules/tools/custom_tools/#structuredtool-dataclass\"\n    icon = \"🐍\"\n    name = \"CustomPythonTool\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"tool_name\",\n            display_name=\"Tool Name\",\n            info=\"Enter the name of the tool.\",\n            placeholder=\"My Tool\",\n            required=True,\n        ),\n        MessageTextInput(\n            name=\"description\",\n            display_name=\"Description\",\n            info=\"Provide a brief description of what the tool does.\",\n            placeholder=\"This tool does something.\",\n            required=True,\n        ),\n        MultilineInput(\n            name=\"tool_code\",\n            display_name=\"Tool Code\",\n            info=\"Enter the dataclass code here.\",\n            placeholder=\"def my_function():\\n    pass\",\n            required=True,\n            refresh_button=True,\n        ),\n        BoolInput(\n            name=\"return_direct\",\n            display_name=\"Return Direct\",\n            info=\"Return the output directly.\",\n            value=True,\n        ),\n        DropdownInput(\n            name=\"tool_function\",\n            display_name=\"Tool Function\",\n            info=\"Select the function for additional expressions.\",\n            placeholder=\"my_function\",\n            options=[],\n            refresh_button=True,\n        ),\n        DropdownInput(\n            name=\"tool_class\",\n            display_name=\"Tool Class\",\n            info=\"Select the class for additional expressions.\",\n            placeholder=\"MyClass\",\n            options=[],\n            refresh_button=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Tool\", name=\"tool\", method=\"build_tool\"),\n    ]\n    \n    def parse_source_name(self, code: str) -> Dict:\n        self.log(\"Parsing source code\")\n        parsed_code = ast.parse(code)\n        class_names = [node.name for node in parsed_code.body if isinstance(node, ast.ClassDef)]\n        function_names = [node.name for node in parsed_code.body if isinstance(node, ast.FunctionDef)]\n        return {\"class\": class_names, \"function\": function_names}\n    \n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None) -> dotdict:\n        self.log(\"Updating build config A\")\n        if field_name == \"tool_code\" or field_name == \"tool_function\" or field_name == \"tool_class\":\n            try:\n                names = self.parse_source_name(build_config.tool_code.value)\n                build_config.tool_class.options = names[\"class\"]\n                build_config.tool_function.options = names[\"function\"]\n            except Exception as e:\n                self.status = f\"Failed to extract class names: {str(e)}\"\n                build_config.tool_class.options = [\"Failed to parse\", str(e)]\n                build_config.tool_function.options = []\n        return build_config\n\n    def build_output(self) -> Data:\n        self.log(\"Building output 1\")\n        self.log(\"Building output 2\")\n        data = Data(value=self.tool_name)\n        self.status = data\n        return data\n    \n    def build_tool(self) -> Tool:\n        self.log(\"Building tool\")\n        local_namespace = {}  # type: ignore\n        exec(self.tool_code, globals(), local_namespace)\n        \n        func = local_namespace[self.tool_function]\n        _class = None\n        \n        if self.tool_class:\n            _class = local_namespace[self.tool_class]\n        \n        tool = StructuredTool.from_function(\n            func=func,\n            args_schema=_class,\n            name=self.tool_name,\n            description=self.description,\n            return_direct=self.return_direct,\n        )\n        \n        return tool",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "description": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "This tool does something.",
+                  "show": true,
+                  "value": "Applies a magic and mysterious operation between two numbers",
+                  "name": "description",
+                  "display_name": "Description",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Provide a brief description of what the tool does.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "return_direct": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": true,
+                  "name": "return_direct",
+                  "display_name": "Return Direct",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Return the output directly.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "tool_class": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "MagicOperationInput"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "MyClass",
+                  "show": true,
+                  "value": "MagicOperationInput",
+                  "name": "tool_class",
+                  "display_name": "Tool Class",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Select the class for additional expressions.",
+                  "refresh_button": true,
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput",
+                  "load_from_db": false
+                },
+                "tool_code": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "def my_function():\n    pass",
+                  "show": true,
+                  "value": "from langchain_core.tools import ToolException\nfrom pydantic import BaseModel, Field\n\nclass MagicOperationInput(BaseModel):\n    a: int = Field(description=\"First number\")\n    b: int = Field(description=\"Second number\")\n\ndef magic_operation(a: int, b: int) -> int:\n    \"\"\"Applies a magic and mysterious operation between two numbers\"\"\"\n    \n    try:\n        return (2 * a * b) / (a + b)\n    except ZeroDivisionError:\n        raise ToolException(f\"Division by zero, this is caused because the sum of the two numbers is zero, {a} + {b} = 0, then x / ({a} + {b}) is undefined\")\n    except Exception as e:\n        raise ToolException(str(e))\n",
+                  "name": "tool_code",
+                  "display_name": "Tool Code",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter the dataclass code here.",
+                  "refresh_button": true,
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "tool_function": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "magic_operation"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "my_function",
+                  "show": true,
+                  "value": "magic_operation",
+                  "name": "tool_function",
+                  "display_name": "Tool Function",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Select the function for additional expressions.",
+                  "refresh_button": true,
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput",
+                  "load_from_db": false
+                },
+                "tool_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "My Tool",
+                  "show": true,
+                  "value": "magic_operation",
+                  "name": "tool_name",
+                  "display_name": "Tool Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter the name of the tool.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Structuredtool dataclass code tool",
+              "icon": "🐍",
+              "base_classes": [
+                "Tool"
+              ],
+              "display_name": "Custom Python Tool",
+              "documentation": "https://python.langchain.com/docs/modules/tools/custom_tools/#structuredtool-dataclass",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "tool_name",
+                "description",
+                "tool_code",
+                "return_direct",
+                "tool_function",
+                "tool_class"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-qBHOF"
+          },
+          "id": "CustomComponent-qBHOF",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-04T01:07:06.765Z",
+    "date_updated": "2024-08-04T01:07:06.790Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "8968c0c8-c3a6-46b0-93d4-bd811e5286f0",
+    "user_created": {
+      "username": "YeiferMunozTelintel",
+      "first_name": "Yeifer",
+      "last_name": "Muñoz",
+      "id": "8968c0c8-c3a6-46b0-93d4-bd811e5286f0"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.576Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,2029 @@
+{
+  "id": "590eda8d-f90e-438a-a779-894fe5b1c0bf",
+  "name": "agriculture_agent",
+  "description": "Create, Chain, Communicate. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "mikealive",
+    "first_name": "Xianzhi",
+    "last_name": "",
+    "id": "7fc81a53-6064-4eee-a0d4-5ced48809343",
+    "full_name": "Xianzhi"
+  },
+  "store_url": "https://www.langflow.store/store/component/590eda8d-f90e-438a-a779-894fe5b1c0bf",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-06-10T12:36:39.451Z",
+    "updated": "2024-06-10T12:36:39.478Z",
+    "downloaded": "2025-08-19T17:50:05.384Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "0.6.19",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "OpenAIConversationalAgent-rho6n",
+        "type": "genericNode",
+        "position": {
+          "x": 1682.1159853829333,
+          "y": -13.748206836311624
+        },
+        "data": {
+          "type": "OpenAIConversationalAgent",
+          "node": {
+            "template": {
+              "memory": {
+                "type": "BaseMemory",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "memory",
+                "display_name": "Memory",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "system_message": {
+                "type": "SystemMessagePromptTemplate",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "system_message",
+                "display_name": "System Message",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "tools": {
+                "type": "Tool",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "tools",
+                "display_name": "Tools",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List, Optional\n\nfrom langchain.agents.agent import AgentExecutor\nfrom langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import _get_default_system_message\nfrom langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent\nfrom langchain.memory.token_buffer import ConversationTokenBufferMemory\nfrom langchain.prompts import SystemMessagePromptTemplate\nfrom langchain.prompts.chat import MessagesPlaceholder\nfrom langchain.schema.memory import BaseMemory\nfrom langchain.tools import Tool\nfrom langchain_community.chat_models import ChatOpenAI\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing.range_spec import RangeSpec\n\n\nclass ConversationalAgent(CustomComponent):\n    display_name: str = \"OpenAI Conversational Agent\"\n    description: str = \"Conversational Agent that can use OpenAI's function calling API\"\n\n    def build_config(self):\n        openai_function_models = [\n            \"gpt-4-turbo-preview\",\n            \"gpt-4-0125-preview\",\n            \"gpt-4-1106-preview\",\n            \"gpt-4-vision-preview\",\n            \"gpt-3.5-turbo-0125\",\n            \"gpt-3.5-turbo-1106\",\n        ]\n        return {\n            \"tools\": {\"display_name\": \"Tools\"},\n            \"memory\": {\"display_name\": \"Memory\"},\n            \"system_message\": {\"display_name\": \"System Message\"},\n            \"max_token_limit\": {\"display_name\": \"Max Token Limit\"},\n            \"model_name\": {\n                \"display_name\": \"Model Name\",\n                \"options\": openai_function_models,\n                \"value\": openai_function_models[0],\n            },\n            \"code\": {\"show\": False},\n            \"temperature\": {\n                \"display_name\": \"Temperature\",\n                \"value\": 0.2,\n                \"range_spec\": RangeSpec(min=0, max=2, step=0.1),\n            },\n        }\n\n    def build(\n        self,\n        model_name: str,\n        openai_api_key: str,\n        tools: List[Tool],\n        openai_api_base: Optional[str] = None,\n        memory: Optional[BaseMemory] = None,\n        system_message: Optional[SystemMessagePromptTemplate] = None,\n        max_token_limit: int = 2000,\n        temperature: float = 0.9,\n    ) -> AgentExecutor:\n        llm = ChatOpenAI(\n            model=model_name,\n            api_key=openai_api_key,\n            base_url=openai_api_base,\n            max_tokens=max_token_limit,\n            temperature=temperature,\n        )\n        if not memory:\n            memory_key = \"chat_history\"\n            memory = ConversationTokenBufferMemory(\n                memory_key=memory_key,\n                return_messages=True,\n                output_key=\"output\",\n                llm=llm,\n                max_token_limit=max_token_limit,\n            )\n        else:\n            memory_key = memory.memory_key  # type: ignore\n\n        _system_message = system_message or _get_default_system_message()\n        prompt = OpenAIFunctionsAgent.create_prompt(\n            system_message=_system_message,  # type: ignore\n            extra_prompt_messages=[MessagesPlaceholder(variable_name=memory_key)],\n        )\n        agent = OpenAIFunctionsAgent(\n            llm=llm,\n            tools=tools,\n            prompt=prompt,  # type: ignore\n        )\n        return AgentExecutor(\n            agent=agent,\n            tools=tools,  # type: ignore\n            memory=memory,\n            verbose=True,\n            return_intermediate_steps=True,\n            handle_parsing_errors=True,\n        )\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "max_token_limit": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 2000,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "max_token_limit",
+                "display_name": "Max Token Limit",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "model_name": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "gpt-4-turbo-preview",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "gpt-4-turbo-preview",
+                  "gpt-4-0125-preview",
+                  "gpt-4-1106-preview",
+                  "gpt-4-vision-preview",
+                  "gpt-3.5-turbo-0125",
+                  "gpt-3.5-turbo-1106"
+                ],
+                "name": "model_name",
+                "display_name": "Model Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "openai_api_base": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "openai_api_base",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "openai_api_key": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "openai_api_key",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "temperature": {
+                "type": "float",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 0.2,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "temperature",
+                "display_name": "Temperature",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "rangeSpec": {
+                  "min": 0,
+                  "max": 2,
+                  "step": 0.1
+                },
+                "title_case": true
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Conversational Agent that can use OpenAI's function calling API",
+            "base_classes": [
+              "AgentExecutor",
+              "Chain"
+            ],
+            "display_name": "OpenAI Conversational Agent",
+            "documentation": "",
+            "custom_fields": {
+              "model_name": null,
+              "openai_api_key": null,
+              "tools": null,
+              "openai_api_base": null,
+              "memory": null,
+              "system_message": null,
+              "max_token_limit": null,
+              "temperature": null
+            },
+            "output_types": [
+              "AgentExecutor"
+            ],
+            "field_formatters": {},
+            "beta": true
+          },
+          "id": "OpenAIConversationalAgent-rho6n"
+        },
+        "selected": false,
+        "width": 480,
+        "height": 1107,
+        "positionAbsolute": {
+          "x": 1682.1159853829333,
+          "y": -13.748206836311624
+        },
+        "dragging": false
+      },
+      {
+        "id": "Chroma-fEMpa",
+        "type": "genericNode",
+        "position": {
+          "x": 161.38073843780307,
+          "y": 563.1222357161555
+        },
+        "data": {
+          "type": "Chroma",
+          "node": {
+            "template": {
+              "documents": {
+                "type": "Document",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "documents",
+                "display_name": "Documents",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "embedding": {
+                "type": "Embeddings",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "embedding",
+                "display_name": "Embedding",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "chroma_server_cors_allow_origins": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "chroma_server_cors_allow_origins",
+                "display_name": "Server CORS Allow Origins",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "chroma_server_grpc_port": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "chroma_server_grpc_port",
+                "display_name": "Server gRPC Port",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "chroma_server_host": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "chroma_server_host",
+                "display_name": "Server Host",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "chroma_server_port": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "chroma_server_port",
+                "display_name": "Server Port",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "chroma_server_ssl_enabled": {
+                "type": "bool",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "chroma_server_ssl_enabled",
+                "display_name": "Server SSL Enabled",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List, Optional, Union\n\nimport chromadb  # type: ignore\nfrom langchain.embeddings.base import Embeddings\nfrom langchain.schema import BaseRetriever, Document\nfrom langchain_community.vectorstores import VectorStore\nfrom langchain_community.vectorstores.chroma import Chroma\nfrom axiestudio import CustomComponent\n\n\nclass ChromaComponent(CustomComponent):\n    \"\"\"\n    A custom component for implementing a Vector Store using Chroma.\n    \"\"\"\n\n    display_name: str = \"Chroma\"\n    description: str = \"Implementation of Vector Store using Chroma\"\n    documentation = \"https://python.langchain.com/docs/integrations/vectorstores/chroma\"\n    beta: bool = True\n\n    def build_config(self):\n        \"\"\"\n        Builds the configuration for the component.\n\n        Returns:\n        - dict: A dictionary containing the configuration options for the component.\n        \"\"\"\n        return {\n            \"collection_name\": {\"display_name\": \"Collection Name\", \"value\": \"axiestudio\"},\n            \"persist\": {\"display_name\": \"Persist\"},\n            \"persist_directory\": {\"display_name\": \"Persist Directory\"},\n            \"code\": {\"advanced\": True, \"display_name\": \"Code\"},\n            \"documents\": {\"display_name\": \"Documents\", \"is_list\": True},\n            \"embedding\": {\"display_name\": \"Embedding\"},\n            \"chroma_server_cors_allow_origins\": {\n                \"display_name\": \"Server CORS Allow Origins\",\n                \"advanced\": True,\n            },\n            \"chroma_server_host\": {\"display_name\": \"Server Host\", \"advanced\": True},\n            \"chroma_server_port\": {\"display_name\": \"Server Port\", \"advanced\": True},\n            \"chroma_server_grpc_port\": {\n                \"display_name\": \"Server gRPC Port\",\n                \"advanced\": True,\n            },\n            \"chroma_server_ssl_enabled\": {\n                \"display_name\": \"Server SSL Enabled\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        collection_name: str,\n        persist: bool,\n        embedding: Embeddings,\n        chroma_server_ssl_enabled: bool,\n        persist_directory: Optional[str] = None,\n        documents: Optional[List[Document]] = None,\n        chroma_server_cors_allow_origins: Optional[str] = None,\n        chroma_server_host: Optional[str] = None,\n        chroma_server_port: Optional[int] = None,\n        chroma_server_grpc_port: Optional[int] = None,\n    ) -> Union[VectorStore, BaseRetriever]:\n        \"\"\"\n        Builds the Vector Store or BaseRetriever object.\n\n        Args:\n        - collection_name (str): The name of the collection.\n        - persist_directory (Optional[str]): The directory to persist the Vector Store to.\n        - chroma_server_ssl_enabled (bool): Whether to enable SSL for the Chroma server.\n        - persist (bool): Whether to persist the Vector Store or not.\n        - embedding (Optional[Embeddings]): The embeddings to use for the Vector Store.\n        - documents (Optional[Document]): The documents to use for the Vector Store.\n        - chroma_server_cors_allow_origins (Optional[str]): The CORS allow origins for the Chroma server.\n        - chroma_server_host (Optional[str]): The host for the Chroma server.\n        - chroma_server_port (Optional[int]): The port for the Chroma server.\n        - chroma_server_grpc_port (Optional[int]): The gRPC port for the Chroma server.\n\n        Returns:\n        - Union[VectorStore, BaseRetriever]: The Vector Store or BaseRetriever object.\n        \"\"\"\n\n        # Chroma settings\n        chroma_settings = None\n\n        if chroma_server_host is not None:\n            chroma_settings = chromadb.config.Settings(\n                chroma_server_cors_allow_origins=chroma_server_cors_allow_origins or None,\n                chroma_server_host=chroma_server_host,\n                chroma_server_port=chroma_server_port or None,\n                chroma_server_grpc_port=chroma_server_grpc_port or None,\n                chroma_server_ssl_enabled=chroma_server_ssl_enabled,\n            )\n\n        # If documents, then we need to create a Chroma instance using .from_documents\n        if documents is not None and embedding is not None:\n            if len(documents) == 0:\n                raise ValueError(\"If documents are provided, there must be at least one document.\")\n            return Chroma.from_documents(\n                documents=documents,  # type: ignore\n                persist_directory=persist_directory if persist else None,\n                collection_name=collection_name,\n                embedding=embedding,\n                client_settings=chroma_settings,\n            )\n\n        return Chroma(persist_directory=persist_directory, client_settings=chroma_settings)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "collection_name": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "axiestudio",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "collection_name",
+                "display_name": "Collection Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "persist": {
+                "type": "bool",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "persist",
+                "display_name": "Persist",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "persist_directory": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "persist_directory",
+                "display_name": "Persist Directory",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Implementation of Vector Store using Chroma",
+            "base_classes": [
+              "VectorStore",
+              "BaseRetriever"
+            ],
+            "display_name": "Chroma",
+            "documentation": "https://python.langchain.com/docs/integrations/vectorstores/chroma",
+            "custom_fields": {
+              "collection_name": null,
+              "persist": null,
+              "embedding": null,
+              "chroma_server_ssl_enabled": null,
+              "persist_directory": null,
+              "documents": null,
+              "chroma_server_cors_allow_origins": null,
+              "chroma_server_host": null,
+              "chroma_server_port": null,
+              "chroma_server_grpc_port": null
+            },
+            "output_types": [
+              "VectorStore",
+              "BaseRetriever"
+            ],
+            "field_formatters": {},
+            "beta": true
+          },
+          "id": "Chroma-fEMpa"
+        },
+        "selected": false,
+        "width": 480,
+        "height": 685,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 161.38073843780307,
+          "y": 563.1222357161555
+        }
+      },
+      {
+        "id": "VectorStoreRetrieverMemory-IYNcn",
+        "type": "genericNode",
+        "position": {
+          "x": 1037.1546039529635,
+          "y": 26.863089436495272
+        },
+        "data": {
+          "type": "VectorStoreRetrieverMemory",
+          "node": {
+            "template": {
+              "retriever": {
+                "type": "VectorStoreRetriever",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "retriever",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "exclude_input_keys": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": false,
+                "multiline": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "exclude_input_keys",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "input_key": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_key",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The variable to be used as Chat Input when more than one variable is available.",
+                "title_case": true
+              },
+              "memory_key": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "chat_history",
+                "fileTypes": [],
+                "password": false,
+                "name": "memory_key",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "return_docs": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": false,
+                "multiline": false,
+                "fileTypes": [],
+                "password": false,
+                "name": "return_docs",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "return_messages": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "return_messages",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "_type": "VectorStoreRetrieverMemory"
+            },
+            "description": "VectorStoreRetriever-backed memory.",
+            "base_classes": [
+              "BaseMemory",
+              "VectorStoreRetrieverMemory"
+            ],
+            "display_name": "VectorStoreRetrieverMemory",
+            "documentation": "https://python.langchain.com/docs/modules/memory/how_to/vectorstore_retriever_memory",
+            "custom_fields": {},
+            "output_types": [],
+            "field_formatters": {},
+            "beta": false
+          },
+          "id": "VectorStoreRetrieverMemory-IYNcn"
+        },
+        "selected": false,
+        "width": 480,
+        "height": 625,
+        "positionAbsolute": {
+          "x": 1037.1546039529635,
+          "y": 26.863089436495272
+        },
+        "dragging": false
+      },
+      {
+        "id": "VectorStoreRetriever-lNKMh",
+        "type": "genericNode",
+        "position": {
+          "x": 408.61709808621856,
+          "y": 211.41980861066412
+        },
+        "data": {
+          "type": "VectorStoreRetriever",
+          "node": {
+            "template": {
+              "vectorstore": {
+                "type": "VectorStore",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "vectorstore",
+                "display_name": "Vector Store",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langchain_core.vectorstores import VectorStoreRetriever\n\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import VectorStore\n\n\nclass VectoStoreRetrieverComponent(CustomComponent):\n    display_name = \"VectorStore Retriever\"\n    description = \"A vector store retriever\"\n\n    def build_config(self):\n        return {\n            \"vectorstore\": {\"display_name\": \"Vector Store\", \"type\": VectorStore},\n        }\n\n    def build(self, vectorstore: VectorStore) -> VectorStoreRetriever:\n        return vectorstore.as_retriever()\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "A vector store retriever",
+            "base_classes": [
+              "VectorStoreRetriever",
+              "BaseRetriever"
+            ],
+            "display_name": "VectorStore Retriever",
+            "documentation": "",
+            "custom_fields": {
+              "vectorstore": null
+            },
+            "output_types": [
+              "VectorStoreRetriever"
+            ],
+            "field_formatters": {},
+            "beta": true
+          },
+          "id": "VectorStoreRetriever-lNKMh"
+        },
+        "selected": false,
+        "width": 480,
+        "height": 407,
+        "positionAbsolute": {
+          "x": 408.61709808621856,
+          "y": 211.41980861066412
+        },
+        "dragging": false
+      },
+      {
+        "id": "DirectoryLoader-99Vox",
+        "type": "genericNode",
+        "position": {
+          "x": -229.47662663260223,
+          "y": 344.40828123705967
+        },
+        "data": {
+          "type": "DirectoryLoader",
+          "node": {
+            "template": {
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Any, Dict, List\n\nfrom langchain.docstore.document import Document\nfrom langchain.document_loaders.directory import DirectoryLoader\nfrom axiestudio import CustomComponent\n\n\nclass DirectoryLoaderComponent(CustomComponent):\n    display_name = \"DirectoryLoader\"\n    description = \"Load from a directory.\"\n\n    def build_config(self) -> Dict[str, Any]:\n        return {\n            \"glob\": {\"display_name\": \"Glob Pattern\", \"value\": \"**/*.txt\"},\n            \"load_hidden\": {\"display_name\": \"Load Hidden Files\", \"value\": False, \"advanced\": True},\n            \"max_concurrency\": {\"display_name\": \"Max Concurrency\", \"value\": 10, \"advanced\": True},\n            \"metadata\": {\"display_name\": \"Metadata\", \"value\": {}},\n            \"path\": {\"display_name\": \"Local Directory\"},\n            \"recursive\": {\"display_name\": \"Recursive\", \"value\": True, \"advanced\": True},\n            \"silent_errors\": {\"display_name\": \"Silent Errors\", \"value\": False, \"advanced\": True},\n            \"use_multithreading\": {\"display_name\": \"Use Multithreading\", \"value\": True, \"advanced\": True},\n        }\n\n    def build(\n        self,\n        glob: str,\n        path: str,\n        max_concurrency: int = 2,\n        load_hidden: bool = False,\n        recursive: bool = True,\n        silent_errors: bool = False,\n        use_multithreading: bool = True,\n    ) -> List[Document]:\n        return DirectoryLoader(\n            glob=glob,\n            path=path,\n            load_hidden=load_hidden,\n            max_concurrency=max_concurrency,\n            recursive=recursive,\n            silent_errors=silent_errors,\n            use_multithreading=use_multithreading,\n        ).load()\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "glob": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "**/*.txt",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "glob",
+                "display_name": "Glob Pattern",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "load_hidden": {
+                "type": "bool",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "load_hidden",
+                "display_name": "Load Hidden Files",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "max_concurrency": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 10,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "max_concurrency",
+                "display_name": "Max Concurrency",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "path": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "path",
+                "display_name": "Local Directory",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "recursive": {
+                "type": "bool",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": true,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "recursive",
+                "display_name": "Recursive",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "silent_errors": {
+                "type": "bool",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "silent_errors",
+                "display_name": "Silent Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "use_multithreading": {
+                "type": "bool",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": true,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "use_multithreading",
+                "display_name": "Use Multithreading",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Load from a directory.",
+            "base_classes": [
+              "Document"
+            ],
+            "display_name": "DirectoryLoader",
+            "documentation": "",
+            "custom_fields": {
+              "glob": null,
+              "path": null,
+              "max_concurrency": null,
+              "load_hidden": null,
+              "recursive": null,
+              "silent_errors": null,
+              "use_multithreading": null
+            },
+            "output_types": [
+              "Document"
+            ],
+            "field_formatters": {},
+            "beta": true
+          },
+          "id": "DirectoryLoader-99Vox"
+        },
+        "selected": true,
+        "width": 480,
+        "height": 579,
+        "positionAbsolute": {
+          "x": -229.47662663260223,
+          "y": 344.40828123705967
+        },
+        "dragging": true
+      }
+    ],
+    "edges": [
+      {
+        "source": "Chroma-fEMpa",
+        "sourceHandle": "{œbaseClassesœ:[œVectorStoreœ,œBaseRetrieverœ],œdataTypeœ:œChromaœ,œidœ:œChroma-fEMpaœ}",
+        "target": "VectorStoreRetriever-lNKMh",
+        "targetHandle": "{œfieldNameœ:œvectorstoreœ,œidœ:œVectorStoreRetriever-lNKMhœ,œinputTypesœ:null,œtypeœ:œVectorStoreœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "vectorstore",
+            "id": "VectorStoreRetriever-lNKMh",
+            "inputTypes": null,
+            "type": "VectorStore"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "VectorStore",
+              "BaseRetriever"
+            ],
+            "dataType": "Chroma",
+            "id": "Chroma-fEMpa"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-foreground  stroke-connection",
+        "animated": false,
+        "id": "reactflow__edge-Chroma-fEMpa{œbaseClassesœ:[œVectorStoreœ,œBaseRetrieverœ],œdataTypeœ:œChromaœ,œidœ:œChroma-fEMpaœ}-VectorStoreRetriever-lNKMh{œfieldNameœ:œvectorstoreœ,œidœ:œVectorStoreRetriever-lNKMhœ,œinputTypesœ:null,œtypeœ:œVectorStoreœ}"
+      },
+      {
+        "source": "VectorStoreRetriever-lNKMh",
+        "sourceHandle": "{œbaseClassesœ:[œVectorStoreRetrieverœ,œBaseRetrieverœ],œdataTypeœ:œVectorStoreRetrieverœ,œidœ:œVectorStoreRetriever-lNKMhœ}",
+        "target": "VectorStoreRetrieverMemory-IYNcn",
+        "targetHandle": "{œfieldNameœ:œretrieverœ,œidœ:œVectorStoreRetrieverMemory-IYNcnœ,œinputTypesœ:null,œtypeœ:œVectorStoreRetrieverœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "retriever",
+            "id": "VectorStoreRetrieverMemory-IYNcn",
+            "inputTypes": null,
+            "type": "VectorStoreRetriever"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "VectorStoreRetriever",
+              "BaseRetriever"
+            ],
+            "dataType": "VectorStoreRetriever",
+            "id": "VectorStoreRetriever-lNKMh"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-foreground  stroke-connection",
+        "animated": false,
+        "id": "reactflow__edge-VectorStoreRetriever-lNKMh{œbaseClassesœ:[œVectorStoreRetrieverœ,œBaseRetrieverœ],œdataTypeœ:œVectorStoreRetrieverœ,œidœ:œVectorStoreRetriever-lNKMhœ}-VectorStoreRetrieverMemory-IYNcn{œfieldNameœ:œretrieverœ,œidœ:œVectorStoreRetrieverMemory-IYNcnœ,œinputTypesœ:null,œtypeœ:œVectorStoreRetrieverœ}"
+      },
+      {
+        "source": "DirectoryLoader-99Vox",
+        "sourceHandle": "{œbaseClassesœ:[œDocumentœ],œdataTypeœ:œDirectoryLoaderœ,œidœ:œDirectoryLoader-99Voxœ}",
+        "target": "Chroma-fEMpa",
+        "targetHandle": "{œfieldNameœ:œdocumentsœ,œidœ:œChroma-fEMpaœ,œinputTypesœ:null,œtypeœ:œDocumentœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "documents",
+            "id": "Chroma-fEMpa",
+            "inputTypes": null,
+            "type": "Document"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "Document"
+            ],
+            "dataType": "DirectoryLoader",
+            "id": "DirectoryLoader-99Vox"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-foreground  stroke-connection",
+        "animated": false,
+        "id": "reactflow__edge-DirectoryLoader-99Vox{œbaseClassesœ:[œDocumentœ],œdataTypeœ:œDirectoryLoaderœ,œidœ:œDirectoryLoader-99Voxœ}-Chroma-fEMpa{œfieldNameœ:œdocumentsœ,œidœ:œChroma-fEMpaœ,œinputTypesœ:null,œtypeœ:œDocumentœ}"
+      },
+      {
+        "source": "VectorStoreRetrieverMemory-IYNcn",
+        "sourceHandle": "{œbaseClassesœ:[œBaseMemoryœ,œVectorStoreRetrieverMemoryœ],œdataTypeœ:œVectorStoreRetrieverMemoryœ,œidœ:œVectorStoreRetrieverMemory-IYNcnœ}",
+        "target": "OpenAIConversationalAgent-rho6n",
+        "targetHandle": "{œfieldNameœ:œmemoryœ,œidœ:œOpenAIConversationalAgent-rho6nœ,œinputTypesœ:null,œtypeœ:œBaseMemoryœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "memory",
+            "id": "OpenAIConversationalAgent-rho6n",
+            "inputTypes": null,
+            "type": "BaseMemory"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "BaseMemory",
+              "VectorStoreRetrieverMemory"
+            ],
+            "dataType": "VectorStoreRetrieverMemory",
+            "id": "VectorStoreRetrieverMemory-IYNcn"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-foreground  stroke-connection",
+        "animated": false,
+        "id": "reactflow__edge-VectorStoreRetrieverMemory-IYNcn{œbaseClassesœ:[œBaseMemoryœ,œVectorStoreRetrieverMemoryœ],œdataTypeœ:œVectorStoreRetrieverMemoryœ,œidœ:œVectorStoreRetrieverMemory-IYNcnœ}-OpenAIConversationalAgent-rho6n{œfieldNameœ:œmemoryœ,œidœ:œOpenAIConversationalAgent-rho6nœ,œinputTypesœ:null,œtypeœ:œBaseMemoryœ}"
+      }
+    ],
+    "viewport": {
+      "x": 180.50387162350694,
+      "y": 118.62655712411231,
+      "zoom": 0.5743491782597534
+    }
+  },
+  "metadata": {
+    "OpenAIConversationalAgent": {
+      "count": 1
+    },
+    "Chroma": {
+      "count": 1
+    },
+    "VectorStoreRetrieverMemory": {
+      "count": 1
+    },
+    "VectorStoreRetriever": {
+      "count": 1
+    },
+    "DirectoryLoader": {
+      "count": 1
+    },
+    "total": 5
+  },
+  "original": {
+    "id": "590eda8d-f90e-438a-a779-894fe5b1c0bf",
+    "name": "agriculture_agent",
+    "description": "Create, Chain, Communicate.",
+    "is_component": false,
+    "liked_by_count": "0",
+    "downloads_count": "0",
+    "metadata": {
+      "OpenAIConversationalAgent": {
+        "count": 1
+      },
+      "Chroma": {
+        "count": 1
+      },
+      "VectorStoreRetrieverMemory": {
+        "count": 1
+      },
+      "VectorStoreRetriever": {
+        "count": 1
+      },
+      "DirectoryLoader": {
+        "count": 1
+      },
+      "total": 5
+    },
+    "last_tested_version": "0.6.19",
+    "private": true,
+    "data": {
+      "nodes": [
+        {
+          "id": "OpenAIConversationalAgent-rho6n",
+          "type": "genericNode",
+          "position": {
+            "x": 1682.1159853829333,
+            "y": -13.748206836311624
+          },
+          "data": {
+            "type": "OpenAIConversationalAgent",
+            "node": {
+              "template": {
+                "memory": {
+                  "type": "BaseMemory",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "memory",
+                  "display_name": "Memory",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "system_message": {
+                  "type": "SystemMessagePromptTemplate",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "system_message",
+                  "display_name": "System Message",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "tools": {
+                  "type": "Tool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "tools",
+                  "display_name": "Tools",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List, Optional\n\nfrom langchain.agents.agent import AgentExecutor\nfrom langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import _get_default_system_message\nfrom langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent\nfrom langchain.memory.token_buffer import ConversationTokenBufferMemory\nfrom langchain.prompts import SystemMessagePromptTemplate\nfrom langchain.prompts.chat import MessagesPlaceholder\nfrom langchain.schema.memory import BaseMemory\nfrom langchain.tools import Tool\nfrom langchain_community.chat_models import ChatOpenAI\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing.range_spec import RangeSpec\n\n\nclass ConversationalAgent(CustomComponent):\n    display_name: str = \"OpenAI Conversational Agent\"\n    description: str = \"Conversational Agent that can use OpenAI's function calling API\"\n\n    def build_config(self):\n        openai_function_models = [\n            \"gpt-4-turbo-preview\",\n            \"gpt-4-0125-preview\",\n            \"gpt-4-1106-preview\",\n            \"gpt-4-vision-preview\",\n            \"gpt-3.5-turbo-0125\",\n            \"gpt-3.5-turbo-1106\",\n        ]\n        return {\n            \"tools\": {\"display_name\": \"Tools\"},\n            \"memory\": {\"display_name\": \"Memory\"},\n            \"system_message\": {\"display_name\": \"System Message\"},\n            \"max_token_limit\": {\"display_name\": \"Max Token Limit\"},\n            \"model_name\": {\n                \"display_name\": \"Model Name\",\n                \"options\": openai_function_models,\n                \"value\": openai_function_models[0],\n            },\n            \"code\": {\"show\": False},\n            \"temperature\": {\n                \"display_name\": \"Temperature\",\n                \"value\": 0.2,\n                \"range_spec\": RangeSpec(min=0, max=2, step=0.1),\n            },\n        }\n\n    def build(\n        self,\n        model_name: str,\n        openai_api_key: str,\n        tools: List[Tool],\n        openai_api_base: Optional[str] = None,\n        memory: Optional[BaseMemory] = None,\n        system_message: Optional[SystemMessagePromptTemplate] = None,\n        max_token_limit: int = 2000,\n        temperature: float = 0.9,\n    ) -> AgentExecutor:\n        llm = ChatOpenAI(\n            model=model_name,\n            api_key=openai_api_key,\n            base_url=openai_api_base,\n            max_tokens=max_token_limit,\n            temperature=temperature,\n        )\n        if not memory:\n            memory_key = \"chat_history\"\n            memory = ConversationTokenBufferMemory(\n                memory_key=memory_key,\n                return_messages=True,\n                output_key=\"output\",\n                llm=llm,\n                max_token_limit=max_token_limit,\n            )\n        else:\n            memory_key = memory.memory_key  # type: ignore\n\n        _system_message = system_message or _get_default_system_message()\n        prompt = OpenAIFunctionsAgent.create_prompt(\n            system_message=_system_message,  # type: ignore\n            extra_prompt_messages=[MessagesPlaceholder(variable_name=memory_key)],\n        )\n        agent = OpenAIFunctionsAgent(\n            llm=llm,\n            tools=tools,\n            prompt=prompt,  # type: ignore\n        )\n        return AgentExecutor(\n            agent=agent,\n            tools=tools,  # type: ignore\n            memory=memory,\n            verbose=True,\n            return_intermediate_steps=True,\n            handle_parsing_errors=True,\n        )\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "max_token_limit": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 2000,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "max_token_limit",
+                  "display_name": "Max Token Limit",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "model_name": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "gpt-4-turbo-preview",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "gpt-4-turbo-preview",
+                    "gpt-4-0125-preview",
+                    "gpt-4-1106-preview",
+                    "gpt-4-vision-preview",
+                    "gpt-3.5-turbo-0125",
+                    "gpt-3.5-turbo-1106"
+                  ],
+                  "name": "model_name",
+                  "display_name": "Model Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "openai_api_base": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "openai_api_base",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "openai_api_key": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "openai_api_key",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "temperature": {
+                  "type": "float",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 0.2,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "temperature",
+                  "display_name": "Temperature",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "rangeSpec": {
+                    "min": 0,
+                    "max": 2,
+                    "step": 0.1
+                  },
+                  "title_case": true
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Conversational Agent that can use OpenAI's function calling API",
+              "base_classes": [
+                "AgentExecutor",
+                "Chain"
+              ],
+              "display_name": "OpenAI Conversational Agent",
+              "documentation": "",
+              "custom_fields": {
+                "model_name": null,
+                "openai_api_key": null,
+                "tools": null,
+                "openai_api_base": null,
+                "memory": null,
+                "system_message": null,
+                "max_token_limit": null,
+                "temperature": null
+              },
+              "output_types": [
+                "AgentExecutor"
+              ],
+              "field_formatters": {},
+              "beta": true
+            },
+            "id": "OpenAIConversationalAgent-rho6n"
+          },
+          "selected": false,
+          "width": 480,
+          "height": 1107,
+          "positionAbsolute": {
+            "x": 1682.1159853829333,
+            "y": -13.748206836311624
+          },
+          "dragging": false
+        },
+        {
+          "id": "Chroma-fEMpa",
+          "type": "genericNode",
+          "position": {
+            "x": 161.38073843780307,
+            "y": 563.1222357161555
+          },
+          "data": {
+            "type": "Chroma",
+            "node": {
+              "template": {
+                "documents": {
+                  "type": "Document",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "documents",
+                  "display_name": "Documents",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "embedding": {
+                  "type": "Embeddings",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "embedding",
+                  "display_name": "Embedding",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "chroma_server_cors_allow_origins": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "chroma_server_cors_allow_origins",
+                  "display_name": "Server CORS Allow Origins",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "chroma_server_grpc_port": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "chroma_server_grpc_port",
+                  "display_name": "Server gRPC Port",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "chroma_server_host": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "chroma_server_host",
+                  "display_name": "Server Host",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "chroma_server_port": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "chroma_server_port",
+                  "display_name": "Server Port",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "chroma_server_ssl_enabled": {
+                  "type": "bool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "chroma_server_ssl_enabled",
+                  "display_name": "Server SSL Enabled",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List, Optional, Union\n\nimport chromadb  # type: ignore\nfrom langchain.embeddings.base import Embeddings\nfrom langchain.schema import BaseRetriever, Document\nfrom langchain_community.vectorstores import VectorStore\nfrom langchain_community.vectorstores.chroma import Chroma\nfrom axiestudio import CustomComponent\n\n\nclass ChromaComponent(CustomComponent):\n    \"\"\"\n    A custom component for implementing a Vector Store using Chroma.\n    \"\"\"\n\n    display_name: str = \"Chroma\"\n    description: str = \"Implementation of Vector Store using Chroma\"\n    documentation = \"https://python.langchain.com/docs/integrations/vectorstores/chroma\"\n    beta: bool = True\n\n    def build_config(self):\n        \"\"\"\n        Builds the configuration for the component.\n\n        Returns:\n        - dict: A dictionary containing the configuration options for the component.\n        \"\"\"\n        return {\n            \"collection_name\": {\"display_name\": \"Collection Name\", \"value\": \"axiestudio\"},\n            \"persist\": {\"display_name\": \"Persist\"},\n            \"persist_directory\": {\"display_name\": \"Persist Directory\"},\n            \"code\": {\"advanced\": True, \"display_name\": \"Code\"},\n            \"documents\": {\"display_name\": \"Documents\", \"is_list\": True},\n            \"embedding\": {\"display_name\": \"Embedding\"},\n            \"chroma_server_cors_allow_origins\": {\n                \"display_name\": \"Server CORS Allow Origins\",\n                \"advanced\": True,\n            },\n            \"chroma_server_host\": {\"display_name\": \"Server Host\", \"advanced\": True},\n            \"chroma_server_port\": {\"display_name\": \"Server Port\", \"advanced\": True},\n            \"chroma_server_grpc_port\": {\n                \"display_name\": \"Server gRPC Port\",\n                \"advanced\": True,\n            },\n            \"chroma_server_ssl_enabled\": {\n                \"display_name\": \"Server SSL Enabled\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        collection_name: str,\n        persist: bool,\n        embedding: Embeddings,\n        chroma_server_ssl_enabled: bool,\n        persist_directory: Optional[str] = None,\n        documents: Optional[List[Document]] = None,\n        chroma_server_cors_allow_origins: Optional[str] = None,\n        chroma_server_host: Optional[str] = None,\n        chroma_server_port: Optional[int] = None,\n        chroma_server_grpc_port: Optional[int] = None,\n    ) -> Union[VectorStore, BaseRetriever]:\n        \"\"\"\n        Builds the Vector Store or BaseRetriever object.\n\n        Args:\n        - collection_name (str): The name of the collection.\n        - persist_directory (Optional[str]): The directory to persist the Vector Store to.\n        - chroma_server_ssl_enabled (bool): Whether to enable SSL for the Chroma server.\n        - persist (bool): Whether to persist the Vector Store or not.\n        - embedding (Optional[Embeddings]): The embeddings to use for the Vector Store.\n        - documents (Optional[Document]): The documents to use for the Vector Store.\n        - chroma_server_cors_allow_origins (Optional[str]): The CORS allow origins for the Chroma server.\n        - chroma_server_host (Optional[str]): The host for the Chroma server.\n        - chroma_server_port (Optional[int]): The port for the Chroma server.\n        - chroma_server_grpc_port (Optional[int]): The gRPC port for the Chroma server.\n\n        Returns:\n        - Union[VectorStore, BaseRetriever]: The Vector Store or BaseRetriever object.\n        \"\"\"\n\n        # Chroma settings\n        chroma_settings = None\n\n        if chroma_server_host is not None:\n            chroma_settings = chromadb.config.Settings(\n                chroma_server_cors_allow_origins=chroma_server_cors_allow_origins or None,\n                chroma_server_host=chroma_server_host,\n                chroma_server_port=chroma_server_port or None,\n                chroma_server_grpc_port=chroma_server_grpc_port or None,\n                chroma_server_ssl_enabled=chroma_server_ssl_enabled,\n            )\n\n        # If documents, then we need to create a Chroma instance using .from_documents\n        if documents is not None and embedding is not None:\n            if len(documents) == 0:\n                raise ValueError(\"If documents are provided, there must be at least one document.\")\n            return Chroma.from_documents(\n                documents=documents,  # type: ignore\n                persist_directory=persist_directory if persist else None,\n                collection_name=collection_name,\n                embedding=embedding,\n                client_settings=chroma_settings,\n            )\n\n        return Chroma(persist_directory=persist_directory, client_settings=chroma_settings)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "collection_name": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "axiestudio",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "collection_name",
+                  "display_name": "Collection Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "persist": {
+                  "type": "bool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "persist",
+                  "display_name": "Persist",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "persist_directory": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "persist_directory",
+                  "display_name": "Persist Directory",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Implementation of Vector Store using Chroma",
+              "base_classes": [
+                "VectorStore",
+                "BaseRetriever"
+              ],
+              "display_name": "Chroma",
+              "documentation": "https://python.langchain.com/docs/integrations/vectorstores/chroma",
+              "custom_fields": {
+                "collection_name": null,
+                "persist": null,
+                "embedding": null,
+                "chroma_server_ssl_enabled": null,
+                "persist_directory": null,
+                "documents": null,
+                "chroma_server_cors_allow_origins": null,
+                "chroma_server_host": null,
+                "chroma_server_port": null,
+                "chroma_server_grpc_port": null
+              },
+              "output_types": [
+                "VectorStore",
+                "BaseRetriever"
+              ],
+              "field_formatters": {},
+              "beta": true
+            },
+            "id": "Chroma-fEMpa"
+          },
+          "selected": false,
+          "width": 480,
+          "height": 685,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": 161.38073843780307,
+            "y": 563.1222357161555
+          }
+        },
+        {
+          "id": "VectorStoreRetrieverMemory-IYNcn",
+          "type": "genericNode",
+          "position": {
+            "x": 1037.1546039529635,
+            "y": 26.863089436495272
+          },
+          "data": {
+            "type": "VectorStoreRetrieverMemory",
+            "node": {
+              "template": {
+                "retriever": {
+                  "type": "VectorStoreRetriever",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "retriever",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "exclude_input_keys": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": false,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "exclude_input_keys",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "input_key": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_key",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The variable to be used as Chat Input when more than one variable is available.",
+                  "title_case": true
+                },
+                "memory_key": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "chat_history",
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "memory_key",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "return_docs": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": false,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "password": false,
+                  "name": "return_docs",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "return_messages": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "return_messages",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "_type": "VectorStoreRetrieverMemory"
+              },
+              "description": "VectorStoreRetriever-backed memory.",
+              "base_classes": [
+                "BaseMemory",
+                "VectorStoreRetrieverMemory"
+              ],
+              "display_name": "VectorStoreRetrieverMemory",
+              "documentation": "https://python.langchain.com/docs/modules/memory/how_to/vectorstore_retriever_memory",
+              "custom_fields": {},
+              "output_types": [],
+              "field_formatters": {},
+              "beta": false
+            },
+            "id": "VectorStoreRetrieverMemory-IYNcn"
+          },
+          "selected": false,
+          "width": 480,
+          "height": 625,
+          "positionAbsolute": {
+            "x": 1037.1546039529635,
+            "y": 26.863089436495272
+          },
+          "dragging": false
+        },
+        {
+          "id": "VectorStoreRetriever-lNKMh",
+          "type": "genericNode",
+          "position": {
+            "x": 408.61709808621856,
+            "y": 211.41980861066412
+          },
+          "data": {
+            "type": "VectorStoreRetriever",
+            "node": {
+              "template": {
+                "vectorstore": {
+                  "type": "VectorStore",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "vectorstore",
+                  "display_name": "Vector Store",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from langchain_core.vectorstores import VectorStoreRetriever\n\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import VectorStore\n\n\nclass VectoStoreRetrieverComponent(CustomComponent):\n    display_name = \"VectorStore Retriever\"\n    description = \"A vector store retriever\"\n\n    def build_config(self):\n        return {\n            \"vectorstore\": {\"display_name\": \"Vector Store\", \"type\": VectorStore},\n        }\n\n    def build(self, vectorstore: VectorStore) -> VectorStoreRetriever:\n        return vectorstore.as_retriever()\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "A vector store retriever",
+              "base_classes": [
+                "VectorStoreRetriever",
+                "BaseRetriever"
+              ],
+              "display_name": "VectorStore Retriever",
+              "documentation": "",
+              "custom_fields": {
+                "vectorstore": null
+              },
+              "output_types": [
+                "VectorStoreRetriever"
+              ],
+              "field_formatters": {},
+              "beta": true
+            },
+            "id": "VectorStoreRetriever-lNKMh"
+          },
+          "selected": false,
+          "width": 480,
+          "height": 407,
+          "positionAbsolute": {
+            "x": 408.61709808621856,
+            "y": 211.41980861066412
+          },
+          "dragging": false
+        },
+        {
+          "id": "DirectoryLoader-99Vox",
+          "type": "genericNode",
+          "position": {
+            "x": -229.47662663260223,
+            "y": 344.40828123705967
+          },
+          "data": {
+            "type": "DirectoryLoader",
+            "node": {
+              "template": {
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Any, Dict, List\n\nfrom langchain.docstore.document import Document\nfrom langchain.document_loaders.directory import DirectoryLoader\nfrom axiestudio import CustomComponent\n\n\nclass DirectoryLoaderComponent(CustomComponent):\n    display_name = \"DirectoryLoader\"\n    description = \"Load from a directory.\"\n\n    def build_config(self) -> Dict[str, Any]:\n        return {\n            \"glob\": {\"display_name\": \"Glob Pattern\", \"value\": \"**/*.txt\"},\n            \"load_hidden\": {\"display_name\": \"Load Hidden Files\", \"value\": False, \"advanced\": True},\n            \"max_concurrency\": {\"display_name\": \"Max Concurrency\", \"value\": 10, \"advanced\": True},\n            \"metadata\": {\"display_name\": \"Metadata\", \"value\": {}},\n            \"path\": {\"display_name\": \"Local Directory\"},\n            \"recursive\": {\"display_name\": \"Recursive\", \"value\": True, \"advanced\": True},\n            \"silent_errors\": {\"display_name\": \"Silent Errors\", \"value\": False, \"advanced\": True},\n            \"use_multithreading\": {\"display_name\": \"Use Multithreading\", \"value\": True, \"advanced\": True},\n        }\n\n    def build(\n        self,\n        glob: str,\n        path: str,\n        max_concurrency: int = 2,\n        load_hidden: bool = False,\n        recursive: bool = True,\n        silent_errors: bool = False,\n        use_multithreading: bool = True,\n    ) -> List[Document]:\n        return DirectoryLoader(\n            glob=glob,\n            path=path,\n            load_hidden=load_hidden,\n            max_concurrency=max_concurrency,\n            recursive=recursive,\n            silent_errors=silent_errors,\n            use_multithreading=use_multithreading,\n        ).load()\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "glob": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "**/*.txt",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "glob",
+                  "display_name": "Glob Pattern",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "load_hidden": {
+                  "type": "bool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "load_hidden",
+                  "display_name": "Load Hidden Files",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "max_concurrency": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 10,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "max_concurrency",
+                  "display_name": "Max Concurrency",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "path": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "path",
+                  "display_name": "Local Directory",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "recursive": {
+                  "type": "bool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": true,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "recursive",
+                  "display_name": "Recursive",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "silent_errors": {
+                  "type": "bool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "silent_errors",
+                  "display_name": "Silent Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "use_multithreading": {
+                  "type": "bool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": true,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "use_multithreading",
+                  "display_name": "Use Multithreading",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Load from a directory.",
+              "base_classes": [
+                "Document"
+              ],
+              "display_name": "DirectoryLoader",
+              "documentation": "",
+              "custom_fields": {
+                "glob": null,
+                "path": null,
+                "max_concurrency": null,
+                "load_hidden": null,
+                "recursive": null,
+                "silent_errors": null,
+                "use_multithreading": null
+              },
+              "output_types": [
+                "Document"
+              ],
+              "field_formatters": {},
+              "beta": true
+            },
+            "id": "DirectoryLoader-99Vox"
+          },
+          "selected": true,
+          "width": 480,
+          "height": 579,
+          "positionAbsolute": {
+            "x": -229.47662663260223,
+            "y": 344.40828123705967
+          },
+          "dragging": true
+        }
+      ],
+      "edges": [
+        {
+          "source": "Chroma-fEMpa",
+          "sourceHandle": "{œbaseClassesœ:[œVectorStoreœ,œBaseRetrieverœ],œdataTypeœ:œChromaœ,œidœ:œChroma-fEMpaœ}",
+          "target": "VectorStoreRetriever-lNKMh",
+          "targetHandle": "{œfieldNameœ:œvectorstoreœ,œidœ:œVectorStoreRetriever-lNKMhœ,œinputTypesœ:null,œtypeœ:œVectorStoreœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "vectorstore",
+              "id": "VectorStoreRetriever-lNKMh",
+              "inputTypes": null,
+              "type": "VectorStore"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "VectorStore",
+                "BaseRetriever"
+              ],
+              "dataType": "Chroma",
+              "id": "Chroma-fEMpa"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-foreground  stroke-connection",
+          "animated": false,
+          "id": "reactflow__edge-Chroma-fEMpa{œbaseClassesœ:[œVectorStoreœ,œBaseRetrieverœ],œdataTypeœ:œChromaœ,œidœ:œChroma-fEMpaœ}-VectorStoreRetriever-lNKMh{œfieldNameœ:œvectorstoreœ,œidœ:œVectorStoreRetriever-lNKMhœ,œinputTypesœ:null,œtypeœ:œVectorStoreœ}"
+        },
+        {
+          "source": "VectorStoreRetriever-lNKMh",
+          "sourceHandle": "{œbaseClassesœ:[œVectorStoreRetrieverœ,œBaseRetrieverœ],œdataTypeœ:œVectorStoreRetrieverœ,œidœ:œVectorStoreRetriever-lNKMhœ}",
+          "target": "VectorStoreRetrieverMemory-IYNcn",
+          "targetHandle": "{œfieldNameœ:œretrieverœ,œidœ:œVectorStoreRetrieverMemory-IYNcnœ,œinputTypesœ:null,œtypeœ:œVectorStoreRetrieverœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "retriever",
+              "id": "VectorStoreRetrieverMemory-IYNcn",
+              "inputTypes": null,
+              "type": "VectorStoreRetriever"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "VectorStoreRetriever",
+                "BaseRetriever"
+              ],
+              "dataType": "VectorStoreRetriever",
+              "id": "VectorStoreRetriever-lNKMh"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-foreground  stroke-connection",
+          "animated": false,
+          "id": "reactflow__edge-VectorStoreRetriever-lNKMh{œbaseClassesœ:[œVectorStoreRetrieverœ,œBaseRetrieverœ],œdataTypeœ:œVectorStoreRetrieverœ,œidœ:œVectorStoreRetriever-lNKMhœ}-VectorStoreRetrieverMemory-IYNcn{œfieldNameœ:œretrieverœ,œidœ:œVectorStoreRetrieverMemory-IYNcnœ,œinputTypesœ:null,œtypeœ:œVectorStoreRetrieverœ}"
+        },
+        {
+          "source": "DirectoryLoader-99Vox",
+          "sourceHandle": "{œbaseClassesœ:[œDocumentœ],œdataTypeœ:œDirectoryLoaderœ,œidœ:œDirectoryLoader-99Voxœ}",
+          "target": "Chroma-fEMpa",
+          "targetHandle": "{œfieldNameœ:œdocumentsœ,œidœ:œChroma-fEMpaœ,œinputTypesœ:null,œtypeœ:œDocumentœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "documents",
+              "id": "Chroma-fEMpa",
+              "inputTypes": null,
+              "type": "Document"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "Document"
+              ],
+              "dataType": "DirectoryLoader",
+              "id": "DirectoryLoader-99Vox"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-foreground  stroke-connection",
+          "animated": false,
+          "id": "reactflow__edge-DirectoryLoader-99Vox{œbaseClassesœ:[œDocumentœ],œdataTypeœ:œDirectoryLoaderœ,œidœ:œDirectoryLoader-99Voxœ}-Chroma-fEMpa{œfieldNameœ:œdocumentsœ,œidœ:œChroma-fEMpaœ,œinputTypesœ:null,œtypeœ:œDocumentœ}"
+        },
+        {
+          "source": "VectorStoreRetrieverMemory-IYNcn",
+          "sourceHandle": "{œbaseClassesœ:[œBaseMemoryœ,œVectorStoreRetrieverMemoryœ],œdataTypeœ:œVectorStoreRetrieverMemoryœ,œidœ:œVectorStoreRetrieverMemory-IYNcnœ}",
+          "target": "OpenAIConversationalAgent-rho6n",
+          "targetHandle": "{œfieldNameœ:œmemoryœ,œidœ:œOpenAIConversationalAgent-rho6nœ,œinputTypesœ:null,œtypeœ:œBaseMemoryœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "memory",
+              "id": "OpenAIConversationalAgent-rho6n",
+              "inputTypes": null,
+              "type": "BaseMemory"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "BaseMemory",
+                "VectorStoreRetrieverMemory"
+              ],
+              "dataType": "VectorStoreRetrieverMemory",
+              "id": "VectorStoreRetrieverMemory-IYNcn"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-foreground  stroke-connection",
+          "animated": false,
+          "id": "reactflow__edge-VectorStoreRetrieverMemory-IYNcn{œbaseClassesœ:[œBaseMemoryœ,œVectorStoreRetrieverMemoryœ],œdataTypeœ:œVectorStoreRetrieverMemoryœ,œidœ:œVectorStoreRetrieverMemory-IYNcnœ}-OpenAIConversationalAgent-rho6n{œfieldNameœ:œmemoryœ,œidœ:œOpenAIConversationalAgent-rho6nœ,œinputTypesœ:null,œtypeœ:œBaseMemoryœ}"
+        }
+      ],
+      "viewport": {
+        "x": 180.50387162350694,
+        "y": 118.62655712411231,
+        "zoom": 0.5743491782597534
+      }
+    },
+    "date_created": "2024-06-10T12:36:39.451Z",
+    "date_updated": "2024-06-10T12:36:39.478Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "7fc81a53-6064-4eee-a0d4-5ced48809343",
+    "user_created": {
+      "username": "mikealive",
+      "first_name": "Xianzhi",
+      "last_name": null,
+      "id": "7fc81a53-6064-4eee-a0d4-5ced48809343"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:58.402Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 16,
+    "converter_version": "1.0.0"
+  }
+}

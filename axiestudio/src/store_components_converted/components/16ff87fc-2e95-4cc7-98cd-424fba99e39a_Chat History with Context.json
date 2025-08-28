@@ -1,0 +1,607 @@
+{
+  "id": "16ff87fc-2e95-4cc7-98cd-424fba99e39a",
+  "name": "Chat History with Context",
+  "description": "Component that manages conversation memory, retrieving saved messages and providing context. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "aleoli",
+    "first_name": "",
+    "last_name": "",
+    "id": "84dd8f05-6c62-4aca-b062-42b260b98dbc",
+    "full_name": "aleoli"
+  },
+  "store_url": "https://www.langflow.store/store/component/16ff87fc-2e95-4cc7-98cd-424fba99e39a",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-18T23:32:06.423Z",
+    "updated": "2024-07-18T23:32:06.498Z",
+    "downloaded": "2025-08-19T17:50:06.534Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Memory",
+        "id": "e660a9ea-35fb-4587-bfbd-13dba4c556d1"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.9",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Memory",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "memory": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "memory",
+                "display_name": "External Memory",
+                "advanced": false,
+                "input_types": [
+                  "BaseChatMessageHistory"
+                ],
+                "dynamic": false,
+                "info": "Retrieve messages from an external memory. If empty, it will use the Langflow tables.",
+                "title_case": false,
+                "type": "other"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\r\nfrom axiestudio.helpers.data import data_to_text\r\nfrom axiestudio.inputs import HandleInput\r\nfrom axiestudio.io import DropdownInput, IntInput, MessageTextInput, MultilineInput, Output\r\nfrom axiestudio.memory import get_messages, LCBuiltinChatMemory\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.schema.message import Message\r\nfrom axiestudio.field_typing import BaseChatMemory\r\nfrom langchain.memory import ConversationBufferMemory\r\n\r\n\r\nclass ChatHistoryWithContext(Component):\r\n    display_name = \"Chat History with Context\"\r\n    description = \"Component that manages conversation memory, retrieving saved messages and providing context.\"\r\n    icon = \"message-square-more\"\r\n    name = \"Memory\"\r\n\r\n    inputs = [\r\n        HandleInput(\r\n            name=\"memory\",\r\n            display_name=\"External Memory\",\r\n            input_types=[\"BaseChatMessageHistory\"],\r\n            info=\"Retrieve messages from an external memory. If empty, it will use the Langflow tables.\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"sender\",\r\n            display_name=\"Sender Type\",\r\n            options=[\"Machine\", \"User\", \"Machine and User\"],\r\n            value=\"Machine and User\",\r\n            info=\"Type of sender.\",\r\n            advanced=True,\r\n        ),\r\n        MessageTextInput(\r\n            name=\"sender_name\",\r\n            display_name=\"Sender Name\",\r\n            info=\"Name of the sender.\",\r\n            advanced=True,\r\n        ),\r\n        IntInput(\r\n            name=\"n_messages\",\r\n            display_name=\"Number of Messages\",\r\n            value=100,\r\n            info=\"Number of messages to retrieve.\",\r\n            advanced=True,\r\n        ),\r\n        MessageTextInput(\r\n            name=\"session_id\",\r\n            display_name=\"Session ID\",\r\n            info=\"Session ID of the chat history.\",\r\n            advanced=True,\r\n        ),\r\n        DropdownInput(\r\n            name=\"order\",\r\n            display_name=\"Order\",\r\n            options=[\"Ascending\", \"Descending\"],\r\n            value=\"Ascending\",\r\n            info=\"Order of the messages.\",\r\n            advanced=True,\r\n        ),\r\n        MultilineInput(\r\n            name=\"template\",\r\n            display_name=\"Template\",\r\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {sender} or any other key in the message data.\",\r\n            value=\"{sender_name}: {text}\",\r\n            advanced=True,\r\n        ),\r\n        MultilineInput(\r\n            name=\"context_template\",\r\n            display_name=\"Context Template\",\r\n            info=\"The template to use for formatting the first user message. It can contain the keys {text}, {sender} or any other key in the message data.\",\r\n            value=\"Give context and add your rules before the chat starts\\n\\n{sender_name}: {text}\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Messages (Data)\", name=\"messages\", method=\"retrieve_messages\"),\r\n        Output(display_name=\"Messages (Text)\", name=\"messages_text\", method=\"retrieve_messages_as_text\"),\r\n        Output(display_name=\"Memory\", name=\"lc_memory\", method=\"build_lc_memory\"),\r\n    ]\r\n\r\n    def retrieve_messages(self) -> Data:\r\n        sender = self.sender\r\n        sender_name = self.sender_name\r\n        session_id = self.session_id\r\n        n_messages = self.n_messages\r\n        order = \"DESC\" if self.order == \"Descending\" else \"ASC\"\r\n\r\n        if sender == \"Machine and User\":\r\n            sender = None\r\n\r\n        if self.memory:\r\n            # override session_id\r\n            self.memory.session_id = session_id\r\n\r\n            stored = self.memory.messages\r\n            if sender:\r\n                expected_type = \"Machine\" if sender == \"Machine\" else \"User\"\r\n                stored = [m for m in stored if m.type == expected_type]\r\n            if order == \"ASC\":\r\n                stored = stored[::-1]\r\n            if n_messages:\r\n                stored = stored[:n_messages]\r\n            stored = [Message.from_lc_message(m) for m in stored]\r\n        else:\r\n            stored = get_messages(\r\n                sender=sender,\r\n                sender_name=sender_name,\r\n                session_id=session_id,\r\n                limit=n_messages,\r\n                order=order,\r\n            )\r\n\r\n        self.status = stored\r\n        return stored\r\n\r\n    def retrieve_messages_as_text(self) -> Message:\r\n        data = self.retrieve_messages()\r\n        template = self.template\r\n        context_template = self.context_template\r\n        sep = \"\\n\"\r\n\r\n        if isinstance(data, (Data)):\r\n            data = [data]\r\n\r\n        stored_text = \"\"\r\n        for i, value in enumerate(data):\r\n            if not isinstance(value, Data):\r\n                value = Data(text=value)\r\n\r\n            if i == 0:\r\n                stored_text += context_template.format(**value.data)\r\n            else:\r\n                stored_text += template.format(**value.data)\r\n            stored_text += sep\r\n\r\n        self.status = stored_text\r\n        return Message(text=stored_text)\r\n\r\n    def build_lc_memory(self) -> BaseChatMemory:\r\n        if self.memory:\r\n            chat_memory = self.memory\r\n        else:\r\n            chat_memory = LCBuiltinChatMemory(flow_id=self.graph.flow_id, session_id=self.session_id)\r\n        return ConversationBufferMemory(chat_memory=chat_memory)\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "context_template": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "Give context and add your rules before the chat starts\n\n{sender_name}: {text}",
+                "name": "context_template",
+                "display_name": "Context Template",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The template to use for formatting the first user message. It can contain the keys {text}, {sender} or any other key in the message data.",
+                "title_case": false,
+                "type": "str"
+              },
+              "n_messages": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": 100,
+                "name": "n_messages",
+                "display_name": "Number of Messages",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Number of messages to retrieve.",
+                "title_case": false,
+                "type": "int"
+              },
+              "order": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Ascending",
+                  "Descending"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "Ascending",
+                "name": "order",
+                "display_name": "Order",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Order of the messages.",
+                "title_case": false,
+                "type": "str"
+              },
+              "sender": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Machine",
+                  "User",
+                  "Machine and User"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "Machine and User",
+                "name": "sender",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Type of sender.",
+                "title_case": false,
+                "type": "str"
+              },
+              "sender_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "sender_name",
+                "display_name": "Sender Name",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Name of the sender.",
+                "title_case": false,
+                "type": "str"
+              },
+              "session_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "session_id",
+                "display_name": "Session ID",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Session ID of the chat history.",
+                "title_case": false,
+                "type": "str"
+              },
+              "template": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "{sender_name}: {text}",
+                "name": "template",
+                "display_name": "Template",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The template to use for formatting the data. It can contain the keys {text}, {sender} or any other key in the message data.",
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "Component that manages conversation memory, retrieving saved messages and providing context.",
+            "icon": "message-square-more",
+            "base_classes": [
+              "BaseChatMemory",
+              "Data",
+              "Message"
+            ],
+            "display_name": "Chat History with Context",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "messages",
+                "display_name": "Messages (Data)",
+                "method": "retrieve_messages",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "messages_text",
+                "display_name": "Messages (Text)",
+                "method": "retrieve_messages_as_text",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "BaseChatMemory"
+                ],
+                "selected": "BaseChatMemory",
+                "name": "lc_memory",
+                "display_name": "Memory",
+                "method": "build_lc_memory",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "memory",
+              "sender",
+              "sender_name",
+              "n_messages",
+              "session_id",
+              "order",
+              "template",
+              "context_template"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "AstraDBChatMemory-kXD9k",
+          "description": "Component that manages conversation memory, retrieving saved messages and providing context.",
+          "display_name": "Chat History with Context"
+        },
+        "id": "AstraDBChatMemory-kXD9k",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "AstraDBChatMemory": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "16ff87fc-2e95-4cc7-98cd-424fba99e39a",
+    "name": "Chat History with Context",
+    "description": "Component that manages conversation memory, retrieving saved messages and providing context.",
+    "is_component": true,
+    "liked_by_count": "50",
+    "downloads_count": "548",
+    "metadata": {
+      "AstraDBChatMemory": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.9",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Memory",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "memory": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "memory",
+                  "display_name": "External Memory",
+                  "advanced": false,
+                  "input_types": [
+                    "BaseChatMessageHistory"
+                  ],
+                  "dynamic": false,
+                  "info": "Retrieve messages from an external memory. If empty, it will use the Langflow tables.",
+                  "title_case": false,
+                  "type": "other"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\r\nfrom axiestudio.helpers.data import data_to_text\r\nfrom axiestudio.inputs import HandleInput\r\nfrom axiestudio.io import DropdownInput, IntInput, MessageTextInput, MultilineInput, Output\r\nfrom axiestudio.memory import get_messages, LCBuiltinChatMemory\r\nfrom axiestudio.schema import Data\r\nfrom axiestudio.schema.message import Message\r\nfrom axiestudio.field_typing import BaseChatMemory\r\nfrom langchain.memory import ConversationBufferMemory\r\n\r\n\r\nclass ChatHistoryWithContext(Component):\r\n    display_name = \"Chat History with Context\"\r\n    description = \"Component that manages conversation memory, retrieving saved messages and providing context.\"\r\n    icon = \"message-square-more\"\r\n    name = \"Memory\"\r\n\r\n    inputs = [\r\n        HandleInput(\r\n            name=\"memory\",\r\n            display_name=\"External Memory\",\r\n            input_types=[\"BaseChatMessageHistory\"],\r\n            info=\"Retrieve messages from an external memory. If empty, it will use the Langflow tables.\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"sender\",\r\n            display_name=\"Sender Type\",\r\n            options=[\"Machine\", \"User\", \"Machine and User\"],\r\n            value=\"Machine and User\",\r\n            info=\"Type of sender.\",\r\n            advanced=True,\r\n        ),\r\n        MessageTextInput(\r\n            name=\"sender_name\",\r\n            display_name=\"Sender Name\",\r\n            info=\"Name of the sender.\",\r\n            advanced=True,\r\n        ),\r\n        IntInput(\r\n            name=\"n_messages\",\r\n            display_name=\"Number of Messages\",\r\n            value=100,\r\n            info=\"Number of messages to retrieve.\",\r\n            advanced=True,\r\n        ),\r\n        MessageTextInput(\r\n            name=\"session_id\",\r\n            display_name=\"Session ID\",\r\n            info=\"Session ID of the chat history.\",\r\n            advanced=True,\r\n        ),\r\n        DropdownInput(\r\n            name=\"order\",\r\n            display_name=\"Order\",\r\n            options=[\"Ascending\", \"Descending\"],\r\n            value=\"Ascending\",\r\n            info=\"Order of the messages.\",\r\n            advanced=True,\r\n        ),\r\n        MultilineInput(\r\n            name=\"template\",\r\n            display_name=\"Template\",\r\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {sender} or any other key in the message data.\",\r\n            value=\"{sender_name}: {text}\",\r\n            advanced=True,\r\n        ),\r\n        MultilineInput(\r\n            name=\"context_template\",\r\n            display_name=\"Context Template\",\r\n            info=\"The template to use for formatting the first user message. It can contain the keys {text}, {sender} or any other key in the message data.\",\r\n            value=\"Give context and add your rules before the chat starts\\n\\n{sender_name}: {text}\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Messages (Data)\", name=\"messages\", method=\"retrieve_messages\"),\r\n        Output(display_name=\"Messages (Text)\", name=\"messages_text\", method=\"retrieve_messages_as_text\"),\r\n        Output(display_name=\"Memory\", name=\"lc_memory\", method=\"build_lc_memory\"),\r\n    ]\r\n\r\n    def retrieve_messages(self) -> Data:\r\n        sender = self.sender\r\n        sender_name = self.sender_name\r\n        session_id = self.session_id\r\n        n_messages = self.n_messages\r\n        order = \"DESC\" if self.order == \"Descending\" else \"ASC\"\r\n\r\n        if sender == \"Machine and User\":\r\n            sender = None\r\n\r\n        if self.memory:\r\n            # override session_id\r\n            self.memory.session_id = session_id\r\n\r\n            stored = self.memory.messages\r\n            if sender:\r\n                expected_type = \"Machine\" if sender == \"Machine\" else \"User\"\r\n                stored = [m for m in stored if m.type == expected_type]\r\n            if order == \"ASC\":\r\n                stored = stored[::-1]\r\n            if n_messages:\r\n                stored = stored[:n_messages]\r\n            stored = [Message.from_lc_message(m) for m in stored]\r\n        else:\r\n            stored = get_messages(\r\n                sender=sender,\r\n                sender_name=sender_name,\r\n                session_id=session_id,\r\n                limit=n_messages,\r\n                order=order,\r\n            )\r\n\r\n        self.status = stored\r\n        return stored\r\n\r\n    def retrieve_messages_as_text(self) -> Message:\r\n        data = self.retrieve_messages()\r\n        template = self.template\r\n        context_template = self.context_template\r\n        sep = \"\\n\"\r\n\r\n        if isinstance(data, (Data)):\r\n            data = [data]\r\n\r\n        stored_text = \"\"\r\n        for i, value in enumerate(data):\r\n            if not isinstance(value, Data):\r\n                value = Data(text=value)\r\n\r\n            if i == 0:\r\n                stored_text += context_template.format(**value.data)\r\n            else:\r\n                stored_text += template.format(**value.data)\r\n            stored_text += sep\r\n\r\n        self.status = stored_text\r\n        return Message(text=stored_text)\r\n\r\n    def build_lc_memory(self) -> BaseChatMemory:\r\n        if self.memory:\r\n            chat_memory = self.memory\r\n        else:\r\n            chat_memory = LCBuiltinChatMemory(flow_id=self.graph.flow_id, session_id=self.session_id)\r\n        return ConversationBufferMemory(chat_memory=chat_memory)\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "context_template": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "Give context and add your rules before the chat starts\n\n{sender_name}: {text}",
+                  "name": "context_template",
+                  "display_name": "Context Template",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The template to use for formatting the first user message. It can contain the keys {text}, {sender} or any other key in the message data.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "n_messages": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": 100,
+                  "name": "n_messages",
+                  "display_name": "Number of Messages",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Number of messages to retrieve.",
+                  "title_case": false,
+                  "type": "int"
+                },
+                "order": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Ascending",
+                    "Descending"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "Ascending",
+                  "name": "order",
+                  "display_name": "Order",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Order of the messages.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "sender": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Machine",
+                    "User",
+                    "Machine and User"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "Machine and User",
+                  "name": "sender",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Type of sender.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "sender_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "sender_name",
+                  "display_name": "Sender Name",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Name of the sender.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "session_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "session_id",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Session ID of the chat history.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "template": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "{sender_name}: {text}",
+                  "name": "template",
+                  "display_name": "Template",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The template to use for formatting the data. It can contain the keys {text}, {sender} or any other key in the message data.",
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "Component that manages conversation memory, retrieving saved messages and providing context.",
+              "icon": "message-square-more",
+              "base_classes": [
+                "BaseChatMemory",
+                "Data",
+                "Message"
+              ],
+              "display_name": "Chat History with Context",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "messages",
+                  "display_name": "Messages (Data)",
+                  "method": "retrieve_messages",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "messages_text",
+                  "display_name": "Messages (Text)",
+                  "method": "retrieve_messages_as_text",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "BaseChatMemory"
+                  ],
+                  "selected": "BaseChatMemory",
+                  "name": "lc_memory",
+                  "display_name": "Memory",
+                  "method": "build_lc_memory",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "memory",
+                "sender",
+                "sender_name",
+                "n_messages",
+                "session_id",
+                "order",
+                "template",
+                "context_template"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "AstraDBChatMemory-kXD9k",
+            "description": "Component that manages conversation memory, retrieving saved messages and providing context.",
+            "display_name": "Chat History with Context"
+          },
+          "id": "AstraDBChatMemory-kXD9k",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-07-18T23:32:06.423Z",
+    "date_updated": "2024-07-18T23:32:06.498Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "84dd8f05-6c62-4aca-b062-42b260b98dbc",
+    "user_created": {
+      "username": "aleoli",
+      "first_name": null,
+      "last_name": null,
+      "id": "84dd8f05-6c62-4aca-b062-42b260b98dbc"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Memory",
+          "id": "e660a9ea-35fb-4587-bfbd-13dba4c556d1"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.044Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 16,
+    "converter_version": "1.0.0"
+  }
+}

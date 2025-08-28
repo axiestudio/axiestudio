@@ -1,0 +1,2691 @@
+{
+  "id": "5a404d6e-a7eb-40d6-b3fd-37cea7128cbe",
+  "name": "Rewrite-Retrieve-Read Flow (3)",
+  "description": "The Retrieval Rewriter Chain is a methodology that rewrites user queries while consulting external tools, optimizing them for more accurate and relevant results by refining the input based on specific parameters and conditions.\n\nReference: https://github.com/langchain-ai/langchain/tree/master/templates/rewrite-retrieve-read (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "Chrisll",
+    "first_name": "Chris",
+    "last_name": "Lai",
+    "id": "abaa0e85-4007-43e3-85db-271c95179cee",
+    "full_name": "Chris Lai"
+  },
+  "store_url": "https://www.langflow.store/store/component/5a404d6e-a7eb-40d6-b3fd-37cea7128cbe",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-12-21T02:03:23.629Z",
+    "updated": "2024-12-21T02:03:23.676Z",
+    "downloaded": "2025-08-19T17:50:07.705Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.1.1",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "Retrieve Rewriter Chain-dtvDP",
+        "type": "genericNode",
+        "position": {
+          "x": 132.20098731616042,
+          "y": -4.2962767178807155
+        },
+        "data": {
+          "type": "Retrieve Rewriter Chain",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "llm": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "llm",
+                "value": "",
+                "display_name": "Language Model",
+                "advanced": false,
+                "input_types": [
+                  "LanguageModel"
+                ],
+                "dynamic": false,
+                "info": "An LLM Model Object (It can be found in any LLM Component).",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "tools": {
+                "trace_as_metadata": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "tools",
+                "value": "",
+                "display_name": "Tools",
+                "advanced": false,
+                "input_types": [
+                  "Tool",
+                  "BaseTool"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput",
+                "load_from_db": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.pydantic_v1 import BaseModel\nfrom langchain_core.runnables import RunnablePassthrough\nfrom axiestudio.base.agents.agent import LCToolsAgentComponent\nfrom langchain_core.runnables.base import RunnableSequence\n\nclass RewriteRetrieveRead(LCToolsAgentComponent):\n    display_name = \"Retireval Rewriter Chain\"\n    description = \"The Retrieval Rewriter Chain is a methodology that rewrites user queries while consulting external tools, optimizing them for more accurate and relevant results by refining the input based on specific parameters and conditions.\"\n    documentation: str = \"https://github.com/langchain-ai/langchain/tree/master/templates/rewrite-retrieve-read\"\n    icon = \"LangChain\"\n    name = \"Retrieve Rewriter Chain\"\n\n    inputs = LCToolsAgentComponent._base_inputs + [\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True, info=\"An LLM Model Object (It can be found in any LLM Component).\"),\n        MultilineInput(name=\"prompt_system\", display_name=\"Prompt System Retireval\", value=\"Answer the users question based only on the following context:\\n<context>\\n{context}\\n</context>\\n\\nQuestion: {question}\\n\", info=\"A prompt template to structure the answer.\"),\n        MultilineInput(name=\"prompt_system_revisor\", display_name=\"Prompt System Revisor\", value=\"Improve my query making it better for searching. End the query with '**'. Question: {x} Answer:\", info=\"A refine querying that intends to improve the user query.\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"output_text\", method=\"build_chain_ans\"),\n        Output(display_name=\"Chain\", name=\"output_chain\", method=\"build_chain\"),\n    ]\n\n    def build_chain_ans(self) -> Message:\n        template = self.prompt_system\n        prompt = ChatPromptTemplate.from_template(template)\n        \n        model = self.llm\n        \n        def retriever(query):\n            retrieval_info = []\n            for tool in self.tools:\n                retrieval_info.append(tool.run(query))\n            return str(retrieval_info)\n\n        template = self.prompt_system_revisor\n        rewrite_prompt = ChatPromptTemplate.from_template(template)\n        \n        chain = (\n            {\"context\": retriever, \"question\": RunnablePassthrough()}\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n        \n        def _parse(text):\n            return text.strip(\"**\")\n        \n        \n        rewriter = rewrite_prompt | self.llm | StrOutputParser() | _parse\n        \n        rewrite_retrieve_read_chain = (\n            {\n                \"context\": {\"x\": RunnablePassthrough()} | rewriter | retriever,\n                \"question\": RunnablePassthrough(),\n            }\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n\n        \n        output = rewrite_retrieve_read_chain.invoke(self.input_value)\n        \n        return Message(text = output)\n        \n    def build_chain(self) -> RunnableSequence:\n        template = self.prompt_system\n        prompt = ChatPromptTemplate.from_template(template)\n        \n        model = self.llm\n        \n        def retriever(query):\n            retrieval_info = []\n            for tool in self.tools:\n                retrieval_info.append(tool.run(query))\n            return str(retrieval_info)\n\n        template = self.prompt_system_revisor\n        rewrite_prompt = ChatPromptTemplate.from_template(template)\n        \n        chain = (\n            {\"context\": retriever, \"question\": RunnablePassthrough()}\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n        \n        def _parse(text):\n            return text.strip(\"**\")\n        \n        \n        rewriter = rewrite_prompt | self.llm | StrOutputParser() | _parse\n        \n        rewrite_retrieve_read_chain = (\n            {\n                \"context\": {\"x\": RunnablePassthrough()} | rewriter | retriever,\n                \"question\": RunnablePassthrough(),\n            }\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n\n        self.status = str(rewrite_retrieve_read_chain)\n        return rewrite_retrieve_read_chain\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "handle_parsing_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "handle_parsing_errors",
+                "value": true,
+                "display_name": "Handle Parse Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "max_iterations": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_iterations",
+                "value": 15,
+                "display_name": "Max Iterations",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "prompt_system": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "prompt_system",
+                "value": "Answer the users question based only on the following context:\n\n<context>\n{context}\n</context>\n\nQuestion: {question}",
+                "display_name": "Prompt System Retireval",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "A prompt template to structure the answer.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "prompt_system_revisor": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "prompt_system_revisor",
+                "value": "Improve my query making it better for searching. End the query with '**'. \n\nQuestion: {x}\nAnswer:",
+                "display_name": "Prompt System Revisor",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "A refine querying that intends to improve the user query.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "verbose": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "verbose",
+                "value": true,
+                "display_name": "Verbose",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "The Retrieval Rewriter Chain is a methodology that rewrites user queries while consulting external tools, optimizing them for more accurate and relevant results by refining the input based on specific parameters and conditions.",
+            "icon": "LangChain",
+            "base_classes": [
+              "Message",
+              "RunnableSequence"
+            ],
+            "display_name": "Retrieve Rewriter Chain",
+            "documentation": "https://github.com/langchain-ai/langchain/tree/master/templates/rewrite-retrieve-read",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "output_text",
+                "display_name": "Text",
+                "method": "build_chain_ans",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "RunnableSequence"
+                ],
+                "selected": "RunnableSequence",
+                "name": "output_chain",
+                "display_name": "Chain",
+                "method": "build_chain",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "handle_parsing_errors",
+              "verbose",
+              "max_iterations",
+              "tools",
+              "llm",
+              "prompt_system",
+              "prompt_system_revisor"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.16"
+          },
+          "id": "Retrieve Rewriter Chain-dtvDP"
+        },
+        "selected": false,
+        "width": 320,
+        "height": 652,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 132.20098731616042,
+          "y": -4.2962767178807155
+        }
+      },
+      {
+        "id": "OpenAIModel-pcLHn",
+        "type": "genericNode",
+        "position": {
+          "x": -429.3939158162318,
+          "y": 361.62979003212337
+        },
+        "data": {
+          "type": "OpenAIModel",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "output_parser": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "output_parser",
+                "value": "",
+                "display_name": "Output Parser",
+                "advanced": true,
+                "input_types": [
+                  "OutputParser"
+                ],
+                "dynamic": false,
+                "info": "The parser to use to parse the output of the model",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "api_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "OpenAI API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The OpenAI API Key to use for the OpenAI model.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import operator\nfrom functools import reduce\n\nfrom langchain_openai import ChatOpenAI\nfrom pydantic.v1 import SecretStr\n\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.base.models.openai_constants import OPENAI_MODEL_NAMES\nfrom axiestudio.field_typing import LanguageModel\nfrom axiestudio.field_typing.range_spec import RangeSpec\nfrom axiestudio.inputs import BoolInput, DictInput, DropdownInput, FloatInput, IntInput, SecretStrInput, StrInput\nfrom axiestudio.inputs.inputs import HandleInput\n\n\nclass OpenAIModelComponent(LCModelComponent):\n    display_name = \"OpenAI\"\n    description = \"Generates text using OpenAI LLMs.\"\n    icon = \"OpenAI\"\n    name = \"OpenAIModel\"\n\n    inputs = [\n        *LCModelComponent._base_inputs,\n        IntInput(\n            name=\"max_tokens\",\n            display_name=\"Max Tokens\",\n            advanced=True,\n            info=\"The maximum number of tokens to generate. Set to 0 for unlimited tokens.\",\n            range_spec=RangeSpec(min=0, max=128000),\n        ),\n        DictInput(\n            name=\"model_kwargs\",\n            display_name=\"Model Kwargs\",\n            advanced=True,\n            info=\"Additional keyword arguments to pass to the model.\",\n        ),\n        BoolInput(\n            name=\"json_mode\",\n            display_name=\"JSON Mode\",\n            advanced=True,\n            info=\"If True, it will output JSON regardless of passing a schema.\",\n        ),\n        DictInput(\n            name=\"output_schema\",\n            is_list=True,\n            display_name=\"Schema\",\n            advanced=True,\n            info=\"The schema for the Output of the model. \"\n            \"You must pass the word JSON in the prompt. \"\n            \"If left blank, JSON mode will be disabled. [DEPRECATED]\",\n        ),\n        DropdownInput(\n            name=\"model_name\",\n            display_name=\"Model Name\",\n            advanced=False,\n            options=OPENAI_MODEL_NAMES,\n            value=OPENAI_MODEL_NAMES[0],\n        ),\n        StrInput(\n            name=\"openai_api_base\",\n            display_name=\"OpenAI API Base\",\n            advanced=True,\n            info=\"The base URL of the OpenAI API. \"\n            \"Defaults to https://api.openai.com/v1. \"\n            \"You can change this to use other APIs like JinaChat, LocalAI and Prem.\",\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"OpenAI API Key\",\n            info=\"The OpenAI API Key to use for the OpenAI model.\",\n            advanced=False,\n            value=\"OPENAI_API_KEY\",\n        ),\n        FloatInput(name=\"temperature\", display_name=\"Temperature\", value=0.1),\n        IntInput(\n            name=\"seed\",\n            display_name=\"Seed\",\n            info=\"The seed controls the reproducibility of the job.\",\n            advanced=True,\n            value=1,\n        ),\n        HandleInput(\n            name=\"output_parser\",\n            display_name=\"Output Parser\",\n            info=\"The parser to use to parse the output of the model\",\n            advanced=True,\n            input_types=[\"OutputParser\"],\n        ),\n    ]\n\n    def build_model(self) -> LanguageModel:  # type: ignore[type-var]\n        # self.output_schema is a list of dictionaries\n        # let's convert it to a dictionary\n        output_schema_dict: dict[str, str] = reduce(operator.ior, self.output_schema or {}, {})\n        openai_api_key = self.api_key\n        temperature = self.temperature\n        model_name: str = self.model_name\n        max_tokens = self.max_tokens\n        model_kwargs = self.model_kwargs or {}\n        openai_api_base = self.openai_api_base or \"https://api.openai.com/v1\"\n        json_mode = bool(output_schema_dict) or self.json_mode\n        seed = self.seed\n\n        api_key = SecretStr(openai_api_key).get_secret_value() if openai_api_key else None\n        output = ChatOpenAI(\n            max_tokens=max_tokens or None,\n            model_kwargs=model_kwargs,\n            model=model_name,\n            base_url=openai_api_base,\n            api_key=api_key,\n            temperature=temperature if temperature is not None else 0.1,\n            seed=seed,\n        )\n        if json_mode:\n            if output_schema_dict:\n                output = output.with_structured_output(schema=output_schema_dict, method=\"json_mode\")\n            else:\n                output = output.bind(response_format={\"type\": \"json_object\"})\n\n        return output\n\n    def _get_exception_message(self, e: Exception):\n        \"\"\"Get a message from an OpenAI exception.\n\n        Args:\n            e (Exception): The exception to get the message from.\n\n        Returns:\n            str: The message from the exception.\n        \"\"\"\n        try:\n            from openai import BadRequestError\n        except ImportError:\n            return None\n        if isinstance(e, BadRequestError):\n            message = e.body.get(\"message\")\n            if message:\n                return message\n        return None\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageInput"
+              },
+              "json_mode": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "json_mode",
+                "value": false,
+                "display_name": "JSON Mode",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If True, it will output JSON regardless of passing a schema.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "max_tokens": {
+                "trace_as_metadata": true,
+                "range_spec": {
+                  "step_type": "float",
+                  "min": 0,
+                  "max": 128000,
+                  "step": 0.1
+                },
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_tokens",
+                "value": "",
+                "display_name": "Max Tokens",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The maximum number of tokens to generate. Set to 0 for unlimited tokens.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "model_kwargs": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "model_kwargs",
+                "value": {},
+                "display_name": "Model Kwargs",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Additional keyword arguments to pass to the model.",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "model_name": {
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "options": [
+                  "gpt-4o-mini",
+                  "gpt-4o",
+                  "gpt-4-turbo",
+                  "gpt-4-turbo-preview",
+                  "gpt-4",
+                  "gpt-3.5-turbo",
+                  "gpt-3.5-turbo-0125"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "model_name",
+                "value": "gpt-4o",
+                "display_name": "Model Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput",
+                "load_from_db": false
+              },
+              "openai_api_base": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "openai_api_base",
+                "value": "",
+                "display_name": "OpenAI API Base",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The base URL of the OpenAI API. Defaults to https://api.openai.com/v1. You can change this to use other APIs like JinaChat, LocalAI and Prem.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "output_schema": {
+                "trace_as_input": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "output_schema",
+                "value": {},
+                "display_name": "Schema",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The schema for the Output of the model. You must pass the word JSON in the prompt. If left blank, JSON mode will be disabled. [DEPRECATED]",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              },
+              "seed": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "seed",
+                "value": 1,
+                "display_name": "Seed",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The seed controls the reproducibility of the job.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "stream": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "stream",
+                "value": false,
+                "display_name": "Stream",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Stream the response from the model. Streaming works only in Chat.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "system_message": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "system_message",
+                "value": "",
+                "display_name": "System Message",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "System message to pass to the model.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "temperature": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "temperature",
+                "value": "0",
+                "display_name": "Temperature",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "float",
+                "_input_type": "FloatInput",
+                "load_from_db": false
+              }
+            },
+            "description": "Generates text using OpenAI LLMs.",
+            "icon": "OpenAI",
+            "base_classes": [
+              "LanguageModel",
+              "Message"
+            ],
+            "display_name": "OpenAI",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text_output",
+                "display_name": "Text",
+                "method": "text_response",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": []
+              },
+              {
+                "types": [
+                  "LanguageModel"
+                ],
+                "selected": "LanguageModel",
+                "name": "model_output",
+                "display_name": "Language Model",
+                "method": "build_model",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": []
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "system_message",
+              "stream",
+              "max_tokens",
+              "model_kwargs",
+              "json_mode",
+              "output_schema",
+              "model_name",
+              "openai_api_base",
+              "api_key",
+              "temperature",
+              "seed",
+              "output_parser"
+            ],
+            "beta": false,
+            "legacy": false,
+            "edited": false,
+            "metadata": {},
+            "tool_mode": false
+          },
+          "id": "OpenAIModel-pcLHn"
+        },
+        "selected": false,
+        "width": 320,
+        "height": 672,
+        "positionAbsolute": {
+          "x": -429.3939158162318,
+          "y": 361.62979003212337
+        },
+        "dragging": false
+      },
+      {
+        "id": "TextInput-lovTd",
+        "type": "genericNode",
+        "position": {
+          "x": -356.3483250494561,
+          "y": -537.3183309400325
+        },
+        "data": {
+          "type": "TextInput",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.io.text import TextComponent\nfrom axiestudio.io import MultilineInput, Output\nfrom axiestudio.schema.message import Message\n\n\nclass TextInputComponent(TextComponent):\n    display_name = \"Text Input\"\n    description = \"Get text inputs from the Playground.\"\n    icon = \"type\"\n    name = \"TextInput\"\n\n    inputs = [\n        MultilineInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Text to be passed as input.\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"text_response\"),\n    ]\n\n    def text_response(self) -> Message:\n        return Message(\n            text=self.input_value,\n        )\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "What is the history of OpenAI? What are the founding principles",
+                "display_name": "Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Text to be passed as input.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "Get text inputs from the Playground.",
+            "icon": "type",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Text Input",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text",
+                "display_name": "Text",
+                "method": "text_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value"
+            ],
+            "beta": false,
+            "legacy": false,
+            "edited": false,
+            "metadata": {},
+            "tool_mode": false
+          },
+          "id": "TextInput-lovTd",
+          "description": "Get text inputs from the Playground.",
+          "display_name": "Text Input"
+        },
+        "selected": false,
+        "width": 320,
+        "height": 234,
+        "positionAbsolute": {
+          "x": -356.3483250494561,
+          "y": -537.3183309400325
+        },
+        "dragging": false
+      },
+      {
+        "id": "ChatOutput-5GGqt",
+        "type": "genericNode",
+        "position": {
+          "x": 579.8562886598247,
+          "y": 261.3410060710934
+        },
+        "data": {
+          "type": "ChatOutput",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "background_color": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "background_color",
+                "value": "",
+                "display_name": "Background Color",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The background color of the icon.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "chat_icon": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "chat_icon",
+                "value": "",
+                "display_name": "Icon",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The icon of the message.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, MessageInput, MessageTextInput, Output\nfrom axiestudio.schema.message import Message\nfrom axiestudio.schema.properties import Source\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI, MESSAGE_SENDER_USER\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Playground.\"\n    icon = \"MessagesSquare\"\n    name = \"ChatOutput\"\n\n    inputs = [\n        MessageInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Message to be passed as output.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_AI,\n            advanced=True,\n            info=\"Type of sender.\",\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_AI,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"data_template\",\n            display_name=\"Data Template\",\n            value=\"{text}\",\n            advanced=True,\n            info=\"Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.\",\n        ),\n        MessageTextInput(\n            name=\"background_color\",\n            display_name=\"Background Color\",\n            info=\"The background color of the icon.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"chat_icon\",\n            display_name=\"Icon\",\n            info=\"The icon of the message.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"text_color\",\n            display_name=\"Text Color\",\n            info=\"The text color of the name\",\n            advanced=True,\n        ),\n    ]\n    outputs = [\n        Output(\n            display_name=\"Message\",\n            name=\"message\",\n            method=\"message_response\",\n        ),\n    ]\n\n    def _build_source(self, _id: str | None, display_name: str | None, source: str | None) -> Source:\n        source_dict = {}\n        if _id:\n            source_dict[\"id\"] = _id\n        if display_name:\n            source_dict[\"display_name\"] = display_name\n        if source:\n            source_dict[\"source\"] = source\n        return Source(**source_dict)\n\n    def message_response(self) -> Message:\n        _source, _icon, _display_name, _source_id = self.get_properties_from_source_component()\n        _background_color = self.background_color\n        _text_color = self.text_color\n        if self.chat_icon:\n            _icon = self.chat_icon\n        message = self.input_value if isinstance(self.input_value, Message) else Message(text=self.input_value)\n        message.sender = self.sender\n        message.sender_name = self.sender_name\n        message.session_id = self.session_id\n        message.flow_id = self.graph.flow_id if hasattr(self, \"graph\") else None\n        message.properties.source = self._build_source(_source_id, _display_name, _source)\n        message.properties.icon = _icon\n        message.properties.background_color = _background_color\n        message.properties.text_color = _text_color\n        if self.session_id and isinstance(message, Message) and self.should_store_message:\n            stored_message = self.send_message(\n                message,\n            )\n            self.message.value = stored_message\n            message = stored_message\n\n        self.status = message\n        return message\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "data_template": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "data_template",
+                "value": "{text}",
+                "display_name": "Data Template",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Message to be passed as output.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageInput"
+              },
+              "sender": {
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender",
+                "value": "Machine",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Type of sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "sender_name": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender_name",
+                "value": "AI",
+                "display_name": "Sender Name",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Name of the sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "session_id": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "session_id",
+                "value": "",
+                "display_name": "Session ID",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "should_store_message": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "should_store_message",
+                "value": true,
+                "display_name": "Store Messages",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Store the message in the history.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "text_color": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "text_color",
+                "value": "",
+                "display_name": "Text Color",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The text color of the name",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Display a chat message in the Playground.",
+            "icon": "MessagesSquare",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Chat Output",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "message",
+                "display_name": "Message",
+                "method": "message_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "should_store_message",
+              "sender",
+              "sender_name",
+              "session_id",
+              "data_template",
+              "background_color",
+              "chat_icon",
+              "text_color"
+            ],
+            "beta": false,
+            "legacy": false,
+            "edited": false,
+            "metadata": {},
+            "tool_mode": false
+          },
+          "id": "ChatOutput-5GGqt",
+          "description": "Display a chat message in the Playground.",
+          "display_name": "Chat Output"
+        },
+        "selected": false,
+        "width": 320,
+        "height": 234,
+        "positionAbsolute": {
+          "x": 579.8562886598247,
+          "y": 261.3410060710934
+        },
+        "dragging": false
+      },
+      {
+        "id": "SearchAPI-5VmjR",
+        "type": "genericNode",
+        "position": {
+          "x": -443.6927108655291,
+          "y": -231.69612989273136
+        },
+        "data": {
+          "type": "SearchAPI",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "api_key": {
+                "load_from_db": true,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "SearchAPI API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Any\n\nfrom langchain.tools import StructuredTool\nfrom langchain_community.utilities.searchapi import SearchApiAPIWrapper\nfrom pydantic import BaseModel, Field\n\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom axiestudio.field_typing import Tool\nfrom axiestudio.inputs import DictInput, IntInput, MessageTextInput, MultilineInput, SecretStrInput\nfrom axiestudio.schema import Data\n\n\nclass SearchAPIComponent(LCToolComponent):\n    display_name: str = \"Search API\"\n    description: str = \"Call the searchapi.io API with result limiting\"\n    name = \"SearchAPI\"\n    documentation: str = \"https://www.searchapi.io/docs/google\"\n    icon = \"SearchAPI\"\n\n    inputs = [\n        MessageTextInput(name=\"engine\", display_name=\"Engine\", value=\"google\"),\n        SecretStrInput(name=\"api_key\", display_name=\"SearchAPI API Key\", required=True),\n        MultilineInput(\n            name=\"input_value\",\n            display_name=\"Input\",\n        ),\n        DictInput(name=\"search_params\", display_name=\"Search parameters\", advanced=True, is_list=True),\n        IntInput(name=\"max_results\", display_name=\"Max Results\", value=5, advanced=True),\n        IntInput(name=\"max_snippet_length\", display_name=\"Max Snippet Length\", value=100, advanced=True),\n    ]\n\n    class SearchAPISchema(BaseModel):\n        query: str = Field(..., description=\"The search query\")\n        params: dict[str, Any] = Field(default_factory=dict, description=\"Additional search parameters\")\n        max_results: int = Field(5, description=\"Maximum number of results to return\")\n        max_snippet_length: int = Field(100, description=\"Maximum length of each result snippet\")\n\n    def _build_wrapper(self):\n        return SearchApiAPIWrapper(engine=self.engine, searchapi_api_key=self.api_key)\n\n    def build_tool(self) -> Tool:\n        wrapper = self._build_wrapper()\n\n        def search_func(\n            query: str, params: dict[str, Any] | None = None, max_results: int = 5, max_snippet_length: int = 100\n        ) -> list[dict[str, Any]]:\n            params = params or {}\n            full_results = wrapper.results(query=query, **params)\n            organic_results = full_results.get(\"organic_results\", [])[:max_results]\n\n            limited_results = []\n            for result in organic_results:\n                limited_result = {\n                    \"title\": result.get(\"title\", \"\")[:max_snippet_length],\n                    \"link\": result.get(\"link\", \"\"),\n                    \"snippet\": result.get(\"snippet\", \"\")[:max_snippet_length],\n                }\n                limited_results.append(limited_result)\n\n            return limited_results\n\n        tool = StructuredTool.from_function(\n            name=\"search_api\",\n            description=\"Search for recent results using searchapi.io with result limiting\",\n            func=search_func,\n            args_schema=self.SearchAPISchema,\n        )\n\n        self.status = f\"Search API Tool created with engine: {self.engine}\"\n        return tool\n\n    def run_model(self) -> list[Data]:\n        tool = self.build_tool()\n        results = tool.run(\n            {\n                \"query\": self.input_value,\n                \"params\": self.search_params or {},\n                \"max_results\": self.max_results,\n                \"max_snippet_length\": self.max_snippet_length,\n            }\n        )\n\n        data_list = [Data(data=result, text=result.get(\"snippet\", \"\")) for result in results]\n\n        self.status = data_list\n        return data_list\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "engine": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "engine",
+                "value": "google",
+                "display_name": "Engine",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "input_value": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "max_results": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_results",
+                "value": 5,
+                "display_name": "Max Results",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "max_snippet_length": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_snippet_length",
+                "value": 100,
+                "display_name": "Max Snippet Length",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "search_params": {
+                "trace_as_input": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "search_params",
+                "value": {},
+                "display_name": "Search parameters",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "dict",
+                "_input_type": "DictInput"
+              }
+            },
+            "description": "Call the searchapi.io API with result limiting",
+            "icon": "SearchAPI",
+            "base_classes": [
+              "Data",
+              "Tool"
+            ],
+            "display_name": "Search API",
+            "documentation": "https://www.searchapi.io/docs/google",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "api_run_model",
+                "display_name": "Data",
+                "method": "run_model",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": [
+                  "api_key"
+                ]
+              },
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "api_build_tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": [
+                  "api_key"
+                ]
+              }
+            ],
+            "field_order": [
+              "engine",
+              "api_key",
+              "input_value",
+              "search_params",
+              "max_results",
+              "max_snippet_length"
+            ],
+            "beta": false,
+            "legacy": false,
+            "edited": false,
+            "metadata": {},
+            "tool_mode": false
+          },
+          "id": "SearchAPI-5VmjR",
+          "description": "Call the searchapi.io API with result limiting",
+          "display_name": "Search API"
+        },
+        "selected": false,
+        "width": 320,
+        "height": 455,
+        "positionAbsolute": {
+          "x": -443.6927108655291,
+          "y": -231.69612989273136
+        },
+        "dragging": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "OpenAIModel-pcLHn",
+        "sourceHandle": "{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-pcLHnœ,œnameœ:œmodel_outputœ,œoutput_typesœ:[œLanguageModelœ]}",
+        "target": "Retrieve Rewriter Chain-dtvDP",
+        "targetHandle": "{œfieldNameœ:œllmœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œinputTypesœ:[œLanguageModelœ],œtypeœ:œotherœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "llm",
+            "id": "Retrieve Rewriter Chain-dtvDP",
+            "inputTypes": [
+              "LanguageModel"
+            ],
+            "type": "other"
+          },
+          "sourceHandle": {
+            "dataType": "OpenAIModel",
+            "id": "OpenAIModel-pcLHn",
+            "name": "model_output",
+            "output_types": [
+              "LanguageModel"
+            ]
+          }
+        },
+        "id": "reactflow__edge-OpenAIModel-pcLHn{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-pcLHnœ,œnameœ:œmodel_outputœ,œoutput_typesœ:[œLanguageModelœ]}-Retrieve Rewriter Chain-dtvDP{œfieldNameœ:œllmœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œinputTypesœ:[œLanguageModelœ],œtypeœ:œotherœ}",
+        "className": ""
+      },
+      {
+        "source": "TextInput-lovTd",
+        "sourceHandle": "{œdataTypeœ:œTextInputœ,œidœ:œTextInput-lovTdœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "Retrieve Rewriter Chain-dtvDP",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "Retrieve Rewriter Chain-dtvDP",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "TextInput",
+            "id": "TextInput-lovTd",
+            "name": "text",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-TextInput-lovTd{œdataTypeœ:œTextInputœ,œidœ:œTextInput-lovTdœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}-Retrieve Rewriter Chain-dtvDP{œfieldNameœ:œinput_valueœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "className": ""
+      },
+      {
+        "source": "SearchAPI-5VmjR",
+        "sourceHandle": "{œdataTypeœ:œSearchAPIœ,œidœ:œSearchAPI-5VmjRœ,œnameœ:œapi_build_toolœ,œoutput_typesœ:[œToolœ]}",
+        "target": "Retrieve Rewriter Chain-dtvDP",
+        "targetHandle": "{œfieldNameœ:œtoolsœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œinputTypesœ:[œToolœ,œBaseToolœ],œtypeœ:œotherœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "tools",
+            "id": "Retrieve Rewriter Chain-dtvDP",
+            "inputTypes": [
+              "Tool",
+              "BaseTool"
+            ],
+            "type": "other"
+          },
+          "sourceHandle": {
+            "dataType": "SearchAPI",
+            "id": "SearchAPI-5VmjR",
+            "name": "api_build_tool",
+            "output_types": [
+              "Tool"
+            ]
+          }
+        },
+        "id": "reactflow__edge-SearchAPI-5VmjR{œdataTypeœ:œSearchAPIœ,œidœ:œSearchAPI-5VmjRœ,œnameœ:œapi_build_toolœ,œoutput_typesœ:[œToolœ]}-Retrieve Rewriter Chain-dtvDP{œfieldNameœ:œtoolsœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œinputTypesœ:[œToolœ,œBaseToolœ],œtypeœ:œotherœ}",
+        "className": ""
+      },
+      {
+        "source": "Retrieve Rewriter Chain-dtvDP",
+        "sourceHandle": "{œdataTypeœ:œRetrieve Rewriter Chainœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œnameœ:œoutput_textœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "ChatOutput-5GGqt",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-5GGqtœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "ChatOutput-5GGqt",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "Retrieve Rewriter Chain",
+            "id": "Retrieve Rewriter Chain-dtvDP",
+            "name": "output_text",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-Retrieve Rewriter Chain-dtvDP{œdataTypeœ:œRetrieve Rewriter Chainœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œnameœ:œoutput_textœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-5GGqt{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-5GGqtœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "className": ""
+      }
+    ],
+    "viewport": {
+      "x": 502.34060895413785,
+      "y": 264.3688920224271,
+      "zoom": 0.4582515142610404
+    }
+  },
+  "metadata": {
+    "Retrieve Rewriter Chain": {
+      "count": 1
+    },
+    "OpenAIModel": {
+      "count": 1
+    },
+    "TextInput": {
+      "count": 1
+    },
+    "ChatOutput": {
+      "count": 1
+    },
+    "SearchAPI": {
+      "count": 1
+    },
+    "total": 5
+  },
+  "original": {
+    "id": "5a404d6e-a7eb-40d6-b3fd-37cea7128cbe",
+    "name": "Rewrite-Retrieve-Read Flow (3)",
+    "description": "The Retrieval Rewriter Chain is a methodology that rewrites user queries while consulting external tools, optimizing them for more accurate and relevant results by refining the input based on specific parameters and conditions.\n\nReference: https://github.com/langchain-ai/langchain/tree/master/templates/rewrite-retrieve-read",
+    "is_component": false,
+    "liked_by_count": "2",
+    "downloads_count": "12",
+    "metadata": {
+      "Retrieve Rewriter Chain": {
+        "count": 1
+      },
+      "OpenAIModel": {
+        "count": 1
+      },
+      "TextInput": {
+        "count": 1
+      },
+      "ChatOutput": {
+        "count": 1
+      },
+      "SearchAPI": {
+        "count": 1
+      },
+      "total": 5
+    },
+    "last_tested_version": "1.1.1",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "Retrieve Rewriter Chain-dtvDP",
+          "type": "genericNode",
+          "position": {
+            "x": 132.20098731616042,
+            "y": -4.2962767178807155
+          },
+          "data": {
+            "type": "Retrieve Rewriter Chain",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "llm": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "llm",
+                  "value": "",
+                  "display_name": "Language Model",
+                  "advanced": false,
+                  "input_types": [
+                    "LanguageModel"
+                  ],
+                  "dynamic": false,
+                  "info": "An LLM Model Object (It can be found in any LLM Component).",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "tools": {
+                  "trace_as_metadata": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "tools",
+                  "value": "",
+                  "display_name": "Tools",
+                  "advanced": false,
+                  "input_types": [
+                    "Tool",
+                    "BaseTool"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput",
+                  "load_from_db": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.pydantic_v1 import BaseModel\nfrom langchain_core.runnables import RunnablePassthrough\nfrom axiestudio.base.agents.agent import LCToolsAgentComponent\nfrom langchain_core.runnables.base import RunnableSequence\n\nclass RewriteRetrieveRead(LCToolsAgentComponent):\n    display_name = \"Retireval Rewriter Chain\"\n    description = \"The Retrieval Rewriter Chain is a methodology that rewrites user queries while consulting external tools, optimizing them for more accurate and relevant results by refining the input based on specific parameters and conditions.\"\n    documentation: str = \"https://github.com/langchain-ai/langchain/tree/master/templates/rewrite-retrieve-read\"\n    icon = \"LangChain\"\n    name = \"Retrieve Rewriter Chain\"\n\n    inputs = LCToolsAgentComponent._base_inputs + [\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True, info=\"An LLM Model Object (It can be found in any LLM Component).\"),\n        MultilineInput(name=\"prompt_system\", display_name=\"Prompt System Retireval\", value=\"Answer the users question based only on the following context:\\n<context>\\n{context}\\n</context>\\n\\nQuestion: {question}\\n\", info=\"A prompt template to structure the answer.\"),\n        MultilineInput(name=\"prompt_system_revisor\", display_name=\"Prompt System Revisor\", value=\"Improve my query making it better for searching. End the query with '**'. Question: {x} Answer:\", info=\"A refine querying that intends to improve the user query.\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"output_text\", method=\"build_chain_ans\"),\n        Output(display_name=\"Chain\", name=\"output_chain\", method=\"build_chain\"),\n    ]\n\n    def build_chain_ans(self) -> Message:\n        template = self.prompt_system\n        prompt = ChatPromptTemplate.from_template(template)\n        \n        model = self.llm\n        \n        def retriever(query):\n            retrieval_info = []\n            for tool in self.tools:\n                retrieval_info.append(tool.run(query))\n            return str(retrieval_info)\n\n        template = self.prompt_system_revisor\n        rewrite_prompt = ChatPromptTemplate.from_template(template)\n        \n        chain = (\n            {\"context\": retriever, \"question\": RunnablePassthrough()}\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n        \n        def _parse(text):\n            return text.strip(\"**\")\n        \n        \n        rewriter = rewrite_prompt | self.llm | StrOutputParser() | _parse\n        \n        rewrite_retrieve_read_chain = (\n            {\n                \"context\": {\"x\": RunnablePassthrough()} | rewriter | retriever,\n                \"question\": RunnablePassthrough(),\n            }\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n\n        \n        output = rewrite_retrieve_read_chain.invoke(self.input_value)\n        \n        return Message(text = output)\n        \n    def build_chain(self) -> RunnableSequence:\n        template = self.prompt_system\n        prompt = ChatPromptTemplate.from_template(template)\n        \n        model = self.llm\n        \n        def retriever(query):\n            retrieval_info = []\n            for tool in self.tools:\n                retrieval_info.append(tool.run(query))\n            return str(retrieval_info)\n\n        template = self.prompt_system_revisor\n        rewrite_prompt = ChatPromptTemplate.from_template(template)\n        \n        chain = (\n            {\"context\": retriever, \"question\": RunnablePassthrough()}\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n        \n        def _parse(text):\n            return text.strip(\"**\")\n        \n        \n        rewriter = rewrite_prompt | self.llm | StrOutputParser() | _parse\n        \n        rewrite_retrieve_read_chain = (\n            {\n                \"context\": {\"x\": RunnablePassthrough()} | rewriter | retriever,\n                \"question\": RunnablePassthrough(),\n            }\n            | prompt\n            | model\n            | StrOutputParser()\n        )\n\n        self.status = str(rewrite_retrieve_read_chain)\n        return rewrite_retrieve_read_chain\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "handle_parsing_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "handle_parsing_errors",
+                  "value": true,
+                  "display_name": "Handle Parse Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "max_iterations": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_iterations",
+                  "value": 15,
+                  "display_name": "Max Iterations",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "prompt_system": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "prompt_system",
+                  "value": "Answer the users question based only on the following context:\n\n<context>\n{context}\n</context>\n\nQuestion: {question}",
+                  "display_name": "Prompt System Retireval",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "A prompt template to structure the answer.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "prompt_system_revisor": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "prompt_system_revisor",
+                  "value": "Improve my query making it better for searching. End the query with '**'. \n\nQuestion: {x}\nAnswer:",
+                  "display_name": "Prompt System Revisor",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "A refine querying that intends to improve the user query.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "verbose": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "verbose",
+                  "value": true,
+                  "display_name": "Verbose",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "The Retrieval Rewriter Chain is a methodology that rewrites user queries while consulting external tools, optimizing them for more accurate and relevant results by refining the input based on specific parameters and conditions.",
+              "icon": "LangChain",
+              "base_classes": [
+                "Message",
+                "RunnableSequence"
+              ],
+              "display_name": "Retrieve Rewriter Chain",
+              "documentation": "https://github.com/langchain-ai/langchain/tree/master/templates/rewrite-retrieve-read",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "output_text",
+                  "display_name": "Text",
+                  "method": "build_chain_ans",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "RunnableSequence"
+                  ],
+                  "selected": "RunnableSequence",
+                  "name": "output_chain",
+                  "display_name": "Chain",
+                  "method": "build_chain",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "handle_parsing_errors",
+                "verbose",
+                "max_iterations",
+                "tools",
+                "llm",
+                "prompt_system",
+                "prompt_system_revisor"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.16"
+            },
+            "id": "Retrieve Rewriter Chain-dtvDP"
+          },
+          "selected": false,
+          "width": 320,
+          "height": 652,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": 132.20098731616042,
+            "y": -4.2962767178807155
+          }
+        },
+        {
+          "id": "OpenAIModel-pcLHn",
+          "type": "genericNode",
+          "position": {
+            "x": -429.3939158162318,
+            "y": 361.62979003212337
+          },
+          "data": {
+            "type": "OpenAIModel",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "output_parser": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "output_parser",
+                  "value": "",
+                  "display_name": "Output Parser",
+                  "advanced": true,
+                  "input_types": [
+                    "OutputParser"
+                  ],
+                  "dynamic": false,
+                  "info": "The parser to use to parse the output of the model",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "api_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "OpenAI API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The OpenAI API Key to use for the OpenAI model.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import operator\nfrom functools import reduce\n\nfrom langchain_openai import ChatOpenAI\nfrom pydantic.v1 import SecretStr\n\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.base.models.openai_constants import OPENAI_MODEL_NAMES\nfrom axiestudio.field_typing import LanguageModel\nfrom axiestudio.field_typing.range_spec import RangeSpec\nfrom axiestudio.inputs import BoolInput, DictInput, DropdownInput, FloatInput, IntInput, SecretStrInput, StrInput\nfrom axiestudio.inputs.inputs import HandleInput\n\n\nclass OpenAIModelComponent(LCModelComponent):\n    display_name = \"OpenAI\"\n    description = \"Generates text using OpenAI LLMs.\"\n    icon = \"OpenAI\"\n    name = \"OpenAIModel\"\n\n    inputs = [\n        *LCModelComponent._base_inputs,\n        IntInput(\n            name=\"max_tokens\",\n            display_name=\"Max Tokens\",\n            advanced=True,\n            info=\"The maximum number of tokens to generate. Set to 0 for unlimited tokens.\",\n            range_spec=RangeSpec(min=0, max=128000),\n        ),\n        DictInput(\n            name=\"model_kwargs\",\n            display_name=\"Model Kwargs\",\n            advanced=True,\n            info=\"Additional keyword arguments to pass to the model.\",\n        ),\n        BoolInput(\n            name=\"json_mode\",\n            display_name=\"JSON Mode\",\n            advanced=True,\n            info=\"If True, it will output JSON regardless of passing a schema.\",\n        ),\n        DictInput(\n            name=\"output_schema\",\n            is_list=True,\n            display_name=\"Schema\",\n            advanced=True,\n            info=\"The schema for the Output of the model. \"\n            \"You must pass the word JSON in the prompt. \"\n            \"If left blank, JSON mode will be disabled. [DEPRECATED]\",\n        ),\n        DropdownInput(\n            name=\"model_name\",\n            display_name=\"Model Name\",\n            advanced=False,\n            options=OPENAI_MODEL_NAMES,\n            value=OPENAI_MODEL_NAMES[0],\n        ),\n        StrInput(\n            name=\"openai_api_base\",\n            display_name=\"OpenAI API Base\",\n            advanced=True,\n            info=\"The base URL of the OpenAI API. \"\n            \"Defaults to https://api.openai.com/v1. \"\n            \"You can change this to use other APIs like JinaChat, LocalAI and Prem.\",\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"OpenAI API Key\",\n            info=\"The OpenAI API Key to use for the OpenAI model.\",\n            advanced=False,\n            value=\"OPENAI_API_KEY\",\n        ),\n        FloatInput(name=\"temperature\", display_name=\"Temperature\", value=0.1),\n        IntInput(\n            name=\"seed\",\n            display_name=\"Seed\",\n            info=\"The seed controls the reproducibility of the job.\",\n            advanced=True,\n            value=1,\n        ),\n        HandleInput(\n            name=\"output_parser\",\n            display_name=\"Output Parser\",\n            info=\"The parser to use to parse the output of the model\",\n            advanced=True,\n            input_types=[\"OutputParser\"],\n        ),\n    ]\n\n    def build_model(self) -> LanguageModel:  # type: ignore[type-var]\n        # self.output_schema is a list of dictionaries\n        # let's convert it to a dictionary\n        output_schema_dict: dict[str, str] = reduce(operator.ior, self.output_schema or {}, {})\n        openai_api_key = self.api_key\n        temperature = self.temperature\n        model_name: str = self.model_name\n        max_tokens = self.max_tokens\n        model_kwargs = self.model_kwargs or {}\n        openai_api_base = self.openai_api_base or \"https://api.openai.com/v1\"\n        json_mode = bool(output_schema_dict) or self.json_mode\n        seed = self.seed\n\n        api_key = SecretStr(openai_api_key).get_secret_value() if openai_api_key else None\n        output = ChatOpenAI(\n            max_tokens=max_tokens or None,\n            model_kwargs=model_kwargs,\n            model=model_name,\n            base_url=openai_api_base,\n            api_key=api_key,\n            temperature=temperature if temperature is not None else 0.1,\n            seed=seed,\n        )\n        if json_mode:\n            if output_schema_dict:\n                output = output.with_structured_output(schema=output_schema_dict, method=\"json_mode\")\n            else:\n                output = output.bind(response_format={\"type\": \"json_object\"})\n\n        return output\n\n    def _get_exception_message(self, e: Exception):\n        \"\"\"Get a message from an OpenAI exception.\n\n        Args:\n            e (Exception): The exception to get the message from.\n\n        Returns:\n            str: The message from the exception.\n        \"\"\"\n        try:\n            from openai import BadRequestError\n        except ImportError:\n            return None\n        if isinstance(e, BadRequestError):\n            message = e.body.get(\"message\")\n            if message:\n                return message\n        return None\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageInput"
+                },
+                "json_mode": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "json_mode",
+                  "value": false,
+                  "display_name": "JSON Mode",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If True, it will output JSON regardless of passing a schema.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "max_tokens": {
+                  "trace_as_metadata": true,
+                  "range_spec": {
+                    "step_type": "float",
+                    "min": 0,
+                    "max": 128000,
+                    "step": 0.1
+                  },
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_tokens",
+                  "value": "",
+                  "display_name": "Max Tokens",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The maximum number of tokens to generate. Set to 0 for unlimited tokens.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "model_kwargs": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "model_kwargs",
+                  "value": {},
+                  "display_name": "Model Kwargs",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Additional keyword arguments to pass to the model.",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "model_name": {
+                  "tool_mode": false,
+                  "trace_as_metadata": true,
+                  "options": [
+                    "gpt-4o-mini",
+                    "gpt-4o",
+                    "gpt-4-turbo",
+                    "gpt-4-turbo-preview",
+                    "gpt-4",
+                    "gpt-3.5-turbo",
+                    "gpt-3.5-turbo-0125"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "model_name",
+                  "value": "gpt-4o",
+                  "display_name": "Model Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput",
+                  "load_from_db": false
+                },
+                "openai_api_base": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "openai_api_base",
+                  "value": "",
+                  "display_name": "OpenAI API Base",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The base URL of the OpenAI API. Defaults to https://api.openai.com/v1. You can change this to use other APIs like JinaChat, LocalAI and Prem.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "output_schema": {
+                  "trace_as_input": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "output_schema",
+                  "value": {},
+                  "display_name": "Schema",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The schema for the Output of the model. You must pass the word JSON in the prompt. If left blank, JSON mode will be disabled. [DEPRECATED]",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                },
+                "seed": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "seed",
+                  "value": 1,
+                  "display_name": "Seed",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The seed controls the reproducibility of the job.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "stream": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "stream",
+                  "value": false,
+                  "display_name": "Stream",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Stream the response from the model. Streaming works only in Chat.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "system_message": {
+                  "tool_mode": false,
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "system_message",
+                  "value": "",
+                  "display_name": "System Message",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "System message to pass to the model.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "temperature": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "temperature",
+                  "value": "0",
+                  "display_name": "Temperature",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "float",
+                  "_input_type": "FloatInput",
+                  "load_from_db": false
+                }
+              },
+              "description": "Generates text using OpenAI LLMs.",
+              "icon": "OpenAI",
+              "base_classes": [
+                "LanguageModel",
+                "Message"
+              ],
+              "display_name": "OpenAI",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text_output",
+                  "display_name": "Text",
+                  "method": "text_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": []
+                },
+                {
+                  "types": [
+                    "LanguageModel"
+                  ],
+                  "selected": "LanguageModel",
+                  "name": "model_output",
+                  "display_name": "Language Model",
+                  "method": "build_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": []
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "system_message",
+                "stream",
+                "max_tokens",
+                "model_kwargs",
+                "json_mode",
+                "output_schema",
+                "model_name",
+                "openai_api_base",
+                "api_key",
+                "temperature",
+                "seed",
+                "output_parser"
+              ],
+              "beta": false,
+              "legacy": false,
+              "edited": false,
+              "metadata": {},
+              "tool_mode": false
+            },
+            "id": "OpenAIModel-pcLHn"
+          },
+          "selected": false,
+          "width": 320,
+          "height": 672,
+          "positionAbsolute": {
+            "x": -429.3939158162318,
+            "y": 361.62979003212337
+          },
+          "dragging": false
+        },
+        {
+          "id": "TextInput-lovTd",
+          "type": "genericNode",
+          "position": {
+            "x": -356.3483250494561,
+            "y": -537.3183309400325
+          },
+          "data": {
+            "type": "TextInput",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.io.text import TextComponent\nfrom axiestudio.io import MultilineInput, Output\nfrom axiestudio.schema.message import Message\n\n\nclass TextInputComponent(TextComponent):\n    display_name = \"Text Input\"\n    description = \"Get text inputs from the Playground.\"\n    icon = \"type\"\n    name = \"TextInput\"\n\n    inputs = [\n        MultilineInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Text to be passed as input.\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"text_response\"),\n    ]\n\n    def text_response(self) -> Message:\n        return Message(\n            text=self.input_value,\n        )\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "tool_mode": false,
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "What is the history of OpenAI? What are the founding principles",
+                  "display_name": "Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Text to be passed as input.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "Get text inputs from the Playground.",
+              "icon": "type",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Text Input",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text",
+                  "display_name": "Text",
+                  "method": "text_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value"
+              ],
+              "beta": false,
+              "legacy": false,
+              "edited": false,
+              "metadata": {},
+              "tool_mode": false
+            },
+            "id": "TextInput-lovTd",
+            "description": "Get text inputs from the Playground.",
+            "display_name": "Text Input"
+          },
+          "selected": false,
+          "width": 320,
+          "height": 234,
+          "positionAbsolute": {
+            "x": -356.3483250494561,
+            "y": -537.3183309400325
+          },
+          "dragging": false
+        },
+        {
+          "id": "ChatOutput-5GGqt",
+          "type": "genericNode",
+          "position": {
+            "x": 579.8562886598247,
+            "y": 261.3410060710934
+          },
+          "data": {
+            "type": "ChatOutput",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "background_color": {
+                  "tool_mode": false,
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "background_color",
+                  "value": "",
+                  "display_name": "Background Color",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The background color of the icon.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "chat_icon": {
+                  "tool_mode": false,
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "chat_icon",
+                  "value": "",
+                  "display_name": "Icon",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The icon of the message.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, MessageInput, MessageTextInput, Output\nfrom axiestudio.schema.message import Message\nfrom axiestudio.schema.properties import Source\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI, MESSAGE_SENDER_USER\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Playground.\"\n    icon = \"MessagesSquare\"\n    name = \"ChatOutput\"\n\n    inputs = [\n        MessageInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Message to be passed as output.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_AI,\n            advanced=True,\n            info=\"Type of sender.\",\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_AI,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"data_template\",\n            display_name=\"Data Template\",\n            value=\"{text}\",\n            advanced=True,\n            info=\"Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.\",\n        ),\n        MessageTextInput(\n            name=\"background_color\",\n            display_name=\"Background Color\",\n            info=\"The background color of the icon.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"chat_icon\",\n            display_name=\"Icon\",\n            info=\"The icon of the message.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"text_color\",\n            display_name=\"Text Color\",\n            info=\"The text color of the name\",\n            advanced=True,\n        ),\n    ]\n    outputs = [\n        Output(\n            display_name=\"Message\",\n            name=\"message\",\n            method=\"message_response\",\n        ),\n    ]\n\n    def _build_source(self, _id: str | None, display_name: str | None, source: str | None) -> Source:\n        source_dict = {}\n        if _id:\n            source_dict[\"id\"] = _id\n        if display_name:\n            source_dict[\"display_name\"] = display_name\n        if source:\n            source_dict[\"source\"] = source\n        return Source(**source_dict)\n\n    def message_response(self) -> Message:\n        _source, _icon, _display_name, _source_id = self.get_properties_from_source_component()\n        _background_color = self.background_color\n        _text_color = self.text_color\n        if self.chat_icon:\n            _icon = self.chat_icon\n        message = self.input_value if isinstance(self.input_value, Message) else Message(text=self.input_value)\n        message.sender = self.sender\n        message.sender_name = self.sender_name\n        message.session_id = self.session_id\n        message.flow_id = self.graph.flow_id if hasattr(self, \"graph\") else None\n        message.properties.source = self._build_source(_source_id, _display_name, _source)\n        message.properties.icon = _icon\n        message.properties.background_color = _background_color\n        message.properties.text_color = _text_color\n        if self.session_id and isinstance(message, Message) and self.should_store_message:\n            stored_message = self.send_message(\n                message,\n            )\n            self.message.value = stored_message\n            message = stored_message\n\n        self.status = message\n        return message\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "data_template": {
+                  "tool_mode": false,
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "data_template",
+                  "value": "{text}",
+                  "display_name": "Data Template",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Message to be passed as output.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageInput"
+                },
+                "sender": {
+                  "tool_mode": false,
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Machine",
+                    "User"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender",
+                  "value": "Machine",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Type of sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "sender_name": {
+                  "tool_mode": false,
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender_name",
+                  "value": "AI",
+                  "display_name": "Sender Name",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Name of the sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "session_id": {
+                  "tool_mode": false,
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "session_id",
+                  "value": "",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "should_store_message": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "should_store_message",
+                  "value": true,
+                  "display_name": "Store Messages",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Store the message in the history.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "text_color": {
+                  "tool_mode": false,
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "text_color",
+                  "value": "",
+                  "display_name": "Text Color",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The text color of the name",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Display a chat message in the Playground.",
+              "icon": "MessagesSquare",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Chat Output",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "message",
+                  "display_name": "Message",
+                  "method": "message_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "should_store_message",
+                "sender",
+                "sender_name",
+                "session_id",
+                "data_template",
+                "background_color",
+                "chat_icon",
+                "text_color"
+              ],
+              "beta": false,
+              "legacy": false,
+              "edited": false,
+              "metadata": {},
+              "tool_mode": false
+            },
+            "id": "ChatOutput-5GGqt",
+            "description": "Display a chat message in the Playground.",
+            "display_name": "Chat Output"
+          },
+          "selected": false,
+          "width": 320,
+          "height": 234,
+          "positionAbsolute": {
+            "x": 579.8562886598247,
+            "y": 261.3410060710934
+          },
+          "dragging": false
+        },
+        {
+          "id": "SearchAPI-5VmjR",
+          "type": "genericNode",
+          "position": {
+            "x": -443.6927108655291,
+            "y": -231.69612989273136
+          },
+          "data": {
+            "type": "SearchAPI",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "api_key": {
+                  "load_from_db": true,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "SearchAPI API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Any\n\nfrom langchain.tools import StructuredTool\nfrom langchain_community.utilities.searchapi import SearchApiAPIWrapper\nfrom pydantic import BaseModel, Field\n\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom axiestudio.field_typing import Tool\nfrom axiestudio.inputs import DictInput, IntInput, MessageTextInput, MultilineInput, SecretStrInput\nfrom axiestudio.schema import Data\n\n\nclass SearchAPIComponent(LCToolComponent):\n    display_name: str = \"Search API\"\n    description: str = \"Call the searchapi.io API with result limiting\"\n    name = \"SearchAPI\"\n    documentation: str = \"https://www.searchapi.io/docs/google\"\n    icon = \"SearchAPI\"\n\n    inputs = [\n        MessageTextInput(name=\"engine\", display_name=\"Engine\", value=\"google\"),\n        SecretStrInput(name=\"api_key\", display_name=\"SearchAPI API Key\", required=True),\n        MultilineInput(\n            name=\"input_value\",\n            display_name=\"Input\",\n        ),\n        DictInput(name=\"search_params\", display_name=\"Search parameters\", advanced=True, is_list=True),\n        IntInput(name=\"max_results\", display_name=\"Max Results\", value=5, advanced=True),\n        IntInput(name=\"max_snippet_length\", display_name=\"Max Snippet Length\", value=100, advanced=True),\n    ]\n\n    class SearchAPISchema(BaseModel):\n        query: str = Field(..., description=\"The search query\")\n        params: dict[str, Any] = Field(default_factory=dict, description=\"Additional search parameters\")\n        max_results: int = Field(5, description=\"Maximum number of results to return\")\n        max_snippet_length: int = Field(100, description=\"Maximum length of each result snippet\")\n\n    def _build_wrapper(self):\n        return SearchApiAPIWrapper(engine=self.engine, searchapi_api_key=self.api_key)\n\n    def build_tool(self) -> Tool:\n        wrapper = self._build_wrapper()\n\n        def search_func(\n            query: str, params: dict[str, Any] | None = None, max_results: int = 5, max_snippet_length: int = 100\n        ) -> list[dict[str, Any]]:\n            params = params or {}\n            full_results = wrapper.results(query=query, **params)\n            organic_results = full_results.get(\"organic_results\", [])[:max_results]\n\n            limited_results = []\n            for result in organic_results:\n                limited_result = {\n                    \"title\": result.get(\"title\", \"\")[:max_snippet_length],\n                    \"link\": result.get(\"link\", \"\"),\n                    \"snippet\": result.get(\"snippet\", \"\")[:max_snippet_length],\n                }\n                limited_results.append(limited_result)\n\n            return limited_results\n\n        tool = StructuredTool.from_function(\n            name=\"search_api\",\n            description=\"Search for recent results using searchapi.io with result limiting\",\n            func=search_func,\n            args_schema=self.SearchAPISchema,\n        )\n\n        self.status = f\"Search API Tool created with engine: {self.engine}\"\n        return tool\n\n    def run_model(self) -> list[Data]:\n        tool = self.build_tool()\n        results = tool.run(\n            {\n                \"query\": self.input_value,\n                \"params\": self.search_params or {},\n                \"max_results\": self.max_results,\n                \"max_snippet_length\": self.max_snippet_length,\n            }\n        )\n\n        data_list = [Data(data=result, text=result.get(\"snippet\", \"\")) for result in results]\n\n        self.status = data_list\n        return data_list\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "engine": {
+                  "tool_mode": false,
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "engine",
+                  "value": "google",
+                  "display_name": "Engine",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "input_value": {
+                  "tool_mode": false,
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "max_results": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_results",
+                  "value": 5,
+                  "display_name": "Max Results",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "max_snippet_length": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_snippet_length",
+                  "value": 100,
+                  "display_name": "Max Snippet Length",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "search_params": {
+                  "trace_as_input": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "search_params",
+                  "value": {},
+                  "display_name": "Search parameters",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "dict",
+                  "_input_type": "DictInput"
+                }
+              },
+              "description": "Call the searchapi.io API with result limiting",
+              "icon": "SearchAPI",
+              "base_classes": [
+                "Data",
+                "Tool"
+              ],
+              "display_name": "Search API",
+              "documentation": "https://www.searchapi.io/docs/google",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "api_run_model",
+                  "display_name": "Data",
+                  "method": "run_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": [
+                    "api_key"
+                  ]
+                },
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "api_build_tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "required_inputs": [
+                    "api_key"
+                  ]
+                }
+              ],
+              "field_order": [
+                "engine",
+                "api_key",
+                "input_value",
+                "search_params",
+                "max_results",
+                "max_snippet_length"
+              ],
+              "beta": false,
+              "legacy": false,
+              "edited": false,
+              "metadata": {},
+              "tool_mode": false
+            },
+            "id": "SearchAPI-5VmjR",
+            "description": "Call the searchapi.io API with result limiting",
+            "display_name": "Search API"
+          },
+          "selected": false,
+          "width": 320,
+          "height": 455,
+          "positionAbsolute": {
+            "x": -443.6927108655291,
+            "y": -231.69612989273136
+          },
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "source": "OpenAIModel-pcLHn",
+          "sourceHandle": "{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-pcLHnœ,œnameœ:œmodel_outputœ,œoutput_typesœ:[œLanguageModelœ]}",
+          "target": "Retrieve Rewriter Chain-dtvDP",
+          "targetHandle": "{œfieldNameœ:œllmœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œinputTypesœ:[œLanguageModelœ],œtypeœ:œotherœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "llm",
+              "id": "Retrieve Rewriter Chain-dtvDP",
+              "inputTypes": [
+                "LanguageModel"
+              ],
+              "type": "other"
+            },
+            "sourceHandle": {
+              "dataType": "OpenAIModel",
+              "id": "OpenAIModel-pcLHn",
+              "name": "model_output",
+              "output_types": [
+                "LanguageModel"
+              ]
+            }
+          },
+          "id": "reactflow__edge-OpenAIModel-pcLHn{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-pcLHnœ,œnameœ:œmodel_outputœ,œoutput_typesœ:[œLanguageModelœ]}-Retrieve Rewriter Chain-dtvDP{œfieldNameœ:œllmœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œinputTypesœ:[œLanguageModelœ],œtypeœ:œotherœ}",
+          "className": ""
+        },
+        {
+          "source": "TextInput-lovTd",
+          "sourceHandle": "{œdataTypeœ:œTextInputœ,œidœ:œTextInput-lovTdœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "Retrieve Rewriter Chain-dtvDP",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "Retrieve Rewriter Chain-dtvDP",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "TextInput",
+              "id": "TextInput-lovTd",
+              "name": "text",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-TextInput-lovTd{œdataTypeœ:œTextInputœ,œidœ:œTextInput-lovTdœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}-Retrieve Rewriter Chain-dtvDP{œfieldNameœ:œinput_valueœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "className": ""
+        },
+        {
+          "source": "SearchAPI-5VmjR",
+          "sourceHandle": "{œdataTypeœ:œSearchAPIœ,œidœ:œSearchAPI-5VmjRœ,œnameœ:œapi_build_toolœ,œoutput_typesœ:[œToolœ]}",
+          "target": "Retrieve Rewriter Chain-dtvDP",
+          "targetHandle": "{œfieldNameœ:œtoolsœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œinputTypesœ:[œToolœ,œBaseToolœ],œtypeœ:œotherœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "tools",
+              "id": "Retrieve Rewriter Chain-dtvDP",
+              "inputTypes": [
+                "Tool",
+                "BaseTool"
+              ],
+              "type": "other"
+            },
+            "sourceHandle": {
+              "dataType": "SearchAPI",
+              "id": "SearchAPI-5VmjR",
+              "name": "api_build_tool",
+              "output_types": [
+                "Tool"
+              ]
+            }
+          },
+          "id": "reactflow__edge-SearchAPI-5VmjR{œdataTypeœ:œSearchAPIœ,œidœ:œSearchAPI-5VmjRœ,œnameœ:œapi_build_toolœ,œoutput_typesœ:[œToolœ]}-Retrieve Rewriter Chain-dtvDP{œfieldNameœ:œtoolsœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œinputTypesœ:[œToolœ,œBaseToolœ],œtypeœ:œotherœ}",
+          "className": ""
+        },
+        {
+          "source": "Retrieve Rewriter Chain-dtvDP",
+          "sourceHandle": "{œdataTypeœ:œRetrieve Rewriter Chainœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œnameœ:œoutput_textœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "ChatOutput-5GGqt",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-5GGqtœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "ChatOutput-5GGqt",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "Retrieve Rewriter Chain",
+              "id": "Retrieve Rewriter Chain-dtvDP",
+              "name": "output_text",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-Retrieve Rewriter Chain-dtvDP{œdataTypeœ:œRetrieve Rewriter Chainœ,œidœ:œRetrieve Rewriter Chain-dtvDPœ,œnameœ:œoutput_textœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-5GGqt{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-5GGqtœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "className": ""
+        }
+      ],
+      "viewport": {
+        "x": 502.34060895413785,
+        "y": 264.3688920224271,
+        "zoom": 0.4582515142610404
+      }
+    },
+    "date_created": "2024-12-21T02:03:23.629Z",
+    "date_updated": "2024-12-21T02:03:23.676Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "abaa0e85-4007-43e3-85db-271c95179cee",
+    "user_created": {
+      "username": "Chrisll",
+      "first_name": "Chris",
+      "last_name": "Lai",
+      "id": "abaa0e85-4007-43e3-85db-271c95179cee"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:58.499Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 40,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,365 @@
+{
+  "id": "c2ff53fe-30d2-4957-b2cf-649e88e14058",
+  "name": "Assembly AI",
+  "description": "Transcribe an audio file using AssemblyAI (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "NamastexLabs",
+    "first_name": "Felipe",
+    "last_name": "Rosa",
+    "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "full_name": "Felipe Rosa"
+  },
+  "store_url": "https://www.langflow.store/store/component/c2ff53fe-30d2-4957-b2cf-649e88e14058",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-06-25T19:51:19.192Z",
+    "updated": "2024-06-25T19:51:19.230Z",
+    "downloaded": "2025-08-19T17:50:05.472Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.4",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "audio_file": {
+                "trace_as_metadata": true,
+                "file_path": "0e320329-72d6-4440-817b-3f2568980148/output-cut-56ed53579eec4a14bf237d04ac998110 (1).mp4",
+                "fileTypes": [
+                  "mp3",
+                  "mp4",
+                  "wav",
+                  "m4a",
+                  "mkv"
+                ],
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "audio_file",
+                "display_name": "Audio File",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The audio file to transcribe.",
+                "title_case": false,
+                "type": "file"
+              },
+              "api_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "api_key",
+                "display_name": "Assembly API Key",
+                "advanced": false,
+                "input_types": [],
+                "dynamic": false,
+                "info": "Your AssemblyAI API key. You can get one from https://www.assemblyai.com/",
+                "title_case": false,
+                "password": true,
+                "type": "str"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import os\r\nimport time\r\nimport requests\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import FileInput, SecretStrInput, DropdownInput, Output\r\nfrom axiestudio.schema import Data\r\nfrom loguru import logger\r\n\r\nclass AssemblyAITranscriber(Component):\r\n    display_name = \"AssemblyAI Transcriber\"\r\n    description = \"Transcribe an audio file using AssemblyAI\"\r\n    documentation = \"https://docs.assemblyai.com/\"\r\n    icon = \"🎤\"\r\n\r\n    inputs = [\r\n        SecretStrInput(\r\n            name=\"api_key\",\r\n            display_name=\"Assembly API Key\",\r\n            info=\"Your AssemblyAI API key. You can get one from https://www.assemblyai.com/\",\r\n            advanced=False,\r\n        ),\r\n        FileInput(\r\n            name=\"audio_file\",\r\n            display_name=\"Audio File\",\r\n            file_types=[\"mp3\", \"mp4\", \"wav\", \"m4a\", \"mkv\"],\r\n            info=\"The audio file to transcribe.\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"language\",\r\n            display_name=\"Language\",\r\n            options=[\r\n                \"en\", \"es\", \"fr\", \"de\", \"it\", \"pt\", \"ja\", \"ko\", \"hi\", \"ar\", \"ru\", \"zh\",\r\n            ],\r\n            value=\"en\",\r\n            info=\"The language of the audio file.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Transcription Text\", name=\"transcription_text\", method=\"transcribe_audio\"),\r\n    ]\r\n\r\n    def upload_audio_file(self, audio_file: str, headers: dict) -> str:\r\n        \"\"\"Uploads audio file to AssemblyAI and returns upload URL.\"\"\"\r\n        base_url = \"https://api.assemblyai.com/v2\"\r\n        with open(audio_file, \"rb\") as f:\r\n            response = requests.post(base_url + \"/upload\", headers=headers, data=f)\r\n        response.raise_for_status()\r\n        upload_url = response.json()[\"upload_url\"]\r\n        return upload_url\r\n\r\n    def create_transcription_request(self, upload_url: str, headers: dict, language: str) -> str:\r\n        \"\"\"Creates a transcription request and returns the transcription ID.\"\"\"\r\n        data = {\"audio_url\": upload_url, \"language_code\": language}\r\n        url = \"https://api.assemblyai.com/v2/transcript\"\r\n        response = requests.post(url, json=data, headers=headers)\r\n        response.raise_for_status()\r\n        transcript_id = response.json()[\"id\"]\r\n        return transcript_id\r\n\r\n    def poll_transcription_status(self, transcript_id: str, headers: dict) -> Data:\r\n        \"\"\"Polls the transcription status until completion and returns the Data.\"\"\"\r\n        polling_endpoint = f\"https://api.assemblyai.com/v2/transcript/{transcript_id}\"\r\n        while True:\r\n            response = requests.get(polling_endpoint, headers=headers)\r\n            response.raise_for_status()\r\n            transcription_result = response.json()\r\n            logger.debug(transcription_result)\r\n\r\n            if transcription_result[\"status\"] == \"completed\":\r\n                data = Data(data=transcription_result, text=transcription_result['text'])\r\n                self.status = data\r\n                return data\r\n            elif transcription_result[\"status\"] == \"error\":\r\n                raise RuntimeError(f\"Transcription failed: {transcription_result['error']}\")\r\n            else:\r\n                time.sleep(3)\r\n\r\n    def transcribe_audio(self) -> Data:\r\n        # Check if the file exists\r\n        if not os.path.exists(self.audio_file):\r\n            self.status = \"Error: Audio file not found\"\r\n            return Data(data={\"error\": \"Audio file not found\"})\r\n\r\n        headers = {\"authorization\": self.api_key}\r\n\r\n        try:\r\n            upload_url = self.upload_audio_file(self.audio_file, headers)\r\n            transcript_id = self.create_transcription_request(upload_url, headers, self.language)\r\n            transcription_result = self.poll_transcription_status(transcript_id, headers)\r\n            return transcription_result\r\n        except requests.RequestException as e:\r\n            self.status = f\"HTTP error: {e.response.status_code if e.response else 'Unknown'}\"\r\n            return Data(data={\"error\": str(e)})\r\n        except Exception as e:\r\n            self.status = f\"An error occurred: {str(e)}\"\r\n            return Data(data={\"error\": str(e)})",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "language": {
+                "trace_as_metadata": true,
+                "options": [
+                  "en",
+                  "es",
+                  "fr",
+                  "de",
+                  "it",
+                  "pt",
+                  "ja",
+                  "ko",
+                  "hi",
+                  "ar",
+                  "ru",
+                  "zh"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "en",
+                "name": "language",
+                "display_name": "Language",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The language of the audio file.",
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "Transcribe an audio file using AssemblyAI",
+            "icon": "🎤",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Assembly AI",
+            "documentation": "https://docs.assemblyai.com/",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "transcription_text",
+                "display_name": "Transcription Text",
+                "method": "transcribe_audio",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "api_key",
+              "audio_file",
+              "language"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-8lumw",
+          "description": "Transcribe an audio file using AssemblyAI",
+          "display_name": "Assembly AI"
+        },
+        "id": "CustomComponent-8lumw",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "c2ff53fe-30d2-4957-b2cf-649e88e14058",
+    "name": "Assembly AI",
+    "description": "Transcribe an audio file using AssemblyAI",
+    "is_component": true,
+    "liked_by_count": "9",
+    "downloads_count": "76",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.4",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "audio_file": {
+                  "trace_as_metadata": true,
+                  "file_path": "0e320329-72d6-4440-817b-3f2568980148/output-cut-56ed53579eec4a14bf237d04ac998110 (1).mp4",
+                  "fileTypes": [
+                    "mp3",
+                    "mp4",
+                    "wav",
+                    "m4a",
+                    "mkv"
+                  ],
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "audio_file",
+                  "display_name": "Audio File",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The audio file to transcribe.",
+                  "title_case": false,
+                  "type": "file"
+                },
+                "api_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "api_key",
+                  "display_name": "Assembly API Key",
+                  "advanced": false,
+                  "input_types": [],
+                  "dynamic": false,
+                  "info": "Your AssemblyAI API key. You can get one from https://www.assemblyai.com/",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import os\r\nimport time\r\nimport requests\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import FileInput, SecretStrInput, DropdownInput, Output\r\nfrom axiestudio.schema import Data\r\nfrom loguru import logger\r\n\r\nclass AssemblyAITranscriber(Component):\r\n    display_name = \"AssemblyAI Transcriber\"\r\n    description = \"Transcribe an audio file using AssemblyAI\"\r\n    documentation = \"https://docs.assemblyai.com/\"\r\n    icon = \"🎤\"\r\n\r\n    inputs = [\r\n        SecretStrInput(\r\n            name=\"api_key\",\r\n            display_name=\"Assembly API Key\",\r\n            info=\"Your AssemblyAI API key. You can get one from https://www.assemblyai.com/\",\r\n            advanced=False,\r\n        ),\r\n        FileInput(\r\n            name=\"audio_file\",\r\n            display_name=\"Audio File\",\r\n            file_types=[\"mp3\", \"mp4\", \"wav\", \"m4a\", \"mkv\"],\r\n            info=\"The audio file to transcribe.\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"language\",\r\n            display_name=\"Language\",\r\n            options=[\r\n                \"en\", \"es\", \"fr\", \"de\", \"it\", \"pt\", \"ja\", \"ko\", \"hi\", \"ar\", \"ru\", \"zh\",\r\n            ],\r\n            value=\"en\",\r\n            info=\"The language of the audio file.\",\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Transcription Text\", name=\"transcription_text\", method=\"transcribe_audio\"),\r\n    ]\r\n\r\n    def upload_audio_file(self, audio_file: str, headers: dict) -> str:\r\n        \"\"\"Uploads audio file to AssemblyAI and returns upload URL.\"\"\"\r\n        base_url = \"https://api.assemblyai.com/v2\"\r\n        with open(audio_file, \"rb\") as f:\r\n            response = requests.post(base_url + \"/upload\", headers=headers, data=f)\r\n        response.raise_for_status()\r\n        upload_url = response.json()[\"upload_url\"]\r\n        return upload_url\r\n\r\n    def create_transcription_request(self, upload_url: str, headers: dict, language: str) -> str:\r\n        \"\"\"Creates a transcription request and returns the transcription ID.\"\"\"\r\n        data = {\"audio_url\": upload_url, \"language_code\": language}\r\n        url = \"https://api.assemblyai.com/v2/transcript\"\r\n        response = requests.post(url, json=data, headers=headers)\r\n        response.raise_for_status()\r\n        transcript_id = response.json()[\"id\"]\r\n        return transcript_id\r\n\r\n    def poll_transcription_status(self, transcript_id: str, headers: dict) -> Data:\r\n        \"\"\"Polls the transcription status until completion and returns the Data.\"\"\"\r\n        polling_endpoint = f\"https://api.assemblyai.com/v2/transcript/{transcript_id}\"\r\n        while True:\r\n            response = requests.get(polling_endpoint, headers=headers)\r\n            response.raise_for_status()\r\n            transcription_result = response.json()\r\n            logger.debug(transcription_result)\r\n\r\n            if transcription_result[\"status\"] == \"completed\":\r\n                data = Data(data=transcription_result, text=transcription_result['text'])\r\n                self.status = data\r\n                return data\r\n            elif transcription_result[\"status\"] == \"error\":\r\n                raise RuntimeError(f\"Transcription failed: {transcription_result['error']}\")\r\n            else:\r\n                time.sleep(3)\r\n\r\n    def transcribe_audio(self) -> Data:\r\n        # Check if the file exists\r\n        if not os.path.exists(self.audio_file):\r\n            self.status = \"Error: Audio file not found\"\r\n            return Data(data={\"error\": \"Audio file not found\"})\r\n\r\n        headers = {\"authorization\": self.api_key}\r\n\r\n        try:\r\n            upload_url = self.upload_audio_file(self.audio_file, headers)\r\n            transcript_id = self.create_transcription_request(upload_url, headers, self.language)\r\n            transcription_result = self.poll_transcription_status(transcript_id, headers)\r\n            return transcription_result\r\n        except requests.RequestException as e:\r\n            self.status = f\"HTTP error: {e.response.status_code if e.response else 'Unknown'}\"\r\n            return Data(data={\"error\": str(e)})\r\n        except Exception as e:\r\n            self.status = f\"An error occurred: {str(e)}\"\r\n            return Data(data={\"error\": str(e)})",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "language": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "en",
+                    "es",
+                    "fr",
+                    "de",
+                    "it",
+                    "pt",
+                    "ja",
+                    "ko",
+                    "hi",
+                    "ar",
+                    "ru",
+                    "zh"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "en",
+                  "name": "language",
+                  "display_name": "Language",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The language of the audio file.",
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "Transcribe an audio file using AssemblyAI",
+              "icon": "🎤",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Assembly AI",
+              "documentation": "https://docs.assemblyai.com/",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "transcription_text",
+                  "display_name": "Transcription Text",
+                  "method": "transcribe_audio",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "api_key",
+                "audio_file",
+                "language"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-8lumw",
+            "description": "Transcribe an audio file using AssemblyAI",
+            "display_name": "Assembly AI"
+          },
+          "id": "CustomComponent-8lumw",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-06-25T19:51:19.192Z",
+    "date_updated": "2024-06-25T19:51:19.230Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "user_created": {
+      "username": "NamastexLabs",
+      "first_name": "Felipe",
+      "last_name": "Rosa",
+      "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.661Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

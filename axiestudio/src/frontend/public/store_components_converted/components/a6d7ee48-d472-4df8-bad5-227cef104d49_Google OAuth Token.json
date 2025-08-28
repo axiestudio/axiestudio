@@ -1,0 +1,315 @@
+{
+  "id": "a6d7ee48-d472-4df8-bad5-227cef104d49",
+  "name": "Google OAuth Token",
+  "description": "A component to generate a json string containing your Google OAuth token. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "viniciossilva3",
+    "first_name": "Vinicios",
+    "last_name": "Batista Da Silva",
+    "id": "6a3a88e2-cc6b-4f37-aebb-a747c97c7489",
+    "full_name": "Vinicios Batista Da Silva"
+  },
+  "store_url": "https://www.langflow.store/store/component/a6d7ee48-d472-4df8-bad5-227cef104d49",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-11-04T14:34:21.893Z",
+    "updated": "2024-11-05T04:48:21.903Z",
+    "downloaded": "2025-08-19T17:50:05.908Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.19",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "node": {
+            "template": {
+              "_type": "Component",
+              "oauth_credentials": {
+                "trace_as_metadata": true,
+                "file_path": "cbc50d9d-40c1-4d7f-8448-9c9097d8edc6/2024-11-05_01-48-02_client_secret_998884801917-hsjq3alo0vfqih74fe635k01khqi74d3.apps.googleusercontent.com.json",
+                "fileTypes": [
+                  "json"
+                ],
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "oauth_credentials",
+                "value": "",
+                "display_name": "Credentials File",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Input OAuth Credentials file. (e.g. credentials.json)",
+                "title_case": false,
+                "type": "file",
+                "_input_type": "FileInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import os\nimport re\n\nfrom google.auth.transport.requests import Request\nfrom google.oauth2.credentials import Credentials\nfrom google_auth_oauthlib.flow import InstalledAppFlow\n\nfrom axiestudio.custom import Component\nfrom axiestudio.io import FileInput, MultilineInput, Output\nfrom axiestudio.schema import Data\n\n\nclass GoogleOAuthToken(Component):\n    display_name = \"Google OAuth Token\"\n    description = \"A component to generate a json string containing your Google OAuth token.\"\n    documentation: str = \"https://developers.google.com/identity/protocols/oauth2/web-server?hl=pt-br#python_1\"\n    icon = \"Google\"\n    name = \"GoogleOAuthToken\"\n\n    inputs = [\n        MultilineInput(\n            name=\"scopes\",\n            display_name=\"Scopes\",\n            info=\"Input a comma-separated list of scopes with the permissions required for your application.\",\n            required=True,\n            value=\"https://www.googleapis.com/auth/drive.readonly,\\n https://www.googleapis.com/auth/drive.activity.readonly\"\n        ),\n        FileInput(\n            name=\"oauth_credentials\",\n            display_name=\"Credentials File\",\n            info=\"Input OAuth Credentials file. (e.g. credentials.json)\",\n            file_types=[\"json\"],\n            required=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Output\", name=\"output\", method=\"build_output\"),\n    ]\n\n    def validate_scopes(self, scopes):\n        pattern = (\n            r\"^(https:\\/\\/(www\\.googleapis\\.com\\/auth\\/[\\w\\.\\-]+\"\n            r\"|mail\\.google\\.com\\/\"\n            r\"|www\\.google\\.com\\/calendar\\/feeds\"\n            r\"|www\\.google\\.com\\/m8\\/feeds))\"\n            r\"(,\\s*https:\\/\\/(www\\.googleapis\\.com\\/auth\\/[\\w\\.\\-]+\"\n            r\"|mail\\.google\\.com\\/\"\n            r\"|www\\.google\\.com\\/calendar\\/feeds\"\n            r\"|www\\.google\\.com\\/m8\\/feeds))*$\"\n        )\n        if not re.match(pattern, scopes):\n            raise ValueError(\n                \"Invalid format for scopes. Please ensure scopes are comma-separated, without quotes, and without extra characters. Also, check if each URL is correct.\"\n            )\n\n    def build_output(self) -> Data:\n        self.validate_scopes(self.scopes)\n\n        user_scopes = [scope.strip() for scope in self.scopes.split(\",\")]\n        if self.scopes:\n            SCOPES = user_scopes\n        else:\n            raise ValueError(\"Incorrect Scope, check if you filled in the scopes field correctly!\")\n\n        creds = None\n        token_path = \"token.json\"\n\n        if os.path.exists(token_path):\n            with open(token_path) as token_file:\n                creds = Credentials.from_authorized_user_file(token_path, SCOPES)\n\n        if not creds or not creds.valid:\n            if creds and creds.expired and creds.refresh_token:\n                creds.refresh(Request())\n            else:\n                if self.oauth_credentials:\n                    CLIENT_SECRET_FILE = self.oauth_credentials\n                else:\n                    raise ValueError(\"Oauth 2.0 Credentials file not provided. (e.g. the credentials.json)\")\n\n                flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET_FILE, SCOPES)\n                creds = flow.run_local_server(port=0)\n\n            with open(token_path, \"w\") as token_file:\n                token_file.write(creds.to_json())\n\n        creds_json = json.loads(creds.to_json())\n\n        return Data(data=creds_json)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "scopes": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "scopes",
+                "value": "https://www.googleapis.com/auth/drive.readonly,\n https://www.googleapis.com/auth/drive.activity.readonly",
+                "display_name": "Scopes",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Input a comma-separated list of scopes with the permissions required for your application.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "A component to generate a json string containing your Google OAuth token.",
+            "icon": "Google",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Google OAuth Token",
+            "documentation": "https://developers.google.com/identity/protocols/oauth2/web-server?hl=pt-br#python_1",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "output",
+                "display_name": "Output",
+                "method": "build_output",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "scopes",
+              "oauth_credentials"
+            ],
+            "beta": false,
+            "legacy": false,
+            "edited": true,
+            "metadata": {},
+            "lf_version": "1.0.19",
+            "official": false
+          },
+          "type": "GoogleOAuthToken",
+          "id": "CustomComponent-F79b5"
+        },
+        "id": "CustomComponent-F79b5",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "a6d7ee48-d472-4df8-bad5-227cef104d49",
+    "name": "Google OAuth Token",
+    "description": "A component to generate a json string containing your Google OAuth token.",
+    "is_component": true,
+    "liked_by_count": "5",
+    "downloads_count": "56",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.19",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "node": {
+              "template": {
+                "_type": "Component",
+                "oauth_credentials": {
+                  "trace_as_metadata": true,
+                  "file_path": "cbc50d9d-40c1-4d7f-8448-9c9097d8edc6/2024-11-05_01-48-02_client_secret_998884801917-hsjq3alo0vfqih74fe635k01khqi74d3.apps.googleusercontent.com.json",
+                  "fileTypes": [
+                    "json"
+                  ],
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "oauth_credentials",
+                  "value": "",
+                  "display_name": "Credentials File",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Input OAuth Credentials file. (e.g. credentials.json)",
+                  "title_case": false,
+                  "type": "file",
+                  "_input_type": "FileInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import os\nimport re\n\nfrom google.auth.transport.requests import Request\nfrom google.oauth2.credentials import Credentials\nfrom google_auth_oauthlib.flow import InstalledAppFlow\n\nfrom axiestudio.custom import Component\nfrom axiestudio.io import FileInput, MultilineInput, Output\nfrom axiestudio.schema import Data\n\n\nclass GoogleOAuthToken(Component):\n    display_name = \"Google OAuth Token\"\n    description = \"A component to generate a json string containing your Google OAuth token.\"\n    documentation: str = \"https://developers.google.com/identity/protocols/oauth2/web-server?hl=pt-br#python_1\"\n    icon = \"Google\"\n    name = \"GoogleOAuthToken\"\n\n    inputs = [\n        MultilineInput(\n            name=\"scopes\",\n            display_name=\"Scopes\",\n            info=\"Input a comma-separated list of scopes with the permissions required for your application.\",\n            required=True,\n            value=\"https://www.googleapis.com/auth/drive.readonly,\\n https://www.googleapis.com/auth/drive.activity.readonly\"\n        ),\n        FileInput(\n            name=\"oauth_credentials\",\n            display_name=\"Credentials File\",\n            info=\"Input OAuth Credentials file. (e.g. credentials.json)\",\n            file_types=[\"json\"],\n            required=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Output\", name=\"output\", method=\"build_output\"),\n    ]\n\n    def validate_scopes(self, scopes):\n        pattern = (\n            r\"^(https:\\/\\/(www\\.googleapis\\.com\\/auth\\/[\\w\\.\\-]+\"\n            r\"|mail\\.google\\.com\\/\"\n            r\"|www\\.google\\.com\\/calendar\\/feeds\"\n            r\"|www\\.google\\.com\\/m8\\/feeds))\"\n            r\"(,\\s*https:\\/\\/(www\\.googleapis\\.com\\/auth\\/[\\w\\.\\-]+\"\n            r\"|mail\\.google\\.com\\/\"\n            r\"|www\\.google\\.com\\/calendar\\/feeds\"\n            r\"|www\\.google\\.com\\/m8\\/feeds))*$\"\n        )\n        if not re.match(pattern, scopes):\n            raise ValueError(\n                \"Invalid format for scopes. Please ensure scopes are comma-separated, without quotes, and without extra characters. Also, check if each URL is correct.\"\n            )\n\n    def build_output(self) -> Data:\n        self.validate_scopes(self.scopes)\n\n        user_scopes = [scope.strip() for scope in self.scopes.split(\",\")]\n        if self.scopes:\n            SCOPES = user_scopes\n        else:\n            raise ValueError(\"Incorrect Scope, check if you filled in the scopes field correctly!\")\n\n        creds = None\n        token_path = \"token.json\"\n\n        if os.path.exists(token_path):\n            with open(token_path) as token_file:\n                creds = Credentials.from_authorized_user_file(token_path, SCOPES)\n\n        if not creds or not creds.valid:\n            if creds and creds.expired and creds.refresh_token:\n                creds.refresh(Request())\n            else:\n                if self.oauth_credentials:\n                    CLIENT_SECRET_FILE = self.oauth_credentials\n                else:\n                    raise ValueError(\"Oauth 2.0 Credentials file not provided. (e.g. the credentials.json)\")\n\n                flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET_FILE, SCOPES)\n                creds = flow.run_local_server(port=0)\n\n            with open(token_path, \"w\") as token_file:\n                token_file.write(creds.to_json())\n\n        creds_json = json.loads(creds.to_json())\n\n        return Data(data=creds_json)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "scopes": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "scopes",
+                  "value": "https://www.googleapis.com/auth/drive.readonly,\n https://www.googleapis.com/auth/drive.activity.readonly",
+                  "display_name": "Scopes",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Input a comma-separated list of scopes with the permissions required for your application.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "A component to generate a json string containing your Google OAuth token.",
+              "icon": "Google",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Google OAuth Token",
+              "documentation": "https://developers.google.com/identity/protocols/oauth2/web-server?hl=pt-br#python_1",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "output",
+                  "display_name": "Output",
+                  "method": "build_output",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "scopes",
+                "oauth_credentials"
+              ],
+              "beta": false,
+              "legacy": false,
+              "edited": true,
+              "metadata": {},
+              "lf_version": "1.0.19",
+              "official": false
+            },
+            "type": "GoogleOAuthToken",
+            "id": "CustomComponent-F79b5"
+          },
+          "id": "CustomComponent-F79b5",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-11-04T14:34:21.893Z",
+    "date_updated": "2024-11-05T04:48:21.903Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "6a3a88e2-cc6b-4f37-aebb-a747c97c7489",
+    "user_created": {
+      "username": "viniciossilva3",
+      "first_name": "Vinicios",
+      "last_name": "Batista Da Silva",
+      "id": "6a3a88e2-cc6b-4f37-aebb-a747c97c7489"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.264Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

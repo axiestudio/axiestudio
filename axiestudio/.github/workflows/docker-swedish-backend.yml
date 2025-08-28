@@ -1,0 +1,124 @@
+name: Build Swedish Backend Docker Image
+run-name: Building Swedish Backend Docker Image by @${{ github.actor }}
+
+on:
+  # Trigger on push to mainbackup branch
+  push:
+    branches:
+      - mainbackup
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.github/workflows/docs_*.yml'
+      - '.github/workflows/deploy-docs-*.yml'
+      - 'src/frontend/**'
+
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      tag_suffix:
+        description: "Additional tag suffix (e.g., 'v1.0', 'beta')"
+        required: false
+        type: string
+        default: "latest"
+
+env:
+  PYTHON_VERSION: "3.13"
+  DOCKER_IMAGE_NAME: "axiestudio/swedish"
+
+jobs:
+  build-swedish-backend:
+    name: Build Swedish Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Free up disk space
+        run: |
+          echo "Cleaning up disk space..."
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker system prune -af
+          sudo apt-get clean
+          df -h
+
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          ref: mainbackup
+          persist-credentials: true
+
+      - name: Setup UV and Python
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install the project
+        run: |
+          uv sync --no-dev --no-sources
+
+      - name: Get version from pyproject.toml
+        id: get-version
+        run: |
+          version=$(grep '^version = ' src/backend/base/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          if [ -z "$version" ]; then
+            echo "Failed to extract version from backend pyproject.toml, using default"
+            version="1.0.0"
+          fi
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "Extracted version: $version"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
+          driver: docker-container
+          driver-opts: |
+            image=moby/buildkit:v0.22.0
+            network=host
+          install: true
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set Docker tags
+        id: set-tags
+        run: |
+          base_tag="${{ env.DOCKER_IMAGE_NAME }}"
+          version_tag="${base_tag}:${{ steps.get-version.outputs.version }}"
+          latest_tag="${base_tag}:latest"
+          
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.tag_suffix }}" != "latest" ]]; then
+            custom_tag="${base_tag}:${{ inputs.tag_suffix }}"
+            tags="${version_tag},${latest_tag},${custom_tag}"
+          else
+            tags="${version_tag},${latest_tag}"
+          fi
+          
+          echo "tags=$tags" >> $GITHUB_OUTPUT
+          echo "Docker tags: $tags"
+
+      - name: Build and Push Swedish Backend Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          file: ./docker/swedish-backend.Dockerfile
+          tags: ${{ steps.set-tags.outputs.tags }}
+          platforms: linux/amd64,linux/arm64
+          no-cache: true
+
+      - name: Image build summary
+        run: |
+          echo "✅ Successfully built and pushed Swedish backend Docker image!"
+          echo "🏷️  Tags: ${{ steps.set-tags.outputs.tags }}"
+          echo "🌍 Platforms: linux/amd64, linux/arm64"
+          echo "📦 Image: ${{ env.DOCKER_IMAGE_NAME }}"
+          echo ""
+          echo "To use this image:"
+          echo "docker pull ${{ env.DOCKER_IMAGE_NAME }}:latest"
+          echo "docker run -p 7860:7860 ${{ env.DOCKER_IMAGE_NAME }}:latest"

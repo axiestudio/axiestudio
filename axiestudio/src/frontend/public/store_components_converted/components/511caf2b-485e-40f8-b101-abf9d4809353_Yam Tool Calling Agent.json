@@ -1,0 +1,495 @@
+{
+  "id": "511caf2b-485e-40f8-b101-abf9d4809353",
+  "name": "Yam Tool Calling Agent",
+  "description": "Agent that uses tools. Only models that are compatible with function calling are supported. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "yamonhello",
+    "first_name": "kg",
+    "last_name": "ro",
+    "id": "e50d7740-e8b2-4051-a554-3d8884e84b5b",
+    "full_name": "kg ro"
+  },
+  "store_url": "https://www.langflow.store/store/component/511caf2b-485e-40f8-b101-abf9d4809353",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-06-25T08:43:48.567Z",
+    "updated": "2024-06-25T08:43:48.629Z",
+    "downloaded": "2025-08-19T17:50:05.862Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.0rc0",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "callbackList": {
+                "trace_as_metadata": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "callbackList",
+                "display_name": "callback",
+                "advanced": false,
+                "input_types": [
+                  "BaseCallbackHandler"
+                ],
+                "dynamic": false,
+                "info": "callback",
+                "title_case": false,
+                "type": "other"
+              },
+              "llm": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "llm",
+                "display_name": "LLM",
+                "advanced": false,
+                "input_types": [
+                  "LanguageModel"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other"
+              },
+              "memory": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "memory",
+                "display_name": "Memory",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Memory to use for the agent.",
+                "title_case": false,
+                "type": "other"
+              },
+              "tools": {
+                "trace_as_metadata": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "tools",
+                "display_name": "Tools",
+                "advanced": false,
+                "input_types": [
+                  "Tool"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List, cast\n\nfrom langchain.agents import AgentExecutor, BaseSingleActionAgent\nfrom langchain.agents.tool_calling_agent.base import create_tool_calling_agent\nfrom langchain_core.messages import BaseMessage, HumanMessage\nfrom langchain_core.prompts import ChatPromptTemplate\n\nfrom langchain.callbacks.base import BaseCallbackHandler\n\nfrom axiestudio.custom import Component\nfrom axiestudio.io import BoolInput, HandleInput, Output, TextInput\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.message import Message\n\n\nclass YamonToolCallingAgentCom(Component):\n    display_name: str = \"Yam Tool Calling Agent\"\n    description: str = \"Agent that uses tools. Only models that are compatible with function calling are supported.\"\n    icon = \"Agent\"\n\n    inputs = [\n        HandleInput(\n            name=\"llm\",\n            display_name=\"LLM\",\n            input_types=[\"LanguageModel\"],\n        ),\n        HandleInput(\n            name=\"tools\",\n            display_name=\"Tools\",\n            input_types=[\"Tool\"],\n            is_list=True,\n        ),\n        TextInput(\n            name=\"user_prompt\",\n            display_name=\"Prompt\",\n            info=\"This prompt must contain 'input' key.\",\n            value=\"{input}\",\n        ),\n        BoolInput(\n            name=\"handle_parsing_errors\",\n            display_name=\"Handle Parsing Errors\",\n            info=\"If True, the agent will handle parsing errors. If False, the agent will raise an error.\",\n            advanced=True,\n            value=True,\n        ),\n        HandleInput(\n            name=\"memory\",\n            display_name=\"Memory\",\n            input_types=[\"Data\"],\n            info=\"Memory to use for the agent.\",\n        ),\n        TextInput(\n            name=\"input_value\",\n            display_name=\"Inputs\",\n            info=\"Input text to pass to the agent.\",\n        ),\n        HandleInput(\n            name=\"callbackList\",\n            display_name=\"callback\",\n            input_types=[\"BaseCallbackHandler\"],\n            info=\"callback\",\n            is_list=True,\n        ),                \n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text_output\", method=\"run_agent\"),\n    ]\n\n    async def run_agent(self) -> Message:\n        \n        \n\n        if \"input\" not in self.user_prompt:\n            self.user_prompt += \"{input}\"        \n#        if \"input\" not in self.user_prompt:\n#            raise ValueError(\"Prompt must contain 'input' key.\")\n        messages = [\n            (\"system\", \"You are a helpful assistant\"),\n            (\n                \"placeholder\",\n                \"{chat_history}\",\n            ),\n            (\"human\", self.user_prompt),\n            (\"placeholder\", \"{agent_scratchpad}\"),\n        ]\n        prompt = ChatPromptTemplate.from_messages(messages)\n        agent = create_tool_calling_agent(self.llm, self.tools, prompt)\n\n        runnable = AgentExecutor.from_agent_and_tools(\n            agent=cast(BaseSingleActionAgent, agent),\n            tools=self.tools,\n            verbose=True,\n            handle_parsing_errors=self.handle_parsing_errors,\n          #    config={\"callbacks\": callbackList if callbackList else []}\n        )\n        input_dict: dict[str, str | list[BaseMessage]] = {\"input\": self.input_value}\n        \n        \n        if hasattr(self, \"memory\") and self.memory:\n            input_dict[\"chat_history\"] = self.convert_chat_history(self.memory)\n            \n    \n            \n        result = await runnable.ainvoke(input_dict,config={\"callbacks\": self.callbackList if self.callbackList else []} )\n        self.status = result\n\n        if \"output\" not in result:\n            raise ValueError(\"Output key not found in result. Tried 'output'.\")\n\n        result_string = result[\"output\"]\n\n        return Message(text=result_string)\n\n    def convert_chat_history(self, chat_history: List[Message | Data]) -> List[BaseMessage]:\n        messages = []\n        for item in chat_history:\n            if isinstance(item, (Message, Data)):\n                messages.append(item.to_lc_message())\n            elif isinstance(item, str):\n                messages.append(HumanMessage(content=item))\n            elif isinstance(item, dict) and \"sender\" in item and \"text\" in item:\n                messages.append(HumanMessage(content=item[\"text\"], sender=item[\"sender\"]))\n            else:\n                raise ValueError(f\"Invalid item ({type(item)}) in chat history: {item}\")\n\n        return messages\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "handle_parsing_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": true,
+                "name": "handle_parsing_errors",
+                "display_name": "Handle Parsing Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If True, the agent will handle parsing errors. If False, the agent will raise an error.",
+                "title_case": false,
+                "type": "bool"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "input_value",
+                "display_name": "Inputs",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Input text to pass to the agent.",
+                "title_case": false,
+                "type": "str"
+              },
+              "user_prompt": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "user_prompt",
+                "display_name": "Prompt",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "This prompt must contain 'input' key.",
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "Agent that uses tools. Only models that are compatible with function calling are supported.",
+            "icon": "Agent",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Yam Tool Calling Agent",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text_output",
+                "display_name": "Text",
+                "method": "run_agent",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "hidden": false
+              }
+            ],
+            "field_order": [
+              "llm",
+              "tools",
+              "user_prompt",
+              "handle_parsing_errors",
+              "memory",
+              "input_value",
+              "callbackList"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-bhxlm",
+          "description": "Agent that uses tools. Only models that are compatible with function calling are supported.",
+          "display_name": "Yam Tool Calling Agent"
+        },
+        "id": "CustomComponent-bhxlm",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "511caf2b-485e-40f8-b101-abf9d4809353",
+    "name": "Yam Tool Calling Agent",
+    "description": "Agent that uses tools. Only models that are compatible with function calling are supported.",
+    "is_component": true,
+    "liked_by_count": "0",
+    "downloads_count": "0",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.0rc0",
+    "private": true,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "callbackList": {
+                  "trace_as_metadata": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "callbackList",
+                  "display_name": "callback",
+                  "advanced": false,
+                  "input_types": [
+                    "BaseCallbackHandler"
+                  ],
+                  "dynamic": false,
+                  "info": "callback",
+                  "title_case": false,
+                  "type": "other"
+                },
+                "llm": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "llm",
+                  "display_name": "LLM",
+                  "advanced": false,
+                  "input_types": [
+                    "LanguageModel"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other"
+                },
+                "memory": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "memory",
+                  "display_name": "Memory",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Memory to use for the agent.",
+                  "title_case": false,
+                  "type": "other"
+                },
+                "tools": {
+                  "trace_as_metadata": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "tools",
+                  "display_name": "Tools",
+                  "advanced": false,
+                  "input_types": [
+                    "Tool"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List, cast\n\nfrom langchain.agents import AgentExecutor, BaseSingleActionAgent\nfrom langchain.agents.tool_calling_agent.base import create_tool_calling_agent\nfrom langchain_core.messages import BaseMessage, HumanMessage\nfrom langchain_core.prompts import ChatPromptTemplate\n\nfrom langchain.callbacks.base import BaseCallbackHandler\n\nfrom axiestudio.custom import Component\nfrom axiestudio.io import BoolInput, HandleInput, Output, TextInput\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.message import Message\n\n\nclass YamonToolCallingAgentCom(Component):\n    display_name: str = \"Yam Tool Calling Agent\"\n    description: str = \"Agent that uses tools. Only models that are compatible with function calling are supported.\"\n    icon = \"Agent\"\n\n    inputs = [\n        HandleInput(\n            name=\"llm\",\n            display_name=\"LLM\",\n            input_types=[\"LanguageModel\"],\n        ),\n        HandleInput(\n            name=\"tools\",\n            display_name=\"Tools\",\n            input_types=[\"Tool\"],\n            is_list=True,\n        ),\n        TextInput(\n            name=\"user_prompt\",\n            display_name=\"Prompt\",\n            info=\"This prompt must contain 'input' key.\",\n            value=\"{input}\",\n        ),\n        BoolInput(\n            name=\"handle_parsing_errors\",\n            display_name=\"Handle Parsing Errors\",\n            info=\"If True, the agent will handle parsing errors. If False, the agent will raise an error.\",\n            advanced=True,\n            value=True,\n        ),\n        HandleInput(\n            name=\"memory\",\n            display_name=\"Memory\",\n            input_types=[\"Data\"],\n            info=\"Memory to use for the agent.\",\n        ),\n        TextInput(\n            name=\"input_value\",\n            display_name=\"Inputs\",\n            info=\"Input text to pass to the agent.\",\n        ),\n        HandleInput(\n            name=\"callbackList\",\n            display_name=\"callback\",\n            input_types=[\"BaseCallbackHandler\"],\n            info=\"callback\",\n            is_list=True,\n        ),                \n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text_output\", method=\"run_agent\"),\n    ]\n\n    async def run_agent(self) -> Message:\n        \n        \n\n        if \"input\" not in self.user_prompt:\n            self.user_prompt += \"{input}\"        \n#        if \"input\" not in self.user_prompt:\n#            raise ValueError(\"Prompt must contain 'input' key.\")\n        messages = [\n            (\"system\", \"You are a helpful assistant\"),\n            (\n                \"placeholder\",\n                \"{chat_history}\",\n            ),\n            (\"human\", self.user_prompt),\n            (\"placeholder\", \"{agent_scratchpad}\"),\n        ]\n        prompt = ChatPromptTemplate.from_messages(messages)\n        agent = create_tool_calling_agent(self.llm, self.tools, prompt)\n\n        runnable = AgentExecutor.from_agent_and_tools(\n            agent=cast(BaseSingleActionAgent, agent),\n            tools=self.tools,\n            verbose=True,\n            handle_parsing_errors=self.handle_parsing_errors,\n          #    config={\"callbacks\": callbackList if callbackList else []}\n        )\n        input_dict: dict[str, str | list[BaseMessage]] = {\"input\": self.input_value}\n        \n        \n        if hasattr(self, \"memory\") and self.memory:\n            input_dict[\"chat_history\"] = self.convert_chat_history(self.memory)\n            \n    \n            \n        result = await runnable.ainvoke(input_dict,config={\"callbacks\": self.callbackList if self.callbackList else []} )\n        self.status = result\n\n        if \"output\" not in result:\n            raise ValueError(\"Output key not found in result. Tried 'output'.\")\n\n        result_string = result[\"output\"]\n\n        return Message(text=result_string)\n\n    def convert_chat_history(self, chat_history: List[Message | Data]) -> List[BaseMessage]:\n        messages = []\n        for item in chat_history:\n            if isinstance(item, (Message, Data)):\n                messages.append(item.to_lc_message())\n            elif isinstance(item, str):\n                messages.append(HumanMessage(content=item))\n            elif isinstance(item, dict) and \"sender\" in item and \"text\" in item:\n                messages.append(HumanMessage(content=item[\"text\"], sender=item[\"sender\"]))\n            else:\n                raise ValueError(f\"Invalid item ({type(item)}) in chat history: {item}\")\n\n        return messages\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "handle_parsing_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": true,
+                  "name": "handle_parsing_errors",
+                  "display_name": "Handle Parsing Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If True, the agent will handle parsing errors. If False, the agent will raise an error.",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "input_value",
+                  "display_name": "Inputs",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Input text to pass to the agent.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "user_prompt": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "user_prompt",
+                  "display_name": "Prompt",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "This prompt must contain 'input' key.",
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "Agent that uses tools. Only models that are compatible with function calling are supported.",
+              "icon": "Agent",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Yam Tool Calling Agent",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text_output",
+                  "display_name": "Text",
+                  "method": "run_agent",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "hidden": false
+                }
+              ],
+              "field_order": [
+                "llm",
+                "tools",
+                "user_prompt",
+                "handle_parsing_errors",
+                "memory",
+                "input_value",
+                "callbackList"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-bhxlm",
+            "description": "Agent that uses tools. Only models that are compatible with function calling are supported.",
+            "display_name": "Yam Tool Calling Agent"
+          },
+          "id": "CustomComponent-bhxlm",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-06-25T08:43:48.567Z",
+    "date_updated": "2024-06-25T08:43:48.629Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "e50d7740-e8b2-4051-a554-3d8884e84b5b",
+    "user_created": {
+      "username": "yamonhello",
+      "first_name": "kg",
+      "last_name": "ro",
+      "id": "e50d7740-e8b2-4051-a554-3d8884e84b5b"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.034Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

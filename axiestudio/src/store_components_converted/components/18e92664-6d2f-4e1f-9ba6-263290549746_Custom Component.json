@@ -1,0 +1,517 @@
+{
+  "id": "18e92664-6d2f-4e1f-9ba6-263290549746",
+  "name": "Custom Component",
+  "description": "Converte um arquivo PDF em Markdown usando o marker_single. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "IvanAmador",
+    "first_name": "Ivan",
+    "last_name": "Amador",
+    "id": "c9c56114-781b-4c78-8ef5-c007386020bb",
+    "full_name": "Ivan Amador"
+  },
+  "store_url": "https://www.langflow.store/store/component/18e92664-6d2f-4e1f-9ba6-263290549746",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-17T07:02:56.401Z",
+    "updated": "2024-07-17T07:02:56.701Z",
+    "downloaded": "2025-08-19T17:50:06.007Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.7",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "PDFtoMarkdown",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "filename": {
+                "trace_as_metadata": true,
+                "file_path": "C:\\Users\\ivano\\AppData\\Local\\axiestudio\\axiestudio\\Cache\\b8b2f9c6-5b72-4410-8a9f-63f63e3c42ed\\0d3c288ec39c3b972f28c279a3503da6a58b46047c5a8d106a429d266d99d2c9.pdf",
+                "fileTypes": [
+                  "pdf"
+                ],
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "filename",
+                "display_name": "Arquivo PDF",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Por favor, carregue um arquivo PDF.",
+                "title_case": false,
+                "type": "file"
+              },
+              "batch_multiplier": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "batch_multiplier",
+                "display_name": "Multiplicador de lote para a conversão",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Por favor, forneça o multiplicador de lote para a conversão. Deixe em branco para usar o valor padrão.",
+                "title_case": false,
+                "type": "str"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\r\nfrom axiestudio.io import BoolInput, FileInput, Output\r\nfrom axiestudio.schema import Data\r\nimport subprocess\r\n\r\nclass PDFtoMarkdown(Component):\r\n    display_name = \"PDF para Markdown\"\r\n    description = \"Converte um arquivo PDF em Markdown usando o marker_single.\"\r\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\r\n    icon = \"custom_components\"\r\n    name = \"PDFtoMarkdown\"\r\n\r\n    inputs = [\r\n        FileInput(name=\"filename\", display_name=\"Arquivo PDF\", file_types=[\"pdf\"], info=\"Por favor, carregue um arquivo PDF.\"),\r\n        MessageTextInput(name=\"output\", display_name=\"Caminho para o arquivo Markdown de saída\", info=\"Por favor, forneça o caminho onde o arquivo Markdown será salvo.\"),\r\n        MessageTextInput(name=\"max_pages\", display_name=\"Número máximo de páginas a serem convertidas\", value=\"\", info=\"Por favor, forneça o número máximo de páginas a serem convertidas. Deixe em branco para converter todas as páginas.\"),\r\n        MessageTextInput(name=\"start_page\", display_name=\"Página inicial para a conversão\", value=\"\", info=\"Por favor, forneça a página inicial para a conversão. Deixe em branco para começar da primeira página.\"),\r\n        MessageTextInput(name=\"langs\", display_name=\"Idiomas a serem considerados durante a conversão\", value=\"\", info=\"Por favor, forneça os idiomas a serem considerados durante a conversão. Deixe em branco para considerar todos os idiomas.\"),\r\n        MessageTextInput(name=\"batch_multiplier\", display_name=\"Multiplicador de lote para a conversão\", value=\"\", info=\"Por favor, forneça o multiplicador de lote para a conversão. Deixe em branco para usar o valor padrão.\"),\r\n        MessageTextInput(name=\"debug\", display_name=\"Modo de depuração\", value=\"False\", info=\"Por favor, forneça se o modo de depuração deve ser ativado ou não. Deixe em 'False' para desativar o modo de depuração.\"),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Conteúdo do arquivo Markdown convertido\", name=\"markdown_output\", method=\"build_output\"),\r\n    ]\r\n\r\n    def build_output(self) -> Data:\r\n        # Construindo o comando marker_single com as opções fornecidas\r\n        command = f\"marker_single {self.filename} {self.output}\"\r\n        if self.max_pages:\r\n            command += f\" --max_pages {self.max_pages}\"\r\n        if self.start_page:\r\n            command += f\" --start_page {self.start_page}\"\r\n        if self.langs:\r\n            command += f\" --langs {self.langs}\"\r\n        if self.batch_multiplier:\r\n            command += f\" --batch_multiplier {self.batch_multiplier}\"\r\n        if self.debug.lower() == \"true\":\r\n            command += f\" --debug\"\r\n\r\n        # Executando o comando marker_single para converter o PDF em Markdown\r\n        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)\r\n        stdout, stderr = process.communicate()\r\n\r\n        # Lendo o arquivo Markdown e retornando o conteúdo\r\n        with open(self.output, \"r\") as file:\r\n            markdown_content = file.read()\r\n\r\n        data = Data(value=markdown_content)\r\n        self.status = data\r\n        return data\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "debug": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "False",
+                "name": "debug",
+                "display_name": "Modo de depuração",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Por favor, forneça se o modo de depuração deve ser ativado ou não. Deixe em 'False' para desativar o modo de depuração.",
+                "title_case": false,
+                "type": "str"
+              },
+              "langs": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "Portuguese",
+                "name": "langs",
+                "display_name": "Idiomas a serem considerados durante a conversão",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Por favor, forneça os idiomas a serem considerados durante a conversão. Deixe em branco para considerar todos os idiomas.",
+                "title_case": false,
+                "type": "str"
+              },
+              "max_pages": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "5",
+                "name": "max_pages",
+                "display_name": "Número máximo de páginas a serem convertidas",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Por favor, forneça o número máximo de páginas a serem convertidas. Deixe em branco para converter todas as páginas.",
+                "title_case": false,
+                "type": "str"
+              },
+              "output": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "C:\\Users\\ivano\\Documents\\AiDevs",
+                "name": "output",
+                "display_name": "Caminho para o arquivo Markdown de saída",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Por favor, forneça o caminho onde o arquivo Markdown será salvo.",
+                "title_case": false,
+                "type": "str"
+              },
+              "start_page": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "start_page",
+                "display_name": "Página inicial para a conversão",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Por favor, forneça a página inicial para a conversão. Deixe em branco para começar da primeira página.",
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "Converte um arquivo PDF em Markdown usando o marker_single.",
+            "icon": "custom_components",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Custom Component",
+            "documentation": "http://docs.axiestudio.org/components/custom",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "markdown_output",
+                "display_name": "Conteúdo do arquivo Markdown convertido",
+                "method": "build_output",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "filename",
+              "output",
+              "max_pages",
+              "start_page",
+              "langs",
+              "batch_multiplier",
+              "debug"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-RC2uE",
+          "description": "Converte um arquivo PDF em Markdown usando o marker_single.",
+          "display_name": "Custom Component"
+        },
+        "id": "CustomComponent-RC2uE",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "18e92664-6d2f-4e1f-9ba6-263290549746",
+    "name": "Custom Component",
+    "description": "Converte um arquivo PDF em Markdown usando o marker_single.",
+    "is_component": true,
+    "liked_by_count": "0",
+    "downloads_count": "0",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.7",
+    "private": true,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "PDFtoMarkdown",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "filename": {
+                  "trace_as_metadata": true,
+                  "file_path": "C:\\Users\\ivano\\AppData\\Local\\axiestudio\\axiestudio\\Cache\\b8b2f9c6-5b72-4410-8a9f-63f63e3c42ed\\0d3c288ec39c3b972f28c279a3503da6a58b46047c5a8d106a429d266d99d2c9.pdf",
+                  "fileTypes": [
+                    "pdf"
+                  ],
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "filename",
+                  "display_name": "Arquivo PDF",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Por favor, carregue um arquivo PDF.",
+                  "title_case": false,
+                  "type": "file"
+                },
+                "batch_multiplier": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "batch_multiplier",
+                  "display_name": "Multiplicador de lote para a conversão",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Por favor, forneça o multiplicador de lote para a conversão. Deixe em branco para usar o valor padrão.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\r\nfrom axiestudio.io import BoolInput, FileInput, Output\r\nfrom axiestudio.schema import Data\r\nimport subprocess\r\n\r\nclass PDFtoMarkdown(Component):\r\n    display_name = \"PDF para Markdown\"\r\n    description = \"Converte um arquivo PDF em Markdown usando o marker_single.\"\r\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\r\n    icon = \"custom_components\"\r\n    name = \"PDFtoMarkdown\"\r\n\r\n    inputs = [\r\n        FileInput(name=\"filename\", display_name=\"Arquivo PDF\", file_types=[\"pdf\"], info=\"Por favor, carregue um arquivo PDF.\"),\r\n        MessageTextInput(name=\"output\", display_name=\"Caminho para o arquivo Markdown de saída\", info=\"Por favor, forneça o caminho onde o arquivo Markdown será salvo.\"),\r\n        MessageTextInput(name=\"max_pages\", display_name=\"Número máximo de páginas a serem convertidas\", value=\"\", info=\"Por favor, forneça o número máximo de páginas a serem convertidas. Deixe em branco para converter todas as páginas.\"),\r\n        MessageTextInput(name=\"start_page\", display_name=\"Página inicial para a conversão\", value=\"\", info=\"Por favor, forneça a página inicial para a conversão. Deixe em branco para começar da primeira página.\"),\r\n        MessageTextInput(name=\"langs\", display_name=\"Idiomas a serem considerados durante a conversão\", value=\"\", info=\"Por favor, forneça os idiomas a serem considerados durante a conversão. Deixe em branco para considerar todos os idiomas.\"),\r\n        MessageTextInput(name=\"batch_multiplier\", display_name=\"Multiplicador de lote para a conversão\", value=\"\", info=\"Por favor, forneça o multiplicador de lote para a conversão. Deixe em branco para usar o valor padrão.\"),\r\n        MessageTextInput(name=\"debug\", display_name=\"Modo de depuração\", value=\"False\", info=\"Por favor, forneça se o modo de depuração deve ser ativado ou não. Deixe em 'False' para desativar o modo de depuração.\"),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Conteúdo do arquivo Markdown convertido\", name=\"markdown_output\", method=\"build_output\"),\r\n    ]\r\n\r\n    def build_output(self) -> Data:\r\n        # Construindo o comando marker_single com as opções fornecidas\r\n        command = f\"marker_single {self.filename} {self.output}\"\r\n        if self.max_pages:\r\n            command += f\" --max_pages {self.max_pages}\"\r\n        if self.start_page:\r\n            command += f\" --start_page {self.start_page}\"\r\n        if self.langs:\r\n            command += f\" --langs {self.langs}\"\r\n        if self.batch_multiplier:\r\n            command += f\" --batch_multiplier {self.batch_multiplier}\"\r\n        if self.debug.lower() == \"true\":\r\n            command += f\" --debug\"\r\n\r\n        # Executando o comando marker_single para converter o PDF em Markdown\r\n        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)\r\n        stdout, stderr = process.communicate()\r\n\r\n        # Lendo o arquivo Markdown e retornando o conteúdo\r\n        with open(self.output, \"r\") as file:\r\n            markdown_content = file.read()\r\n\r\n        data = Data(value=markdown_content)\r\n        self.status = data\r\n        return data\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "debug": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "False",
+                  "name": "debug",
+                  "display_name": "Modo de depuração",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Por favor, forneça se o modo de depuração deve ser ativado ou não. Deixe em 'False' para desativar o modo de depuração.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "langs": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "Portuguese",
+                  "name": "langs",
+                  "display_name": "Idiomas a serem considerados durante a conversão",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Por favor, forneça os idiomas a serem considerados durante a conversão. Deixe em branco para considerar todos os idiomas.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "max_pages": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "5",
+                  "name": "max_pages",
+                  "display_name": "Número máximo de páginas a serem convertidas",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Por favor, forneça o número máximo de páginas a serem convertidas. Deixe em branco para converter todas as páginas.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "output": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "C:\\Users\\ivano\\Documents\\AiDevs",
+                  "name": "output",
+                  "display_name": "Caminho para o arquivo Markdown de saída",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Por favor, forneça o caminho onde o arquivo Markdown será salvo.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "start_page": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "start_page",
+                  "display_name": "Página inicial para a conversão",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Por favor, forneça a página inicial para a conversão. Deixe em branco para começar da primeira página.",
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "Converte um arquivo PDF em Markdown usando o marker_single.",
+              "icon": "custom_components",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Custom Component",
+              "documentation": "http://docs.axiestudio.org/components/custom",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "markdown_output",
+                  "display_name": "Conteúdo do arquivo Markdown convertido",
+                  "method": "build_output",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "filename",
+                "output",
+                "max_pages",
+                "start_page",
+                "langs",
+                "batch_multiplier",
+                "debug"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-RC2uE",
+            "description": "Converte um arquivo PDF em Markdown usando o marker_single.",
+            "display_name": "Custom Component"
+          },
+          "id": "CustomComponent-RC2uE",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-07-17T07:02:56.401Z",
+    "date_updated": "2024-07-17T07:02:56.701Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "c9c56114-781b-4c78-8ef5-c007386020bb",
+    "user_created": {
+      "username": "IvanAmador",
+      "first_name": "Ivan",
+      "last_name": "Amador",
+      "id": "c9c56114-781b-4c78-8ef5-c007386020bb"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.083Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 14,
+    "converter_version": "1.0.0"
+  }
+}

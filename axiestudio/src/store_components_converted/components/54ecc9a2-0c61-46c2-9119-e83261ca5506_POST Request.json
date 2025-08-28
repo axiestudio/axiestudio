@@ -1,0 +1,321 @@
+{
+  "id": "54ecc9a2-0c61-46c2-9119-e83261ca5506",
+  "name": "POST Request",
+  "description": "Make a POST request to the given URL. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "ericribeirodev",
+    "first_name": "Eric",
+    "last_name": "Ribeiro",
+    "id": "33596665-68e3-4b9d-90e4-114c80077454",
+    "full_name": "Eric Ribeiro"
+  },
+  "store_url": "https://www.langflow.store/store/component/54ecc9a2-0c61-46c2-9119-e83261ca5506",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2025-02-07T00:31:05.264Z",
+    "updated": "2025-02-07T00:31:05.362Z",
+    "downloaded": "2025-08-19T17:50:07.656Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Prompt",
+        "id": "57f5c681-a1f5-4053-be33-e9525e7eb00a"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "0.6.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "PostRequest",
+          "node": {
+            "template": {
+              "document": {
+                "type": "Document",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "document",
+                "display_name": "Document",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional\n\nimport requests\nfrom langchain_core.documents import Document\nfrom axiestudio import CustomComponent\nfrom axiestudio.services.database.models.base import orjson_dumps\n\n\nclass PostRequest(CustomComponent):\n    display_name: str = \"POST Request\"\n    description: str = \"Make a POST request to the given URL.\"\n    output_types: list[str] = [\"Document\"]\n    documentation: str = \"https://docs.axiestudio.org/components/utilities#post-request\"\n    beta: bool = True\n    field_config = {\n        \"url\": {\"display_name\": \"URL\", \"info\": \"The URL to make the request to.\"},\n        \"headers\": {\n            \"display_name\": \"Headers\",\n            \"info\": \"The headers to send with the request.\",\n        },\n        \"code\": {\"show\": False},\n        \"document\": {\"display_name\": \"Document\"},\n    }\n\n    def post_document(\n        self,\n        session: requests.Session,\n        document: Document,\n        url: str,\n        headers: Optional[dict] = None,\n    ) -> Document:\n        try:\n            response = session.post(url, headers=headers, data=document.page_content)\n            try:\n                response_json = response.json()\n                result = orjson_dumps(response_json, indent_2=False)\n            except Exception:\n                result = response.text\n            self.repr_value = result\n            return Document(\n                page_content=result,\n                metadata={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response,\n                },\n            )\n        except Exception as exc:\n            return Document(\n                page_content=str(exc),\n                metadata={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                },\n            )\n\n    def build(\n        self,\n        document: Document,\n        url: str,\n        headers: Optional[dict] = None,\n    ) -> list[Document]:\n        if headers is None:\n            headers = {}\n\n        if not isinstance(document, list) and isinstance(document, Document):\n            documents: list[Document] = [document]\n        elif isinstance(document, list) and all(isinstance(doc, Document) for doc in document):\n            documents = document\n        else:\n            raise ValueError(\"document must be a Document or a list of Documents\")\n\n        with requests.Session() as session:\n            documents = [self.post_document(session, doc, url, headers) for doc in documents]\n            self.repr_value = documents\n        return documents\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "headers": {
+                "type": "dict",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "headers",
+                "display_name": "Headers",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The headers to send with the request.",
+                "title_case": true,
+                "value": [
+                  {
+                    "Teste": "TESTE 1"
+                  }
+                ]
+              },
+              "url": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "url",
+                "display_name": "URL",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The URL to make the request to.",
+                "title_case": true,
+                "value": "https://n8n-production-8e54.up.railway.app/webhook-test/e5df036e-2020-4284-9c5e-2f8db8edeeb9"
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Make a POST request to the given URL.",
+            "base_classes": [
+              "Document"
+            ],
+            "display_name": "POST Request",
+            "documentation": "https://docs.axiestudio.org/components/utilities#post-request",
+            "custom_fields": {
+              "document": null,
+              "url": null,
+              "headers": null
+            },
+            "output_types": [
+              "Document"
+            ],
+            "field_formatters": {},
+            "beta": true,
+            "official": false
+          },
+          "id": "PostRequest-DteHf"
+        },
+        "id": "PostRequest-DteHf",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "PostRequest": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "54ecc9a2-0c61-46c2-9119-e83261ca5506",
+    "name": "POST Request",
+    "description": "Make a POST request to the given URL.",
+    "is_component": true,
+    "liked_by_count": "0",
+    "downloads_count": "23",
+    "metadata": {
+      "PostRequest": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "0.6.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "PostRequest",
+            "node": {
+              "template": {
+                "document": {
+                  "type": "Document",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "document",
+                  "display_name": "Document",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional\n\nimport requests\nfrom langchain_core.documents import Document\nfrom axiestudio import CustomComponent\nfrom axiestudio.services.database.models.base import orjson_dumps\n\n\nclass PostRequest(CustomComponent):\n    display_name: str = \"POST Request\"\n    description: str = \"Make a POST request to the given URL.\"\n    output_types: list[str] = [\"Document\"]\n    documentation: str = \"https://docs.axiestudio.org/components/utilities#post-request\"\n    beta: bool = True\n    field_config = {\n        \"url\": {\"display_name\": \"URL\", \"info\": \"The URL to make the request to.\"},\n        \"headers\": {\n            \"display_name\": \"Headers\",\n            \"info\": \"The headers to send with the request.\",\n        },\n        \"code\": {\"show\": False},\n        \"document\": {\"display_name\": \"Document\"},\n    }\n\n    def post_document(\n        self,\n        session: requests.Session,\n        document: Document,\n        url: str,\n        headers: Optional[dict] = None,\n    ) -> Document:\n        try:\n            response = session.post(url, headers=headers, data=document.page_content)\n            try:\n                response_json = response.json()\n                result = orjson_dumps(response_json, indent_2=False)\n            except Exception:\n                result = response.text\n            self.repr_value = result\n            return Document(\n                page_content=result,\n                metadata={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response,\n                },\n            )\n        except Exception as exc:\n            return Document(\n                page_content=str(exc),\n                metadata={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                },\n            )\n\n    def build(\n        self,\n        document: Document,\n        url: str,\n        headers: Optional[dict] = None,\n    ) -> list[Document]:\n        if headers is None:\n            headers = {}\n\n        if not isinstance(document, list) and isinstance(document, Document):\n            documents: list[Document] = [document]\n        elif isinstance(document, list) and all(isinstance(doc, Document) for doc in document):\n            documents = document\n        else:\n            raise ValueError(\"document must be a Document or a list of Documents\")\n\n        with requests.Session() as session:\n            documents = [self.post_document(session, doc, url, headers) for doc in documents]\n            self.repr_value = documents\n        return documents\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "headers": {
+                  "type": "dict",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "headers",
+                  "display_name": "Headers",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The headers to send with the request.",
+                  "title_case": true,
+                  "value": [
+                    {
+                      "Teste": "TESTE 1"
+                    }
+                  ]
+                },
+                "url": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "url",
+                  "display_name": "URL",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The URL to make the request to.",
+                  "title_case": true,
+                  "value": "https://n8n-production-8e54.up.railway.app/webhook-test/e5df036e-2020-4284-9c5e-2f8db8edeeb9"
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Make a POST request to the given URL.",
+              "base_classes": [
+                "Document"
+              ],
+              "display_name": "POST Request",
+              "documentation": "https://docs.axiestudio.org/components/utilities#post-request",
+              "custom_fields": {
+                "document": null,
+                "url": null,
+                "headers": null
+              },
+              "output_types": [
+                "Document"
+              ],
+              "field_formatters": {},
+              "beta": true,
+              "official": false
+            },
+            "id": "PostRequest-DteHf"
+          },
+          "id": "PostRequest-DteHf",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2025-02-07T00:31:05.264Z",
+    "date_updated": "2025-02-07T00:31:05.362Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "33596665-68e3-4b9d-90e4-114c80077454",
+    "user_created": {
+      "username": "ericribeirodev",
+      "first_name": "Eric",
+      "last_name": "Ribeiro",
+      "id": "33596665-68e3-4b9d-90e4-114c80077454"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Prompt",
+          "id": "57f5c681-a1f5-4053-be33-e9525e7eb00a"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.101Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

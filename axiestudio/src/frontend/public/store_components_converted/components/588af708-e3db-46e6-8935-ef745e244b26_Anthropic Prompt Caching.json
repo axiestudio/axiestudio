@@ -1,0 +1,573 @@
+{
+  "id": "588af708-e3db-46e6-8935-ef745e244b26",
+  "name": "Anthropic Prompt Caching",
+  "description": "Implements Anthropic's Prompt Caching feature for optimized API usage. Cached prompts persist for 5 minutes and are refreshed with each new message within that timeframe, enhancing efficiency and reducing token usage. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "raphaelchristi",
+    "first_name": "Raphael",
+    "last_name": "Christi",
+    "id": "2e0554c7-2ab5-4dd7-b9c1-6b5ed9f5b565",
+    "full_name": "Raphael Christi"
+  },
+  "store_url": "https://www.langflow.store/store/component/588af708-e3db-46e6-8935-ef745e244b26",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-29T22:39:32.700Z",
+    "updated": "2024-08-29T22:39:32.725Z",
+    "downloaded": "2025-08-19T17:50:06.320Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "AnthropicPromptCachingComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "data_to_cache": {
+                "trace_as_metadata": true,
+                "list": false,
+                "trace_as_input": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "data_to_cache",
+                "value": "",
+                "display_name": "Data to Cache",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "api_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "Anthropic API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.io import (\n    MessageTextInput,\n    DropdownInput,\n    IntInput,\n    BoolInput,\n    Output,\n    SecretStrInput,\n    DataInput,\n)\nfrom axiestudio.schema.message import Message\nfrom axiestudio.schema import Data\nimport httpx\nimport json\nimport time\nfrom tenacity import retry, stop_after_attempt, wait_exponential\n\nclass AnthropicPromptCachingComponent(Component):\n    display_name = \"Anthropic Prompt Caching\"\n    description = \"Implements Anthropic's Prompt Caching feature for optimized API usage. Cached prompts persist for 5 minutes and are refreshed with each new message within that timeframe, enhancing efficiency and reducing token usage.\"\n    icon = \"Anthropic\"\n\n    inputs = [\n        MessageTextInput(name=\"system_message\", display_name=\"System Message\"),\n        MessageTextInput(name=\"user_message\", display_name=\"User Message\"),\n        DataInput(name=\"data_to_cache\", display_name=\"Data to Cache\"),\n        DropdownInput(\n            name=\"model\",\n            display_name=\"Model\",\n            options=[\"claude-3-5-sonnet-20240620\", \"claude-3-haiku-20240307\", \"claude-3-opus-20240229\"],\n            value=\"claude-3-5-sonnet-20240620\",\n        ),\n        IntInput(name=\"max_tokens\", display_name=\"Max Tokens\", value=1024, advanced=True),\n        BoolInput(name=\"stream\", display_name=\"Stream\", advanced=True),\n        SecretStrInput(name=\"api_key\", display_name=\"Anthropic API Key\"),\n        IntInput(name=\"timeout\", display_name=\"Timeout (seconds)\"),\n        IntInput(name=\"max_retries\", display_name=\"Max Retries\", advanced=True),\n    ]\n\n    outputs = [\n        Output(display_name=\"Response\", name=\"response\", method=\"make_request\"),\n    ]\n\n    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))\n    def _make_api_request(self, url, headers, data):\n        with httpx.Client(timeout=self.timeout or 30) as client:\n            response = client.post(url, headers=headers, json=data)\n            response.raise_for_status()\n            return response.json()\n\n    def make_request(self) -> Message:\n        headers = {\n            \"content-type\": \"application/json\",\n            \"x-api-key\": self.api_key,\n            \"anthropic-version\": \"2023-06-01\",\n            \"anthropic-beta\": \"prompt-caching-2024-07-31\"\n        }\n\n        data_content = self.data_to_cache.text if isinstance(self.data_to_cache, Data) else str(self.data_to_cache)\n\n        data = {\n            \"model\": self.model,\n            \"max_tokens\": self.max_tokens,\n            \"stream\": self.stream,\n            \"system\": [],\n            \"messages\": []\n        }\n\n        if self.system_message and self.system_message.strip():\n            data[\"system\"].append({\n                \"type\": \"text\",\n                \"text\": self.system_message,\n                \"cache_control\": {\"type\": \"ephemeral\"}\n            })\n\n        if data_content and data_content.strip():\n            data[\"system\"].append({\n                \"type\": \"text\",\n                \"text\": f\"Cached data content: {data_content}\",\n                \"cache_control\": {\"type\": \"ephemeral\"}\n            })\n\n        if self.user_message and self.user_message.strip():\n            data[\"messages\"].append({\n                \"role\": \"user\",\n                \"content\": [\n                    {\n                        \"type\": \"text\",\n                        \"text\": self.user_message\n                    }\n                ]\n            })\n\n        if not data[\"system\"] and not data[\"messages\"]:\n            error_message = \"No non-empty content to send to the API.\"\n            self.status = error_message\n            return Message(text=error_message)\n\n        try:\n            start_time = time.time()\n            result = self._make_api_request(\"https://api.anthropic.com/v1/messages\", headers, data)\n            end_time = time.time()\n\n            content = result.get(\"content\", [{}])[0].get(\"text\", \"\")\n            usage = result.get(\"usage\", {})\n            cache_info = {\n                \"cache_creation_input_tokens\": usage.get(\"cache_creation_input_tokens\", 0),\n                \"cache_read_input_tokens\": usage.get(\"cache_read_input_tokens\", 0)\n            }\n\n            self.status = f\"Response received in {end_time - start_time:.2f} seconds. Cache info: {json.dumps(cache_info)}\"\n            return Message(text=content)\n\n        except httpx.TimeoutException:\n            error_message = f\"Request timed out after {self.timeout or 30} seconds\"\n            self.status = error_message\n            return Message(text=error_message)\n        except httpx.HTTPStatusError as e:\n            error_message = f\"HTTP error occurred: {e.response.text}\"\n            self.status = error_message\n            return Message(text=error_message)\n        except Exception as e:\n            error_message = f\"An error occurred: {str(e)}\"\n            self.status = error_message\n            return Message(text=error_message)",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "max_retries": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_retries",
+                "value": "",
+                "display_name": "Max Retries",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "max_tokens": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_tokens",
+                "value": 1024,
+                "display_name": "Max Tokens",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "model": {
+                "trace_as_metadata": true,
+                "options": [
+                  "claude-3-5-sonnet-20240620",
+                  "claude-3-haiku-20240307",
+                  "claude-3-opus-20240229"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "model",
+                "value": "claude-3-5-sonnet-20240620",
+                "display_name": "Model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "stream": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "stream",
+                "value": false,
+                "display_name": "Stream",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "system_message": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "system_message",
+                "value": "",
+                "display_name": "System Message",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "timeout",
+                "value": "",
+                "display_name": "Timeout (seconds)",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "user_message": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "user_message",
+                "value": "",
+                "display_name": "User Message",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Implements Anthropic's Prompt Caching feature for optimized API usage. Cached prompts persist for 5 minutes and are refreshed with each new message within that timeframe, enhancing efficiency and reducing token usage.",
+            "icon": "Anthropic",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Anthropic Prompt Caching",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "response",
+                "display_name": "Response",
+                "method": "make_request",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "system_message",
+              "user_message",
+              "data_to_cache",
+              "model",
+              "max_tokens",
+              "stream",
+              "api_key",
+              "timeout",
+              "max_retries"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.17",
+            "official": false
+          },
+          "id": "PromptCachingComponent-ZHXJ9"
+        },
+        "id": "PromptCachingComponent-ZHXJ9",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "PromptCachingComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "588af708-e3db-46e6-8935-ef745e244b26",
+    "name": "Anthropic Prompt Caching",
+    "description": "Implements Anthropic's Prompt Caching feature for optimized API usage. Cached prompts persist for 5 minutes and are refreshed with each new message within that timeframe, enhancing efficiency and reducing token usage.",
+    "is_component": true,
+    "liked_by_count": "21",
+    "downloads_count": "93",
+    "metadata": {
+      "PromptCachingComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "AnthropicPromptCachingComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "data_to_cache": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "trace_as_input": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "data_to_cache",
+                  "value": "",
+                  "display_name": "Data to Cache",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "api_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "Anthropic API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.io import (\n    MessageTextInput,\n    DropdownInput,\n    IntInput,\n    BoolInput,\n    Output,\n    SecretStrInput,\n    DataInput,\n)\nfrom axiestudio.schema.message import Message\nfrom axiestudio.schema import Data\nimport httpx\nimport json\nimport time\nfrom tenacity import retry, stop_after_attempt, wait_exponential\n\nclass AnthropicPromptCachingComponent(Component):\n    display_name = \"Anthropic Prompt Caching\"\n    description = \"Implements Anthropic's Prompt Caching feature for optimized API usage. Cached prompts persist for 5 minutes and are refreshed with each new message within that timeframe, enhancing efficiency and reducing token usage.\"\n    icon = \"Anthropic\"\n\n    inputs = [\n        MessageTextInput(name=\"system_message\", display_name=\"System Message\"),\n        MessageTextInput(name=\"user_message\", display_name=\"User Message\"),\n        DataInput(name=\"data_to_cache\", display_name=\"Data to Cache\"),\n        DropdownInput(\n            name=\"model\",\n            display_name=\"Model\",\n            options=[\"claude-3-5-sonnet-20240620\", \"claude-3-haiku-20240307\", \"claude-3-opus-20240229\"],\n            value=\"claude-3-5-sonnet-20240620\",\n        ),\n        IntInput(name=\"max_tokens\", display_name=\"Max Tokens\", value=1024, advanced=True),\n        BoolInput(name=\"stream\", display_name=\"Stream\", advanced=True),\n        SecretStrInput(name=\"api_key\", display_name=\"Anthropic API Key\"),\n        IntInput(name=\"timeout\", display_name=\"Timeout (seconds)\"),\n        IntInput(name=\"max_retries\", display_name=\"Max Retries\", advanced=True),\n    ]\n\n    outputs = [\n        Output(display_name=\"Response\", name=\"response\", method=\"make_request\"),\n    ]\n\n    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))\n    def _make_api_request(self, url, headers, data):\n        with httpx.Client(timeout=self.timeout or 30) as client:\n            response = client.post(url, headers=headers, json=data)\n            response.raise_for_status()\n            return response.json()\n\n    def make_request(self) -> Message:\n        headers = {\n            \"content-type\": \"application/json\",\n            \"x-api-key\": self.api_key,\n            \"anthropic-version\": \"2023-06-01\",\n            \"anthropic-beta\": \"prompt-caching-2024-07-31\"\n        }\n\n        data_content = self.data_to_cache.text if isinstance(self.data_to_cache, Data) else str(self.data_to_cache)\n\n        data = {\n            \"model\": self.model,\n            \"max_tokens\": self.max_tokens,\n            \"stream\": self.stream,\n            \"system\": [],\n            \"messages\": []\n        }\n\n        if self.system_message and self.system_message.strip():\n            data[\"system\"].append({\n                \"type\": \"text\",\n                \"text\": self.system_message,\n                \"cache_control\": {\"type\": \"ephemeral\"}\n            })\n\n        if data_content and data_content.strip():\n            data[\"system\"].append({\n                \"type\": \"text\",\n                \"text\": f\"Cached data content: {data_content}\",\n                \"cache_control\": {\"type\": \"ephemeral\"}\n            })\n\n        if self.user_message and self.user_message.strip():\n            data[\"messages\"].append({\n                \"role\": \"user\",\n                \"content\": [\n                    {\n                        \"type\": \"text\",\n                        \"text\": self.user_message\n                    }\n                ]\n            })\n\n        if not data[\"system\"] and not data[\"messages\"]:\n            error_message = \"No non-empty content to send to the API.\"\n            self.status = error_message\n            return Message(text=error_message)\n\n        try:\n            start_time = time.time()\n            result = self._make_api_request(\"https://api.anthropic.com/v1/messages\", headers, data)\n            end_time = time.time()\n\n            content = result.get(\"content\", [{}])[0].get(\"text\", \"\")\n            usage = result.get(\"usage\", {})\n            cache_info = {\n                \"cache_creation_input_tokens\": usage.get(\"cache_creation_input_tokens\", 0),\n                \"cache_read_input_tokens\": usage.get(\"cache_read_input_tokens\", 0)\n            }\n\n            self.status = f\"Response received in {end_time - start_time:.2f} seconds. Cache info: {json.dumps(cache_info)}\"\n            return Message(text=content)\n\n        except httpx.TimeoutException:\n            error_message = f\"Request timed out after {self.timeout or 30} seconds\"\n            self.status = error_message\n            return Message(text=error_message)\n        except httpx.HTTPStatusError as e:\n            error_message = f\"HTTP error occurred: {e.response.text}\"\n            self.status = error_message\n            return Message(text=error_message)\n        except Exception as e:\n            error_message = f\"An error occurred: {str(e)}\"\n            self.status = error_message\n            return Message(text=error_message)",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "max_retries": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_retries",
+                  "value": "",
+                  "display_name": "Max Retries",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "max_tokens": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_tokens",
+                  "value": 1024,
+                  "display_name": "Max Tokens",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "model": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "claude-3-5-sonnet-20240620",
+                    "claude-3-haiku-20240307",
+                    "claude-3-opus-20240229"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "model",
+                  "value": "claude-3-5-sonnet-20240620",
+                  "display_name": "Model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "stream": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "stream",
+                  "value": false,
+                  "display_name": "Stream",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "system_message": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "system_message",
+                  "value": "",
+                  "display_name": "System Message",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "timeout",
+                  "value": "",
+                  "display_name": "Timeout (seconds)",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "user_message": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "user_message",
+                  "value": "",
+                  "display_name": "User Message",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Implements Anthropic's Prompt Caching feature for optimized API usage. Cached prompts persist for 5 minutes and are refreshed with each new message within that timeframe, enhancing efficiency and reducing token usage.",
+              "icon": "Anthropic",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Anthropic Prompt Caching",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "response",
+                  "display_name": "Response",
+                  "method": "make_request",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "system_message",
+                "user_message",
+                "data_to_cache",
+                "model",
+                "max_tokens",
+                "stream",
+                "api_key",
+                "timeout",
+                "max_retries"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.17",
+              "official": false
+            },
+            "id": "PromptCachingComponent-ZHXJ9"
+          },
+          "id": "PromptCachingComponent-ZHXJ9",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-29T22:39:32.700Z",
+    "date_updated": "2024-08-29T22:39:32.725Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "2e0554c7-2ab5-4dd7-b9c1-6b5ed9f5b565",
+    "user_created": {
+      "username": "raphaelchristi",
+      "first_name": "Raphael",
+      "last_name": "Christi",
+      "id": "2e0554c7-2ab5-4dd7-b9c1-6b5ed9f5b565"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.156Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

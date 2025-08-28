@@ -1,0 +1,661 @@
+{
+  "id": "4b5cfd48-5600-4894-8834-60120e28b394",
+  "name": "Azure Vision GPT-4o",
+  "description": "Converts an image into Base64 then processes it and generates responses based on the prompt given, using Azure OpenAI GPT-4o. (Amir) (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "amir",
+    "first_name": "AmirMohammad",
+    "last_name": "Mohseni Ghaleh Ghazi",
+    "id": "918090e3-0e8a-43ee-92a2-4f6fb455d4d2",
+    "full_name": "AmirMohammad Mohseni Ghaleh Ghazi"
+  },
+  "store_url": "https://www.langflow.store/store/component/4b5cfd48-5600-4894-8834-60120e28b394",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-25T13:49:49.848Z",
+    "updated": "2024-09-25T13:49:49.894Z",
+    "downloaded": "2025-08-19T17:50:07.307Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "AzureVisionComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "image_file": {
+                "trace_as_metadata": true,
+                "file_path": "",
+                "fileTypes": [
+                  "jpg",
+                  "jpeg",
+                  "png",
+                  "bmp",
+                  "tiff",
+                  "gif"
+                ],
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "image_file",
+                "value": "",
+                "display_name": "Image File",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Supported file types: jpg, jpeg, png, bmp, tiff, gif",
+                "title_case": false,
+                "type": "file",
+                "_input_type": "FileInput",
+                "load_from_db": false
+              },
+              "api_key": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "azure_deployment": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "azure_deployment",
+                "value": "",
+                "display_name": "Deployment Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "azure_endpoint": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "azure_endpoint",
+                "value": "",
+                "display_name": "Azure Endpoint",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import base64\r\nimport requests\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.inputs import MessageTextInput\r\nfrom axiestudio.io import FileInput, Output\r\nfrom axiestudio.base.models.model import LCModelComponent\r\nfrom axiestudio.schema.message import Message\r\nfrom axiestudio.memory import store_message\r\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI\r\n\r\n\r\nclass AzureVisionComponent(LCModelComponent):\r\n    display_name: str = \"Azure Vision\"\r\n    description: str = \"Processes an image and generates responses based on the image using Azure OpenAI GPT-4O.\"\r\n    icon = \"👁️\"\r\n    name = \"AzureVisionComponent\"\r\n    IMAGE_FILE_TYPES = [\"jpg\", \"jpeg\", \"png\", \"bmp\", \"tiff\", \"gif\"]\r\n\r\n    inputs = LCModelComponent._base_inputs + [\r\n        FileInput(\r\n            name=\"image_file\",\r\n            display_name=\"Image File\",\r\n            file_types=IMAGE_FILE_TYPES,\r\n            info=f\"Supported file types: {', '.join(IMAGE_FILE_TYPES)}\",\r\n            required=True,\r\n        ),\r\n        MessageTextInput(name=\"prompt\", display_name=\"Prompt\", required=True),\r\n        MessageTextInput(name=\"azure_endpoint\", display_name=\"Azure Endpoint\", required=True),\r\n        MessageTextInput(name=\"azure_deployment\", display_name=\"Deployment Name\", required=True, value=\"gpt-4o\"),\r\n        MessageTextInput(name=\"api_key\", display_name=\"API Key\", required=True),\r\n        MessageTextInput(name=\"max_tokens\", display_name=\"Max Tokens\", required=True, value=\"300\"),\r\n        MessageTextInput(name=\"session_id\", display_name=\"Session ID\", required=False),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Message\", name=\"response_message\", method=\"get_response_message\"),\r\n    ]\r\n\r\n    def convert_to_base64(self, image_file_path: str) -> str:\r\n        \"\"\"Convert the provided image file to Base64.\"\"\"\r\n        with open(image_file_path, \"rb\") as file:\r\n            encoded_string = base64.b64encode(file.read()).decode(\"utf-8\")\r\n        return encoded_string\r\n\r\n    def get_response_message(self) -> Message:\r\n        \"\"\"Main function to process the image and generate the response message compatible with ChatOutput.\"\"\"\r\n        # Retrieve the inputs\r\n        image_file = self.image_file\r\n        prompt = self.prompt\r\n        azure_endpoint = self.azure_endpoint\r\n        deployment_name = self.azure_deployment\r\n        api_key = self.api_key\r\n        max_tokens = self.max_tokens\r\n        session_id = self.session_id or self.graph.flow_id\r\n\r\n        # Convert the image to Base64\r\n        base64_image_data = self.convert_to_base64(image_file)\r\n        print(f\"Base64 Image Data Length: {len(base64_image_data)}\")\r\n\r\n        headers = {\r\n            \"Content-Type\": \"application/json\",\r\n            \"api-key\": api_key,\r\n        }\r\n\r\n        payload = {\r\n            \"messages\": [\r\n                {\r\n                    \"role\": \"user\",\r\n                    \"content\": [\r\n                        {\"type\": \"text\", \"text\": prompt},\r\n                        {\"type\": \"image_url\", \"image_url\": {\"url\": f\"data:image/jpeg;base64,{base64_image_data}\"}}\r\n                    ],\r\n                },\r\n            ],\r\n            \"max_tokens\": int(max_tokens),\r\n        }\r\n\r\n        endpoint_url = f\"{azure_endpoint}/openai/deployments/{deployment_name}/chat/completions?api-version=2023-05-15\"\r\n\r\n        print(\"Payload sent to API:\", payload)\r\n\r\n        # Make the API request\r\n        response = requests.post(\r\n            endpoint_url,\r\n            headers=headers,\r\n            json=payload,\r\n        )\r\n\r\n        # Check for HTTP errors\r\n        if response.status_code != 200:\r\n            print(f\"Error: API request failed with status code {response.status_code}. Response: {response.text}\")\r\n            return \"\"\r\n\r\n        print(\"API Response:\", response.text)\r\n\r\n        # Extract the response content\r\n        try:\r\n            response_data = response.json()\r\n            response_content = response_data.get('choices', [{}])[0].get('message', {}).get('content', '')\r\n        except ValueError as e:\r\n            print(\"Error decoding JSON:\", e)\r\n            return \"\"\r\n\r\n        if not response_content:\r\n            print(\"Warning: No content returned from the response.\")\r\n\r\n        # Create a Message object compatible with ChatOutput\r\n        message = Message(\r\n            text=response_content,\r\n            sender=MESSAGE_SENDER_AI,\r\n            sender_name=MESSAGE_SENDER_NAME_AI,\r\n            session_id=session_id,\r\n        )\r\n\r\n        # Optionally store the message\r\n        store_message(\r\n            message,\r\n            flow_id=self.graph.flow_id,\r\n        )\r\n\r\n        # Set the status of the component and return the message\r\n        self.status = message\r\n        return message\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageInput"
+              },
+              "max_tokens": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "max_tokens",
+                "value": "",
+                "display_name": "Max Tokens",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "prompt": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "prompt",
+                "value": "",
+                "display_name": "Prompt",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "session_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "session_id",
+                "value": "",
+                "display_name": "Session ID",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "stream": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "stream",
+                "value": false,
+                "display_name": "Stream",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Stream the response from the model. Streaming works only in Chat.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "system_message": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "system_message",
+                "value": "",
+                "display_name": "System Message",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "System message to pass to the model.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Converts an image into Base64 then processes it and generates responses based on the prompt given, using Azure OpenAI GPT-4o. (Amir)",
+            "icon": "👁️",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Azure Vision GPT-4o",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "response_message",
+                "display_name": "Message",
+                "method": "get_response_message",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "system_message",
+              "stream",
+              "image_file",
+              "prompt",
+              "azure_endpoint",
+              "azure_deployment",
+              "api_key",
+              "max_tokens",
+              "session_id"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "AzureVisionComponent-K9fCj"
+        },
+        "id": "AzureVisionComponent-K9fCj",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "AzureVisionComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "4b5cfd48-5600-4894-8834-60120e28b394",
+    "name": "Azure Vision GPT-4o",
+    "description": "Converts an image into Base64 then processes it and generates responses based on the prompt given, using Azure OpenAI GPT-4o. (Amir)",
+    "is_component": true,
+    "liked_by_count": "7",
+    "downloads_count": "86",
+    "metadata": {
+      "AzureVisionComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "AzureVisionComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "image_file": {
+                  "trace_as_metadata": true,
+                  "file_path": "",
+                  "fileTypes": [
+                    "jpg",
+                    "jpeg",
+                    "png",
+                    "bmp",
+                    "tiff",
+                    "gif"
+                  ],
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "image_file",
+                  "value": "",
+                  "display_name": "Image File",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Supported file types: jpg, jpeg, png, bmp, tiff, gif",
+                  "title_case": false,
+                  "type": "file",
+                  "_input_type": "FileInput",
+                  "load_from_db": false
+                },
+                "api_key": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "azure_deployment": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "azure_deployment",
+                  "value": "",
+                  "display_name": "Deployment Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "azure_endpoint": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "azure_endpoint",
+                  "value": "",
+                  "display_name": "Azure Endpoint",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import base64\r\nimport requests\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.inputs import MessageTextInput\r\nfrom axiestudio.io import FileInput, Output\r\nfrom axiestudio.base.models.model import LCModelComponent\r\nfrom axiestudio.schema.message import Message\r\nfrom axiestudio.memory import store_message\r\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI\r\n\r\n\r\nclass AzureVisionComponent(LCModelComponent):\r\n    display_name: str = \"Azure Vision\"\r\n    description: str = \"Processes an image and generates responses based on the image using Azure OpenAI GPT-4O.\"\r\n    icon = \"👁️\"\r\n    name = \"AzureVisionComponent\"\r\n    IMAGE_FILE_TYPES = [\"jpg\", \"jpeg\", \"png\", \"bmp\", \"tiff\", \"gif\"]\r\n\r\n    inputs = LCModelComponent._base_inputs + [\r\n        FileInput(\r\n            name=\"image_file\",\r\n            display_name=\"Image File\",\r\n            file_types=IMAGE_FILE_TYPES,\r\n            info=f\"Supported file types: {', '.join(IMAGE_FILE_TYPES)}\",\r\n            required=True,\r\n        ),\r\n        MessageTextInput(name=\"prompt\", display_name=\"Prompt\", required=True),\r\n        MessageTextInput(name=\"azure_endpoint\", display_name=\"Azure Endpoint\", required=True),\r\n        MessageTextInput(name=\"azure_deployment\", display_name=\"Deployment Name\", required=True, value=\"gpt-4o\"),\r\n        MessageTextInput(name=\"api_key\", display_name=\"API Key\", required=True),\r\n        MessageTextInput(name=\"max_tokens\", display_name=\"Max Tokens\", required=True, value=\"300\"),\r\n        MessageTextInput(name=\"session_id\", display_name=\"Session ID\", required=False),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Message\", name=\"response_message\", method=\"get_response_message\"),\r\n    ]\r\n\r\n    def convert_to_base64(self, image_file_path: str) -> str:\r\n        \"\"\"Convert the provided image file to Base64.\"\"\"\r\n        with open(image_file_path, \"rb\") as file:\r\n            encoded_string = base64.b64encode(file.read()).decode(\"utf-8\")\r\n        return encoded_string\r\n\r\n    def get_response_message(self) -> Message:\r\n        \"\"\"Main function to process the image and generate the response message compatible with ChatOutput.\"\"\"\r\n        # Retrieve the inputs\r\n        image_file = self.image_file\r\n        prompt = self.prompt\r\n        azure_endpoint = self.azure_endpoint\r\n        deployment_name = self.azure_deployment\r\n        api_key = self.api_key\r\n        max_tokens = self.max_tokens\r\n        session_id = self.session_id or self.graph.flow_id\r\n\r\n        # Convert the image to Base64\r\n        base64_image_data = self.convert_to_base64(image_file)\r\n        print(f\"Base64 Image Data Length: {len(base64_image_data)}\")\r\n\r\n        headers = {\r\n            \"Content-Type\": \"application/json\",\r\n            \"api-key\": api_key,\r\n        }\r\n\r\n        payload = {\r\n            \"messages\": [\r\n                {\r\n                    \"role\": \"user\",\r\n                    \"content\": [\r\n                        {\"type\": \"text\", \"text\": prompt},\r\n                        {\"type\": \"image_url\", \"image_url\": {\"url\": f\"data:image/jpeg;base64,{base64_image_data}\"}}\r\n                    ],\r\n                },\r\n            ],\r\n            \"max_tokens\": int(max_tokens),\r\n        }\r\n\r\n        endpoint_url = f\"{azure_endpoint}/openai/deployments/{deployment_name}/chat/completions?api-version=2023-05-15\"\r\n\r\n        print(\"Payload sent to API:\", payload)\r\n\r\n        # Make the API request\r\n        response = requests.post(\r\n            endpoint_url,\r\n            headers=headers,\r\n            json=payload,\r\n        )\r\n\r\n        # Check for HTTP errors\r\n        if response.status_code != 200:\r\n            print(f\"Error: API request failed with status code {response.status_code}. Response: {response.text}\")\r\n            return \"\"\r\n\r\n        print(\"API Response:\", response.text)\r\n\r\n        # Extract the response content\r\n        try:\r\n            response_data = response.json()\r\n            response_content = response_data.get('choices', [{}])[0].get('message', {}).get('content', '')\r\n        except ValueError as e:\r\n            print(\"Error decoding JSON:\", e)\r\n            return \"\"\r\n\r\n        if not response_content:\r\n            print(\"Warning: No content returned from the response.\")\r\n\r\n        # Create a Message object compatible with ChatOutput\r\n        message = Message(\r\n            text=response_content,\r\n            sender=MESSAGE_SENDER_AI,\r\n            sender_name=MESSAGE_SENDER_NAME_AI,\r\n            session_id=session_id,\r\n        )\r\n\r\n        # Optionally store the message\r\n        store_message(\r\n            message,\r\n            flow_id=self.graph.flow_id,\r\n        )\r\n\r\n        # Set the status of the component and return the message\r\n        self.status = message\r\n        return message\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageInput"
+                },
+                "max_tokens": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_tokens",
+                  "value": "",
+                  "display_name": "Max Tokens",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "prompt": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "prompt",
+                  "value": "",
+                  "display_name": "Prompt",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "session_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "session_id",
+                  "value": "",
+                  "display_name": "Session ID",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "stream": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "stream",
+                  "value": false,
+                  "display_name": "Stream",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Stream the response from the model. Streaming works only in Chat.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "system_message": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "system_message",
+                  "value": "",
+                  "display_name": "System Message",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "System message to pass to the model.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Converts an image into Base64 then processes it and generates responses based on the prompt given, using Azure OpenAI GPT-4o. (Amir)",
+              "icon": "👁️",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Azure Vision GPT-4o",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "response_message",
+                  "display_name": "Message",
+                  "method": "get_response_message",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "system_message",
+                "stream",
+                "image_file",
+                "prompt",
+                "azure_endpoint",
+                "azure_deployment",
+                "api_key",
+                "max_tokens",
+                "session_id"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "AzureVisionComponent-K9fCj"
+          },
+          "id": "AzureVisionComponent-K9fCj",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-25T13:49:49.848Z",
+    "date_updated": "2024-09-25T13:49:49.894Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "918090e3-0e8a-43ee-92a2-4f6fb455d4d2",
+    "user_created": {
+      "username": "amir",
+      "first_name": "AmirMohammad",
+      "last_name": "Mohseni Ghaleh Ghazi",
+      "id": "918090e3-0e8a-43ee-92a2-4f6fb455d4d2"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.935Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 14,
+    "converter_version": "1.0.0"
+  }
+}

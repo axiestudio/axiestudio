@@ -1,0 +1,299 @@
+{
+  "id": "6c4199d5-001a-4ef5-ab1d-884c2544d5ea",
+  "name": "Raptor",
+  "description": "Recursive Abstractive Processing for Tree-Organized Retrieval models (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "imickey",
+    "first_name": "Miklós",
+    "last_name": "Imre",
+    "id": "56d25557-4265-41d0-84c1-49cabc21a2c3",
+    "full_name": "Miklós Imre"
+  },
+  "store_url": "https://www.langflow.store/store/component/6c4199d5-001a-4ef5-ab1d-884c2544d5ea",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-04-21T11:08:04.312Z",
+    "updated": "2024-04-21T11:08:04.342Z",
+    "downloaded": "2025-08-19T17:50:05.155Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "0.6.16",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Document",
+          "node": {
+            "template": {
+              "documents": {
+                "type": "Document",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "documents",
+                "display_name": "Documents",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "embedding": {
+                "type": "Embeddings",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "embedding",
+                "display_name": "Embedding",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "model": {
+                "type": "BaseLanguageModel",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "model",
+                "display_name": "LLM",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": true
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional, Tuple, List, Dict\n\nimport numpy as np\nimport pandas as pd\nimport umap\n\nfrom sklearn.mixture import GaussianMixture\n\nfrom langchain.embeddings.base import Embeddings\nfrom langchain.llms.base import BaseLanguageModel\nfrom langchain.schema import Document\nfrom langchain.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nfrom axiestudio import CustomComponent\n\n\nclass RaptorComponent(CustomComponent):\n    display_name : str = \"Raptor\"\n    description : str = \"Recursive Abstractive Processing for Tree-Organized Retrieval models\"\n    documentation : str = \"https://github.com/langchain-ai/langchain/blob/master/cookbook/RAPTOR.ipynb\"\n    \n    def build_config(self):\n        return {\n            \"model\": {\"display_name\": \"LLM\"},\n            \"documents\": {\"display_name\": \"Documents\", \"is_list\": True},\n            \"embedding\": {\"display_name\": \"Embedding\"},\n        }\n\n    def build(self, \n            model: BaseLanguageModel,\n            embedding: Embeddings,\n            documents: list[Document]\n    ) -> list[Document]:\n        \n        RANDOM_SEED = 224  # Fixed seed for reproducibility\n        \n        def global_cluster_embeddings(\n            np_embeddings: np.ndarray,\n            dim: int,\n            n_neighbors: Optional[int] = None,\n            metric: str = \"cosine\",\n        ) -> np.ndarray:\n            \"\"\"\n            Perform global dimensionality reduction on the embeddings using UMAP.\n        \n            Parameters:\n            - np_embeddings: The input embeddings as a numpy array.\n            - dim: The target dimensionality for the reduced space.\n            - n_neighbors: Optional; the number of neighbors to consider for each point.\n                           If not provided, it defaults to the square root of the number of embeddings.\n            - metric: The distance metric to use for UMAP.\n        \n            Returns:\n            - A numpy array of the embeddings reduced to the specified dimensionality.\n            \"\"\"\n            if n_neighbors is None:\n                n_neighbors = int((len(np_embeddings) - 1) ** 0.5)\n            return umap.UMAP(\n                n_neighbors=n_neighbors, n_components=dim, metric=metric\n            ).fit_transform(np_embeddings)\n        \n        \n        def local_cluster_embeddings(\n            np_embeddings: np.ndarray, dim: int, num_neighbors: int = 10, metric: str = \"cosine\"\n        ) -> np.ndarray:\n            \"\"\"\n            Perform local dimensionality reduction on the embeddings using UMAP, typically after global clustering.\n        \n            Parameters:\n            - np_embeddings: The input embeddings as a numpy array.\n            - dim: The target dimensionality for the reduced space.\n            - num_neighbors: The number of neighbors to consider for each point.\n            - metric: The distance metric to use for UMAP.\n        \n            Returns:\n            - A numpy array of the embeddings reduced to the specified dimensionality.\n            \"\"\"\n            return umap.UMAP(\n                n_neighbors=num_neighbors, n_components=dim, metric=metric\n            ).fit_transform(np_embeddings)\n        \n        \n        def get_optimal_clusters(\n            np_embeddings: np.ndarray, max_clusters: int = 50, random_state: int = RANDOM_SEED\n        ) -> int:\n            \"\"\"\n            Determine the optimal number of clusters using the Bayesian Information Criterion (BIC) with a Gaussian Mixture Model.\n        \n            Parameters:\n            - np_embeddings: The input embeddings as a numpy array.\n            - max_clusters: The maximum number of clusters to consider.\n            - random_state: Seed for reproducibility.\n        \n            Returns:\n            - An integer representing the optimal number of clusters found.\n            \"\"\"\n            max_clusters = min(max_clusters, len(np_embeddings))\n            n_clusters = np.arange(1, max_clusters)\n            bics = []\n            for n in n_clusters:\n                gm = GaussianMixture(n_components=n, random_state=random_state)\n                gm.fit(np_embeddings)\n                bics.append(gm.bic(np_embeddings))\n            return n_clusters[np.argmin(bics)]\n        \n        \n        def GMM_cluster(np_embeddings: np.ndarray, threshold: float, random_state: int = 0):\n            \"\"\"\n            Cluster embeddings using a Gaussian Mixture Model (GMM) based on a probability threshold.\n        \n            Parameters:\n            - np_embeddings: The input embeddings as a numpy array.\n            - threshold: The probability threshold for assigning an embedding to a cluster.\n            - random_state: Seed for reproducibility.\n        \n            Returns:\n            - A tuple containing the cluster labels and the number of clusters determined.\n            \"\"\"\n            n_clusters = get_optimal_clusters(np_embeddings)\n            gm = GaussianMixture(n_components=n_clusters, random_state=random_state)\n            gm.fit(np_embeddings)\n            probs = gm.predict_proba(np_embeddings)\n            labels = [np.where(prob > threshold)[0] for prob in probs]\n            return labels, n_clusters\n\n        def perform_clustering(\n            np_embeddings: np.ndarray,\n            dim: int,\n            threshold: float,\n        ) -> List[np.ndarray]:\n            \"\"\"\n            Perform clustering on the embeddings by first reducing their dimensionality globally, then clustering\n            using a Gaussian Mixture Model, and finally performing local clustering within each global cluster.\n        \n            Parameters:\n            - np_embeddings: The input embeddings as a numpy array.\n            - dim: The target dimensionality for UMAP reduction.\n            - threshold: The probability threshold for assigning an embedding to a cluster in GMM.\n        \n            Returns:\n            - A list of numpy arrays, where each array contains the cluster IDs for each embedding.\n            \"\"\"\n            if len(np_embeddings) <= dim + 1:\n                # Avoid clustering when there's insufficient data\n                return [np.array([0]) for _ in range(len(np_embeddings))]\n        \n            # Global dimensionality reduction\n            reduced_embeddings_global = global_cluster_embeddings(np_embeddings, dim)\n            # Global clustering\n            global_clusters, n_global_clusters = GMM_cluster(\n                reduced_embeddings_global, threshold\n            )\n        \n            all_local_clusters = [np.array([]) for _ in range(len(np_embeddings))]\n            total_clusters = 0\n        \n            # Iterate through each global cluster to perform local clustering\n            for i in range(n_global_clusters):\n                # Extract embeddings belonging to the current global cluster\n                global_cluster_embeddings_ = np_embeddings[\n                    np.array([i in gc for gc in global_clusters])\n                ]\n        \n                if len(global_cluster_embeddings_) == 0:\n                    continue\n                if len(global_cluster_embeddings_) <= dim + 1:\n                    # Handle small clusters with direct assignment\n                    local_clusters = [np.array([0]) for _ in global_cluster_embeddings_]\n                    n_local_clusters = 1\n                else:\n                    # Local dimensionality reduction and clustering\n                    reduced_embeddings_local = local_cluster_embeddings(\n                        global_cluster_embeddings_, dim\n                    )\n                    local_clusters, n_local_clusters = GMM_cluster(\n                        reduced_embeddings_local, threshold\n                    )\n        \n                # Assign local cluster IDs, adjusting for total clusters already processed\n                for j in range(n_local_clusters):\n                    local_cluster_embeddings_ = global_cluster_embeddings_[\n                        np.array([j in lc for lc in local_clusters])\n                    ]\n                    indices = np.where(\n                        (np_embeddings == local_cluster_embeddings_[:, None]).all(-1)\n                    )[1]\n                    for idx in indices:\n                        all_local_clusters[idx] = np.append(\n                            all_local_clusters[idx], j + total_clusters\n                        )\n        \n                total_clusters += n_local_clusters\n        \n            return all_local_clusters\n        \n        def embed_cluster_texts(texts):\n            \"\"\"\n            Embeds a list of texts and clusters them, returning a DataFrame with texts, their embeddings, and cluster labels.\n        \n            This function combines embedding generation and clustering into a single step. It assumes the existence\n            of a previously defined `perform_clustering` function that performs clustering on the embeddings.\n        \n            Parameters:\n            - texts: List[str], a list of text documents to be processed.\n        \n            Returns:\n            - pandas.DataFrame: A DataFrame containing the original texts, their embeddings, and the assigned cluster labels.\n            \"\"\"\n            # Generate embeddings for a list of text documents.\n            text_embeddings = embedding.embed_documents(texts)\n            text_embeddings_np = np.array(text_embeddings)\n\n            cluster_labels = perform_clustering(\n                text_embeddings_np, 10, 0.1\n            )  # Perform clustering on the embeddings\n            df = pd.DataFrame()  # Initialize a DataFrame to store the results\n            df[\"text\"] = texts  # Store original texts\n            df[\"embd\"] = list(text_embeddings_np)  # Store embeddings as a list in the DataFrame\n            df[\"cluster\"] = cluster_labels  # Store cluster labels\n            return df\n    \n        def fmt_txt(df: pd.DataFrame) -> str:\n            \"\"\"\n            Formats the text documents in a DataFrame into a single string.\n        \n            Parameters:\n            - df: DataFrame containing the 'text' column with text documents to format.\n        \n            Returns:\n            - A single string where all text documents are joined by a specific delimiter.\n            \"\"\"\n            unique_txt = df[\"text\"].tolist()\n            return \"--- --- \\n --- --- \".join(unique_txt)\n        \n        def embed_cluster_summarize_texts(\n            texts: List[str], level: int\n        ) -> Tuple[pd.DataFrame, pd.DataFrame]:\n            \"\"\"\n            Embeds, clusters, and summarizes a list of texts. This function first generates embeddings for the texts,\n            clusters them based on similarity, expands the cluster assignments for easier processing, and then summarizes\n            the content within each cluster.\n        \n            Parameters:\n            - texts: A list of text documents to be processed.\n            - level: An integer parameter that could define the depth or detail of processing.\n        \n            Returns:\n            - Tuple containing two DataFrames:\n              1. The first DataFrame (`df_clusters`) includes the original texts, their embeddings, and cluster assignments.\n              2. The second DataFrame (`df_summary`) contains summaries for each cluster, the specified level of detail,\n                 and the cluster identifiers.\n            \"\"\"\n        \n            # Embed and cluster the texts, resulting in a DataFrame with 'text', 'embd', and 'cluster' columns\n            df_clusters = embed_cluster_texts(texts)\n        \n            # Prepare to expand the DataFrame for easier manipulation of clusters\n            expanded_list = []\n        \n            # Expand DataFrame entries to document-cluster pairings for straightforward processing\n            for index, row in df_clusters.iterrows():\n                for cluster in row[\"cluster\"]:\n                    expanded_list.append(\n                        {\"text\": row[\"text\"], \"embd\": row[\"embd\"], \"cluster\": cluster}\n                    )\n        \n            # Create a new DataFrame from the expanded list\n            expanded_df = pd.DataFrame(expanded_list)\n        \n            # Retrieve unique cluster identifiers for processing\n            all_clusters = expanded_df[\"cluster\"].unique()\n        \n            # Summarization\n            template = \"\"\"Give a detailed summary of the documentation provided.\n            \n            Documentation:\n            {context}\n            \"\"\"\n            prompt = ChatPromptTemplate.from_template(template)\n            chain = prompt | model | StrOutputParser()\n        \n            # Format text within each cluster for summarization\n            summaries = []\n            for i in all_clusters:\n                df_cluster = expanded_df[expanded_df[\"cluster\"] == i]\n                formatted_txt = fmt_txt(df_cluster)\n                summaries.append(chain.invoke({\"context\": formatted_txt}))\n        \n            # Create a DataFrame to store summaries with their corresponding cluster and level\n            df_summary = pd.DataFrame(\n                {\n                    \"summaries\": summaries,\n                    \"level\": [level] * len(summaries),\n                    \"cluster\": list(all_clusters),\n                }\n            )\n        \n            return df_clusters, df_summary\n        \n        def recursive_embed_cluster_summarize(\n            texts: List[str], level: int = 1, n_levels: int = 3\n        ) -> Dict[int, Tuple[pd.DataFrame, pd.DataFrame]]:\n            \"\"\"\n            Recursively embeds, clusters, and summarizes texts up to a specified level or until\n            the number of unique clusters becomes 1, storing the results at each level.\n        \n            Parameters:\n            - texts: List[str], texts to be processed.\n            - level: int, current recursion level (starts at 1).\n            - n_levels: int, maximum depth of recursion.\n        \n            Returns:\n            - Dict[int, Tuple[pd.DataFrame, pd.DataFrame]], a dictionary where keys are the recursion\n              levels and values are tuples containing the clusters DataFrame and summaries DataFrame at that level.\n            \"\"\"\n            results = {}  # Dictionary to store results at each level\n        \n            # Perform embedding, clustering, and summarization for the current level\n            df_clusters, df_summary = embed_cluster_summarize_texts(texts, level)\n        \n            # Store the results of the current level\n            results[level] = (df_clusters, df_summary)\n        \n            # Determine if further recursion is possible and meaningful\n            unique_clusters = df_summary[\"cluster\"].nunique()\n            if level < n_levels and unique_clusters > 1:\n                # Use summaries as the input texts for the next level of recursion\n                new_texts = df_summary[\"summaries\"].tolist()\n                next_level_results = recursive_embed_cluster_summarize(\n                    new_texts, level + 1, n_levels\n                )\n        \n                # Merge the results from the next level into the current results dictionary\n                results.update(next_level_results)\n        \n            return results\n            \n        # Build tree\n        leaf_texts = [d.page_content for d in documents]\n        results = recursive_embed_cluster_summarize(leaf_texts, level=1, n_levels=3)\n        \n        # Initialize all_documents with documents\n        all_documents = documents.copy()\n\n        # Iterate through the results to extract summaries from each level and add them to all_texts\n        for level in sorted(results.keys()):\n            # Extract summaries from the current level's DataFrame\n            summaries = results[level][1][\"summaries\"].tolist()\n            # Extend all_documents with the summaries from the current level\n            for summary in summaries:\n                document = Document(page_content=summary, metadata={\"source\": f\"level{level}\"})\n                all_documents.append(document)\n\n        return all_documents\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": false,
+                "dynamic": true,
+                "info": "",
+                "title_case": true
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Recursive Abstractive Processing for Tree-Organized Retrieval models",
+            "base_classes": [
+              "Document"
+            ],
+            "display_name": "Raptor",
+            "documentation": "https://github.com/langchain-ai/langchain/blob/master/cookbook/RAPTOR.ipynb",
+            "custom_fields": {
+              "model": null,
+              "embedding": null,
+              "documents": null
+            },
+            "output_types": [
+              "Document"
+            ],
+            "field_formatters": {},
+            "beta": true,
+            "official": false
+          },
+          "id": "Document-UjASE",
+          "description": "Recursive Abstractive Processing for Tree-Organized Retrieval models",
+          "display_name": "Raptor"
+        },
+        "id": "Document-UjASE",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Document": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "6c4199d5-001a-4ef5-ab1d-884c2544d5ea",
+    "name": "Raptor",
+    "description": "Recursive Abstractive Processing for Tree-Organized Retrieval models",
+    "is_component": true,
+    "liked_by_count": "30",
+    "downloads_count": "183",
+    "metadata": {
+      "Document": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "0.6.16",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Document",
+            "node": {
+              "template": {
+                "documents": {
+                  "type": "Document",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "documents",
+                  "display_name": "Documents",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "embedding": {
+                  "type": "Embeddings",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "embedding",
+                  "display_name": "Embedding",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "model": {
+                  "type": "BaseLanguageModel",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "model",
+                  "display_name": "LLM",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": true
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional, Tuple, List, Dict\n\nimport numpy as np\nimport pandas as pd\nimport umap\n\nfrom sklearn.mixture import GaussianMixture\n\nfrom langchain.embeddings.base import Embeddings\nfrom langchain.llms.base import BaseLanguageModel\nfrom langchain.schema import Document\nfrom langchain.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nfrom axiestudio import CustomComponent\n\n\nclass RaptorComponent(CustomComponent):\n    display_name : str = \"Raptor\"\n    description : str = \"Recursive Abstractive Processing for Tree-Organized Retrieval models\"\n    documentation : str = \"https://github.com/langchain-ai/langchain/blob/master/cookbook/RAPTOR.ipynb\"\n    \n    def build_config(self):\n        return {\n            \"model\": {\"display_name\": \"LLM\"},\n            \"documents\": {\"display_name\": \"Documents\", \"is_list\": True},\n            \"embedding\": {\"display_name\": \"Embedding\"},\n        }\n\n    def build(self, \n            model: BaseLanguageModel,\n            embedding: Embeddings,\n            documents: list[Document]\n    ) -> list[Document]:\n        \n        RANDOM_SEED = 224  # Fixed seed for reproducibility\n        \n        def global_cluster_embeddings(\n            np_embeddings: np.ndarray,\n            dim: int,\n            n_neighbors: Optional[int] = None,\n            metric: str = \"cosine\",\n        ) -> np.ndarray:\n            \"\"\"\n            Perform global dimensionality reduction on the embeddings using UMAP.\n        \n            Parameters:\n            - np_embeddings: The input embeddings as a numpy array.\n            - dim: The target dimensionality for the reduced space.\n            - n_neighbors: Optional; the number of neighbors to consider for each point.\n                           If not provided, it defaults to the square root of the number of embeddings.\n            - metric: The distance metric to use for UMAP.\n        \n            Returns:\n            - A numpy array of the embeddings reduced to the specified dimensionality.\n            \"\"\"\n            if n_neighbors is None:\n                n_neighbors = int((len(np_embeddings) - 1) ** 0.5)\n            return umap.UMAP(\n                n_neighbors=n_neighbors, n_components=dim, metric=metric\n            ).fit_transform(np_embeddings)\n        \n        \n        def local_cluster_embeddings(\n            np_embeddings: np.ndarray, dim: int, num_neighbors: int = 10, metric: str = \"cosine\"\n        ) -> np.ndarray:\n            \"\"\"\n            Perform local dimensionality reduction on the embeddings using UMAP, typically after global clustering.\n        \n            Parameters:\n            - np_embeddings: The input embeddings as a numpy array.\n            - dim: The target dimensionality for the reduced space.\n            - num_neighbors: The number of neighbors to consider for each point.\n            - metric: The distance metric to use for UMAP.\n        \n            Returns:\n            - A numpy array of the embeddings reduced to the specified dimensionality.\n            \"\"\"\n            return umap.UMAP(\n                n_neighbors=num_neighbors, n_components=dim, metric=metric\n            ).fit_transform(np_embeddings)\n        \n        \n        def get_optimal_clusters(\n            np_embeddings: np.ndarray, max_clusters: int = 50, random_state: int = RANDOM_SEED\n        ) -> int:\n            \"\"\"\n            Determine the optimal number of clusters using the Bayesian Information Criterion (BIC) with a Gaussian Mixture Model.\n        \n            Parameters:\n            - np_embeddings: The input embeddings as a numpy array.\n            - max_clusters: The maximum number of clusters to consider.\n            - random_state: Seed for reproducibility.\n        \n            Returns:\n            - An integer representing the optimal number of clusters found.\n            \"\"\"\n            max_clusters = min(max_clusters, len(np_embeddings))\n            n_clusters = np.arange(1, max_clusters)\n            bics = []\n            for n in n_clusters:\n                gm = GaussianMixture(n_components=n, random_state=random_state)\n                gm.fit(np_embeddings)\n                bics.append(gm.bic(np_embeddings))\n            return n_clusters[np.argmin(bics)]\n        \n        \n        def GMM_cluster(np_embeddings: np.ndarray, threshold: float, random_state: int = 0):\n            \"\"\"\n            Cluster embeddings using a Gaussian Mixture Model (GMM) based on a probability threshold.\n        \n            Parameters:\n            - np_embeddings: The input embeddings as a numpy array.\n            - threshold: The probability threshold for assigning an embedding to a cluster.\n            - random_state: Seed for reproducibility.\n        \n            Returns:\n            - A tuple containing the cluster labels and the number of clusters determined.\n            \"\"\"\n            n_clusters = get_optimal_clusters(np_embeddings)\n            gm = GaussianMixture(n_components=n_clusters, random_state=random_state)\n            gm.fit(np_embeddings)\n            probs = gm.predict_proba(np_embeddings)\n            labels = [np.where(prob > threshold)[0] for prob in probs]\n            return labels, n_clusters\n\n        def perform_clustering(\n            np_embeddings: np.ndarray,\n            dim: int,\n            threshold: float,\n        ) -> List[np.ndarray]:\n            \"\"\"\n            Perform clustering on the embeddings by first reducing their dimensionality globally, then clustering\n            using a Gaussian Mixture Model, and finally performing local clustering within each global cluster.\n        \n            Parameters:\n            - np_embeddings: The input embeddings as a numpy array.\n            - dim: The target dimensionality for UMAP reduction.\n            - threshold: The probability threshold for assigning an embedding to a cluster in GMM.\n        \n            Returns:\n            - A list of numpy arrays, where each array contains the cluster IDs for each embedding.\n            \"\"\"\n            if len(np_embeddings) <= dim + 1:\n                # Avoid clustering when there's insufficient data\n                return [np.array([0]) for _ in range(len(np_embeddings))]\n        \n            # Global dimensionality reduction\n            reduced_embeddings_global = global_cluster_embeddings(np_embeddings, dim)\n            # Global clustering\n            global_clusters, n_global_clusters = GMM_cluster(\n                reduced_embeddings_global, threshold\n            )\n        \n            all_local_clusters = [np.array([]) for _ in range(len(np_embeddings))]\n            total_clusters = 0\n        \n            # Iterate through each global cluster to perform local clustering\n            for i in range(n_global_clusters):\n                # Extract embeddings belonging to the current global cluster\n                global_cluster_embeddings_ = np_embeddings[\n                    np.array([i in gc for gc in global_clusters])\n                ]\n        \n                if len(global_cluster_embeddings_) == 0:\n                    continue\n                if len(global_cluster_embeddings_) <= dim + 1:\n                    # Handle small clusters with direct assignment\n                    local_clusters = [np.array([0]) for _ in global_cluster_embeddings_]\n                    n_local_clusters = 1\n                else:\n                    # Local dimensionality reduction and clustering\n                    reduced_embeddings_local = local_cluster_embeddings(\n                        global_cluster_embeddings_, dim\n                    )\n                    local_clusters, n_local_clusters = GMM_cluster(\n                        reduced_embeddings_local, threshold\n                    )\n        \n                # Assign local cluster IDs, adjusting for total clusters already processed\n                for j in range(n_local_clusters):\n                    local_cluster_embeddings_ = global_cluster_embeddings_[\n                        np.array([j in lc for lc in local_clusters])\n                    ]\n                    indices = np.where(\n                        (np_embeddings == local_cluster_embeddings_[:, None]).all(-1)\n                    )[1]\n                    for idx in indices:\n                        all_local_clusters[idx] = np.append(\n                            all_local_clusters[idx], j + total_clusters\n                        )\n        \n                total_clusters += n_local_clusters\n        \n            return all_local_clusters\n        \n        def embed_cluster_texts(texts):\n            \"\"\"\n            Embeds a list of texts and clusters them, returning a DataFrame with texts, their embeddings, and cluster labels.\n        \n            This function combines embedding generation and clustering into a single step. It assumes the existence\n            of a previously defined `perform_clustering` function that performs clustering on the embeddings.\n        \n            Parameters:\n            - texts: List[str], a list of text documents to be processed.\n        \n            Returns:\n            - pandas.DataFrame: A DataFrame containing the original texts, their embeddings, and the assigned cluster labels.\n            \"\"\"\n            # Generate embeddings for a list of text documents.\n            text_embeddings = embedding.embed_documents(texts)\n            text_embeddings_np = np.array(text_embeddings)\n\n            cluster_labels = perform_clustering(\n                text_embeddings_np, 10, 0.1\n            )  # Perform clustering on the embeddings\n            df = pd.DataFrame()  # Initialize a DataFrame to store the results\n            df[\"text\"] = texts  # Store original texts\n            df[\"embd\"] = list(text_embeddings_np)  # Store embeddings as a list in the DataFrame\n            df[\"cluster\"] = cluster_labels  # Store cluster labels\n            return df\n    \n        def fmt_txt(df: pd.DataFrame) -> str:\n            \"\"\"\n            Formats the text documents in a DataFrame into a single string.\n        \n            Parameters:\n            - df: DataFrame containing the 'text' column with text documents to format.\n        \n            Returns:\n            - A single string where all text documents are joined by a specific delimiter.\n            \"\"\"\n            unique_txt = df[\"text\"].tolist()\n            return \"--- --- \\n --- --- \".join(unique_txt)\n        \n        def embed_cluster_summarize_texts(\n            texts: List[str], level: int\n        ) -> Tuple[pd.DataFrame, pd.DataFrame]:\n            \"\"\"\n            Embeds, clusters, and summarizes a list of texts. This function first generates embeddings for the texts,\n            clusters them based on similarity, expands the cluster assignments for easier processing, and then summarizes\n            the content within each cluster.\n        \n            Parameters:\n            - texts: A list of text documents to be processed.\n            - level: An integer parameter that could define the depth or detail of processing.\n        \n            Returns:\n            - Tuple containing two DataFrames:\n              1. The first DataFrame (`df_clusters`) includes the original texts, their embeddings, and cluster assignments.\n              2. The second DataFrame (`df_summary`) contains summaries for each cluster, the specified level of detail,\n                 and the cluster identifiers.\n            \"\"\"\n        \n            # Embed and cluster the texts, resulting in a DataFrame with 'text', 'embd', and 'cluster' columns\n            df_clusters = embed_cluster_texts(texts)\n        \n            # Prepare to expand the DataFrame for easier manipulation of clusters\n            expanded_list = []\n        \n            # Expand DataFrame entries to document-cluster pairings for straightforward processing\n            for index, row in df_clusters.iterrows():\n                for cluster in row[\"cluster\"]:\n                    expanded_list.append(\n                        {\"text\": row[\"text\"], \"embd\": row[\"embd\"], \"cluster\": cluster}\n                    )\n        \n            # Create a new DataFrame from the expanded list\n            expanded_df = pd.DataFrame(expanded_list)\n        \n            # Retrieve unique cluster identifiers for processing\n            all_clusters = expanded_df[\"cluster\"].unique()\n        \n            # Summarization\n            template = \"\"\"Give a detailed summary of the documentation provided.\n            \n            Documentation:\n            {context}\n            \"\"\"\n            prompt = ChatPromptTemplate.from_template(template)\n            chain = prompt | model | StrOutputParser()\n        \n            # Format text within each cluster for summarization\n            summaries = []\n            for i in all_clusters:\n                df_cluster = expanded_df[expanded_df[\"cluster\"] == i]\n                formatted_txt = fmt_txt(df_cluster)\n                summaries.append(chain.invoke({\"context\": formatted_txt}))\n        \n            # Create a DataFrame to store summaries with their corresponding cluster and level\n            df_summary = pd.DataFrame(\n                {\n                    \"summaries\": summaries,\n                    \"level\": [level] * len(summaries),\n                    \"cluster\": list(all_clusters),\n                }\n            )\n        \n            return df_clusters, df_summary\n        \n        def recursive_embed_cluster_summarize(\n            texts: List[str], level: int = 1, n_levels: int = 3\n        ) -> Dict[int, Tuple[pd.DataFrame, pd.DataFrame]]:\n            \"\"\"\n            Recursively embeds, clusters, and summarizes texts up to a specified level or until\n            the number of unique clusters becomes 1, storing the results at each level.\n        \n            Parameters:\n            - texts: List[str], texts to be processed.\n            - level: int, current recursion level (starts at 1).\n            - n_levels: int, maximum depth of recursion.\n        \n            Returns:\n            - Dict[int, Tuple[pd.DataFrame, pd.DataFrame]], a dictionary where keys are the recursion\n              levels and values are tuples containing the clusters DataFrame and summaries DataFrame at that level.\n            \"\"\"\n            results = {}  # Dictionary to store results at each level\n        \n            # Perform embedding, clustering, and summarization for the current level\n            df_clusters, df_summary = embed_cluster_summarize_texts(texts, level)\n        \n            # Store the results of the current level\n            results[level] = (df_clusters, df_summary)\n        \n            # Determine if further recursion is possible and meaningful\n            unique_clusters = df_summary[\"cluster\"].nunique()\n            if level < n_levels and unique_clusters > 1:\n                # Use summaries as the input texts for the next level of recursion\n                new_texts = df_summary[\"summaries\"].tolist()\n                next_level_results = recursive_embed_cluster_summarize(\n                    new_texts, level + 1, n_levels\n                )\n        \n                # Merge the results from the next level into the current results dictionary\n                results.update(next_level_results)\n        \n            return results\n            \n        # Build tree\n        leaf_texts = [d.page_content for d in documents]\n        results = recursive_embed_cluster_summarize(leaf_texts, level=1, n_levels=3)\n        \n        # Initialize all_documents with documents\n        all_documents = documents.copy()\n\n        # Iterate through the results to extract summaries from each level and add them to all_texts\n        for level in sorted(results.keys()):\n            # Extract summaries from the current level's DataFrame\n            summaries = results[level][1][\"summaries\"].tolist()\n            # Extend all_documents with the summaries from the current level\n            for summary in summaries:\n                document = Document(page_content=summary, metadata={\"source\": f\"level{level}\"})\n                all_documents.append(document)\n\n        return all_documents\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": true
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Recursive Abstractive Processing for Tree-Organized Retrieval models",
+              "base_classes": [
+                "Document"
+              ],
+              "display_name": "Raptor",
+              "documentation": "https://github.com/langchain-ai/langchain/blob/master/cookbook/RAPTOR.ipynb",
+              "custom_fields": {
+                "model": null,
+                "embedding": null,
+                "documents": null
+              },
+              "output_types": [
+                "Document"
+              ],
+              "field_formatters": {},
+              "beta": true,
+              "official": false
+            },
+            "id": "Document-UjASE",
+            "description": "Recursive Abstractive Processing for Tree-Organized Retrieval models",
+            "display_name": "Raptor"
+          },
+          "id": "Document-UjASE",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-04-21T11:08:04.312Z",
+    "date_updated": "2024-04-21T11:08:04.342Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "56d25557-4265-41d0-84c1-49cabc21a2c3",
+    "user_created": {
+      "username": "imickey",
+      "first_name": "Miklós",
+      "last_name": "Imre",
+      "id": "56d25557-4265-41d0-84c1-49cabc21a2c3"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.537Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 2,
+    "converter_version": "1.0.0"
+  }
+}

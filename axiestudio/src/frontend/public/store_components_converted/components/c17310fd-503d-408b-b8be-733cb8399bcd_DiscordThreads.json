@@ -1,0 +1,383 @@
+{
+  "id": "c17310fd-503d-408b-b8be-733cb8399bcd",
+  "name": "DiscordThreads",
+  "description": "get the messages of discord's threads (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "joaoguilhermeS",
+    "first_name": "João",
+    "last_name": "Oliveira",
+    "id": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "full_name": "João Oliveira"
+  },
+  "store_url": "https://www.langflow.store/store/component/c17310fd-503d-408b-b8be-733cb8399bcd",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-05-23T01:11:30.456Z",
+    "updated": "2024-05-23T01:11:30.478Z",
+    "downloaded": "2025-08-19T17:50:05.370Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.0a30",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "bot_name": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "bot_name",
+                "display_name": "BotName",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "channel_id": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "channel_id",
+                "display_name": "ChannelId",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "1239303061915308164"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional, Any\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom json import loads\nfrom axiestudio.schema.dotdict import dotdict\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordThreads(CustomComponent):\n    display_name = \"DiscordThreads\"\n    description = \"get the messages of discord's threads\"\n    field_order = [\"bot_name\", \"token\", \"channel_id\", \"limit\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"bot_name\": {\n                \"display_name\": \"BotName\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"limit\": {\n                \"display_name\": \"Limit\",\n                \"value\": 20,\n                \"advanced\": False,\n                \"info\": \"The value 0 means limitless\",\n                \"required\": True,\n            }\n        }\n\n    def update_state(\n        self, name: str, value: Any\n    ):\n        print(name, value, flush=True)\n        return super().update_state(name, value)\n\n    def build(self, bot_name: str, token: str, channel_id: int,  limit: int) -> str:\n        import requests\n        \n        body = {\"token\": token}\n        if channel_id:\n            body[\"channel_id\"] = channel_id\n\n        resp = requests.post(\"http://discord:7880/api/v1/listen_mention\", json=body)\n        if resp.status_code == 200:\n            user_input = loads(resp.content)\n            user_input_id, user_input_msg = user_input[\"id\"], user_input[\"content\"]\n            body = {\"token\": token, \"limit\": limit}\n            resp = requests.post(f\"http://discord:7880/api/v1/channels/{channel_id}/get_messages\", json=body)\n\n            if resp.status_code == 200:\n                messages = loads(resp.content)[1:]\n                messages.reverse()\n                messages = str([{\"sender\": message[\"author\"][\"name\"], \"message\": message[\"message\"]} for message in messages])\n\n                return f'Chat Messages: {messages}\\n\\nChat Message Order: Down to Top\\n\\nUser Input: {user_input_msg}\\nYour name: {bot_name}'\n            else:\n                raise Exception(\"Timeout exception\")\n        else:\n            raise Exception(\"Timeout exception\")\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "limit": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "2",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "limit",
+                "display_name": "Limit",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The value 0 means limitless",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "token": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "token",
+                "display_name": "Token",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "get the messages of discord's threads",
+            "icon": "Discord",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "DiscordThreads",
+            "documentation": "",
+            "custom_fields": {
+              "bot_name": null,
+              "token": null,
+              "channel_id": null,
+              "limit": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "bot_name",
+              "token",
+              "channel_id",
+              "limit"
+            ],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-H8jRg",
+          "description": "get the messages of discord's threads",
+          "display_name": "DiscordThreads"
+        },
+        "id": "CustomComponent-H8jRg",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "c17310fd-503d-408b-b8be-733cb8399bcd",
+    "name": "DiscordThreads",
+    "description": "get the messages of discord's threads",
+    "is_component": true,
+    "liked_by_count": "2",
+    "downloads_count": "39",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.0a30",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "bot_name": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "bot_name",
+                  "display_name": "BotName",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "channel_id": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "channel_id",
+                  "display_name": "ChannelId",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "1239303061915308164"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional, Any\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom json import loads\nfrom axiestudio.schema.dotdict import dotdict\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordThreads(CustomComponent):\n    display_name = \"DiscordThreads\"\n    description = \"get the messages of discord's threads\"\n    field_order = [\"bot_name\", \"token\", \"channel_id\", \"limit\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"bot_name\": {\n                \"display_name\": \"BotName\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"limit\": {\n                \"display_name\": \"Limit\",\n                \"value\": 20,\n                \"advanced\": False,\n                \"info\": \"The value 0 means limitless\",\n                \"required\": True,\n            }\n        }\n\n    def update_state(\n        self, name: str, value: Any\n    ):\n        print(name, value, flush=True)\n        return super().update_state(name, value)\n\n    def build(self, bot_name: str, token: str, channel_id: int,  limit: int) -> str:\n        import requests\n        \n        body = {\"token\": token}\n        if channel_id:\n            body[\"channel_id\"] = channel_id\n\n        resp = requests.post(\"http://discord:7880/api/v1/listen_mention\", json=body)\n        if resp.status_code == 200:\n            user_input = loads(resp.content)\n            user_input_id, user_input_msg = user_input[\"id\"], user_input[\"content\"]\n            body = {\"token\": token, \"limit\": limit}\n            resp = requests.post(f\"http://discord:7880/api/v1/channels/{channel_id}/get_messages\", json=body)\n\n            if resp.status_code == 200:\n                messages = loads(resp.content)[1:]\n                messages.reverse()\n                messages = str([{\"sender\": message[\"author\"][\"name\"], \"message\": message[\"message\"]} for message in messages])\n\n                return f'Chat Messages: {messages}\\n\\nChat Message Order: Down to Top\\n\\nUser Input: {user_input_msg}\\nYour name: {bot_name}'\n            else:\n                raise Exception(\"Timeout exception\")\n        else:\n            raise Exception(\"Timeout exception\")\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "limit": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "2",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "limit",
+                  "display_name": "Limit",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The value 0 means limitless",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "token": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "token",
+                  "display_name": "Token",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "get the messages of discord's threads",
+              "icon": "Discord",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "DiscordThreads",
+              "documentation": "",
+              "custom_fields": {
+                "bot_name": null,
+                "token": null,
+                "channel_id": null,
+                "limit": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "bot_name",
+                "token",
+                "channel_id",
+                "limit"
+              ],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-H8jRg",
+            "description": "get the messages of discord's threads",
+            "display_name": "DiscordThreads"
+          },
+          "id": "CustomComponent-H8jRg",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-05-23T01:11:30.456Z",
+    "date_updated": "2024-05-23T01:11:30.478Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "user_created": {
+      "username": "joaoguilhermeS",
+      "first_name": "João",
+      "last_name": "Oliveira",
+      "id": "94b2e207-1a44-4905-856c-4f5a69c168ce"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.652Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

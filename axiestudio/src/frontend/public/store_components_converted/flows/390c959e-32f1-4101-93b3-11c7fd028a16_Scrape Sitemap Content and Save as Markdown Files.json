@@ -1,0 +1,1211 @@
+{
+  "id": "390c959e-32f1-4101-93b3-11c7fd028a16",
+  "name": "Scrape Sitemap Content and Save as Markdown Files",
+  "description": "Enter an XML sitemap URL, optionally apply URL path filters, then save them as separate files! (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "Roy",
+    "first_name": "Roy",
+    "last_name": "Barber",
+    "id": "d37448a0-3dae-485a-8bce-0671ce46cf30",
+    "full_name": "Roy Barber"
+  },
+  "store_url": "https://www.langflow.store/store/component/390c959e-32f1-4101-93b3-11c7fd028a16",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-28T19:06:45.856Z",
+    "updated": "2024-09-28T19:06:45.910Z",
+    "downloaded": "2025-08-19T17:50:07.265Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Chain",
+        "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "TextInput-va1XE",
+        "type": "genericNode",
+        "position": {
+          "x": 42.448925005496676,
+          "y": 632.6680353213949
+        },
+        "data": {
+          "type": "TextInput",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.io.text import TextComponent\nfrom axiestudio.io import MultilineInput, Output\nfrom axiestudio.schema.message import Message\n\n\nclass TextInputComponent(TextComponent):\n    display_name = \"Sitemap URL\"\n    description = \"Enter the full sitemap URL including http(s)\"\n    icon = \"map\"\n    name = \"TextInput\"\n\n    inputs = [\n        MultilineInput(\n            name=\"sitemap_url\",\n            display_name=\"Sitemap\",\n            info=\"Sitemap URL including http(s)\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"text_response\"),\n    ]\n\n    def text_response(self) -> Message:\n        message = Message(\n            text=self.sitemap_url,\n        )\n        return message\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "sitemap_url": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sitemap_url",
+                "value": "",
+                "display_name": "Sitemap",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Sitemap URL including http(s)",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "Enter the full sitemap URL including http(s)",
+            "icon": "map",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Sitemap URL",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text",
+                "display_name": "Text",
+                "method": "text_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "sitemap_url"
+            ],
+            "beta": false,
+            "edited": true
+          },
+          "id": "TextInput-va1XE"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 302,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 42.448925005496676,
+          "y": 632.6680353213949
+        }
+      },
+      {
+        "id": "SitemapFilter-vQw99",
+        "type": "genericNode",
+        "position": {
+          "x": 587.0265495830818,
+          "y": 582.2979116314294
+        },
+        "data": {
+          "type": "SitemapFilter",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import xml.etree.ElementTree as ET\nfrom typing import List\nimport httpx\n\nfrom axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, Output\nfrom axiestudio.schema import Data\n\nclass SitemapFilterComponent(Component):\n    display_name = \"Sitemap Fetch & Filter\"\n    description = \"Fetchs an XML sitemap, parses the URLs and allows you to filter the results. (e.g., '/blog/')\"\n    icon = \"book-open-text\"\n    name = \"SitemapFilter\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"sitemap_url\",\n            display_name=\"Sitemap URL\",\n            info=\"Enter the URL of the sitemap to process, including http(s)://\",\n        ),\n        MessageTextInput(\n            name=\"filter_criteria\",\n            display_name=\"Filter\",\n            info=\"Value to filter URLs by (e.g., '/blog/').\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Filtered URLs\", name=\"filtered_urls\", method=\"process_sitemap\"),\n    ]\n\n    def parse_xml(self, xml_data: str) -> List[str]:\n        \"\"\"Parses the XML data and extracts all URLs from <loc> elements.\"\"\"\n        try:\n            root = ET.fromstring(xml_data)\n            urls = [url.find(\"{http://www.sitemaps.org/schemas/sitemap/0.9}loc\").text \n                    for url in root.findall(\"{http://www.sitemaps.org/schemas/sitemap/0.9}url\")]\n            return urls\n        except ET.ParseError as e:\n            raise ValueError(f\"Error parsing XML: {e}\")\n\n    async def process_sitemap(self) -> List[Data]:\n        sitemap_url = self.sitemap_url\n        filter_criteria = self.filter_criteria\n\n        async with httpx.AsyncClient() as client:\n            # Fetch the sitemap\n            try:\n                response = await client.get(sitemap_url)\n                sitemap_content = response.text\n            except Exception as e:\n                return [Data(data={\"error\": f\"Failed to fetch sitemap: {e}\"})]\n\n            # Parse and filter URLs\n            try:\n                all_urls = self.parse_xml(sitemap_content)\n                filtered_urls = [url for url in all_urls if filter_criteria in url]\n            except Exception as e:\n                return [Data(data={\"error\": f\"Failed to parse or filter sitemap: {e}\"})]\n\n        # Create a list of Data objects, each containing a filtered URL\n        result = [Data(data={\"link\": url}) for url in filtered_urls]\n        \n        self.status = result\n        return result",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "filter_criteria": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "filter_criteria",
+                "value": "blog/posts",
+                "display_name": "Filter",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Value to filter URLs by (e.g., '/blog/').",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "sitemap_url": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sitemap_url",
+                "value": "",
+                "display_name": "Sitemap URL",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter the URL of the sitemap to process, including http(s)://",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Fetchs an XML sitemap, parses the URLs and allows you to filter the results. (e.g., '/blog/')",
+            "icon": "book-open-text",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Sitemap Filter",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "filtered_urls",
+                "display_name": "Filtered URLs",
+                "method": "process_sitemap",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "sitemap_url",
+              "filter_criteria"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.18"
+          },
+          "id": "SitemapFilter-vQw99"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 416,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 587.0265495830818,
+          "y": 582.2979116314294
+        }
+      },
+      {
+        "id": "URLToMarkdownConverter-RZkNf",
+        "type": "genericNode",
+        "position": {
+          "x": 1202.7406686737822,
+          "y": 506.2862402256809
+        },
+        "data": {
+          "type": "URLToMarkdownConverter",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "search_results": {
+                "trace_as_metadata": true,
+                "list": false,
+                "trace_as_input": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "search_results",
+                "value": "",
+                "display_name": "Search results with URLs",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "List of retrieved URLs from a search engine to convert to Markdown",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import requests\nimport html2text\nfrom loguru import logger\nfrom bs4 import BeautifulSoup\nfrom typing import List, Dict\nfrom axiestudio.schema import Data\nfrom axiestudio.custom import Component\nfrom axiestudio.schema.dotdict import dotdict\nfrom axiestudio.io import DataInput, MessageTextInput, Output\nimport os\nfrom urllib.parse import urlparse\n\nclass URLToMarkdownConverter(Component):\n    display_name = \"Link list to Markdown\"\n    description = \"Fetches HTML from URLs, parses it, and converts the HTML to Markdown.\"\n    icon = \"heading-1\"\n    inputs = [\n        DataInput(\n            name=\"search_results\",\n            display_name=\"Search results with URLs\",\n            info=\"List of retrieved URLs from a search engine to convert to Markdown\",\n        ),\n        MessageTextInput(\n            name=\"title_selector\",\n            display_name=\"Title Selector\",\n            info=\"HTML selector for the title element, e.g 'h1.blog-title'\",\n        ),\n        MessageTextInput(\n            name=\"content_selector\",\n            display_name=\"Content Selector\",\n            info=\"HTML selector for the content, e.g 'div.content\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Markdown Output\", name=\"markdown_output\", method=\"process_urls\"),\n    ]\n    def process_urls(self) -> List[Data]:\n        search_results: List[Data] = self.search_results\n        title_selector: str = self.title_selector\n        content_selector: str = self.content_selector\n        processed_urls = []\n        \n        for result in search_results:\n            url = result.link\n            new_item = result.data.copy()\n            \n            try:\n                logger.info(f\"Processing URL: {url}\")\n                # 1. Extract HTML from the response\n                response = requests.get(url)\n                html_content = response.text\n                # 2. Parse the HTML\n                soup = BeautifulSoup(html_content, 'html.parser')\n                # 3. Extract specific content using the provided selectors\n                title_element = soup.select_one(title_selector) if title_selector else None\n                if not title_element:\n                    # Fallback to using the page title if no specific title element is found\n                    title_element = soup.find('title')\n                content_element = soup.select_one(content_selector)\n                # Check if both elements exist\n                if title_element and content_element:\n                    # Combine the relevant parts into HTML\n                    title_text = title_element.get_text().strip()\n                    extracted_html = f\"<h1>{title_text}</h1>\\n{str(content_element)}\"\n                    \n                    # 4. Convert the extracted HTML to Markdown\n                    h = html2text.HTML2Text()\n                    h.ignore_links = True  # This will remove all hyperlinks\n                    h.ignore_images = True  # This will remove all images\n                    \n                    # Convert the content to markdown\n                    markdown_content = h.handle(extracted_html)\n                    \n                    # Remove extra newlines or empty headings (like '## ')\n                    markdown_content = markdown_content.replace(\"##\\n\\n\", \"## \").replace(\"##\\n\", \"## \")\n                    \n                    # Clean up additional unnecessary newlines\n                    markdown_content = markdown_content.replace(\"\\n\\n\", \"\\n\").strip()\n                    # Ensure headings don't have extra spaces or newlines\n                    markdown_content = markdown_content.replace(\"##  \\n\", \"## \").replace(\"##\\n\", \"## \").strip()\n                    \n                    # Generate a file name based on the URL\n                    parsed_url = urlparse(url)\n                    file_name = f\"{parsed_url.path.replace('/', '_')}.md\".strip('_')\n                    new_item[\"title\"] = title_text\n                    new_item[\"markdown\"] = markdown_content\n                    new_item[\"file_name\"] = file_name\n                    processed_urls.append(Data(data=new_item))\n                else:\n                    logger.error(f\"Missing required elements in {url}\")\n            \n            except Exception as e:\n                logger.error(f\"Error processing {url}: {e}\")\n                raise\n        \n        return processed_urls",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "content_selector": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "content_selector",
+                "value": "div.content",
+                "display_name": "Content Selector",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "HTML selector for the content, e.g 'div.content",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "title_selector": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "title_selector",
+                "value": "h1.blog-title",
+                "display_name": "Title Selector",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "HTML selector for the title element, e.g 'h1.blog-title'",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Fetches HTML from URLs, parses it, and converts the HTML to Markdown.",
+            "icon": "heading-1",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Link list to Markdown",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "markdown_output",
+                "display_name": "Markdown Output",
+                "method": "process_urls",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "search_results",
+              "title_selector",
+              "content_selector"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.18"
+          },
+          "id": "URLToMarkdownConverter-RZkNf"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 464,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 1202.7406686737822,
+          "y": 506.2862402256809
+        }
+      },
+      {
+        "id": "SaveTextToMD-H8KEQ",
+        "type": "genericNode",
+        "position": {
+          "x": 1810.0790799112467,
+          "y": 539.3420727273224
+        },
+        "data": {
+          "type": "SaveTextToMD",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "markdown_data": {
+                "trace_as_metadata": true,
+                "list": false,
+                "trace_as_input": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "markdown_data",
+                "value": "",
+                "display_name": "Markdown Data",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "A list of dictionaries containing 'markdown' and 'file_name' keys.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List, Dict\nfrom axiestudio.custom import Component\nfrom axiestudio.inputs import MessageTextInput, DataInput\nfrom axiestudio.template import Output\nimport os\n\nclass SaveTextToMD(Component):\n    display_name = \"Save Multiple Texts to MD\"\n    description = \"Saves multiple Markdown texts as .md files using provided data.\"\n    icon = \"Save\"\n    inputs = [\n        DataInput(\n            name=\"markdown_data\",\n            display_name=\"Markdown Data\",\n            info=\"A list of dictionaries containing 'markdown' and 'file_name' keys.\",\n        ),\n        MessageTextInput(\n            name=\"directory\",\n            display_name=\"Directory\",\n            info=\"The directory where the files will be saved. If left empty, the current working directory will be used.\",\n            value=os.getcwd(),  # Default to current working directory\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"File Paths\", name=\"file_paths\", method=\"save_texts_to_md\"),\n    ]\n    def save_texts_to_md(self) -> List[str]:\n\n        # Ensure markdown_data is a list of dictionaries\n        if not isinstance(self.markdown_data, list):\n            return []\n\n        directory = self.directory.strip()\n\n        if not directory:\n            directory = tempfile.mkdtemp(prefix=\"markdown_files_\")\n        else:\n            os.makedirs(directory, exist_ok=True)\n\n        file_paths = []\n\n        # Iterate through the list of dictionaries\n        for item in self.markdown_data:\n            # Access markdown content and file_name directly from the dictionary\n            markdown_content = item.markdown\n            file_name = item.file_name\n\n            if markdown_content is None or file_name is None:\n                continue\n\n            # Ensure the file has a .md extension\n            if not file_name.endswith('.md'):\n                file_name += '.md'\n\n            file_path = os.path.join(directory, file_name)\n            with open(file_path, 'w', encoding='utf-8') as file:\n                file.write(markdown_content)\n            file_paths.append(file_path)\n\n        self.status = f\"{len(file_paths)} files saved to {directory}\"\n        return file_paths\n    \n    def run(self):\n        return self.save_texts_to_md()",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "directory": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "directory",
+                "value": "/Users/user/local-folder",
+                "display_name": "Directory",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The directory where the files will be saved. If left empty, the current working directory will be used.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Saves multiple Markdown texts as .md files using provided data.",
+            "icon": "Save",
+            "base_classes": [
+              "Text"
+            ],
+            "display_name": "Save Multiple Texts to MD",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Text"
+                ],
+                "selected": "Text",
+                "name": "file_paths",
+                "display_name": "File Paths",
+                "method": "save_texts_to_md",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "markdown_data",
+              "directory"
+            ],
+            "beta": false,
+            "edited": true
+          },
+          "id": "SaveTextToMD-H8KEQ"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 378,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 1810.0790799112467,
+          "y": 539.3420727273224
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "TextInput-va1XE",
+        "sourceHandle": "{œdataTypeœ:œTextInputœ,œidœ:œTextInput-va1XEœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "SitemapFilter-vQw99",
+        "targetHandle": "{œfieldNameœ:œsitemap_urlœ,œidœ:œSitemapFilter-vQw99œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "sitemap_url",
+            "id": "SitemapFilter-vQw99",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "TextInput",
+            "id": "TextInput-va1XE",
+            "name": "text",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-TextInput-va1XE{œdataTypeœ:œTextInputœ,œidœ:œTextInput-va1XEœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}-SitemapFilter-vQw99{œfieldNameœ:œsitemap_urlœ,œidœ:œSitemapFilter-vQw99œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "className": ""
+      },
+      {
+        "source": "SitemapFilter-vQw99",
+        "sourceHandle": "{œdataTypeœ:œSitemapFilterœ,œidœ:œSitemapFilter-vQw99œ,œnameœ:œfiltered_urlsœ,œoutput_typesœ:[œDataœ]}",
+        "target": "URLToMarkdownConverter-RZkNf",
+        "targetHandle": "{œfieldNameœ:œsearch_resultsœ,œidœ:œURLToMarkdownConverter-RZkNfœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "search_results",
+            "id": "URLToMarkdownConverter-RZkNf",
+            "inputTypes": [
+              "Data"
+            ],
+            "type": "other"
+          },
+          "sourceHandle": {
+            "dataType": "SitemapFilter",
+            "id": "SitemapFilter-vQw99",
+            "name": "filtered_urls",
+            "output_types": [
+              "Data"
+            ]
+          }
+        },
+        "id": "reactflow__edge-SitemapFilter-vQw99{œdataTypeœ:œSitemapFilterœ,œidœ:œSitemapFilter-vQw99œ,œnameœ:œfiltered_urlsœ,œoutput_typesœ:[œDataœ]}-URLToMarkdownConverter-RZkNf{œfieldNameœ:œsearch_resultsœ,œidœ:œURLToMarkdownConverter-RZkNfœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "className": ""
+      },
+      {
+        "source": "URLToMarkdownConverter-RZkNf",
+        "sourceHandle": "{œdataTypeœ:œURLToMarkdownConverterœ,œidœ:œURLToMarkdownConverter-RZkNfœ,œnameœ:œmarkdown_outputœ,œoutput_typesœ:[œDataœ]}",
+        "target": "SaveTextToMD-H8KEQ",
+        "targetHandle": "{œfieldNameœ:œmarkdown_dataœ,œidœ:œSaveTextToMD-H8KEQœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "markdown_data",
+            "id": "SaveTextToMD-H8KEQ",
+            "inputTypes": [
+              "Data"
+            ],
+            "type": "other"
+          },
+          "sourceHandle": {
+            "dataType": "URLToMarkdownConverter",
+            "id": "URLToMarkdownConverter-RZkNf",
+            "name": "markdown_output",
+            "output_types": [
+              "Data"
+            ]
+          }
+        },
+        "id": "reactflow__edge-URLToMarkdownConverter-RZkNf{œdataTypeœ:œURLToMarkdownConverterœ,œidœ:œURLToMarkdownConverter-RZkNfœ,œnameœ:œmarkdown_outputœ,œoutput_typesœ:[œDataœ]}-SaveTextToMD-H8KEQ{œfieldNameœ:œmarkdown_dataœ,œidœ:œSaveTextToMD-H8KEQœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "className": ""
+      }
+    ],
+    "viewport": {
+      "x": 40.673582505433274,
+      "y": 42.213411915407676,
+      "zoom": 0.6244736627123635
+    }
+  },
+  "metadata": {
+    "TextInput": {
+      "count": 1
+    },
+    "SitemapFilter": {
+      "count": 1
+    },
+    "URLToMarkdownConverter": {
+      "count": 1
+    },
+    "SaveTextToMD": {
+      "count": 1
+    },
+    "total": 4
+  },
+  "original": {
+    "id": "390c959e-32f1-4101-93b3-11c7fd028a16",
+    "name": "Scrape Sitemap Content and Save as Markdown Files",
+    "description": "Enter an XML sitemap URL, optionally apply URL path filters, then save them as separate files!",
+    "is_component": false,
+    "liked_by_count": "2",
+    "downloads_count": "68",
+    "metadata": {
+      "TextInput": {
+        "count": 1
+      },
+      "SitemapFilter": {
+        "count": 1
+      },
+      "URLToMarkdownConverter": {
+        "count": 1
+      },
+      "SaveTextToMD": {
+        "count": 1
+      },
+      "total": 4
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "TextInput-va1XE",
+          "type": "genericNode",
+          "position": {
+            "x": 42.448925005496676,
+            "y": 632.6680353213949
+          },
+          "data": {
+            "type": "TextInput",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.io.text import TextComponent\nfrom axiestudio.io import MultilineInput, Output\nfrom axiestudio.schema.message import Message\n\n\nclass TextInputComponent(TextComponent):\n    display_name = \"Sitemap URL\"\n    description = \"Enter the full sitemap URL including http(s)\"\n    icon = \"map\"\n    name = \"TextInput\"\n\n    inputs = [\n        MultilineInput(\n            name=\"sitemap_url\",\n            display_name=\"Sitemap\",\n            info=\"Sitemap URL including http(s)\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"text_response\"),\n    ]\n\n    def text_response(self) -> Message:\n        message = Message(\n            text=self.sitemap_url,\n        )\n        return message\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "sitemap_url": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sitemap_url",
+                  "value": "",
+                  "display_name": "Sitemap",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Sitemap URL including http(s)",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "Enter the full sitemap URL including http(s)",
+              "icon": "map",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Sitemap URL",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text",
+                  "display_name": "Text",
+                  "method": "text_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "sitemap_url"
+              ],
+              "beta": false,
+              "edited": true
+            },
+            "id": "TextInput-va1XE"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 302,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": 42.448925005496676,
+            "y": 632.6680353213949
+          }
+        },
+        {
+          "id": "SitemapFilter-vQw99",
+          "type": "genericNode",
+          "position": {
+            "x": 587.0265495830818,
+            "y": 582.2979116314294
+          },
+          "data": {
+            "type": "SitemapFilter",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import xml.etree.ElementTree as ET\nfrom typing import List\nimport httpx\n\nfrom axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, Output\nfrom axiestudio.schema import Data\n\nclass SitemapFilterComponent(Component):\n    display_name = \"Sitemap Fetch & Filter\"\n    description = \"Fetchs an XML sitemap, parses the URLs and allows you to filter the results. (e.g., '/blog/')\"\n    icon = \"book-open-text\"\n    name = \"SitemapFilter\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"sitemap_url\",\n            display_name=\"Sitemap URL\",\n            info=\"Enter the URL of the sitemap to process, including http(s)://\",\n        ),\n        MessageTextInput(\n            name=\"filter_criteria\",\n            display_name=\"Filter\",\n            info=\"Value to filter URLs by (e.g., '/blog/').\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Filtered URLs\", name=\"filtered_urls\", method=\"process_sitemap\"),\n    ]\n\n    def parse_xml(self, xml_data: str) -> List[str]:\n        \"\"\"Parses the XML data and extracts all URLs from <loc> elements.\"\"\"\n        try:\n            root = ET.fromstring(xml_data)\n            urls = [url.find(\"{http://www.sitemaps.org/schemas/sitemap/0.9}loc\").text \n                    for url in root.findall(\"{http://www.sitemaps.org/schemas/sitemap/0.9}url\")]\n            return urls\n        except ET.ParseError as e:\n            raise ValueError(f\"Error parsing XML: {e}\")\n\n    async def process_sitemap(self) -> List[Data]:\n        sitemap_url = self.sitemap_url\n        filter_criteria = self.filter_criteria\n\n        async with httpx.AsyncClient() as client:\n            # Fetch the sitemap\n            try:\n                response = await client.get(sitemap_url)\n                sitemap_content = response.text\n            except Exception as e:\n                return [Data(data={\"error\": f\"Failed to fetch sitemap: {e}\"})]\n\n            # Parse and filter URLs\n            try:\n                all_urls = self.parse_xml(sitemap_content)\n                filtered_urls = [url for url in all_urls if filter_criteria in url]\n            except Exception as e:\n                return [Data(data={\"error\": f\"Failed to parse or filter sitemap: {e}\"})]\n\n        # Create a list of Data objects, each containing a filtered URL\n        result = [Data(data={\"link\": url}) for url in filtered_urls]\n        \n        self.status = result\n        return result",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "filter_criteria": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "filter_criteria",
+                  "value": "blog/posts",
+                  "display_name": "Filter",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Value to filter URLs by (e.g., '/blog/').",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "sitemap_url": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sitemap_url",
+                  "value": "",
+                  "display_name": "Sitemap URL",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter the URL of the sitemap to process, including http(s)://",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Fetchs an XML sitemap, parses the URLs and allows you to filter the results. (e.g., '/blog/')",
+              "icon": "book-open-text",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Sitemap Filter",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "filtered_urls",
+                  "display_name": "Filtered URLs",
+                  "method": "process_sitemap",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "sitemap_url",
+                "filter_criteria"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.18"
+            },
+            "id": "SitemapFilter-vQw99"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 416,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": 587.0265495830818,
+            "y": 582.2979116314294
+          }
+        },
+        {
+          "id": "URLToMarkdownConverter-RZkNf",
+          "type": "genericNode",
+          "position": {
+            "x": 1202.7406686737822,
+            "y": 506.2862402256809
+          },
+          "data": {
+            "type": "URLToMarkdownConverter",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "search_results": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "trace_as_input": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "search_results",
+                  "value": "",
+                  "display_name": "Search results with URLs",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "List of retrieved URLs from a search engine to convert to Markdown",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import requests\nimport html2text\nfrom loguru import logger\nfrom bs4 import BeautifulSoup\nfrom typing import List, Dict\nfrom axiestudio.schema import Data\nfrom axiestudio.custom import Component\nfrom axiestudio.schema.dotdict import dotdict\nfrom axiestudio.io import DataInput, MessageTextInput, Output\nimport os\nfrom urllib.parse import urlparse\n\nclass URLToMarkdownConverter(Component):\n    display_name = \"Link list to Markdown\"\n    description = \"Fetches HTML from URLs, parses it, and converts the HTML to Markdown.\"\n    icon = \"heading-1\"\n    inputs = [\n        DataInput(\n            name=\"search_results\",\n            display_name=\"Search results with URLs\",\n            info=\"List of retrieved URLs from a search engine to convert to Markdown\",\n        ),\n        MessageTextInput(\n            name=\"title_selector\",\n            display_name=\"Title Selector\",\n            info=\"HTML selector for the title element, e.g 'h1.blog-title'\",\n        ),\n        MessageTextInput(\n            name=\"content_selector\",\n            display_name=\"Content Selector\",\n            info=\"HTML selector for the content, e.g 'div.content\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Markdown Output\", name=\"markdown_output\", method=\"process_urls\"),\n    ]\n    def process_urls(self) -> List[Data]:\n        search_results: List[Data] = self.search_results\n        title_selector: str = self.title_selector\n        content_selector: str = self.content_selector\n        processed_urls = []\n        \n        for result in search_results:\n            url = result.link\n            new_item = result.data.copy()\n            \n            try:\n                logger.info(f\"Processing URL: {url}\")\n                # 1. Extract HTML from the response\n                response = requests.get(url)\n                html_content = response.text\n                # 2. Parse the HTML\n                soup = BeautifulSoup(html_content, 'html.parser')\n                # 3. Extract specific content using the provided selectors\n                title_element = soup.select_one(title_selector) if title_selector else None\n                if not title_element:\n                    # Fallback to using the page title if no specific title element is found\n                    title_element = soup.find('title')\n                content_element = soup.select_one(content_selector)\n                # Check if both elements exist\n                if title_element and content_element:\n                    # Combine the relevant parts into HTML\n                    title_text = title_element.get_text().strip()\n                    extracted_html = f\"<h1>{title_text}</h1>\\n{str(content_element)}\"\n                    \n                    # 4. Convert the extracted HTML to Markdown\n                    h = html2text.HTML2Text()\n                    h.ignore_links = True  # This will remove all hyperlinks\n                    h.ignore_images = True  # This will remove all images\n                    \n                    # Convert the content to markdown\n                    markdown_content = h.handle(extracted_html)\n                    \n                    # Remove extra newlines or empty headings (like '## ')\n                    markdown_content = markdown_content.replace(\"##\\n\\n\", \"## \").replace(\"##\\n\", \"## \")\n                    \n                    # Clean up additional unnecessary newlines\n                    markdown_content = markdown_content.replace(\"\\n\\n\", \"\\n\").strip()\n                    # Ensure headings don't have extra spaces or newlines\n                    markdown_content = markdown_content.replace(\"##  \\n\", \"## \").replace(\"##\\n\", \"## \").strip()\n                    \n                    # Generate a file name based on the URL\n                    parsed_url = urlparse(url)\n                    file_name = f\"{parsed_url.path.replace('/', '_')}.md\".strip('_')\n                    new_item[\"title\"] = title_text\n                    new_item[\"markdown\"] = markdown_content\n                    new_item[\"file_name\"] = file_name\n                    processed_urls.append(Data(data=new_item))\n                else:\n                    logger.error(f\"Missing required elements in {url}\")\n            \n            except Exception as e:\n                logger.error(f\"Error processing {url}: {e}\")\n                raise\n        \n        return processed_urls",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "content_selector": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "content_selector",
+                  "value": "div.content",
+                  "display_name": "Content Selector",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "HTML selector for the content, e.g 'div.content",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "title_selector": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "title_selector",
+                  "value": "h1.blog-title",
+                  "display_name": "Title Selector",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "HTML selector for the title element, e.g 'h1.blog-title'",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Fetches HTML from URLs, parses it, and converts the HTML to Markdown.",
+              "icon": "heading-1",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Link list to Markdown",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "markdown_output",
+                  "display_name": "Markdown Output",
+                  "method": "process_urls",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "search_results",
+                "title_selector",
+                "content_selector"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.18"
+            },
+            "id": "URLToMarkdownConverter-RZkNf"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 464,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": 1202.7406686737822,
+            "y": 506.2862402256809
+          }
+        },
+        {
+          "id": "SaveTextToMD-H8KEQ",
+          "type": "genericNode",
+          "position": {
+            "x": 1810.0790799112467,
+            "y": 539.3420727273224
+          },
+          "data": {
+            "type": "SaveTextToMD",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "markdown_data": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "trace_as_input": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "markdown_data",
+                  "value": "",
+                  "display_name": "Markdown Data",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "A list of dictionaries containing 'markdown' and 'file_name' keys.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List, Dict\nfrom axiestudio.custom import Component\nfrom axiestudio.inputs import MessageTextInput, DataInput\nfrom axiestudio.template import Output\nimport os\n\nclass SaveTextToMD(Component):\n    display_name = \"Save Multiple Texts to MD\"\n    description = \"Saves multiple Markdown texts as .md files using provided data.\"\n    icon = \"Save\"\n    inputs = [\n        DataInput(\n            name=\"markdown_data\",\n            display_name=\"Markdown Data\",\n            info=\"A list of dictionaries containing 'markdown' and 'file_name' keys.\",\n        ),\n        MessageTextInput(\n            name=\"directory\",\n            display_name=\"Directory\",\n            info=\"The directory where the files will be saved. If left empty, the current working directory will be used.\",\n            value=os.getcwd(),  # Default to current working directory\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"File Paths\", name=\"file_paths\", method=\"save_texts_to_md\"),\n    ]\n    def save_texts_to_md(self) -> List[str]:\n\n        # Ensure markdown_data is a list of dictionaries\n        if not isinstance(self.markdown_data, list):\n            return []\n\n        directory = self.directory.strip()\n\n        if not directory:\n            directory = tempfile.mkdtemp(prefix=\"markdown_files_\")\n        else:\n            os.makedirs(directory, exist_ok=True)\n\n        file_paths = []\n\n        # Iterate through the list of dictionaries\n        for item in self.markdown_data:\n            # Access markdown content and file_name directly from the dictionary\n            markdown_content = item.markdown\n            file_name = item.file_name\n\n            if markdown_content is None or file_name is None:\n                continue\n\n            # Ensure the file has a .md extension\n            if not file_name.endswith('.md'):\n                file_name += '.md'\n\n            file_path = os.path.join(directory, file_name)\n            with open(file_path, 'w', encoding='utf-8') as file:\n                file.write(markdown_content)\n            file_paths.append(file_path)\n\n        self.status = f\"{len(file_paths)} files saved to {directory}\"\n        return file_paths\n    \n    def run(self):\n        return self.save_texts_to_md()",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "directory": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "directory",
+                  "value": "/Users/user/local-folder",
+                  "display_name": "Directory",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The directory where the files will be saved. If left empty, the current working directory will be used.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Saves multiple Markdown texts as .md files using provided data.",
+              "icon": "Save",
+              "base_classes": [
+                "Text"
+              ],
+              "display_name": "Save Multiple Texts to MD",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Text"
+                  ],
+                  "selected": "Text",
+                  "name": "file_paths",
+                  "display_name": "File Paths",
+                  "method": "save_texts_to_md",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "markdown_data",
+                "directory"
+              ],
+              "beta": false,
+              "edited": true
+            },
+            "id": "SaveTextToMD-H8KEQ"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 378,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": 1810.0790799112467,
+            "y": 539.3420727273224
+          }
+        }
+      ],
+      "edges": [
+        {
+          "source": "TextInput-va1XE",
+          "sourceHandle": "{œdataTypeœ:œTextInputœ,œidœ:œTextInput-va1XEœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "SitemapFilter-vQw99",
+          "targetHandle": "{œfieldNameœ:œsitemap_urlœ,œidœ:œSitemapFilter-vQw99œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "sitemap_url",
+              "id": "SitemapFilter-vQw99",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "TextInput",
+              "id": "TextInput-va1XE",
+              "name": "text",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-TextInput-va1XE{œdataTypeœ:œTextInputœ,œidœ:œTextInput-va1XEœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}-SitemapFilter-vQw99{œfieldNameœ:œsitemap_urlœ,œidœ:œSitemapFilter-vQw99œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "className": ""
+        },
+        {
+          "source": "SitemapFilter-vQw99",
+          "sourceHandle": "{œdataTypeœ:œSitemapFilterœ,œidœ:œSitemapFilter-vQw99œ,œnameœ:œfiltered_urlsœ,œoutput_typesœ:[œDataœ]}",
+          "target": "URLToMarkdownConverter-RZkNf",
+          "targetHandle": "{œfieldNameœ:œsearch_resultsœ,œidœ:œURLToMarkdownConverter-RZkNfœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "search_results",
+              "id": "URLToMarkdownConverter-RZkNf",
+              "inputTypes": [
+                "Data"
+              ],
+              "type": "other"
+            },
+            "sourceHandle": {
+              "dataType": "SitemapFilter",
+              "id": "SitemapFilter-vQw99",
+              "name": "filtered_urls",
+              "output_types": [
+                "Data"
+              ]
+            }
+          },
+          "id": "reactflow__edge-SitemapFilter-vQw99{œdataTypeœ:œSitemapFilterœ,œidœ:œSitemapFilter-vQw99œ,œnameœ:œfiltered_urlsœ,œoutput_typesœ:[œDataœ]}-URLToMarkdownConverter-RZkNf{œfieldNameœ:œsearch_resultsœ,œidœ:œURLToMarkdownConverter-RZkNfœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "className": ""
+        },
+        {
+          "source": "URLToMarkdownConverter-RZkNf",
+          "sourceHandle": "{œdataTypeœ:œURLToMarkdownConverterœ,œidœ:œURLToMarkdownConverter-RZkNfœ,œnameœ:œmarkdown_outputœ,œoutput_typesœ:[œDataœ]}",
+          "target": "SaveTextToMD-H8KEQ",
+          "targetHandle": "{œfieldNameœ:œmarkdown_dataœ,œidœ:œSaveTextToMD-H8KEQœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "markdown_data",
+              "id": "SaveTextToMD-H8KEQ",
+              "inputTypes": [
+                "Data"
+              ],
+              "type": "other"
+            },
+            "sourceHandle": {
+              "dataType": "URLToMarkdownConverter",
+              "id": "URLToMarkdownConverter-RZkNf",
+              "name": "markdown_output",
+              "output_types": [
+                "Data"
+              ]
+            }
+          },
+          "id": "reactflow__edge-URLToMarkdownConverter-RZkNf{œdataTypeœ:œURLToMarkdownConverterœ,œidœ:œURLToMarkdownConverter-RZkNfœ,œnameœ:œmarkdown_outputœ,œoutput_typesœ:[œDataœ]}-SaveTextToMD-H8KEQ{œfieldNameœ:œmarkdown_dataœ,œidœ:œSaveTextToMD-H8KEQœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "className": ""
+        }
+      ],
+      "viewport": {
+        "x": 40.673582505433274,
+        "y": 42.213411915407676,
+        "zoom": 0.6244736627123635
+      }
+    },
+    "date_created": "2024-09-28T19:06:45.856Z",
+    "date_updated": "2024-09-28T19:06:45.910Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "d37448a0-3dae-485a-8bce-0671ce46cf30",
+    "user_created": {
+      "username": "Roy",
+      "first_name": "Roy",
+      "last_name": "Barber",
+      "id": "d37448a0-3dae-485a-8bce-0671ce46cf30"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Chain",
+          "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:56.336Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 26,
+    "converter_version": "1.0.0"
+  }
+}

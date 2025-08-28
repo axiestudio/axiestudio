@@ -1,0 +1,519 @@
+{
+  "id": "80b4343e-0464-4992-b9cb-ba3d2b287ada",
+  "name": "Brasil CEP - viacep",
+  "description": "Fetch Brazilian postal code (CEP) data using the ViaCEP API with customizable output. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "thiagomsoares",
+    "first_name": "Thiago",
+    "last_name": "Mota",
+    "id": "c2a93390-5588-4241-81fe-edd868b686fa",
+    "full_name": "Thiago Mota"
+  },
+  "store_url": "https://www.langflow.store/store/component/80b4343e-0464-4992-b9cb-ba3d2b287ada",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-11T04:43:40.084Z",
+    "updated": "2024-07-11T04:43:40.114Z",
+    "downloaded": "2025-08-19T17:50:06.093Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.6",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "cep": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "cep",
+                "display_name": "CEP",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter a Brazilian postal code (CEP) with 8 digits.",
+                "title_case": false,
+                "type": "str"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import re\nimport httpx\nfrom axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, BoolInput, Output\nfrom axiestudio.schema.message import Message\n\nclass CEPRequestComponent(Component):\n    display_name = \"CEP Request\"\n    description = \"Fetch Brazilian postal code (CEP) data using the ViaCEP API with customizable output.\"\n    icon = \"map-pin\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"cep\",\n            display_name=\"CEP\",\n            info=\"Enter a Brazilian postal code (CEP) with 8 digits.\",\n        ),\n        BoolInput(name=\"include_cep\", display_name=\"Include CEP\", value=True),\n        BoolInput(name=\"include_logradouro\", display_name=\"Include Logradouro\", value=True),\n        BoolInput(name=\"include_complemento\", display_name=\"Include Complemento\", value=True),\n        BoolInput(name=\"include_bairro\", display_name=\"Include Bairro\", value=True),\n        BoolInput(name=\"include_cidade\", display_name=\"Include Cidade\", value=True),\n        BoolInput(name=\"include_estado\", display_name=\"Include Estado\", value=True),\n        BoolInput(name=\"include_ibge\", display_name=\"Include IBGE\", value=True),\n        BoolInput(name=\"include_ddd\", display_name=\"Include DDD\", value=True),\n    ]\n\n    outputs = [\n        Output(display_name=\"CEP Data\", name=\"cep_data\", method=\"fetch_cep_data\"),\n    ]\n\n    def validate_cep(self, cep: str) -> bool:\n        return bool(re.match(r'^\\d{8}$', cep))\n\n    def format_cep_data(self, data: dict) -> str:\n        formatted_data = []\n        if self.include_cep:\n            formatted_data.append(f\"CEP: {data.get('cep', 'N/A')}\")\n        if self.include_logradouro:\n            formatted_data.append(f\"Logradouro: {data.get('logradouro', 'N/A')}\")\n        if self.include_complemento:\n            formatted_data.append(f\"Complemento: {data.get('complemento', 'N/A')}\")\n        if self.include_bairro:\n            formatted_data.append(f\"Bairro: {data.get('bairro', 'N/A')}\")\n        if self.include_cidade:\n            formatted_data.append(f\"Cidade: {data.get('localidade', 'N/A')}\")\n        if self.include_estado:\n            formatted_data.append(f\"Estado: {data.get('uf', 'N/A')}\")\n        if self.include_ibge:\n            formatted_data.append(f\"IBGE: {data.get('ibge', 'N/A')}\")\n        if self.include_ddd:\n            formatted_data.append(f\"DDD: {data.get('ddd', 'N/A')}\")\n        \n        return \"\\n\".join(formatted_data)\n\n    async def fetch_cep_data(self) -> Message:\n        cep = self.cep.replace(\"-\", \"\").replace(\".\", \"\").strip()\n\n        if not self.validate_cep(cep):\n            self.status = \"Invalid CEP format. Please enter 8 digits.\"\n            return Message(text=\"Erro: Formato de CEP inválido. Por favor, insira 8 dígitos.\")\n\n        url = f\"https://viacep.com.br/ws/{cep}/json/\"\n\n        async with httpx.AsyncClient() as client:\n            try:\n                response = await client.get(url)\n                response.raise_for_status()\n                data = response.json()\n\n                if \"erro\" in data and data[\"erro\"]:\n                    self.status = \"CEP not found\"\n                    return Message(text=\"Erro: CEP não encontrado.\")\n\n                formatted_data = self.format_cep_data(data)\n                self.status = f\"CEP data fetched successfully for {cep}\"\n                return Message(text=formatted_data)\n\n            except httpx.HTTPStatusError as e:\n                self.status = f\"HTTP error occurred: {e.response.status_code}\"\n                return Message(text=f\"Erro: Ocorreu um erro HTTP {e.response.status_code}\")\n\n            except Exception as e:\n                self.status = f\"An error occurred: {str(e)}\"\n                return Message(text=f\"Erro: Ocorreu um erro - {str(e)}\")",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "include_bairro": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": true,
+                "name": "include_bairro",
+                "display_name": "Include Bairro",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool"
+              },
+              "include_cep": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "include_cep",
+                "display_name": "Include CEP",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool"
+              },
+              "include_cidade": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": true,
+                "name": "include_cidade",
+                "display_name": "Include Cidade",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool"
+              },
+              "include_complemento": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "include_complemento",
+                "display_name": "Include Complemento",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool"
+              },
+              "include_ddd": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "include_ddd",
+                "display_name": "Include DDD",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool"
+              },
+              "include_estado": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": true,
+                "name": "include_estado",
+                "display_name": "Include Estado",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool"
+              },
+              "include_ibge": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "include_ibge",
+                "display_name": "Include IBGE",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool"
+              },
+              "include_logradouro": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": true,
+                "name": "include_logradouro",
+                "display_name": "Include Logradouro",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool"
+              }
+            },
+            "description": "Fetch Brazilian postal code (CEP) data using the ViaCEP API with customizable output.",
+            "icon": "map-pin",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Brasil CEP - viacep",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "cep_data",
+                "display_name": "CEP Data",
+                "method": "fetch_cep_data",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "cep",
+              "include_cep",
+              "include_logradouro",
+              "include_complemento",
+              "include_bairro",
+              "include_cidade",
+              "include_estado",
+              "include_ibge",
+              "include_ddd"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-qtxdf"
+        },
+        "id": "CustomComponent-qtxdf",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "80b4343e-0464-4992-b9cb-ba3d2b287ada",
+    "name": "Brasil CEP - viacep",
+    "description": "Fetch Brazilian postal code (CEP) data using the ViaCEP API with customizable output.",
+    "is_component": true,
+    "liked_by_count": "6",
+    "downloads_count": "38",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.6",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "cep": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "cep",
+                  "display_name": "CEP",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter a Brazilian postal code (CEP) with 8 digits.",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import re\nimport httpx\nfrom axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, BoolInput, Output\nfrom axiestudio.schema.message import Message\n\nclass CEPRequestComponent(Component):\n    display_name = \"CEP Request\"\n    description = \"Fetch Brazilian postal code (CEP) data using the ViaCEP API with customizable output.\"\n    icon = \"map-pin\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"cep\",\n            display_name=\"CEP\",\n            info=\"Enter a Brazilian postal code (CEP) with 8 digits.\",\n        ),\n        BoolInput(name=\"include_cep\", display_name=\"Include CEP\", value=True),\n        BoolInput(name=\"include_logradouro\", display_name=\"Include Logradouro\", value=True),\n        BoolInput(name=\"include_complemento\", display_name=\"Include Complemento\", value=True),\n        BoolInput(name=\"include_bairro\", display_name=\"Include Bairro\", value=True),\n        BoolInput(name=\"include_cidade\", display_name=\"Include Cidade\", value=True),\n        BoolInput(name=\"include_estado\", display_name=\"Include Estado\", value=True),\n        BoolInput(name=\"include_ibge\", display_name=\"Include IBGE\", value=True),\n        BoolInput(name=\"include_ddd\", display_name=\"Include DDD\", value=True),\n    ]\n\n    outputs = [\n        Output(display_name=\"CEP Data\", name=\"cep_data\", method=\"fetch_cep_data\"),\n    ]\n\n    def validate_cep(self, cep: str) -> bool:\n        return bool(re.match(r'^\\d{8}$', cep))\n\n    def format_cep_data(self, data: dict) -> str:\n        formatted_data = []\n        if self.include_cep:\n            formatted_data.append(f\"CEP: {data.get('cep', 'N/A')}\")\n        if self.include_logradouro:\n            formatted_data.append(f\"Logradouro: {data.get('logradouro', 'N/A')}\")\n        if self.include_complemento:\n            formatted_data.append(f\"Complemento: {data.get('complemento', 'N/A')}\")\n        if self.include_bairro:\n            formatted_data.append(f\"Bairro: {data.get('bairro', 'N/A')}\")\n        if self.include_cidade:\n            formatted_data.append(f\"Cidade: {data.get('localidade', 'N/A')}\")\n        if self.include_estado:\n            formatted_data.append(f\"Estado: {data.get('uf', 'N/A')}\")\n        if self.include_ibge:\n            formatted_data.append(f\"IBGE: {data.get('ibge', 'N/A')}\")\n        if self.include_ddd:\n            formatted_data.append(f\"DDD: {data.get('ddd', 'N/A')}\")\n        \n        return \"\\n\".join(formatted_data)\n\n    async def fetch_cep_data(self) -> Message:\n        cep = self.cep.replace(\"-\", \"\").replace(\".\", \"\").strip()\n\n        if not self.validate_cep(cep):\n            self.status = \"Invalid CEP format. Please enter 8 digits.\"\n            return Message(text=\"Erro: Formato de CEP inválido. Por favor, insira 8 dígitos.\")\n\n        url = f\"https://viacep.com.br/ws/{cep}/json/\"\n\n        async with httpx.AsyncClient() as client:\n            try:\n                response = await client.get(url)\n                response.raise_for_status()\n                data = response.json()\n\n                if \"erro\" in data and data[\"erro\"]:\n                    self.status = \"CEP not found\"\n                    return Message(text=\"Erro: CEP não encontrado.\")\n\n                formatted_data = self.format_cep_data(data)\n                self.status = f\"CEP data fetched successfully for {cep}\"\n                return Message(text=formatted_data)\n\n            except httpx.HTTPStatusError as e:\n                self.status = f\"HTTP error occurred: {e.response.status_code}\"\n                return Message(text=f\"Erro: Ocorreu um erro HTTP {e.response.status_code}\")\n\n            except Exception as e:\n                self.status = f\"An error occurred: {str(e)}\"\n                return Message(text=f\"Erro: Ocorreu um erro - {str(e)}\")",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "include_bairro": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": true,
+                  "name": "include_bairro",
+                  "display_name": "Include Bairro",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "include_cep": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "include_cep",
+                  "display_name": "Include CEP",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "include_cidade": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": true,
+                  "name": "include_cidade",
+                  "display_name": "Include Cidade",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "include_complemento": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "include_complemento",
+                  "display_name": "Include Complemento",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "include_ddd": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "include_ddd",
+                  "display_name": "Include DDD",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "include_estado": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": true,
+                  "name": "include_estado",
+                  "display_name": "Include Estado",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "include_ibge": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "include_ibge",
+                  "display_name": "Include IBGE",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "include_logradouro": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": true,
+                  "name": "include_logradouro",
+                  "display_name": "Include Logradouro",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool"
+                }
+              },
+              "description": "Fetch Brazilian postal code (CEP) data using the ViaCEP API with customizable output.",
+              "icon": "map-pin",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Brasil CEP - viacep",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "cep_data",
+                  "display_name": "CEP Data",
+                  "method": "fetch_cep_data",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "cep",
+                "include_cep",
+                "include_logradouro",
+                "include_complemento",
+                "include_bairro",
+                "include_cidade",
+                "include_estado",
+                "include_ibge",
+                "include_ddd"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-qtxdf"
+          },
+          "id": "CustomComponent-qtxdf",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-07-11T04:43:40.084Z",
+    "date_updated": "2024-07-11T04:43:40.114Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "c2a93390-5588-4241-81fe-edd868b686fa",
+    "user_created": {
+      "username": "thiagomsoares",
+      "first_name": "Thiago",
+      "last_name": "Mota",
+      "id": "c2a93390-5588-4241-81fe-edd868b686fa"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.798Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}
