@@ -249,8 +249,26 @@ def run(
     ssl_key_file_path: str | None = typer.Option(None, help="Defines the SSL key file path.", show_default=False),
 ) -> None:
     """Run Axie Studio."""
+    # Load .env file - either specified or auto-detect
     if env_file:
         load_dotenv(env_file, override=True)
+        logger.debug(f"Loaded environment variables from {env_file}")
+    else:
+        # Auto-detect .env file in current directory or parent directories
+        env_paths = [
+            Path.cwd() / ".env",
+            Path.cwd().parent / ".env",
+            Path(__file__).parent / ".env",
+            Path(__file__).parent.parent / ".env"
+        ]
+
+        for env_path in env_paths:
+            if env_path.exists():
+                load_dotenv(env_path, override=True)
+                logger.debug(f"Auto-loaded environment variables from {env_path}")
+                break
+        else:
+            logger.debug("No .env file found - using system environment variables only")
 
     # Set default log level if not provided
     log_level_str = "info" if log_level is None else log_level.lower()

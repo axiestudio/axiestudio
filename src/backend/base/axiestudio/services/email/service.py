@@ -9,28 +9,46 @@ from datetime import datetime, timezone, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Dict, Any
+from enum import Enum
 
 from loguru import logger
+
+try:
+    import resend
+    RESEND_SDK_AVAILABLE = True
+except ImportError:
+    RESEND_SDK_AVAILABLE = False
+    resend = None
 
 from axiestudio.services.settings.email import EmailSettings
 from axiestudio.services.deps import get_settings_service
 
 
+class EmailMethod(Enum):
+    """Email sending methods"""
+    SDK = "sdk"
+    SMTP = "smtp"
+
+
 class EmailService:
     """
-    Enterprise-grade email service using SMTP.
+    Enterprise-grade dual email service with Resend SDK + SMTP fallback.
 
     Features:
+    - Resend Python SDK (primary method)
+    - SMTP fallback (secondary method)
     - Professional email templates without emojis
     - Email verification codes
     - Password reset emails
-    - Comprehensive error handling
-    - Security best practices
+    - Intelligent method switching
+    - Enhanced error handling and logging
     """
 
     def __init__(self):
         self.settings = EmailSettings()
+        self.preferred_method = EmailMethod.SDK if RESEND_SDK_AVAILABLE else EmailMethod.SMTP
         self._validate_configuration()
+        self._log_configuration_debug()
 
     def _validate_configuration(self) -> None:
         """Validate email configuration on startup."""
@@ -43,12 +61,56 @@ class EmailService:
         if not self.settings.FROM_EMAIL:
             logger.warning("FROM_EMAIL not configured. Email functionality will be disabled.")
 
+    def _log_configuration_debug(self) -> None:
+        """Log email configuration for debugging purposes."""
+        logger.debug("🚀 DUAL EMAIL SERVICE CONFIGURATION:")
+        logger.debug(f"  📧 Resend SDK Available: {RESEND_SDK_AVAILABLE}")
+        logger.debug(f"  🎯 Preferred Method: {self.preferred_method.value}")
+        logger.debug(f"  🔧 SMTP_HOST: {self.settings.SMTP_HOST}")
+        logger.debug(f"  🔧 SMTP_PORT: {self.settings.SMTP_PORT}")
+        logger.debug(f"  🔧 SMTP_USER: {self.settings.SMTP_USER}")
+        logger.debug(f"  🔧 SMTP_PASSWORD: {'*' * len(self.settings.SMTP_PASSWORD) if self.settings.SMTP_PASSWORD else 'NOT SET'}")
+        logger.debug(f"  📨 FROM_EMAIL: {self.settings.FROM_EMAIL}")
+        logger.debug(f"  👤 FROM_NAME: {self.settings.FROM_NAME}")
+        logger.debug(f"  ⚡ EMAIL_ENABLED: {self.settings.EMAIL_ENABLED}")
+        logger.debug(f"  ✅ Configuration Valid: {self.settings.is_configured()}")
+
+    async def test_email_methods(self) -> Dict[str, Any]:
+        """Test both email methods and return status."""
+        results = {
+            "resend_sdk": {"available": RESEND_SDK_AVAILABLE, "configured": False},
+            "smtp": {"available": True, "configured": False}
+        }
+
+        # Test Resend SDK configuration
+        if RESEND_SDK_AVAILABLE and self.settings.SMTP_PASSWORD:
+            try:
+                resend.api_key = self.settings.SMTP_PASSWORD
+                results["resend_sdk"]["configured"] = True
+                logger.debug("✅ Resend SDK configured successfully")
+            except Exception as e:
+                logger.debug(f"❌ Resend SDK configuration failed: {e}")
+
+        # Test SMTP configuration
+        if all([self.settings.SMTP_HOST, self.settings.SMTP_USER, self.settings.SMTP_PASSWORD]):
+            results["smtp"]["configured"] = True
+            logger.debug("✅ SMTP configured successfully")
+        else:
+            logger.debug("❌ SMTP configuration incomplete")
+
+        return results
+
     async def health_check(self) -> Dict[str, Any]:
         """Check email service health."""
         try:
+            # Test both email methods
+            method_results = await self.test_email_methods()
+
             health_status = {
-                "service": "email",
+                "service": "email_dual",
                 "status": "healthy",
+                "preferred_method": self.preferred_method.value,
+                "methods": method_results,
                 "smtp_host": self.settings.SMTP_HOST,
                 "smtp_port": self.settings.SMTP_PORT,
                 "from_email": self.settings.FROM_EMAIL,
@@ -845,6 +907,66 @@ Visit us at: https://axiestudio.se
             return False
 
     async def _send_email(self, to_email: str, subject: str, text_body: str, html_body: str) -> bool:
+        """Send email using dual method: Resend SDK (primary) + SMTP (fallback)."""
+
+        # Try Resend SDK first (if available)
+        if self.preferred_method == EmailMethod.SDK and RESEND_SDK_AVAILABLE:
+            logger.debug(f"🚀 Attempting to send email via Resend SDK to: {to_email}")
+            success = await self._send_email_via_sdk(to_email, subject, text_body, html_body)
+            if success:
+                logger.info(f"✅ Email sent successfully via Resend SDK to: {to_email}")
+                return True
+            else:
+                logger.warning(f"⚠️ Resend SDK failed, falling back to SMTP for: {to_email}")
+
+        # Fallback to SMTP or primary SMTP method
+        logger.debug(f"📧 Attempting to send email via SMTP to: {to_email}")
+        success = await self._send_email_via_smtp(to_email, subject, text_body, html_body)
+        if success:
+            logger.info(f"✅ Email sent successfully via SMTP to: {to_email}")
+            return True
+        else:
+            logger.error(f"❌ Both email methods failed for: {to_email}")
+            return False
+
+    async def _send_email_via_sdk(self, to_email: str, subject: str, text_body: str, html_body: str) -> bool:
+        """Send email using Resend Python SDK."""
+        if not RESEND_SDK_AVAILABLE:
+            logger.error("Resend SDK not available")
+            return False
+
+        try:
+            # Configure Resend API key
+            resend.api_key = self.settings.SMTP_PASSWORD  # Resend API key
+
+            # Prepare email parameters
+            params = {
+                "from": f"{self.settings.FROM_NAME} <{self.settings.FROM_EMAIL}>",
+                "to": [to_email],
+                "subject": subject,
+                "html": html_body,
+                "text": text_body
+            }
+
+            logger.debug(f"📤 Sending via Resend SDK with params: {params['from']} -> {params['to']}")
+
+            # Send email via Resend SDK (synchronous call)
+            import asyncio
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(None, lambda: resend.Emails.send(params))
+
+            if response and hasattr(response, 'id'):
+                logger.info(f"✅ Resend SDK success - Email ID: {response.id}")
+                return True
+            else:
+                logger.error(f"❌ Resend SDK failed - Invalid response: {response}")
+                return False
+
+        except Exception as e:
+            logger.error(f"❌ Resend SDK error: {e}")
+            return False
+
+    async def _send_email_via_smtp(self, to_email: str, subject: str, text_body: str, html_body: str) -> bool:
         """Send email using SMTP with enterprise-level error handling and security."""
         try:
             # Debug logging for email configuration

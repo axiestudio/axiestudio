@@ -5,7 +5,10 @@ Enterprise-level email service configuration with SMTP support
 """
 
 import os
+from pathlib import Path
 from typing import Optional
+
+from dotenv import load_dotenv
 
 
 class EmailSettings:
@@ -21,7 +24,10 @@ class EmailSettings:
     
     def __init__(self):
         """Initialize email settings from environment variables"""
-        
+
+        # Ensure .env file is loaded if it exists (fallback mechanism)
+        self._ensure_env_loaded()
+
         # SMTP Server Configuration
         self.SMTP_HOST: str = os.getenv("AXIESTUDIO_EMAIL_SMTP_HOST", "smtp.gmail.com")
         self.SMTP_PORT: int = int(os.getenv("AXIESTUDIO_EMAIL_SMTP_PORT", "587"))
@@ -57,7 +63,22 @@ class EmailSettings:
         
         # Fallback configuration for development
         self._setup_fallback_config()
-    
+
+    def _ensure_env_loaded(self) -> None:
+        """Ensure .env file is loaded if it exists (fallback mechanism)"""
+        # Only load if SMTP settings are not already in environment
+        if not os.getenv("AXIESTUDIO_EMAIL_SMTP_HOST"):
+            env_paths = [
+                Path.cwd() / ".env",
+                Path.cwd().parent / ".env",
+                Path(__file__).parent.parent.parent.parent.parent.parent / ".env",  # axiestudio/.env
+            ]
+
+            for env_path in env_paths:
+                if env_path.exists():
+                    load_dotenv(env_path, override=False)  # Don't override existing env vars
+                    break
+
     def _setup_fallback_config(self) -> None:
         """Setup fallback configuration for development environments"""
 
