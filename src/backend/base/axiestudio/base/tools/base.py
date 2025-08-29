@@ -21,6 +21,6 @@ def build_status_from_tool(tool: Tool):
     )
     # Include args_schema information
     args_schema_str = repr(tool.args_schema) if tool.args_schema else "None"
-    status = f"Name: {tool.name}\nDescription: {description_repr}"
+    status = f"Namn: {tool.name}\nBeskrivning: {description_repr}"
     status += f"\nArgs Schema: {args_schema_str}"
-    return status + (f"\nArguments:\n{args_str}" if args_str else "")
+    return status + (f"\nArgument:\n{args_str}" if args_str else "")

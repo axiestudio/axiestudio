@@ -97,7 +97,7 @@ class OpenAIModelComponent(LCModelComponent):
     ]
 
     def build_model(self) -> LanguageModel:  # type: ignore[type-var]
-        logger.debug(f"Executing request with model: {self.model_name}")
+        logger.debug(f"Kör förfrågan med modell: {self.model_name}")
         parameters = {
             "api_key": SecretStr(self.api_key).get_secret_value() if self.api_key else None,
             "model_name": self.model_name,
@@ -108,7 +108,7 @@ class OpenAIModelComponent(LCModelComponent):
             "timeout": self.timeout,
         }
 
-        # TODO: Revisit if/once parameters are supported for reasoning models
+        # TODO: Återbesök om/när parametrar stöds för resonemangsmodeller
         unsupported_params_for_reasoning_models = ["temperature", "seed"]
 
         if self.model_name not in OPENAI_REASONING_MODEL_NAMES:
@@ -116,7 +116,7 @@ class OpenAIModelComponent(LCModelComponent):
             parameters["seed"] = self.seed
         else:
             params_str = ", ".join(unsupported_params_for_reasoning_models)
-            logger.debug(f"{self.model_name} is a reasoning model, {params_str} are not configurable. Ignoring.")
+            logger.debug(f"{self.model_name} är en resonemangsmodell, {params_str} är inte konfigurerbara. Ignorerar.")
 
         output = ChatOpenAI(**parameters)
         if self.json_mode:

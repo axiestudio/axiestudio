@@ -573,7 +573,7 @@ class ComposioSlackAPIComponent(ComposioBaseComponent):
         except Exception as e:
             logger.error(f"Error executing action: {e}")
             display_name = self.action[0]["name"] if isinstance(self.action, list) and self.action else str(self.action)
-            msg = f"Failed to execute {display_name}: {e!s}"
+            msg = f"Misslyckades att köra {display_name}: {e!s}"
             raise ValueError(msg) from e
 
     def update_build_config(self, build_config: dict, field_value: Any, field_name: str | None = None) -> dict:

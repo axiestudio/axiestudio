@@ -39,11 +39,11 @@ def rag_graph():
     parse_data.set(input_data=rag_vector_store.search_documents)
     prompt_component = PromptComponent()
     prompt_component.set(
-        template=dedent("""Given the following context, answer the question.
-                         Context:{context}
+        template=dedent("""Givet följande sammanhang, svara på frågan.
+                         Sammanhang:{context}
 
-                         Question: {question}
-                         Answer:"""),
+                         Fråga: {question}
+                         Svar:"""),
         context=parse_data.parse_combined_text,
         question=chat_input.message_response,
     )

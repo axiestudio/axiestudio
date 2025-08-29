@@ -8,28 +8,28 @@ def extract_docling_documents(data_inputs: Data | list[Data] | DataFrame, doc_ke
     documents: list[DoclingDocument] = []
     if isinstance(data_inputs, DataFrame):
         if not len(data_inputs):
-            msg = "DataFrame is empty"
+            msg = "DataFrame är tom"
             raise TypeError(msg)
 
         if doc_key not in data_inputs.columns:
-            msg = f"Column '{doc_key}' not found in DataFrame"
+            msg = f"Kolumnen '{doc_key}' hittades inte i DataFrame"
             raise TypeError(msg)
         try:
             documents = data_inputs[doc_key].tolist()
         except Exception as e:
-            msg = f"Error extracting DoclingDocument from DataFrame: {e}"
+            msg = f"Fel vid extrahering av DoclingDocument från DataFrame: {e}"
             raise TypeError(msg) from e
     else:
         if not data_inputs:
-            msg = "No data inputs provided"
+            msg = "Inga datainmatningar tillhandahållna"
             raise TypeError(msg)
 
         if isinstance(data_inputs, Data):
             if doc_key not in data_inputs.data:
                 msg = (
-                    f"'{doc_key}' field not available in the input Data. "
-                    "Check that your input is a DoclingDocument. "
-                    "You can use the Docling component to convert your input to a DoclingDocument."
+                    f"'{doc_key}'-fältet är inte tillgängligt i indata. "
+                    "Kontrollera att din indata är ett DoclingDocument. "
+                    "Du kan använda Docling-komponenten för att konvertera din indata till ett DoclingDocument."
                 )
                 raise TypeError(msg)
             documents = [data_inputs.data[doc_key]]
@@ -43,9 +43,9 @@ def extract_docling_documents(data_inputs: Data | list[Data] | DataFrame, doc_ke
                     and isinstance(input_.data[doc_key], DoclingDocument)
                 ]
                 if not documents:
-                    msg = f"No valid Data inputs found in {type(data_inputs)}"
+                    msg = f"Inga giltiga datainmatningar hittades i {type(data_inputs)}"
                     raise TypeError(msg)
             except AttributeError as e:
-                msg = f"Invalid input type in collection: {e}"
+                msg = f"Ogiltig indatatyp i samling: {e}"
                 raise TypeError(msg) from e
     return documents

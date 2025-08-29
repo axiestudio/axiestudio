@@ -182,7 +182,7 @@ class ComponentToolkit:
                 continue
 
             if not output.method:
-                msg = f"Output {output.name} does not have a method defined"
+                msg = f"Output {output.name} har ingen definierad metod"
                 raise ValueError(msg)
 
             output_method: Callable = getattr(self.component, output.method)
@@ -215,7 +215,7 @@ class ComponentToolkit:
                     msg = (
                         f"Output '{output.name}' requires inputs that are not in tool mode. "
                         f"The following inputs are not in tool mode: {non_tool_mode_inputs_str}. "
-                        "Please ensure all required inputs are set to tool mode."
+                        "Vänligen se till att alla nödvändiga indata är inställda på verktygsläge."
                     )
                     raise ValueError(msg)
                 args_schema = create_input_schema(inputs)
@@ -287,7 +287,7 @@ class ComponentToolkit:
                     if record.get("tags")
                 }
             except (KeyError, IndexError) as e:
-                msg = "Error processing metadata records: " + str(e)
+                msg = "Fel vid bearbetning av metadataposter: " + str(e)
                 raise ValueError(msg) from e
         return {}
 
@@ -304,7 +304,7 @@ class ComponentToolkit:
                     try:
                         tag = tool.tags[0]
                     except IndexError:
-                        msg = "Tool tags cannot be empty."
+                        msg = "Verktygstaggar kan inte vara tomma."
                         raise ValueError(msg) from None
                     if tag in metadata_dict:
                         tool_metadata = metadata_dict[tag]
@@ -318,7 +318,7 @@ class ComponentToolkit:
                                 )
                             filtered_tools.append(tool)
                 else:
-                    msg = f"Expected a StructuredTool or BaseTool, got {type(tool)}"
+                    msg = f"Förväntade ett StructuredTool eller BaseTool, fick {type(tool)}"
                     raise TypeError(msg)
             return filtered_tools
         return tools

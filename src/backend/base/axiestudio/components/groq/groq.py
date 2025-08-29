@@ -92,7 +92,7 @@ class GroqModel(LCModelComponent):
             try:
                 from langchain_groq import ChatGroq
             except ImportError as e:
-                msg = "langchain_groq is not installed. Please install it with `pip install langchain_groq`."
+                msg = "langchain_groq är inte installerat. Vänligen installera det med `pip install langchain_groq`."
                 raise ImportError(msg) from e
             for model in model_ids:
                 model_with_tool = ChatGroq(

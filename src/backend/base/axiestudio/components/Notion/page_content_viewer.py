@@ -30,20 +30,20 @@ class NotionPageContent(LCToolComponent):
     ]
 
     class NotionPageContentSchema(BaseModel):
-        page_id: str = Field(..., description="The ID of the Notion page to retrieve.")
+        page_id: str = Field(..., description="ID:t för Notion-sidan att hämta.")
 
     def run_model(self) -> Data:
         result = self._retrieve_page_content(self.page_id)
         if isinstance(result, str) and result.startswith("Error:"):
-            # An error occurred, return it as text
+            # Ett fel inträffade, returnera det som text
             return Data(text=result)
-        # Success, return the content
+        # Framgång, returnera innehållet
         return Data(text=result, data={"content": result})
 
     def build_tool(self) -> Tool:
         return StructuredTool.from_function(
             name="notion_page_content",
-            description="Retrieve the content of a Notion page as plain text.",
+            description="Hämta innehållet från en Notion-sida som vanlig text.",
             func=self._retrieve_page_content,
             args_schema=self.NotionPageContentSchema,
         )

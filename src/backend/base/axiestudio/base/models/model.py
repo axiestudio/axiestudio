@@ -50,8 +50,8 @@ class LCModelComponent(Component):
     ]
 
     outputs = [
-        Output(display_name="Model Response", name="text_output", method="text_response"),
-        Output(display_name="Language Model", name="model_output", method="build_model"),
+        Output(display_name="Modellsvar", name="text_output", method="text_response"),
+        Output(display_name="Språkmodell", name="model_output", method="build_model"),
     ]
 
     def _get_exception_message(self, e: Exception):
@@ -77,10 +77,10 @@ class LCModelComponent(Component):
         output_names = [output.name for output in self.outputs]
         for method_name in required_output_methods:
             if method_name not in output_names:
-                msg = f"Output with name '{method_name}' must be defined."
+                msg = f"Output med namnet '{method_name}' måste definieras."
                 raise ValueError(msg)
             if not hasattr(self, method_name):
-                msg = f"Method '{method_name}' must be defined."
+                msg = f"Metoden '{method_name}' måste definieras."
                 raise ValueError(msg)
 
     async def text_response(self) -> Message:
@@ -211,7 +211,7 @@ class LCModelComponent(Component):
         """
         messages: list[BaseMessage] = []
         if not input_value and not system_message:
-            msg = "The message you want to send to the model is empty."
+            msg = "Meddelandet du vill skicka till modellen är tomt."
             raise ValueError(msg)
         system_message_added = False
         message = None
@@ -319,7 +319,7 @@ class LCModelComponent(Component):
         """
         try:
             if provider_name not in [model.get("display_name") for model in model_info.values()]:
-                msg = f"Unknown model provider: {provider_name}"
+                msg = f"Okänd modellleverantör: {provider_name}"
                 raise ValueError(msg)
 
             # Find the component class name from MODEL_INFO in a single iteration
@@ -328,7 +328,7 @@ class LCModelComponent(Component):
                 (None, None),
             )
             if not component_info:
-                msg = f"Component information not found for {provider_name}"
+                msg = f"Komponentinformation hittades inte för {provider_name}"
                 raise ValueError(msg)
             component_inputs = component_info.get("inputs", [])
             # Get the component class from the models module
@@ -349,7 +349,7 @@ class LCModelComponent(Component):
 
             return self.build_llm_model_from_inputs(component, component_inputs)
         except Exception as e:
-            msg = f"Error building {provider_name} language model"
+            msg = f"Fel vid byggande av {provider_name} språkmodell"
             raise ValueError(msg) from e
 
     def build_llm_model_from_inputs(

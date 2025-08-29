@@ -8,23 +8,23 @@ from axiestudio.schema.data import Data
 
 
 class PythonREPLComponent(Component):
-    display_name = "Python Interpreter"
-    description = "Run Python code with optional imports. Use print() to see the output."
+    display_name = "Python-tolk"
+    description = "Kör Python-kod med valfria importer. Använd print() för att se utmatningen."
     documentation: str = "https://docs.axiestudio.org/components-processing#python-interpreter"
     icon = "square-terminal"
 
     inputs = [
         StrInput(
             name="global_imports",
-            display_name="Global Imports",
-            info="A comma-separated list of modules to import globally, e.g. 'math,numpy,pandas'.",
+            display_name="Globala importer",
+            info="En kommaseparerad lista av moduler att importera globalt, t.ex. 'math,numpy,pandas'.",
             value="math,pandas",
             required=True,
         ),
         CodeInput(
             name="python_code",
-            display_name="Python Code",
-            info="The Python code to execute. Only modules specified in Global Imports can be used.",
+            display_name="Python-kod",
+            info="Python-koden att köra. Endast moduler specificerade i Globala importer kan användas.",
             value="print('Hello, World!')",
             input_types=["Message"],
             tool_mode=True,
@@ -76,21 +76,21 @@ class PythonREPLComponent(Component):
             result = python_repl.run(self.python_code)
             result = result.strip() if result else ""
 
-            self.log("Code execution completed successfully")
+            self.log("Kodkörning slutfördes framgångsrikt")
             return Data(data={"result": result})
 
         except ImportError as e:
-            error_message = f"Import Error: {e!s}"
+            error_message = f"Importfel: {e!s}"
             self.log(error_message)
             return Data(data={"error": error_message})
 
         except SyntaxError as e:
-            error_message = f"Syntax Error: {e!s}"
+            error_message = f"Syntaxfel: {e!s}"
             self.log(error_message)
             return Data(data={"error": error_message})
 
         except (NameError, TypeError, ValueError) as e:
-            error_message = f"Error during execution: {e!s}"
+            error_message = f"Fel under körning: {e!s}"
             self.log(error_message)
             return Data(data={"error": error_message})
 

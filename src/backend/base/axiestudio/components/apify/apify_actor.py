@@ -38,8 +38,8 @@ class ApifyActorsComponent(Component):
             name="actor_id",
             display_name="Aktör",
             info=(
-                "Actor name from Apify store to run. For example 'apify/website-content-crawler' "
-                "to use the Website Content Crawler Actor."
+                "Aktörnamn från Apify-butiken att köra. Till exempel 'apify/website-content-crawler' "
+                "för att använda Website Content Crawler-aktören."
             ),
             value="apify/website-content-crawler",
             required=True,
@@ -47,9 +47,9 @@ class ApifyActorsComponent(Component):
         # multiline input is more pleasant to use than the nested dict input
         MultilineInput(
             name="run_input",
-            display_name="Run input",
+            display_name="Körningsinmatning",
             info=(
-                'The JSON input for the Actor run. For example for the "apify/website-content-crawler" Actor: '
+                'JSON-inmatningen för aktörkörningen. Till exempel för "apify/website-content-crawler"-aktören: '
                 '{"startUrls":[{"url":"https://docs.apify.com/academy/web-scraping-for-beginners"}],"maxCrawlDepth":0}'
             ),
             value='{"startUrls":[{"url":"https://docs.apify.com/academy/web-scraping-for-beginners"}],"maxCrawlDepth":0}',
@@ -57,24 +57,24 @@ class ApifyActorsComponent(Component):
         ),
         MultilineInput(
             name="dataset_fields",
-            display_name="Output fields",
+            display_name="Utmatningsfält",
             info=(
-                "Fields to extract from the dataset, split by commas. "
-                "Other fields will be ignored. Dots in nested structures will be replaced by underscores. "
-                "Sample input: 'text, metadata.title'. "
-                "Sample output: {'text': 'page content here', 'metadata_title': 'page title here'}. "
-                "For example, for the 'apify/website-content-crawler' Actor, you can extract the 'markdown' field, "
-                "which is the content of the website in markdown format."
+                "Fält att extrahera från datasetet, separerade med kommatecken. "
+                "Andra fält kommer att ignoreras. Punkter i nästlade strukturer ersätts med understreck. "
+                "Exempelinmatning: 'text, metadata.title'. "
+                "Exempelutmatning: {'text': 'sidinnehåll här', 'metadata_title': 'sidtitel här'}. "
+                "Till exempel, för 'apify/website-content-crawler'-aktören kan du extrahera 'markdown'-fältet, "
+                "som är innehållet på webbplatsen i markdown-format."
             ),
         ),
         BoolInput(
             name="flatten_dataset",
-            display_name="Flatten output",
+            display_name="Platta ut utmatning",
             info=(
-                "The output dataset will be converted from a nested format to a flat structure. "
-                "Dots in nested structure will be replaced by underscores. "
-                "This is useful for further processing of the Data object. "
-                "For example, {'a': {'b': 1}} will be flattened to {'a_b': 1}."
+                "Utmatningsdatasetet kommer att konverteras från ett nästlat format till en platt struktur. "
+                "Punkter i nästlad struktur ersätts med understreck. "
+                "Detta är användbart för vidare bearbetning av Data-objektet. "
+                "Till exempel kommer {'a': {'b': 1}} att plattas ut till {'a_b': 1}."
             ),
         ),
     ]

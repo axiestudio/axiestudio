@@ -65,8 +65,8 @@ class MCPToolsComponent(ComponentWithCache):
         "tool",
     ]
 
-    display_name = "MCP Tools"
-    description = "Connect to an MCP server to use its tools."
+    display_name = "MCP-verktyg"
+    description = "Anslut till en MCP-server för att använda dess verktyg."
     documentation: str = "https://docs.axiestudio.org/mcp-client"
     icon = "Mcp"
     name = "MCPTools"
@@ -74,24 +74,24 @@ class MCPToolsComponent(ComponentWithCache):
     inputs = [
         McpInput(
             name="mcp_server",
-            display_name="MCP Server",
-            info="Select the MCP Server that will be used by this component",
+            display_name="MCP-server",
+            info="Välj MCP-servern som kommer att användas av denna komponent",
             real_time_refresh=True,
         ),
         DropdownInput(
             name="tool",
-            display_name="Tool",
+            display_name="Verktyg",
             options=[],
             value="",
-            info="Select the tool to execute",
+            info="Välj verktyget att köra",
             show=False,
             required=True,
             real_time_refresh=True,
         ),
         MessageTextInput(
             name="tool_placeholder",
-            display_name="Tool Placeholder",
-            info="Placeholder for the tool",
+            display_name="Verktygsplatshållare",
+            info="Platshållare för verktyget",
             value="",
             show=False,
             tool_mode=False,
@@ -99,7 +99,7 @@ class MCPToolsComponent(ComponentWithCache):
     ]
 
     outputs = [
-        Output(display_name="Response", name="response", method="build_output"),
+        Output(display_name="Svar", name="response", method="build_output"),
     ]
 
     async def _validate_schema_inputs(self, tool_obj) -> list[InputTypes]:

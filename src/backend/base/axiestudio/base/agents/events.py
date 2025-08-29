@@ -21,7 +21,7 @@ class ExceptionWithMessageError(Exception):
 
     def __str__(self):
         return (
-            f"Agent message: {self.agent_message.text} \nError: {self.message}."
+            f"Agentmeddelande: {self.agent_message.text} \nFel: {self.message}."
             if self.agent_message.error or self.agent_message.text
             else f"{self.message}."
         )
@@ -34,7 +34,7 @@ class InputDict(TypedDict):
 
 def _build_agent_input_text_content(agent_input_dict: InputDict) -> str:
     final_input = agent_input_dict.get("input", "")
-    return f"**Input**: {final_input}"
+    return f"**Indata**: {final_input}"
 
 
 def _calculate_duration(start_time: float) -> int:
@@ -57,7 +57,7 @@ async def handle_on_chain_start(
 ) -> tuple[Message, float]:
     # Create content blocks if they don't exist
     if not agent_message.content_blocks:
-        agent_message.content_blocks = [ContentBlock(title="Agent Steps", contents=[])]
+        agent_message.content_blocks = [ContentBlock(title="Agentsteg", contents=[])]
 
     if event["data"].get("input"):
         input_data = event["data"].get("input")
@@ -91,7 +91,7 @@ def _extract_output_text(output: str | list) -> str:
     if isinstance(output, list) and len(output) == 0:
         return ""
     if not isinstance(output, list) or len(output) != 1:
-        msg = f"Output is not a string or list of dictionaries with 'text' key: {output}"
+        msg = f"Output är inte en sträng eller lista av ordböcker med 'text'-nyckel: {output}"
         raise TypeError(msg)
 
     item = output[0]
@@ -116,7 +116,7 @@ def _extract_output_text(output: str | list) -> str:
         # although it would be nice to
         if "partial_json" in item:
             return ""
-    msg = f"Output is not a string or list of dictionaries with 'text' key: {output}"
+    msg = f"Output är inte en sträng eller lista av ordböcker med 'text'-nyckel: {output}"
     raise TypeError(msg)
 
 
@@ -158,7 +158,7 @@ async def handle_on_tool_start(
 
     # Create content blocks if they don't exist
     if not agent_message.content_blocks:
-        agent_message.content_blocks = [ContentBlock(title="Agent Steps", contents=[])]
+        agent_message.content_blocks = [ContentBlock(title="Agentsteg", contents=[])]
 
     duration = _calculate_duration(start_time)
     new_start_time = perf_counter()  # Get new start time for next operation
@@ -170,7 +170,7 @@ async def handle_on_tool_start(
         tool_input=tool_input,
         output=None,
         error=None,
-        header={"title": f"Accessing **{tool_name}**", "icon": "Hammer"},
+        header={"title": f"Använder **{tool_name}**", "icon": "Hammer"},
         duration=duration,  # Store the actual duration
     )
 

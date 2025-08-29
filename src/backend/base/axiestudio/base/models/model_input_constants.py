@@ -57,8 +57,8 @@ def process_inputs(component_data: Input):
         component_data = add_combobox_true(component_data)
         component_data = add_info(
             component_data,
-            "To see the model names, first choose a provider. Then, enter your API key and click the refresh button "
-            "next to the model name.",
+            "För att se modellnamnen, välj först en leverantör. Ange sedan din API-nyckel och klicka på uppdateringsknappen "
+            "bredvid modellnamnet.",
         )
     return component_data
 

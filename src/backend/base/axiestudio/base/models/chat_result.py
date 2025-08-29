@@ -46,7 +46,7 @@ def get_chat_result(
     stream: bool = False,
 ):
     if not input_value and not system_message:
-        msg = "The message you want to send to the model is empty."
+        msg = "Meddelandet du vill skicka till modellen är tomt."
         raise ValueError(msg)
 
     messages, runnable = build_messages_and_runnable(

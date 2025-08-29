@@ -12,16 +12,16 @@ class LCCompressorComponent(Component):
     inputs = [
         MultilineInput(
             name="search_query",
-            display_name="Search Query",
+            display_name="Sökfråga",
             tool_mode=True,
         ),
         DataInput(
             name="search_results",
-            display_name="Search Results",
-            info="Search Results from a Vector Store.",
+            display_name="Sökresultat",
+            info="Sökresultat från ett vektorlager.",
             is_list=True,
         ),
-        IntInput(name="top_n", display_name="Top N", value=3, advanced=True),
+        IntInput(name="top_n", display_name="Topp N", value=3, advanced=True),
     ]
 
     outputs = [
@@ -40,7 +40,7 @@ class LCCompressorComponent(Component):
     @abstractmethod
     def build_compressor(self) -> BaseDocumentCompressor:
         """Builds the Base Document Compressor object."""
-        msg = "build_compressor method must be implemented."
+        msg = "build_compressor-metoden måste implementeras."
         raise NotImplementedError(msg)
 
     async def compress_documents(self) -> list[Data]:

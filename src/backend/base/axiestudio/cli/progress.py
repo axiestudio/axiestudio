@@ -179,13 +179,13 @@ def create_axiestudio_progress(*, verbose: bool = False) -> ProgressIndicator:
 
     # Define the initialization steps matching the order in main.py
     steps = [
-        ("Initializing Axie Studio", "Setting up basic configuration"),
-        ("Checking Environment", "Loading environment variables and settings"),
-        ("Starting Core Services", "Initializing database and core services"),
-        ("Connecting Database", "Setting up database connection and migrations"),
-        ("Loading Components", "Caching component types and custom components"),
-        ("Adding Starter Projects", "Creating or updating starter project templates"),
-        ("Launching Axie Studio", "Starting server and final setup"),
+        ("Initialiserar Axie Studio", "Ställer in grundläggande konfiguration"),
+        ("Kontrollerar miljö", "Laddar miljövariabler och inställningar"),
+        ("Startar kärntjänster", "Initialiserar databas och kärntjänster"),
+        ("Ansluter databas", "Ställer in databasanslutning och migreringar"),
+        ("Laddar komponenter", "Cachar komponenttyper och anpassade komponenter"),
+        ("Lägger till startprojekt", "Skapar eller uppdaterar startprojektmallar"),
+        ("Startar Axie Studio", "Startar server och slutlig installation"),
     ]
 
     for title, description in steps:

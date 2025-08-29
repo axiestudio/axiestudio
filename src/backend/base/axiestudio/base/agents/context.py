@@ -46,7 +46,7 @@ class AgentContext(BaseModel):
     @classmethod
     def validate_llm(cls, v) -> LanguageModel:
         if not isinstance(v, BaseLLM | BaseChatModel | BaseLanguageModel):
-            msg = "llm must be an instance of LanguageModel"
+            msg = "llm måste vara en instans av LanguageModel"
             raise TypeError(msg)
         return v
 
@@ -60,7 +60,7 @@ class AgentContext(BaseModel):
 
         sorted_data_objs.append(
             Data(
-                name="Formatted Context",
+                name="Formaterat sammanhang",
                 value=self.get_full_context(),
             )
         )
@@ -82,7 +82,7 @@ class AgentContext(BaseModel):
         if hasattr(self.llm, "bind_tools"):
             self.llm = self.llm.bind_tools(self.tools.values())
         if self.context:
-            self.update_context("Initial Context", self.context)
+            self.update_context("Initialt sammanhang", self.context)
 
     def update_context(self, key: str, value: str):
         self.context_history.insert(0, (key, value, datetime.now(tz=timezone.utc).astimezone().isoformat()))
@@ -104,6 +104,6 @@ class AgentContext(BaseModel):
             ]
         )
         return f"""
-Context:
+Sammanhang:
 {context_formatted}
 """

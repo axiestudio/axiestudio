@@ -56,8 +56,8 @@ class SaveToFileComponent(Component):
     outputs = [Output(display_name="Filsökväg", name="result", method="save_to_file")]
 
     async def save_to_file(self) -> Message:
-        """Save the input to a file and upload it, returning a confirmation message."""
-        # Validate inputs
+        """Spara inmatningen till en fil och ladda upp den, returnera ett bekräftelsemeddelande."""
+        # Validera inmatningar
         if not self.file_name:
             msg = "Filnamn måste anges."
             raise ValueError(msg)
@@ -65,7 +65,7 @@ class SaveToFileComponent(Component):
             msg = "Indatatyp är inte inställd."
             raise ValueError(msg)
 
-        # Validate file format based on input type
+        # Validera filformat baserat på inmatningstyp
         file_format = self.file_format or self._get_default_format()
         allowed_formats = (
             self.MESSAGE_FORMAT_CHOICES if self._get_input_type() == "Message" else self.DATA_FORMAT_CHOICES
@@ -202,6 +202,6 @@ class SaveToFileComponent(Component):
         elif fmt == "markdown":
             path.write_text(f"**Message:**\n\n{content}", encoding="utf-8")
         else:
-            msg = f"Unsupported Message format: {fmt}"
+            msg = f"Meddelandeformat som inte stöds: {fmt}"
             raise ValueError(msg)
-        return f"Message saved successfully as '{path}'"
+        return f"Meddelande sparat framgångsrikt som '{path}'"

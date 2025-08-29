@@ -221,13 +221,13 @@ class RedisCache(ExternalAsyncBaseCacheService, Generic[LockType]):
         self.expiration_time = expiration_time
 
     async def is_connected(self) -> bool:
-        """Check if the Redis client is connected."""
+        """Kontrollera om Redis-klienten är ansluten."""
         import redis
 
         try:
             await self._client.ping()
         except redis.exceptions.ConnectionError:
-            msg = "RedisCache could not connect to the Redis server"
+            msg = "RedisCache kunde inte ansluta till Redis-servern"
             logger.exception(msg)
             return False
         return True

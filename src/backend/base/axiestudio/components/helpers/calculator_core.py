@@ -9,12 +9,12 @@ from axiestudio.schema.data import Data
 
 
 class CalculatorComponent(Component):
-    display_name = "Calculator"
-    description = "Perform basic arithmetic operations on a given expression."
-    documentation: str = "https://docs.axiestudio.org/components-helpers#calculator"
+    display_name = "Kalkylator"
+    description = "Utför grundläggande aritmetiska operationer på ett givet uttryck."
+    documentation: str = "https://docs.axiestudio.se/components-helpers#calculator"
     icon = "calculator"
 
-    # Cache operators dictionary as a class variable
+    # Cachea operatörsordbok som klassvariabel
     OPERATORS: dict[type[ast.operator], Callable] = {
         ast.Add: operator.add,
         ast.Sub: operator.sub,
@@ -26,8 +26,8 @@ class CalculatorComponent(Component):
     inputs = [
         MessageTextInput(
             name="expression",
-            display_name="Expression",
-            info="The arithmetic expression to evaluate (e.g., '4*4*(33/22)+12-20').",
+            display_name="Uttryck",
+            info="Det aritmetiska uttrycket att utvärdera (t.ex. '4*4*(33/22)+12-20').",
             tool_mode=True,
         ),
     ]
@@ -37,53 +37,53 @@ class CalculatorComponent(Component):
     ]
 
     def _eval_expr(self, node: ast.AST) -> float:
-        """Evaluate an AST node recursively."""
+        """Utvärdera en AST-nod rekursivt."""
         if isinstance(node, ast.Constant):
             if isinstance(node.value, int | float):
                 return float(node.value)
-            error_msg = f"Unsupported constant type: {type(node.value).__name__}"
+            error_msg = f"Konstant typ som inte stöds: {type(node.value).__name__}"
             raise TypeError(error_msg)
-        if isinstance(node, ast.Num):  # For backwards compatibility
+        if isinstance(node, ast.Num):  # För bakåtkompatibilitet
             if isinstance(node.n, int | float):
                 return float(node.n)
-            error_msg = f"Unsupported number type: {type(node.n).__name__}"
+            error_msg = f"Taltyp som inte stöds: {type(node.n).__name__}"
             raise TypeError(error_msg)
 
         if isinstance(node, ast.BinOp):
             op_type = type(node.op)
             if op_type not in self.OPERATORS:
-                error_msg = f"Unsupported binary operator: {op_type.__name__}"
+                error_msg = f"Binär operator som inte stöds: {op_type.__name__}"
                 raise TypeError(error_msg)
 
             left = self._eval_expr(node.left)
             right = self._eval_expr(node.right)
             return self.OPERATORS[op_type](left, right)
 
-        error_msg = f"Unsupported operation or expression type: {type(node).__name__}"
+        error_msg = f"Operation eller uttryckstyp som inte stöds: {type(node).__name__}"
         raise TypeError(error_msg)
 
     def evaluate_expression(self) -> Data:
-        """Evaluate the mathematical expression and return the result."""
+        """Utvärdera det matematiska uttrycket och returnera resultatet."""
         try:
             tree = ast.parse(self.expression, mode="eval")
             result = self._eval_expr(tree.body)
 
             formatted_result = f"{float(result):.6f}".rstrip("0").rstrip(".")
-            self.log(f"Calculation result: {formatted_result}")
+            self.log(f"Beräkningsresultat: {formatted_result}")
 
             self.status = formatted_result
             return Data(data={"result": formatted_result})
 
         except ZeroDivisionError:
-            error_message = "Error: Division by zero"
+            error_message = "Fel: Division med noll"
             self.status = error_message
             return Data(data={"error": error_message, "input": self.expression})
 
         except (SyntaxError, TypeError, KeyError, ValueError, AttributeError, OverflowError) as e:
-            error_message = f"Invalid expression: {e!s}"
+            error_message = f"Ogiltigt uttryck: {e!s}"
             self.status = error_message
             return Data(data={"error": error_message, "input": self.expression})
 
     def build(self):
-        """Return the main evaluation function."""
+        """Returnera huvudutvärderingsfunktionen."""
         return self.evaluate_expression

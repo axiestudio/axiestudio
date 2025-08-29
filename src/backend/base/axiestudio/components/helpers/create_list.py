@@ -6,8 +6,8 @@ from axiestudio.template.field.base import Output
 
 
 class CreateListComponent(Component):
-    display_name = "Create List"
-    description = "Creates a list of texts."
+    display_name = "Skapa lista"
+    description = "Skapar en lista med texter."
     icon = "list"
     name = "CreateList"
     legacy = True
@@ -15,14 +15,14 @@ class CreateListComponent(Component):
     inputs = [
         StrInput(
             name="texts",
-            display_name="Texts",
-            info="Enter one or more texts.",
+            display_name="Texter",
+            info="Ange en eller flera texter.",
             is_list=True,
         ),
     ]
 
     outputs = [
-        Output(display_name="Data List", name="list", method="create_list"),
+        Output(display_name="Datalista", name="list", method="create_list"),
         Output(display_name="DataFrame", name="dataframe", method="as_dataframe"),
     ]
 
@@ -32,9 +32,9 @@ class CreateListComponent(Component):
         return data
 
     def as_dataframe(self) -> DataFrame:
-        """Convert the list of Data objects into a DataFrame.
+        """Konvertera listan med Data-objekt till en DataFrame.
 
-        Returns:
-            DataFrame: A DataFrame containing the list data.
+        Returnerar:
+            DataFrame: En DataFrame som innehåller listdatan.
         """
         return DataFrame(self.create_list())

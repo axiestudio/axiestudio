@@ -180,14 +180,14 @@ class ChatOutput(ChatComponent):
                 for item in self.input_value
                 if not isinstance(item, Message | Data | DataFrame | str)
             ]
-            msg = f"Expected Data or DataFrame or Message or str, got {invalid_types}"
+            msg = f"Förväntade Data eller DataFrame eller Message eller str, fick {invalid_types}"
             raise TypeError(msg)
         if not isinstance(
             self.input_value,
             Message | Data | DataFrame | str | list | Generator | type(None),
         ):
             type_name = type(self.input_value).__name__
-            msg = f"Expected Data or DataFrame or Message or str, Generator or None, got {type_name}"
+            msg = f"Förväntade Data eller DataFrame eller Message eller str, Generator eller None, fick {type_name}"
             raise TypeError(msg)
 
     def convert_to_string(self) -> str | Generator[Any, None, None]:

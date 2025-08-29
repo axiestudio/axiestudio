@@ -9,11 +9,11 @@ from axiestudio.template.utils import update_template_values
 class PromptComponent(Component):
     display_name: str = "Promptmall"
     description: str = "Skapa en promptmall med dynamiska variabler."
-    documentation: str = "https://docs.axiestudio.org/components-prompts"
+    documentation: str = "https://docs.axiestudio.se/components-prompts"
     icon = "braces"
     trace_type = "prompt"
     name = "Prompt Template"
-    priority = 0  # Set priority to 0 to make it appear first
+    priority = 0  # Sätt prioritet till 0 för att få den att visas först
 
     inputs = [
         PromptInput(name="template", display_name="Mall"),

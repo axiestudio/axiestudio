@@ -33,7 +33,7 @@ def _hf_tool_to_lc_tool(tool) -> BaseTool:
         BaseTool: Equivalent LangChain tool
     """
     if not hasattr(tool, "langchain_tool"):
-        msg = "Hugging Face Tool does not have a langchain_tool attribute"
+        msg = "Hugging Face-verktyget har inte ett langchain_tool-attribut"
         raise ValueError(msg)
     return tool.langchain_tool
 
@@ -81,7 +81,7 @@ class LangChainHFModel(Model):
             ChatMessage: Response in Hugging Face format
         """
         if grammar:
-            msg = "Grammar is not yet supported."
+            msg = "Grammatik stöds inte ännu."
             raise ValueError(msg)
 
         # Convert HF messages to LangChain messages

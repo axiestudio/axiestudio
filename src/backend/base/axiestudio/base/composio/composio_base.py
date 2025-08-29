@@ -119,13 +119,13 @@ class ComposioBaseComponent(Component):
         """Build the Composio toolset wrapper."""
         try:
             if not self.api_key:
-                msg = "Composio API Key is required"
+                msg = "Composio API-nyckel krävs"
                 raise ValueError(msg)
             return ComposioToolSet(api_key=self.api_key)
 
         except ValueError as e:
             logger.error(f"Error building Composio wrapper: {e}")
-            msg = "Please provide a valid Composio API Key in the component settings"
+            msg = "Vänligen ange en giltig Composio API-nyckel i komponentinställningarna"
             raise ValueError(msg) from e
 
     def show_hide_fields(self, build_config: dict, field_value: Any):
@@ -171,9 +171,9 @@ class ComposioBaseComponent(Component):
                 return build_config
         if field_name == "api_key" and len(field_value) == 0:
             build_config["auth_link"]["value"] = ""
-            build_config["auth_link"]["auth_tooltip"] = "Please provide a valid Composio API Key."
+            build_config["auth_link"]["auth_tooltip"] = "Vänligen ange en giltig Composio API-nyckel."
             build_config["action"]["options"] = []
-            build_config["action"]["helper_text"] = "Please connect before selecting actions."
+            build_config["action"]["helper_text"] = "Vänligen anslut innan du väljer åtgärder."
             build_config["action"]["helper_text_metadata"] = {"variant": "destructive"}
             return build_config
         if not hasattr(self, "api_key") or not self.api_key:
@@ -218,10 +218,10 @@ class ComposioBaseComponent(Component):
             logger.error(f"Error checking auth status: {e}")
         except ApiKeyError as e:
             build_config["auth_link"]["value"] = ""
-            build_config["auth_link"]["auth_tooltip"] = "Please provide a valid Composio API Key."
+            build_config["auth_link"]["auth_tooltip"] = "Vänligen ange en giltig Composio API-nyckel."
             build_config["action"]["options"] = []
             build_config["action"]["value"] = ""
-            build_config["action"]["helper_text"] = "Please connect before selecting actions."
+            build_config["action"]["helper_text"] = "Vänligen anslut innan du väljer åtgärder."
             build_config["action"]["helper_text_metadata"] = {"variant": "destructive"}
             logger.error(f"Error checking auth status: {e}")
 
@@ -235,7 +235,7 @@ class ComposioBaseComponent(Component):
                 self.disconnect_connection(entity, self.app_name)
                 build_config["auth_link"]["value"] = self._initiate_default_connection(entity, self.app_name)
                 build_config["auth_link"]["auth_tooltip"] = "Connect"
-                build_config["action"]["helper_text"] = "Please connect before selecting actions."
+                build_config["action"]["helper_text"] = "Vänligen anslut innan du väljer åtgärder."
                 build_config["action"]["helper_text_metadata"] = {
                     "variant": "destructive",
                 }

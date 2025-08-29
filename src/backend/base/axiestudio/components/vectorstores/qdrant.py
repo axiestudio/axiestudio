@@ -70,7 +70,7 @@ class QdrantVectorStoreComponent(LCVectorStoreComponent):
 
         server_kwargs = {k: v for k, v in server_kwargs.items() if v is not None}
 
-        # Convert DataFrame to Data if needed using parent's method
+        # Konvertera DataFrame till Data om nödvändigt med förälderns metod
         self.ingest_data = self._prepare_ingest_data()
 
         documents = []

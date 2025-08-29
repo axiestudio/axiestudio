@@ -114,11 +114,11 @@ class AssemblyAILeMUR(Component):
             self.status = error
             return Data(data={"error": error})
 
-        # Get TranscriptGroup and check if there is any error
+        # Hämta TranscriptGroup och kontrollera om det finns något fel
         transcript_group = aai.TranscriptGroup(transcript_ids=transcript_ids)
         transcript_group, failures = transcript_group.wait_for_completion(return_failures=True)
         if failures:
-            error = f"Getting transcriptions failed: {failures[0]}"
+            error = f"Hämtning av transkriptioner misslyckades: {failures[0]}"
             self.status = error
             return Data(data={"error": error})
 
@@ -127,12 +127,12 @@ class AssemblyAILeMUR(Component):
                 self.status = t.error
                 return Data(data={"error": t.error})
 
-        # Perform LeMUR action
+        # Utför LeMUR-åtgärd
         try:
             response = self.perform_lemur_action(transcript_group, self.endpoint)
         except Exception as e:  # noqa: BLE001
-            logger.opt(exception=True).debug("Error running LeMUR")
-            error = f"An Error happened: {e}"
+            logger.opt(exception=True).debug("Fel vid körning av LeMUR")
+            error = f"Ett fel inträffade: {e}"
             self.status = error
             return Data(data={"error": error})
 

@@ -43,7 +43,7 @@ class PineconeVectorStoreComponent(LCVectorStoreComponent):
 
     @check_cached_vector_store
     def build_vector_store(self) -> VectorStore:
-        """Build and return a Pinecone vector store instance."""
+        """Bygg och returnera en Pinecone vektorlager-instans."""
         try:
             from langchain_pinecone import PineconeVectorStore
         except ImportError as e:
@@ -53,17 +53,17 @@ class PineconeVectorStoreComponent(LCVectorStoreComponent):
         try:
             from langchain_pinecone._utilities import DistanceStrategy
 
-            # Wrap the embedding model to ensure float32 output
+            # Omslut inbäddningsmodellen för att säkerställa float32-utdata
             wrapped_embeddings = Float32Embeddings(self.embedding)
 
-            # Convert distance strategy
+            # Konvertera avståndsstrategi
             distance_strategy = self.distance_strategy.replace(" ", "_").upper()
             distance_strategy = DistanceStrategy[distance_strategy]
 
-            # Initialize Pinecone instance with wrapped embeddings
+            # Initialisera Pinecone-instans med omslutna inbäddningar
             pinecone = PineconeVectorStore(
                 index_name=self.index_name,
-                embedding=wrapped_embeddings,  # Use wrapped embeddings
+                embedding=wrapped_embeddings,  # Använd omslutna inbäddningar
                 text_key=self.text_key,
                 namespace=self.namespace,
                 distance_strategy=distance_strategy,

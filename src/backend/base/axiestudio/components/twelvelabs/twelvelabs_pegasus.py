@@ -27,46 +27,46 @@ class IndexCreationError(Exception):
 
 
 class ApiRequestError(Exception):
-    """Error raised when an API request fails."""
+    """Fel som uppstår när en API-förfrågan misslyckas."""
 
 
 class VideoValidationError(Exception):
-    """Error raised when video validation fails."""
+    """Fel som uppstår när videovalidering misslyckas."""
 
 
 class TwelveLabsPegasus(Component):
     display_name = "TwelveLabs Pegasus"
-    description = "Chat with videos using TwelveLabs Pegasus API."
+    description = "Chatta med videor med TwelveLabs Pegasus API."
     icon = "TwelveLabs"
     name = "TwelveLabsPegasus"
     documentation = "https://github.com/twelvelabs-io/twelvelabs-developer-experience/blob/main/integrations/Axie Studio/TWELVE_LABS_COMPONENTS_README.md"
 
     inputs = [
-        DataInput(name="videodata", display_name="Video Data", info="Video Data", is_list=True),
+        DataInput(name="videodata", display_name="Videodata", info="Videodata", is_list=True),
         SecretStrInput(
-            name="api_key", display_name="TwelveLabs API Key", info="Enter your TwelveLabs API Key.", required=True
+            name="api_key", display_name="TwelveLabs API-nyckel", info="Ange din TwelveLabs API-nyckel.", required=True
         ),
         MessageInput(
             name="video_id",
-            display_name="Pegasus Video ID",
-            info="Enter a Video ID for a previously indexed video.",
+            display_name="Pegasus Video-ID",
+            info="Ange ett Video-ID för en tidigare indexerad video.",
         ),
         MessageInput(
             name="index_name",
-            display_name="Index Name",
-            info="Name of the index to use. If the index doesn't exist, it will be created.",
+            display_name="Indexnamn",
+            info="Namn på indexet att använda. Om indexet inte finns kommer det att skapas.",
             required=False,
         ),
         MessageInput(
             name="index_id",
-            display_name="Index ID",
-            info="ID of an existing index to use. If provided, index_name will be ignored.",
+            display_name="Index-ID",
+            info="ID för ett befintligt index att använda. Om angivet kommer index_name att ignoreras.",
             required=False,
         ),
         DropdownInput(
             name="model_name",
-            display_name="Model",
-            info="Pegasus model to use for indexing",
+            display_name="Modell",
+            info="Pegasus-modell att använda för indexering",
             options=["pegasus1.2"],
             value="pegasus1.2",
             advanced=False,
@@ -74,7 +74,7 @@ class TwelveLabsPegasus(Component):
         MultilineInput(
             name="message",
             display_name="Prompt",
-            info="Message to chat with the video.",
+            info="Meddelande för att chatta med videon.",
             required=True,
         ),
         SliderInput(
@@ -83,21 +83,21 @@ class TwelveLabsPegasus(Component):
             value=0.7,
             range_spec=RangeSpec(min=0, max=1, step=0.01),
             info=(
-                "Controls randomness in responses. Lower values are more deterministic, "
-                "higher values are more creative."
+                "Kontrollerar slumpmässighet i svar. Lägre värden är mer deterministiska, "
+                "högre värden är mer kreativa."
             ),
         ),
     ]
 
     outputs = [
         Output(
-            display_name="Message",
+            display_name="Meddelande",
             name="response",
             method="process_video",
             type_=Message,
         ),
         Output(
-            display_name="Video ID",
+            display_name="Video-ID",
             name="processed_video_id",
             method="get_video_id",
             type_=Message,
@@ -340,7 +340,7 @@ class TwelveLabsPegasus(Component):
 
             # Otherwise process new video
             if not self.videodata or not isinstance(self.videodata, list) or len(self.videodata) != 1:
-                return Message(text="Please provide exactly one video")
+                return Message(text="Vänligen ange exakt en video")
 
             video_path = self.videodata[0].data.get("text")
             if not video_path or not Path(video_path).exists():
@@ -369,7 +369,7 @@ class TwelveLabsPegasus(Component):
             task.wait_for_done(sleep_interval=5, callback=self.on_task_update)
 
             if task.status != "ready":
-                return Message(text=f"Processing failed with status {task.status}")
+                return Message(text=f"Bearbetning misslyckades med status {task.status}")
 
             # Store video_id for future use
             self._video_id = task.video_id
@@ -387,7 +387,7 @@ class TwelveLabsPegasus(Component):
                 return Message(text=response.data)
 
             success_msg = (
-                f"Video processed successfully. You can now ask questions about the video. Video ID: {self._video_id}"
+                f"Video bearbetades framgångsrikt. Du kan nu ställa frågor om videon. Video-ID: {self._video_id}"
             )
             return Message(text=success_msg)
 
@@ -397,7 +397,7 @@ class TwelveLabsPegasus(Component):
             self._video_id = None
             self._index_id = None
             self._task_id = None
-            return Message(text=f"Error: {e!s}")
+            return Message(text=f"Fel: {e!s}")
 
     def get_video_id(self) -> Message:
         """Return the video ID of the processed video as a Message.

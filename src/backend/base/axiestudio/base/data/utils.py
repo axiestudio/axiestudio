@@ -68,7 +68,7 @@ def retrieve_file_paths(
     path = format_directory_path(path)
     path_obj = Path(path)
     if not path_obj.exists() or not path_obj.is_dir():
-        msg = f"Path {path} must exist and be a directory."
+        msg = f"Sökvägen {path} måste existera och vara en katalog."
         raise ValueError(msg)
 
     def match_types(p: Path) -> bool:
@@ -97,7 +97,7 @@ def partition_file_to_data(file_path: str, *, silent_errors: bool) -> Data | Non
         elements = partition(file_path)
     except Exception as e:
         if not silent_errors:
-            msg = f"Error loading file {file_path}: {e}"
+            msg = f"Fel vid laddning av fil {file_path}: {e}"
             raise ValueError(msg) from e
         return None
 
@@ -159,7 +159,7 @@ def parse_text_file_to_data(file_path: str, *, silent_errors: bool) -> Data | No
             text = ElementTree.tostring(xml_element, encoding="unicode")
     except Exception as e:
         if not silent_errors:
-            msg = f"Error loading file {file_path}: {e}"
+            msg = f"Fel vid laddning av fil {file_path}: {e}"
             raise ValueError(msg) from e
         return None
 

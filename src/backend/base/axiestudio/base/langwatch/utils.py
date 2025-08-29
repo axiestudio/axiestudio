@@ -13,5 +13,5 @@ def get_cached_evaluators(url: str) -> dict[str, Any]:
         data = response.json()
         return data.get("evaluators", {})
     except httpx.RequestError as e:
-        logger.error(f"Error fetching evaluators: {e}")
+        logger.error(f"Fel vid hämtning av utvärderare: {e}")
         return {}

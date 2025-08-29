@@ -54,12 +54,12 @@ class YouTubeSearchComponent(Component):
     ]
 
     outputs = [
-        Output(name="results", display_name="Search Results", method="search_videos"),
+        Output(name="results", display_name="Sökresultat", method="search_videos"),
     ]
 
     @contextmanager
     def youtube_client(self):
-        """Context manager for YouTube API client."""
+        """Kontexthanterare för YouTube API-klient."""
         client = build("youtube", "v3", developerKey=self.api_key)
         try:
             yield client

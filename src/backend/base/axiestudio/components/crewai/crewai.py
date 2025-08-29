@@ -83,12 +83,12 @@ class CrewAIAgentComponent(Component):
         try:
             from crewai import Agent
         except ImportError as e:
-            msg = "CrewAI is not installed. Please install it with `uv pip install crewai`."
+            msg = "CrewAI är inte installerat. Vänligen installera det med `uv pip install crewai`."
             raise ImportError(msg) from e
 
         kwargs = self.kwargs or {}
 
-        # Define the Agent
+        # Definiera agenten
         agent = Agent(
             role=self.role,
             goal=self.goal,

@@ -53,7 +53,7 @@ def build_data_from_result_data(result_data: ResultData) -> list[Data]:
                     data.append(artifact)
                 else:
                     # Warn about unknown output type
-                    logger.warning(f"Unable to build record output from unknown ResultData.artifact: {artifact}")
+                    logger.warning(f"Kunde inte bygga postutdata från okänd ResultData.artifact: {artifact}")
         # Chat or text output
         elif result_data.results:
             data.append(Data(data={"result": result_data.results}, text_key="result"))
@@ -82,6 +82,6 @@ def format_flow_output_data(data: list[Data]) -> str:
         str: The formatted flow output data.
 
     """
-    result = "Flow run output:\n"
+    result = "Flödeskörningsutdata:\n"
     results = "\n".join([value.get_text() if hasattr(value, "get_text") else str(value) for value in data])
     return result + results

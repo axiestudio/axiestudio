@@ -91,10 +91,10 @@ class LCAgentComponent(Component):
         output_names = [output.name for output in self.outputs]
         for method_name in required_output_methods:
             if method_name not in output_names:
-                msg = f"Output with name '{method_name}' must be defined."
+                msg = f"Output med namnet '{method_name}' måste definieras."
                 raise ValueError(msg)
             if not hasattr(self, method_name):
-                msg = f"Method '{method_name}' must be defined."
+                msg = f"Metoden '{method_name}' måste definieras."
                 raise ValueError(msg)
 
     def get_agent_kwargs(self, *, flatten: bool = False) -> dict:
@@ -209,8 +209,8 @@ class LCAgentComponent(Component):
             for tool in self.tools:
                 if not pattern.match(tool.name):
                     msg = (
-                        f"Invalid tool name '{tool.name}': must only contain letters, numbers, underscores, dashes,"
-                        " and cannot contain spaces."
+                        f"Ogiltigt verktygsnamn '{tool.name}': får endast innehålla bokstäver, siffror, understreck, bindestreck,"
+                        " och kan inte innehålla mellanslag."
                     )
                     raise ValueError(msg)
 

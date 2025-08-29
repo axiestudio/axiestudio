@@ -19,7 +19,7 @@ from axiestudio.utils.constants import (
 class ChatInput(ChatComponent):
     display_name = "Chattinmatning"
     description = "Hämta chattinmatningar från Playground."
-    documentation: str = "https://docs.axiestudio.org/components-io#chat-input"
+    documentation: str = "https://docs.axiestudio.se/components-io#chat-input"
     icon = "MessagesSquare"
     name = "ChatInput"
     minimized = True
@@ -34,62 +34,62 @@ class ChatInput(ChatComponent):
         ),
         BoolInput(
             name="should_store_message",
-            display_name="Store Messages",
-            info="Store the message in the history.",
+            display_name="Lagra meddelanden",
+            info="Lagra meddelandet i historiken.",
             value=True,
             advanced=True,
         ),
         DropdownInput(
             name="sender",
-            display_name="Sender Type",
+            display_name="Avsändartyp",
             options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],
             value=MESSAGE_SENDER_USER,
-            info="Type of sender.",
+            info="Typ av avsändare.",
             advanced=True,
         ),
         MessageTextInput(
             name="sender_name",
-            display_name="Sender Name",
-            info="Name of the sender.",
+            display_name="Avsändarnamn",
+            info="Namn på avsändaren.",
             value=MESSAGE_SENDER_NAME_USER,
             advanced=True,
         ),
         MessageTextInput(
             name="session_id",
-            display_name="Session ID",
-            info="The session ID of the chat. If empty, the current session ID parameter will be used.",
+            display_name="Sessions-ID",
+            info="Sessions-ID för chatten. Om tom kommer den aktuella sessions-ID-parametern att användas.",
             advanced=True,
         ),
         FileInput(
             name="files",
-            display_name="Files",
+            display_name="Filer",
             file_types=TEXT_FILE_TYPES + IMG_FILE_TYPES,
-            info="Files to be sent with the message.",
+            info="Filer som ska skickas med meddelandet.",
             advanced=True,
             is_list=True,
             temp_file=True,
         ),
         MessageTextInput(
             name="background_color",
-            display_name="Background Color",
-            info="The background color of the icon.",
+            display_name="Bakgrundsfärg",
+            info="Bakgrundsfärgen för ikonen.",
             advanced=True,
         ),
         MessageTextInput(
             name="chat_icon",
-            display_name="Icon",
-            info="The icon of the message.",
+            display_name="Ikon",
+            info="Ikonen för meddelandet.",
             advanced=True,
         ),
         MessageTextInput(
             name="text_color",
-            display_name="Text Color",
-            info="The text color of the name",
+            display_name="Textfärg",
+            info="Textfärgen för namnet.",
             advanced=True,
         ),
     ]
     outputs = [
-        Output(display_name="Chat Message", name="message", method="message_response"),
+        Output(display_name="Chattmeddelande", name="message", method="message_response"),
     ]
 
     async def message_response(self) -> Message:

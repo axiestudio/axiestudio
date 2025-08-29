@@ -261,10 +261,10 @@ Obs: Markera 'Avancerat' för alla alternativ.
     ) -> list[Data]:
         # Validate enum values
         if not isinstance(search_depth, TavilySearchDepth):
-            msg = f"Invalid search_depth value: {search_depth}"
+            msg = f"Ogiltigt search_depth-värde: {search_depth}"
             raise TypeError(msg)
         if not isinstance(topic, TavilySearchTopic):
-            msg = f"Invalid topic value: {topic}"
+            msg = f"Ogiltigt topic-värde: {topic}"
             raise TypeError(msg)
 
         # Validate chunks_per_source range

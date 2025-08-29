@@ -110,7 +110,7 @@ class ChromaVectorStoreComponent(LCVectorStoreComponent):
             )
             client = Client(settings=chroma_settings)
 
-        # Check persist_directory and expand it if it is a relative path
+        # Kontrollera persist_directory och expandera den om det är en relativ sökväg
         persist_directory = self.resolve_path(self.persist_directory) if self.persist_directory is not None else None
 
         chroma = Chroma(

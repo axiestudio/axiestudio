@@ -110,5 +110,5 @@ class MistralAIModelComponent(LCModelComponent):
                 streaming=self.stream,
             )
         except Exception as e:
-            msg = "Could not connect to MistralAI API."
+            msg = "Kunde inte ansluta till MistralAI API."
             raise ValueError(msg) from e

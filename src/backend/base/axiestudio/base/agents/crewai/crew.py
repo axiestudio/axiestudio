@@ -54,7 +54,7 @@ def convert_llm(llm: Any, excluded_keys=None):
     try:
         from crewai import LLM
     except ImportError as e:
-        msg = "CrewAI is not installed. Please install it with `uv pip install crewai`."
+        msg = "CrewAI är inte installerat. Vänligen installera det med `uv pip install crewai`."
         raise ImportError(msg) from e
 
     if not llm:
@@ -72,7 +72,7 @@ def convert_llm(llm: Any, excluded_keys=None):
     elif hasattr(llm, "deployment_name") and llm.deployment_name:
         model_name = llm.deployment_name
     else:
-        msg = "Could not find model name in the LLM object"
+        msg = "Kunde inte hitta modellnamn i LLM-objektet"
         raise ValueError(msg)
 
     # Normalize to the LLM model name
@@ -114,7 +114,7 @@ def convert_tools(tools):
     try:
         from crewai.tools.base_tool import Tool
     except ImportError as e:
-        msg = "CrewAI is not installed. Please install it with `uv pip install crewai`."
+        msg = "CrewAI är inte installerat. Vänligen installera det med `uv pip install crewai`."
         raise ImportError(msg) from e
 
     if not tools:
@@ -125,28 +125,28 @@ def convert_tools(tools):
 
 class BaseCrewComponent(Component):
     description: str = (
-        "Represents a group of agents, defining how they should collaborate and the tasks they should perform."
+        "Representerar en grupp agenter som definierar hur de ska samarbeta och vilka uppgifter de ska utföra."
     )
     icon = "CrewAI"
 
     _base_inputs: list[InputTypes] = [
-        IntInput(name="verbose", display_name="Verbose", value=0, advanced=True),
-        BoolInput(name="memory", display_name="Memory", value=False, advanced=True),
+        IntInput(name="verbose", display_name="Utförlig", value=0, advanced=True),
+        BoolInput(name="memory", display_name="Minne", value=False, advanced=True),
         BoolInput(name="use_cache", display_name="Cache", value=True, advanced=True),
         IntInput(name="max_rpm", display_name="Max RPM", value=100, advanced=True),
-        BoolInput(name="share_crew", display_name="Share Crew", value=False, advanced=True),
+        BoolInput(name="share_crew", display_name="Dela besättning", value=False, advanced=True),
         HandleInput(
             name="function_calling_llm",
-            display_name="Function Calling LLM",
+            display_name="Funktionsanropande LLM",
             input_types=["LanguageModel"],
-            info="Turns the ReAct CrewAI agent into a function-calling agent",
+            info="Förvandlar ReAct CrewAI-agenten till en funktionsanropande agent",
             required=False,
             advanced=True,
         ),
     ]
 
     outputs = [
-        Output(display_name="Output", name="output", method="build_output"),
+        Output(display_name="Utdata", name="output", method="build_output"),
     ]
 
     # Model properties to exclude when creating a CrewAI LLM object
@@ -186,7 +186,7 @@ class BaseCrewComponent(Component):
         try:
             from crewai.task import TaskOutput
         except ImportError as e:
-            msg = "CrewAI is not installed. Please install it with `uv pip install crewai`."
+            msg = "CrewAI är inte installerat. Vänligen installera det med `uv pip install crewai`."
             raise ImportError(msg) from e
 
         def task_callback(task_output: TaskOutput) -> None:
@@ -201,7 +201,7 @@ class BaseCrewComponent(Component):
         try:
             from langchain_core.agents import AgentFinish
         except ImportError as e:
-            msg = "langchain_core is not installed. Please install it with `uv pip install langchain-core`."
+            msg = "langchain_core är inte installerat. Vänligen installera det med `uv pip install langchain-core`."
             raise ImportError(msg) from e
 
         def step_callback(agent_output) -> None:

@@ -30,22 +30,22 @@ class FirecrawlCrawlApi(Component):
         IntInput(
             name="timeout",
             display_name="Timeout",
-            info="Timeout in milliseconds for the request.",
+            info="Timeout i millisekunder för förfrågan.",
         ),
         StrInput(
             name="idempotency_key",
-            display_name="Idempotency Key",
-            info="Optional idempotency key to ensure unique requests.",
+            display_name="Idempotens-nyckel",
+            info="Valfri idempotens-nyckel för att säkerställa unika förfrågningar.",
         ),
         DataInput(
             name="crawlerOptions",
-            display_name="Crawler Options",
-            info="The crawler options to send with the request.",
+            display_name="Crawler-alternativ",
+            info="Crawler-alternativen att skicka med förfrågan.",
         ),
         DataInput(
             name="scrapeOptions",
-            display_name="Scrape Options",
-            info="The page options to send with the request.",
+            display_name="Scrape-alternativ",
+            info="Sidalternativen att skicka med förfrågan.",
         ),
     ]
 

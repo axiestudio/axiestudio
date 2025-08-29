@@ -1147,7 +1147,7 @@ class AstraDBVectorStoreComponent(LCVectorStoreComponent):
                 **additional_params,
             )
         except Exception as e:
-            msg = f"Error initializing AstraDBVectorStore: {e}"
+            msg = f"Fel vid initialisering av AstraDBVectorStore: {e}"
             raise ValueError(msg) from e
 
         # Add documents to the vector store

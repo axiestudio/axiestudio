@@ -12,15 +12,15 @@ from axiestudio.inputs.inputs import BoolInput, FileInput, HandleInput
 
 
 class OpenAPIAgentComponent(LCAgentComponent):
-    display_name = "OpenAPI Agent"
-    description = "Agent to interact with OpenAPI API."
+    display_name = "OpenAPI-agent"
+    description = "Agent för att interagera med OpenAPI API."
     name = "OpenAPIAgent"
     icon = "LangChain"
     inputs = [
         *LCAgentComponent._base_inputs,
-        HandleInput(name="llm", display_name="Language Model", input_types=["LanguageModel"], required=True),
-        FileInput(name="path", display_name="File Path", file_types=["json", "yaml", "yml"], required=True),
-        BoolInput(name="allow_dangerous_requests", display_name="Allow Dangerous Requests", value=False, required=True),
+        HandleInput(name="llm", display_name="Språkmodell", input_types=["LanguageModel"], required=True),
+        FileInput(name="path", display_name="Filsökväg", file_types=["json", "yaml", "yml"], required=True),
+        BoolInput(name="allow_dangerous_requests", display_name="Tillåt farliga förfrågningar", value=False, required=True),
     ]
 
     def build_agent(self) -> AgentExecutor:

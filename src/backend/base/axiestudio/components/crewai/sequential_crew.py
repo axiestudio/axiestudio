@@ -32,7 +32,7 @@ class SequentialCrewComponent(BaseCrewComponent):
         try:
             from crewai import Crew, Process
         except ImportError as e:
-            msg = "CrewAI is not installed. Please install it with `uv pip install crewai`."
+            msg = "CrewAI är inte installerat. Vänligen installera det med `uv pip install crewai`."
             raise ImportError(msg) from e
 
         tasks, agents = self.get_tasks_and_agents()

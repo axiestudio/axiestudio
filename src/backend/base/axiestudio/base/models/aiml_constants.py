@@ -17,10 +17,10 @@ class AimlModels:
                 response = client.get("https://api.aimlapi.com/models")
                 response.raise_for_status()
         except httpx.RequestError as e:
-            msg = "Failed to connect to the AI/ML API."
+            msg = "Misslyckades att ansluta till AI/ML API."
             raise APIConnectionError(msg) from e
         except httpx.HTTPStatusError as e:
-            msg = f"AI/ML API responded with status code: {e.response.status_code}"
+            msg = f"AI/ML API svarade med statuskod: {e.response.status_code}"
             raise APIError(
                 message=msg,
                 body=None,
@@ -31,7 +31,7 @@ class AimlModels:
             models = response.json().get("data", [])
             self.separate_models_by_type(models)
         except (ValueError, KeyError, TypeError) as e:
-            msg = "Failed to parse response data from AI/ML API. The format may be incorrect."
+            msg = "Misslyckades att tolka svarsdata från AI/ML API. Formatet kan vara felaktigt."
             raise ValueError(msg) from e
 
     def separate_models_by_type(self, models):

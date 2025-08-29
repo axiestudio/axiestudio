@@ -100,7 +100,7 @@ def list_custom_components() -> list[str]:
         return component_names
         
     except Exception as e:
-        logger.error(f"Error listing custom components: {e}")
+        logger.error(f"Fel vid listning av anpassade komponenter: {e}")
         return []
 
 

@@ -12,7 +12,7 @@ from axiestudio.template.field.base import Output
 
 
 class YouTubeChannelComponent(Component):
-    """A component that retrieves detailed information about YouTube channels."""
+    """En komponent som hämtar detaljerad information om YouTube-kanaler."""
 
     display_name: str = "YouTube-kanal"
     description: str = "Hämtar detaljerad information och statistik om YouTube-kanaler som en DataFrame."
@@ -28,34 +28,34 @@ class YouTubeChannelComponent(Component):
         MessageTextInput(
             name="channel_url",
             display_name="Kanal-URL eller ID",
-            info="The URL or ID of the YouTube channel.",
+            info="URL:en eller ID:t för YouTube-kanalen.",
             tool_mode=True,
             required=True,
         ),
         SecretStrInput(
             name="api_key",
-            display_name="YouTube API Key",
-            info="Your YouTube Data API key.",
+            display_name="YouTube API-nyckel",
+            info="Din YouTube Data API-nyckel.",
             required=True,
         ),
         BoolInput(
             name="include_statistics",
-            display_name="Include Statistics",
+            display_name="Inkludera statistik",
             value=True,
-            info="Include channel statistics (views, subscribers, videos).",
+            info="Inkludera kanalstatistik (visningar, prenumeranter, videor).",
         ),
         BoolInput(
             name="include_branding",
-            display_name="Include Branding",
+            display_name="Inkludera varumärke",
             value=True,
-            info="Include channel branding settings (banner, thumbnails).",
+            info="Inkludera kanalvarumärkesinställningar (banner, miniatyrer).",
             advanced=True,
         ),
         BoolInput(
             name="include_playlists",
-            display_name="Include Playlists",
+            display_name="Inkludera spellistor",
             value=False,
-            info="Include channel's public playlists.",
+            info="Inkludera kanalens offentliga spellistor.",
             advanced=True,
         ),
     ]

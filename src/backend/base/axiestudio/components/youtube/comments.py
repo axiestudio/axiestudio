@@ -11,7 +11,7 @@ from axiestudio.template.field.base import Output
 
 
 class YouTubeCommentsComponent(Component):
-    """A component that retrieves comments from YouTube videos."""
+    """En komponent som hämtar kommentarer från YouTube-videor."""
 
     display_name: str = "YouTube-kommentarer"
     description: str = "Hämtar och analyserar kommentarer från YouTube-videor."
@@ -150,12 +150,12 @@ class YouTubeCommentsComponent(Component):
             client.close()
 
     def get_video_comments(self) -> DataFrame:
-        """Retrieves comments from a YouTube video and returns as DataFrame."""
+        """Hämtar kommentarer från en YouTube-video och returnerar som DataFrame."""
         try:
-            # Extract video ID from URL
+            # Extrahera video-ID från URL
             video_id = self._extract_video_id(self.video_url)
 
-            # Use context manager for YouTube API client
+            # Använd kontexthanterare för YouTube API-klient
             with self.youtube_client() as youtube:
                 comments_data = []
                 results_count = 0

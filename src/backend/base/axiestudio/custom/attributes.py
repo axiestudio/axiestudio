@@ -13,12 +13,12 @@ def validate_icon(value: str):
     if not value.startswith(":") or not value.endswith(":"):
         # emoji should have both starting and ending colons
         # so if one of them is missing, we will raise
-        msg = f"Invalid emoji. {value} is not a valid emoji."
+        msg = f"Ogiltig emoji. {value} är inte en giltig emoji."
         raise ValueError(msg)
 
     emoji_value = emoji.emojize(value, variant="emoji_type")
     if value == emoji_value:
-        logger.warning(f"Invalid emoji. {value} is not a valid emoji.")
+        logger.warning(f"Ogiltig emoji. {value} är inte en giltig emoji.")
         return value
     return emoji_value
 

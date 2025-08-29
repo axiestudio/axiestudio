@@ -372,7 +372,7 @@ class ComposioGmailAPIComponent(ComposioBaseComponent):
                 try:
                     error_data = json.loads(message_str).get("error", {})
                 except json.JSONDecodeError:
-                    error_data = {"error": "Failed to get exact error details"}
+                    error_data = {"error": "Misslyckades att få exakta feldetaljer"}
                 return {
                     "code": error_data.get("code"),
                     "message": error_data.get("message"),

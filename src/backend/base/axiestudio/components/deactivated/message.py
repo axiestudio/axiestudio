@@ -4,21 +4,21 @@ from axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_USER
 
 
 class MessageComponent(CustomComponent):
-    display_name = "Message"
-    description = "Creates a Message object given a Session ID."
+    display_name = "Meddelande"
+    description = "Skapar ett Message-objekt givet ett Sessions-ID."
     name = "Message"
 
     def build_config(self):
         return {
             "sender": {
                 "options": [MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],
-                "display_name": "Sender Type",
+                "display_name": "Avsändartyp",
             },
-            "sender_name": {"display_name": "Sender Name"},
+            "sender_name": {"display_name": "Avsändarnamn"},
             "text": {"display_name": "Text"},
             "session_id": {
-                "display_name": "Session ID",
-                "info": "Session ID of the chat history.",
+                "display_name": "Sessions-ID",
+                "info": "Sessions-ID för chatthistoriken.",
                 "input_types": ["Message"],
             },
         }

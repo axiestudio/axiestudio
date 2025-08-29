@@ -190,7 +190,7 @@ def create_tool_coroutine(tool_name: str, arg_schema: type[BaseModel], client) -
         # Map positional arguments to their corresponding field names
         for i, arg in enumerate(args):
             if i >= len(field_names):
-                msg = "Too many positional arguments provided"
+                msg = "För många positionsargument angivna"
                 raise ValueError(msg)
             provided_args[field_names[i]] = arg
         # Merge in keyword arguments
@@ -199,7 +199,7 @@ def create_tool_coroutine(tool_name: str, arg_schema: type[BaseModel], client) -
         try:
             validated = arg_schema.model_validate(provided_args)
         except Exception as e:
-            msg = f"Invalid input: {e}"
+            msg = f"Ogiltig indata: {e}"
             raise ValueError(msg) from e
 
         try:
@@ -207,7 +207,7 @@ def create_tool_coroutine(tool_name: str, arg_schema: type[BaseModel], client) -
         except Exception as e:
             logger.error(f"Tool '{tool_name}' execution failed: {e}")
             # Re-raise with more context
-            msg = f"Tool '{tool_name}' execution failed: {e}"
+            msg = f"Verktyget '{tool_name}' misslyckades: {e}"
             raise ValueError(msg) from e
 
     return tool_coroutine
@@ -219,14 +219,14 @@ def create_tool_func(tool_name: str, arg_schema: type[BaseModel], client) -> Cal
         provided_args = {}
         for i, arg in enumerate(args):
             if i >= len(field_names):
-                msg = "Too many positional arguments provided"
+                msg = "För många positionsargument angivna"
                 raise ValueError(msg)
             provided_args[field_names[i]] = arg
         provided_args.update(kwargs)
         try:
             validated = arg_schema.model_validate(provided_args)
         except Exception as e:
-            msg = f"Invalid input: {e}"
+            msg = f"Ogiltig indata: {e}"
             raise ValueError(msg) from e
 
         try:
@@ -235,7 +235,7 @@ def create_tool_func(tool_name: str, arg_schema: type[BaseModel], client) -> Cal
         except Exception as e:
             logger.error(f"Tool '{tool_name}' execution failed: {e}")
             # Re-raise with more context
-            msg = f"Tool '{tool_name}' execution failed: {e}"
+            msg = f"Verktyget '{tool_name}' misslyckades: {e}"
             raise ValueError(msg) from e
 
     return tool_func
@@ -277,7 +277,7 @@ def create_input_schema_from_json_schema(schema: dict[str, Any]) -> type[BaseMod
     Non-required fields become Optional[...] with default=None.
     """
     if schema.get("type") != "object":
-        msg = "Root schema must be type 'object'"
+        msg = "Rotschema måste vara av typen 'object'"
         raise ValueError(msg)
 
     defs: dict[str, dict[str, Any]] = schema.get("$defs", {})
@@ -357,7 +357,7 @@ def create_input_schema_from_json_schema(schema: dict[str, Any]) -> type[BaseMod
                 return model_cache[refname]
             target = defs.get(refname)
             if not target:
-                msg = f"Definition '{refname}' not found"
+                msg = f"Definition '{refname}' hittades inte"
                 raise ValueError(msg)
             cls = _build_model(refname, target)
             model_cache[refname] = cls
@@ -438,7 +438,7 @@ def _process_headers(headers: Any) -> dict:
 def _validate_node_installation(command: str) -> str:
     """Validate the npx command."""
     if "npx" in command and not shutil.which("node"):
-        msg = "Node.js is not installed. Please install Node.js to use npx commands."
+        msg = "Node.js är inte installerat. Vänligen installera Node.js för att använda npx-kommandon."
         raise ValueError(msg)
     return command
 
@@ -446,16 +446,16 @@ def _validate_node_installation(command: str) -> str:
 async def _validate_connection_params(mode: str, command: str | None = None, url: str | None = None) -> None:
     """Validate connection parameters based on mode."""
     if mode not in ["Stdio", "SSE"]:
-        msg = f"Invalid mode: {mode}. Must be either 'Stdio' or 'SSE'"
+        msg = f"Ogiltigt läge: {mode}. Måste vara antingen 'Stdio' eller 'SSE'"
         raise ValueError(msg)
 
     if mode == "Stdio" and not command:
-        msg = "Command is required for Stdio mode"
+        msg = "Kommando krävs för Stdio-läge"
         raise ValueError(msg)
     if mode == "Stdio" and command:
         _validate_node_installation(command)
     if mode == "SSE" and not url:
-        msg = "URL is required for SSE mode"
+        msg = "URL krävs för SSE-läge"
         raise ValueError(msg)
 
 
@@ -848,7 +848,7 @@ class MCPStdioClient:
     async def _get_or_create_session(self) -> ClientSession:
         """Get or create a persistent session for the current context."""
         if not self._session_context or not self._connection_params:
-            msg = "Session context and connection params must be set"
+            msg = "Sessionskontext och anslutningsparametrar måste anges"
             raise ValueError(msg)
 
         # Use cached session manager to get/create persistent session
@@ -869,7 +869,7 @@ class MCPStdioClient:
             ValueError: If session is not initialized or tool execution fails
         """
         if not self._connected or not self._connection_params:
-            msg = "Session not initialized or disconnected. Call connect_to_server first."
+            msg = "Session inte initialiserad eller frånkopplad. Anropa connect_to_server först."
             raise ValueError(msg)
 
         # If no session context is set, create a default one
@@ -1009,7 +1009,7 @@ class MCPSseClient:
         try:
             parsed = urlparse(url)
             if not parsed.scheme or not parsed.netloc:
-                return False, "Invalid URL format. Must include scheme (http/https) and host."
+                return False, "Ogiltigt URL-format. Måste inkludera schema (http/https) och värd."
 
             async with httpx.AsyncClient() as client:
                 try:
@@ -1035,19 +1035,19 @@ class MCPSseClient:
                         HTTP_BAD_REQUEST <= response.status_code < HTTP_INTERNAL_SERVER_ERROR
                         and response.status_code != HTTP_NOT_FOUND
                     ):
-                        return False, f"Server returned client error status: {response.status_code}"
+                        return False, f"Servern returnerade klientfelstatus: {response.status_code}"
 
                 except httpx.TimeoutException:
                     # Timeout on a short request might indicate the server is trying to stream
                     # This is actually expected behavior for SSE endpoints
                     return True, ""
                 except httpx.NetworkError:
-                    return False, "Network error. Could not reach the server."
+                    return False, "Nätverksfel. Kunde inte nå servern."
                 else:
                     return True, ""
 
         except (httpx.HTTPError, ValueError, OSError) as e:
-            return False, f"URL validation error: {e!s}"
+            return False, f"URL-valideringsfel: {e!s}"
 
     async def pre_check_redirect(self, url: str | None, headers: dict[str, str] | None = None) -> str | None:
         """Check for redirects and return the final URL."""
@@ -1078,7 +1078,7 @@ class MCPSseClient:
         validated_headers = _process_headers(headers)
 
         if url is None:
-            msg = "URL is required for SSE mode"
+            msg = "URL krävs för SSE-läge"
             raise ValueError(msg)
         is_valid, error_msg = await self.validate_url(url, validated_headers)
         if not is_valid:
@@ -1122,7 +1122,7 @@ class MCPSseClient:
     async def _get_or_create_session(self) -> ClientSession:
         """Get or create a persistent session for the current context."""
         if not self._session_context or not self._connection_params:
-            msg = "Session context and params must be set"
+            msg = "Sessionskontext och parametrar måste anges"
             raise ValueError(msg)
 
         # Use cached session manager to get/create persistent session
@@ -1155,7 +1155,7 @@ class MCPSseClient:
             ValueError: If session is not initialized or tool execution fails
         """
         if not self._connected or not self._connection_params:
-            msg = "Session not initialized or disconnected. Call connect_to_server first."
+            msg = "Session inte initialiserad eller frånkopplad. Anropa connect_to_server först."
             raise ValueError(msg)
 
         # If no session context is set, create a default one

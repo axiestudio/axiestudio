@@ -530,7 +530,7 @@ async def load_starter_projects(retries=3, delay=1) -> list[tuple[anyio.Path, di
             except orjson.JSONDecodeError as e:
                 attempt += 1
                 if attempt >= retries:
-                    msg = f"Error loading starter project {file}: {e}"
+                    msg = f"Fel vid laddning av startprojekt {file}: {e}"
                     raise ValueError(msg) from e
                 await asyncio.sleep(delay)  # Wait before retrying
     logger.debug(f"Loaded {len(starter_projects)} starter projects")
@@ -555,7 +555,7 @@ async def copy_profile_pictures() -> None:
     # Get config directory from settings
     config_dir = get_storage_service().settings_service.settings.config_dir
     if config_dir is None:
-        msg = "Config dir is not set in the settings"
+        msg = "Konfigurationskatalog är inte inställd i inställningarna"
         raise ValueError(msg)
 
     # Setup source and target paths
@@ -563,7 +563,7 @@ async def copy_profile_pictures() -> None:
     target = anyio.Path(config_dir) / "profile_pictures"
 
     if not await origin.exists():
-        msg = f"The source folder '{origin}' does not exist."
+        msg = f"Källmappen '{origin}' existerar inte."
         raise ValueError(msg)
 
     # Create target dir if needed
@@ -596,8 +596,8 @@ async def copy_profile_pictures() -> None:
             await asyncio.gather(*tasks)
 
     except Exception as exc:
-        logger.exception("Error copying profile pictures")
-        msg = "An error occurred while copying profile pictures."
+        logger.exception("Fel vid kopiering av profilbilder")
+        msg = "Ett fel uppstod vid kopiering av profilbilder."
         raise RuntimeError(msg) from exc
 
 
@@ -844,7 +844,7 @@ async def upsert_flow_from_file(file_content: AnyStr, filename: str, session: As
         try:
             flow_id = UUID(flow_id)
         except ValueError:
-            logger.error(f"Invalid UUID string: {flow_id}")
+            logger.error(f"Ogiltig UUID-sträng: {flow_id}")
             return
 
     existing = await find_existing_flow(session, flow_id, flow_endpoint_name)
@@ -867,7 +867,7 @@ async def upsert_flow_from_file(file_content: AnyStr, filename: str, session: As
             try:
                 existing.id = UUID(existing.id)
             except ValueError:
-                logger.error(f"Invalid UUID string: {existing.id}")
+                logger.error(f"Ogiltig UUID-sträng: {existing.id}")
                 return
 
         session.add(existing)
@@ -1051,7 +1051,7 @@ async def get_or_create_default_folder(session: AsyncSession, user_id: UUID) -> 
         folder = result.first()
         if folder:
             return FolderRead.model_validate(folder, from_attributes=True)
-        msg = "Failed to get or create default folder"
+        msg = "Misslyckades med att hämta eller skapa standardmapp"
         raise ValueError(msg) from e
     return FolderRead.model_validate(folder_obj, from_attributes=True)
 

@@ -37,7 +37,7 @@ class AgentAsyncHandler(AsyncCallbackHandler):
                 "metadata": metadata,
                 **kwargs,
             },
-            name="Chain Start",
+            name="Kedjestart",
         )
 
     async def on_tool_start(
@@ -66,7 +66,7 @@ class AgentAsyncHandler(AsyncCallbackHandler):
                 "inputs": inputs,
                 **kwargs,
             },
-            name="Tool Start",
+            name="Verktygsstart",
         )
 
     async def on_tool_end(self, output: Any, *, run_id: UUID, parent_run_id: UUID | None = None, **kwargs: Any) -> None:
@@ -80,7 +80,7 @@ class AgentAsyncHandler(AsyncCallbackHandler):
                 "parent_run_id": parent_run_id,
                 **kwargs,
             },
-            name="Tool End",
+            name="Verktygsslut",
         )
 
     async def on_agent_action(
@@ -103,7 +103,7 @@ class AgentAsyncHandler(AsyncCallbackHandler):
                 "tags": tags,
                 **kwargs,
             },
-            name="Agent Action",
+            name="Agentåtgärd",
         )
 
     async def on_agent_finish(
@@ -126,5 +126,5 @@ class AgentAsyncHandler(AsyncCallbackHandler):
                 "tags": tags,
                 **kwargs,
             },
-            name="Agent Finish",
+            name="Agentslut",
         )

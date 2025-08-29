@@ -41,7 +41,7 @@ class SplitTextComponent(Component):
     ]
 
     outputs = [
-        Output(display_name="Chunks", name="chunks", method="split_text"),
+        Output(display_name="Bitar", name="chunks", method="split_text"),
     ]
 
     def _docs_to_data(self, docs):

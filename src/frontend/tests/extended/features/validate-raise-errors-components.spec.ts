@@ -15,28 +15,28 @@ from axiestudio.schema import Data
 
 
 class CustomComponent(Component):
-    display_name = "Custom Component"
-    description = "Use as a template to create your own component."
-    documentation: str = "https://docs.axiestudio.org/components-custom-components"
+    display_name = "Anpassad komponent"
+    description = "Använd som mall för att skapa din egen komponent."
+    documentation: str = "https://docs.axiestudio.se/components-custom-components"
     icon = "code"
     name = "CustomComponent"
 
     inputs = [
         MessageTextInput(
             name="input_value",
-            display_name="Input Value",
-            info="This is a custom component Input",
+            display_name="Inmatningsvärde",
+            info="Detta är en anpassad komponentinmatning",
             value="Hello, World!",
             tool_mode=True,
         ),
     ]
 
     outputs = [
-        Output(display_name="Output", name="output", method="build_output"),
+        Output(display_name="Utmatning", name="output", method="build_output"),
     ]
 
     def build_output(self) -> Data:
-        msg = "THIS IS A TEST ERROR MESSAGE"
+        msg = "DETTA ÄR ETT TESTFELMEDDELANDE"
         raise ValueError(msg)
         data = Data(value=self.input_value)
         self.status = data

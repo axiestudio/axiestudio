@@ -83,11 +83,11 @@ class DirectoryComponent(Component):
 
         resolved_path = self.resolve_path(path)
 
-        # If no types are specified, use all supported types
+        # Om inga typer anges, använd alla stödda typer
         if not types:
             types = TEXT_FILE_TYPES
 
-        # Check if all specified types are valid
+        # Kontrollera om alla angivna typer är giltiga
         invalid_types = [t for t in types if t not in TEXT_FILE_TYPES]
         if invalid_types:
             msg = f"Ogiltiga filtyper angivna: {invalid_types}. Giltiga typer är: {TEXT_FILE_TYPES}"

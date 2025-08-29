@@ -10,10 +10,10 @@ from axiestudio.io import HandleInput, StrInput
 
 
 class VectaraSelfQueryRetriverComponent(CustomComponent):
-    """A custom component for implementing Vectara Self Query Retriever using a vector store."""
+    """En anpassad komponent för att implementera Vectara Self Query Retriever med hjälp av ett vektorlager."""
 
     display_name: str = "Vectara Self Query Retriever"
-    description: str = "Implementation of Vectara Self Query Retriever"
+    description: str = "Implementering av Vectara Self Query Retriever"
     name = "VectaraSelfQueryRetriver"
     icon = "Vectara"
     legacy = True

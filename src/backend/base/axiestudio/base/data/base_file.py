@@ -55,7 +55,7 @@ class BaseFileComponent(Component, ABC):
             elif isinstance(value, list) and all(isinstance(item, Data) for item in value):
                 self._data = value
             else:
-                msg = f"data must be a Data object or a list of Data objects. Got: {type(value)}"
+                msg = f"data måste vara ett Data-objekt eller en lista av Data-objekt. Fick: {type(value)}"
                 if not self._silent_errors:
                     raise ValueError(msg)
 
@@ -77,7 +77,7 @@ class BaseFileComponent(Component, ABC):
             elif isinstance(new_data, list) and all(isinstance(item, Data) for item in new_data):
                 new_data_list = new_data
             else:
-                msg = "new_data must be a Data object, a list of Data objects, or None."
+                msg = "new_data måste vara ett Data-objekt, en lista av Data-objekt, eller None."
                 if not self._silent_errors:
                     raise ValueError(msg)
                 return self.data
@@ -118,12 +118,12 @@ class BaseFileComponent(Component, ABC):
         bundles = ", ".join(self.SUPPORTED_BUNDLE_EXTENSIONS)
         self._base_inputs[
             0
-        ].info = f"Supported file extensions: {file_types}; optionally bundled in file extensions: {bundles}"
+        ].info = f"Stödda filtillägg: {file_types}; valfritt paketerade i filtillägg: {bundles}"
 
     _base_inputs = [
         FileInput(
             name="path",
-            display_name="Files",
+            display_name="Filer",
             fileTypes=[],  # Dynamically set in __init__
             info="",  # Dynamically set in __init__
             required=False,
@@ -132,10 +132,10 @@ class BaseFileComponent(Component, ABC):
         ),
         HandleInput(
             name="file_path",
-            display_name="Server File Path",
+            display_name="Serverfilsökväg",
             info=(
-                f"Data object with a '{SERVER_FILE_PATH_FIELDNAME}' property pointing to server file"
-                " or a Message object with a path to the file. Supercedes 'Path' but supports same file types."
+                f"Dataobjekt med en '{SERVER_FILE_PATH_FIELDNAME}'-egenskap som pekar på serverfil"
+                " eller ett Message-objekt med en sökväg till filen. Ersätter 'Path' men stöder samma filtyper."
             ),
             required=False,
             input_types=["Data", "Message"],
@@ -144,43 +144,43 @@ class BaseFileComponent(Component, ABC):
         ),
         StrInput(
             name="separator",
-            display_name="Separator",
+            display_name="Avgränsare",
             value="\n\n",
             show=True,
-            info="Specify the separator to use between multiple outputs in Message format.",
+            info="Ange avgränsaren att använda mellan flera utmatningar i Message-format.",
             advanced=True,
         ),
         BoolInput(
             name="silent_errors",
-            display_name="Silent Errors",
+            display_name="Tysta fel",
             advanced=True,
-            info="If true, errors will not raise an exception.",
+            info="Om sant kommer fel inte att kasta ett undantag.",
         ),
         BoolInput(
             name="delete_server_file_after_processing",
-            display_name="Delete Server File After Processing",
+            display_name="Ta bort serverfil efter bearbetning",
             advanced=True,
             value=True,
-            info="If true, the Server File Path will be deleted after processing.",
+            info="Om sant kommer serverfilsökvägen att tas bort efter bearbetning.",
         ),
         BoolInput(
             name="ignore_unsupported_extensions",
-            display_name="Ignore Unsupported Extensions",
+            display_name="Ignorera ostödda tillägg",
             advanced=True,
             value=True,
-            info="If true, files with unsupported extensions will not be processed.",
+            info="Om sant kommer filer med ostödda tillägg inte att bearbetas.",
         ),
         BoolInput(
             name="ignore_unspecified_files",
-            display_name="Ignore Unspecified Files",
+            display_name="Ignorera ospecificerade filer",
             advanced=True,
             value=False,
-            info=f"If true, Data with no '{SERVER_FILE_PATH_FIELDNAME}' property will be ignored.",
+            info=f"Om sant kommer Data utan '{SERVER_FILE_PATH_FIELDNAME}'-egenskap att ignoreras.",
         ),
     ]
 
     _base_outputs = [
-        Output(display_name="Files", name="dataframe", method="load_files"),
+        Output(display_name="Filer", name="dataframe", method="load_files"),
     ]
 
     @abstractmethod

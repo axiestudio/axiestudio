@@ -86,8 +86,8 @@ class LangWatchComponent(Component):
         url = f"{endpoint}/api/evaluations/list"
         self.evaluators = get_cached_evaluators(url)
         if not self.evaluators or len(self.evaluators) == 0:
-            self.status = f"No evaluators found from {endpoint}"
-            msg = f"No evaluators found from {endpoint}"
+            self.status = f"Inga utvärderare hittades från {endpoint}"
+            msg = f"Inga utvärderare hittades från {endpoint}"
             raise ValueError(msg)
 
     def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None) -> dotdict:
@@ -147,10 +147,10 @@ class LangWatchComponent(Component):
             # Ensure the current_evaluator is always set in the build_config
             build_config["evaluator_name"]["value"] = self.current_evaluator
 
-            logger.info(f"Current evaluator set to: {self.current_evaluator}")
+            logger.info(f"Aktuell utvärderare inställd på: {self.current_evaluator}")
 
         except (KeyError, AttributeError, ValueError) as e:
-            self.status = f"Error updating component: {e!s}"
+            self.status = f"Fel vid uppdatering av komponent: {e!s}"
         return build_config
 
     def get_dynamic_inputs(self, evaluator: dict[str, Any]):
@@ -213,7 +213,7 @@ class LangWatchComponent(Component):
 
     async def evaluate(self) -> Data:
         if not self.api_key:
-            return Data(data={"error": "API key is required"})
+            return Data(data={"error": "API-nyckel krävs"})
 
         self.set_evaluators(os.getenv("LANGWATCH_ENDPOINT", "https://app.langwatch.ai"))
         self.dynamic_inputs = {}
@@ -226,10 +226,10 @@ class LangWatchComponent(Component):
         if not evaluator_name:
             if self.evaluators:
                 evaluator_name = next(iter(self.evaluators))
-                logger.info(f"No evaluator was selected. Using default: {evaluator_name}")
+                logger.info(f"Ingen utvärderare valdes. Använder standard: {evaluator_name}")
             else:
                 return Data(
-                    data={"error": "No evaluator selected and no evaluators available. Please choose an evaluator."}
+                    data={"error": "Ingen utvärderare vald och inga utvärderare tillgängliga. Vänligen välj en utvärderare."}
                 )
 
         try:
@@ -237,7 +237,7 @@ class LangWatchComponent(Component):
             if not evaluator:
                 return Data(data={"error": f"Selected evaluator '{evaluator_name}' not found."})
 
-            logger.info(f"Evaluating with evaluator: {evaluator_name}")
+            logger.info(f"Utvärderar med utvärderare: {evaluator_name}")
 
             endpoint = f"/api/evaluations/{evaluator_name}/evaluate"
             url = f"{os.getenv('LANGWATCH_ENDPOINT', 'https://app.langwatch.ai')}{endpoint}"
@@ -269,10 +269,10 @@ class LangWatchComponent(Component):
             result = response.json()
 
             formatted_result = json.dumps(result, indent=2)
-            self.status = f"Evaluation completed successfully. Result:\n{formatted_result}"
+            self.status = f"Utvärdering slutförd framgångsrikt. Resultat:\n{formatted_result}"
             return Data(data=result)
 
         except (httpx.RequestError, KeyError, AttributeError, ValueError) as e:
-            error_message = f"Evaluation error: {e!s}"
+            error_message = f"Utvärderingsfel: {e!s}"
             self.status = error_message
             return Data(data={"error": error_message})

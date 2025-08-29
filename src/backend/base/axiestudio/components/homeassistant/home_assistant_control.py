@@ -90,9 +90,9 @@ class HomeAssistantControl(LCToolComponent):
         return StructuredTool.from_function(
             name="home_assistant_control",
             description=(
-                "A tool to control Home Assistant devices easily. "
-                "Parameters: action ('turn_on'/'turn_off'/'toggle'), entity_id ('switch.xxx', etc.)."
-                "Entity ID must be obtained using the list_homeassistant_states tool and not guessed."
+                "Ett verktyg för att enkelt styra Home Assistant-enheter. "
+                "Parametrar: action ('turn_on'/'turn_off'/'toggle'), entity_id ('switch.xxx', etc.)."
+                "Entity ID måste erhållas med hjälp av list_homeassistant_states-verktyget och inte gissas."
             ),
             func=self._control_device_for_tool,  # Wrapper function below
             args_schema=self.ToolSchema,

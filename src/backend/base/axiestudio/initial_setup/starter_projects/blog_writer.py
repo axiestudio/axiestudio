@@ -24,10 +24,10 @@ Blog:
     parse_data_component = ParserComponent()
     parse_data_component.set(input_data=url_component.fetch_content)
 
-    text_input = TextInputComponent(_display_name="Instructions")
+    text_input = TextInputComponent(_display_name="Instruktioner")
     text_input.set(
-        input_value="Use the references above for style to write a new blog/tutorial about Axie Studio and AI. "
-        "Suggest non-covered topics."
+        input_value="Använd referenserna ovan för stil för att skriva en ny blogg/handledning om Axie Studio och AI. "
+        "Föreslå ämnen som inte täcks."
     )
 
     prompt_component = PromptComponent()

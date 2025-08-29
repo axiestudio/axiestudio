@@ -2,8 +2,8 @@ from axiestudio.custom.custom_component.component import Component
 
 
 class ChatComponent(Component):
-    display_name = "Chat Component"
-    description = "Use as base for chat components."
+    display_name = "Chattkomponent"
+    description = "Använd som bas för chattkomponenter."
 
     def get_properties_from_source_component(self):
         if hasattr(self, "_vertex") and hasattr(self._vertex, "incoming_edges") and self._vertex.incoming_edges:

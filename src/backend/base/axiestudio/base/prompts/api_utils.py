@@ -90,10 +90,10 @@ def _check_variable(var, invalid_chars, wrong_variables, empty_variables):
 def _check_for_errors(input_variables, fixed_variables, wrong_variables, empty_variables) -> None:
     if any(var for var in input_variables if var not in fixed_variables):
         error_message = (
-            f"Error: Input variables contain invalid characters or formats. \n"
-            f"Invalid variables: {', '.join(wrong_variables)}.\n"
-            f"Empty variables: {', '.join(empty_variables)}. \n"
-            f"Fixed variables: {', '.join(fixed_variables)}."
+            f"Fel: Inmatningsvariabler innehåller ogiltiga tecken eller format. \n"
+            f"Ogiltiga variabler: {', '.join(wrong_variables)}.\n"
+            f"Tomma variabler: {', '.join(empty_variables)}. \n"
+            f"Fixade variabler: {', '.join(fixed_variables)}."
         )
         raise ValueError(error_message)
 
@@ -128,13 +128,13 @@ def validate_prompt(prompt_template: str, *, silent_errors: bool = False) -> lis
     # Check if there are invalid characters in the input_variables
     input_variables = _check_input_variables(input_variables)
     if any(var in _INVALID_NAMES for var in input_variables):
-        msg = f"Invalid input variables. None of the variables can be named {', '.join(input_variables)}. "
+        msg = f"Ogiltiga inmatningsvariabler. Ingen av variablerna kan heta {', '.join(input_variables)}. "
         raise ValueError(msg)
 
     try:
         PromptTemplate(template=prompt_template, input_variables=input_variables)
     except Exception as exc:
-        msg = f"Invalid prompt: {exc}"
+        msg = f"Ogiltig prompt: {exc}"
         logger.exception(msg)
         if not silent_errors:
             raise ValueError(msg) from exc
@@ -201,11 +201,11 @@ def update_input_variables_field(input_variables, template) -> None:
 def process_prompt_template(
     template: str, name: str, custom_fields: dict[str, list[str]] | None, frontend_node_template: dict[str, Any]
 ):
-    """Process and validate prompt template, update template and custom fields."""
-    # Validate the prompt template and extract input variables
+    """Bearbeta och validera promptmall, uppdatera mall och anpassade fält."""
+    # Validera promptmallen och extrahera inmatningsvariabler
     input_variables = validate_prompt(template)
 
-    # Initialize custom_fields if None
+    # Initialisera custom_fields om None
     if custom_fields is None:
         custom_fields = defaultdict(list)
 

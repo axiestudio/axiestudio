@@ -11,8 +11,8 @@ from axiestudio.schema.data import Data
 
 
 class ToolCallingAgentComponent(LCToolsAgentComponent):
-    display_name: str = "Tool Calling Agent"
-    description: str = "An agent designed to utilize various tools seamlessly within workflows."
+    display_name: str = "Verktygsanropande agent"
+    description: str = "En agent designad för att använda olika verktyg sömlöst inom arbetsflöden."
     icon = "LangChain"
     name = "ToolCallingAgent"
 
@@ -20,23 +20,23 @@ class ToolCallingAgentComponent(LCToolsAgentComponent):
         *LCToolsAgentComponent._base_inputs,
         HandleInput(
             name="llm",
-            display_name="Language Model",
+            display_name="Språkmodell",
             input_types=["LanguageModel"],
             required=True,
-            info="Language model that the agent utilizes to perform tasks effectively.",
+            info="Språkmodell som agenten använder för att utföra uppgifter effektivt.",
         ),
         MessageTextInput(
             name="system_prompt",
-            display_name="System Prompt",
-            info="System prompt to guide the agent's behavior.",
-            value="You are a helpful assistant that can use tools to answer questions and perform tasks.",
+            display_name="Systemprompt",
+            info="Systemprompt för att vägleda agentens beteende.",
+            value="Du är en hjälpsam assistent som kan använda verktyg för att svara på frågor och utföra uppgifter.",
         ),
         DataInput(
             name="chat_history",
-            display_name="Chat Memory",
+            display_name="Chattminne",
             is_list=True,
             advanced=True,
-            info="This input stores the chat history, allowing the agent to remember previous conversations.",
+            info="Denna inmatning lagrar chatthistoriken, vilket gör att agenten kan komma ihåg tidigare konversationer.",
         ),
     ]
 
@@ -55,5 +55,5 @@ class ToolCallingAgentComponent(LCToolsAgentComponent):
         try:
             return create_tool_calling_agent(self.llm, self.tools or [], prompt)
         except NotImplementedError as e:
-            message = f"{self.display_name} does not support tool calling. Please try using a compatible model."
+            message = f"{self.display_name} stöder inte verktygsanrop. Vänligen försök använda en kompatibel modell."
             raise NotImplementedError(message) from e

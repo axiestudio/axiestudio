@@ -26,9 +26,9 @@ TOOL_TABLE_SCHEMA = [
     },
     {
         "name": "tags",
-        "display_name": "Tool Identifiers",
+        "display_name": "Verktygsidentifierare",
         "type": "str",
-        "description": ("The default identifiers for the tools and cannot be changed."),
+        "description": ("Standardidentifierarna för verktygen och kan inte ändras."),
         "disable_edit": True,
         "sortable": False,
         "filterable": False,
@@ -37,13 +37,13 @@ TOOL_TABLE_SCHEMA = [
     },
     {
         "name": "status",
-        "display_name": "Enable",
+        "display_name": "Aktivera",
         "type": "boolean",
-        "description": "Indicates whether the tool is currently active. Set to True to activate this tool.",
+        "description": "Indikerar om verktyget är aktivt för närvarande. Sätt till True för att aktivera detta verktyg.",
         "default": True,
     },
 ]
 
-TOOLS_METADATA_INFO = "Modify tool names and descriptions to help agents understand when to use each tool."
+TOOLS_METADATA_INFO = "Ändra verktygsnamn och beskrivningar för att hjälpa agenter förstå när de ska använda varje verktyg."
 
 TOOL_UPDATE_CONSTANTS = ["tool_mode", "tool_actions", TOOLS_METADATA_INPUT_NAME, "flow_name_selected"]

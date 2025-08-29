@@ -8,7 +8,7 @@ from axiestudio.schema.data import Data
 
 class ConfluenceComponent(Component):
     display_name = "Confluence"
-    description = "Confluence wiki collaboration platform"
+    description = "Confluence wiki-samarbetsplattform"
     documentation = "https://python.langchain.com/v0.2/docs/integrations/document_loaders/confluence/"
     trace_type = "tool"
     icon = "Confluence"
@@ -17,27 +17,27 @@ class ConfluenceComponent(Component):
     inputs = [
         StrInput(
             name="url",
-            display_name="Site URL",
+            display_name="Webbplats-URL",
             required=True,
-            info="The base URL of the Confluence Space. Example: https://<company>.atlassian.net/wiki.",
+            info="Bas-URL:en för Confluence-utrymmet. Exempel: https://<företag>.atlassian.net/wiki.",
         ),
         StrInput(
             name="username",
-            display_name="Username",
+            display_name="Användarnamn",
             required=True,
-            info="Atlassian User E-mail. Example: email@example.com",
+            info="Atlassian-användarens e-post. Exempel: email@example.com",
         ),
         SecretStrInput(
             name="api_key",
-            display_name="API Key",
+            display_name="API-nyckel",
             required=True,
-            info="Atlassian Key. Create at: https://id.atlassian.com/manage-profile/security/api-tokens",
+            info="Atlassian-nyckel. Skapa på: https://id.atlassian.com/manage-profile/security/api-tokens",
         ),
-        StrInput(name="space_key", display_name="Space Key", required=True),
-        BoolInput(name="cloud", display_name="Use Cloud?", required=True, value=True, advanced=True),
+        StrInput(name="space_key", display_name="Utrymmesnyckel", required=True),
+        BoolInput(name="cloud", display_name="Använd moln?", required=True, value=True, advanced=True),
         DropdownInput(
             name="content_format",
-            display_name="Content Format",
+            display_name="Innehållsformat",
             options=[
                 ContentFormat.EDITOR.value,
                 ContentFormat.EXPORT_VIEW.value,

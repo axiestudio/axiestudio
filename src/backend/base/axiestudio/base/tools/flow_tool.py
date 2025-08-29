@@ -68,7 +68,7 @@ class FlowTool(BaseTool):
             )
         )
         if not run_outputs:
-            return "No output"
+            return "Ingen utdata"
         run_output = run_outputs[0]
 
         data = []
@@ -89,7 +89,7 @@ class FlowTool(BaseTool):
 
         missing_args = [arg["arg_name"] for arg in args_names if arg["arg_name"] not in kwargs]
         if missing_args:
-            msg = f"Missing required arguments: {', '.join(missing_args)}"
+            msg = f"Saknar nödvändiga argument: {', '.join(missing_args)}"
             raise ToolException(msg)
 
         return kwargs
@@ -120,7 +120,7 @@ class FlowTool(BaseTool):
             graph=self.graph,
         )
         if not run_outputs:
-            return "No output"
+            return "Ingen utdata"
         run_output = run_outputs[0]
 
         data = []

@@ -11,7 +11,7 @@ from axiestudio.schema.data import Data
 
 
 class XMLAgentComponent(LCToolsAgentComponent):
-    display_name: str = "XML Agent"
+    display_name: str = "XML-agent"
     description: str = "Agent som använder verktyg som formaterar instruktioner som xml till språkmodellen."
     icon = "LangChain"
     beta = True

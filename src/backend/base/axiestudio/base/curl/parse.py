@@ -55,7 +55,7 @@ def parse_curl_command(curl_command):
     tokens = shlex.split(normalize_newlines(curl_command))
     tokens = [token for token in tokens if token and token != " "]  # noqa: S105
     if tokens and "curl" not in tokens[0]:
-        msg = "Invalid curl command"
+        msg = "Ogiltigt curl-kommando"
         raise ValueError(msg)
     args_template = {
         "command": None,

@@ -49,8 +49,8 @@ class LCVectorStoreComponent(Component):
             method = cls.build_vector_store
             if not hasattr(method, "is_cached_vector_store_checked"):
                 msg = (
-                    f"The method 'build_vector_store' in class {cls.__name__} "
-                    "must be decorated with @check_cached_vector_store"
+                    f"Metoden 'build_vector_store' i klass {cls.__name__} "
+                    "måste dekoreras med @check_cached_vector_store"
                 )
                 raise TypeError(msg)
 
@@ -59,30 +59,30 @@ class LCVectorStoreComponent(Component):
     inputs = [
         HandleInput(
             name="ingest_data",
-            display_name="Ingest Data",
+            display_name="Mata in data",
             input_types=["Data", "DataFrame"],
             is_list=True,
         ),
         QueryInput(
             name="search_query",
-            display_name="Search Query",
-            info="Enter a query to run a similarity search.",
-            placeholder="Enter a query...",
+            display_name="Sökfråga",
+            info="Ange en fråga för att köra en likhetsökning.",
+            placeholder="Ange en fråga...",
             tool_mode=True,
         ),
         BoolInput(
             name="should_cache_vector_store",
-            display_name="Cache Vector Store",
+            display_name="Cacha vektorlager",
             value=True,
             advanced=True,
-            info="If True, the vector store will be cached for the current build of the component. "
-            "This is useful for components that have multiple output methods and want to share the same vector store.",
+            info="Om True kommer vektorlagret att cachas för den aktuella byggnationen av komponenten. "
+            "Detta är användbart för komponenter som har flera utdatametoder och vill dela samma vektorlager.",
         ),
     ]
 
     outputs = [
         Output(
-            display_name="Search Results",
+            display_name="Sökresultat",
             name="search_results",
             method="search_documents",
         ),
@@ -98,10 +98,10 @@ class LCVectorStoreComponent(Component):
         output_names = [output.name for output in self.outputs]
         for method_name in required_output_methods:
             if method_name not in output_names:
-                msg = f"Output with name '{method_name}' must be defined."
+                msg = f"Output med namnet '{method_name}' måste definieras."
                 raise ValueError(msg)
             if not hasattr(self, method_name):
-                msg = f"Method '{method_name}' must be defined."
+                msg = f"Metoden '{method_name}' måste definieras."
                 raise ValueError(msg)
 
     def _prepare_ingest_data(self) -> list[Any]:
@@ -189,5 +189,5 @@ class LCVectorStoreComponent(Component):
     @check_cached_vector_store
     def build_vector_store(self) -> VectorStore:
         """Builds the Vector Store object."""
-        msg = "build_vector_store method must be implemented."
+        msg = "build_vector_store-metoden måste implementeras."
         raise NotImplementedError(msg)

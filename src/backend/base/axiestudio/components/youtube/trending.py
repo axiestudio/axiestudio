@@ -163,19 +163,19 @@ class YouTubeTrendingComponent(Component):
             if not 1 <= self.max_results <= MAX_API_RESULTS:
                 self.max_results = min(max(1, self.max_results), MAX_API_RESULTS)
 
-            # Use context manager for YouTube API client
+            # Använd kontexthanterare för YouTube API-klient
             with self.youtube_client() as youtube:
-                # Get country code
+                # Hämta landskod
                 region_code = self.COUNTRY_CODES[self.region]
 
-                # Prepare API request parts
+                # Förbered API-förfrågansdelar
                 parts = ["snippet"]
                 if self.include_statistics:
                     parts.append("statistics")
                 if self.include_content_details:
                     parts.append("contentDetails")
 
-                # Prepare API request parameters
+                # Förbered API-förfrågansparametrar
                 request_params = {
                     "part": ",".join(parts),
                     "chart": "mostPopular",
@@ -183,11 +183,11 @@ class YouTubeTrendingComponent(Component):
                     "maxResults": self.max_results,
                 }
 
-                # Add category filter if not "All"
+                # Lägg till kategorifilter om inte "All"
                 if self.category != "All":
                     request_params["videoCategoryId"] = self.VIDEO_CATEGORIES[self.category]
 
-                # Get trending videos
+                # Hämta trendande videor
                 request = youtube.videos().list(**request_params)
                 response = request.execute()
 

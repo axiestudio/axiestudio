@@ -115,7 +115,7 @@ def wrap_base_tool_as_tool_interface(base_tool: BaseTool) -> ToolInterface:
         schema_dict = raw_args_schema.schema()
 
     else:
-        msg = f"args_schema must be a Pydantic model class, a JSON schema dict, or None. Got: {raw_args_schema!r}"
+        msg = f"args_schema måste vara en Pydantic-modellklass, en JSON-schemaordbok, eller None. Fick: {raw_args_schema!r}"
         raise TypeError(msg)
 
     # --- 3) Build our dynamic Pydantic model from the JSON schema ---
@@ -153,7 +153,7 @@ def wrap_base_tool_as_tool_interface(base_tool: BaseTool) -> ToolInterface:
         def to_function(self):
             """Incorporate the base tool's description if present."""
             params = InputSchema.schema()
-            description = getattr(self._tool, "description", "A dynamically wrapped tool")
+            description = getattr(self._tool, "description", "Ett dynamiskt inslaget verktyg")
             return {
                 "type": "function",
                 "function": {"name": self.name(), "description": description, "parameters": params},
