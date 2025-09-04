@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
   const apiRoutes = API_ROUTES || ["^/api/v1/", "^/api/v2/", "/health"];
 
   const target =
-    env.VITE_PROXY_TARGET || PROXY_TARGET || "http://localhost:7860";
+    env.VITE_PROXY_TARGET || PROXY_TARGET || "https://se.axiestudio.se";
 
   const port = Number(env.VITE_PORT) || PORT || 3000;
 
@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
     },
     define: {
       "process.env.BACKEND_URL": JSON.stringify(
-        envAxiestudio.BACKEND_URL ?? env.BACKEND_URL ?? "http://localhost:7860",
+        envAxiestudio.BACKEND_URL ?? env.BACKEND_URL ?? "https://se.axiestudio.se",
       ),
       "process.env.ACCESS_TOKEN_EXPIRE_SECONDS": JSON.stringify(
         envAxiestudio.ACCESS_TOKEN_EXPIRE_SECONDS ?? env.ACCESS_TOKEN_EXPIRE_SECONDS ?? 60,
