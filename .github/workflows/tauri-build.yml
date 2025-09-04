@@ -1,22 +1,10 @@
-name: 'Tauri Build - Axie Studio'
-run-name: 'Tauri Build @${{ github.ref_name }} by @${{ github.actor }}'
+name: 'Tauri Build'
 
 on:
   push:
     branches: [ tauri-en ]
   pull_request:
     branches: [ tauri-en ]
-  workflow_dispatch:
-    inputs:
-      create_release:
-        description: 'Create GitHub Release'
-        required: false
-        type: boolean
-        default: false
-
-env:
-  TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-  TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
 jobs:
   tauri:
@@ -26,21 +14,16 @@ jobs:
         include:
           - platform: 'macos-latest'
             args: '--target universal-apple-darwin'
-            rust_target: 'universal-apple-darwin'
           - platform: 'ubuntu-22.04'
             args: ''
-            rust_target: 'x86_64-unknown-linux-gnu'
           - platform: 'windows-latest'
             args: ''
-            rust_target: 'x86_64-pc-windows-msvc'
 
     runs-on: ${{ matrix.platform }}
-    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: setup node
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -48,17 +31,17 @@ jobs:
           # cache: 'npm'
           # cache-dependency-path: src/frontend/package-lock.json
 
-      - name: Install Rust stable
+      - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || matrix.rust_target }}
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
 
-      - name: Install dependencies (Ubuntu only)
+      - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
@@ -68,73 +51,54 @@ jobs:
             patchelf \
             libgtk-3-dev \
             libxdo-dev \
-            libssl-dev \
-            pkg-config \
-            build-essential \
-            curl \
-            wget \
-            file
+            libssl-dev
           # Install only one appindicator package to avoid conflicts
           sudo apt-get install -y libayatana-appindicator3-dev || sudo apt-get install -y libappindicator3-dev
 
-      - name: Install frontend dependencies
+      - name: install frontend dependencies
         run: |
-          # Clean install to avoid optional dependency issues with Rollup
+          # Fix npm optional dependencies issue with Rollup
           rm -rf node_modules package-lock.json || true
           npm install
         working-directory: src/frontend
         shell: bash
 
-      - name: Build frontend
+      - name: build frontend
         run: npm run build
         working-directory: src/frontend
-        env:
-          # Use production backend URL for Tauri builds
-          VITE_PROXY_TARGET: https://flow.axiestudio.se
-          BACKEND_URL: https://flow.axiestudio.se
 
       - name: Setup Tauri icons from existing favicon/logo
         run: |
           mkdir -p src-tauri/icons
           # Copy existing favicon and logo files to Tauri icons directory
-          cp src/frontend/public/favicon.ico src-tauri/icons/icon.ico || echo "favicon.ico not found"
-          cp src/frontend/public/favicon.svg src-tauri/icons/icon.svg || echo "favicon.svg not found"
-          cp src/frontend/public/logo512.png src-tauri/icons/icon.png || echo "logo512.png not found"
-          cp src/frontend/public/logo192.png src-tauri/icons/128x128.png || echo "logo192.png not found"
-          cp src/frontend/public/favicon_io/favicon-32x32.png src-tauri/icons/32x32.png || echo "32x32.png not found"
-          cp src/frontend/public/favicon_io/apple-touch-icon.png src-tauri/icons/icon.icns || echo "apple-touch-icon.png not found"
-          cp src/frontend/public/favicon_io/android-chrome-512x512.png src-tauri/icons/512x512.png || echo "512x512.png not found"
-          # Use the 1024x1024 icon for high-res displays
-          cp "src/frontend/public/favicon generator/1024 x 1024.png" src-tauri/icons/1024x1024.png || echo "1024x1024.png not found"
+          cp src/frontend/public/favicon.ico src-tauri/icons/icon.ico
+          cp src/frontend/public/favicon.svg src-tauri/icons/icon.svg
+          cp src/frontend/public/logo512.png src-tauri/icons/icon.png
+          cp src/frontend/public/logo192.png src-tauri/icons/128x128.png
+          cp src/frontend/public/favicon_io/favicon-32x32.png src-tauri/icons/32x32.png
+          cp src/frontend/public/favicon_io/apple-touch-icon.png src-tauri/icons/icon.icns
+          cp src/frontend/public/favicon_io/android-chrome-512x512.png src-tauri/icons/512x512.png
           # List created icons for debugging
-          echo "Created Tauri icons:"
-          ls -la src-tauri/icons/ || echo "Icons directory not found"
+          ls -la src-tauri/icons/
         shell: bash
 
       - name: Debug - Check build output
         run: |
           echo "Checking if build directory exists..."
           ls -la src/frontend/build || echo "Build directory not found"
-          echo "Checking build contents..."
-          find src/frontend/build -type f -name "*.html" -o -name "*.js" -o -name "*.css" | head -10 || echo "No build files found"
         shell: bash
 
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        id: tauri-build
+      - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           # Don't create releases automatically to avoid permission issues
-          # Only create release if manually triggered
-          tagName: ${{ inputs.create_release && format('app-v{0}', github.run_number) || '' }}
-          releaseName: ${{ inputs.create_release && format('Axie Studio v{0}', github.run_number) || '' }}
-          releaseBody: ${{ inputs.create_release && 'See the assets to download this version and install.' || '' }}
-          releaseDraft: ${{ inputs.create_release && true || false }}
-          prerelease: false
+          # tagName: app-v__VERSION__
+          # releaseName: 'App v__VERSION__'
+          # releaseBody: 'See the assets to download this version and install.'
+          # releaseDraft: true
+          # prerelease: false
           args: ${{ matrix.args }}
-          projectPath: src-tauri
-          tauriScript: cd src-tauri && cargo tauri
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -144,36 +108,3 @@ jobs:
             src-tauri/target/release/bundle/
             src-tauri/target/universal-apple-darwin/release/bundle/
           retention-days: 30
-          if-no-files-found: warn
-
-      - name: Upload Windows installer
-        if: matrix.platform == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: axie-studio-windows-installer
-          path: src-tauri/target/release/bundle/msi/*.msi
-          retention-days: 30
-          if-no-files-found: warn
-
-      - name: Upload macOS app
-        if: matrix.platform == 'macos-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: axie-studio-macos-app
-          path: |
-            src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
-            src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app
-          retention-days: 30
-          if-no-files-found: warn
-
-      - name: Upload Linux packages
-        if: matrix.platform == 'ubuntu-22.04'
-        uses: actions/upload-artifact@v4
-        with:
-          name: axie-studio-linux-packages
-          path: |
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/rpm/*.rpm
-            src-tauri/target/release/bundle/appimage/*.AppImage
-          retention-days: 30
-          if-no-files-found: warn
