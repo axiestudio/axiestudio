@@ -3,6 +3,8 @@
 
 use tauri::Manager;
 
+mod api;
+
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -33,7 +35,10 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             greet,
             open_external_url,
-            get_app_version
+            get_app_version,
+            api::get_backend_url,
+            api::check_backend_health,
+            api::get_api_config
         ])
         .setup(|app| {
             // Set up the main window
