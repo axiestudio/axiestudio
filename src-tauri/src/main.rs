@@ -75,12 +75,12 @@ fn main() {
             info!("Application setup complete");
 
             // Set up any initial configuration here
-            let main_window = app.get_webview_window("main").unwrap();
-
-            // Configure window properties
-            #[cfg(debug_assertions)]
-            {
-                main_window.open_devtools();
+            if let Some(main_window) = app.get_webview_window("main") {
+                // Configure window properties
+                #[cfg(debug_assertions)]
+                {
+                    main_window.open_devtools();
+                }
             }
 
             Ok(())
