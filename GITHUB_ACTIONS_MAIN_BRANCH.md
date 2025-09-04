@@ -15,21 +15,21 @@ The GitHub Actions workflows are now properly configured to automatically build 
 - ✅ **Manual workflow dispatch**
 
 **Features:**
-- 🐳 **Builds and pushes to Docker Hub** (`axiestudio/axiestudio`)
+- 🐳 **Builds and pushes to Docker Hub** (`axiestudio/swedish`)
 - 🏗️ **Multi-platform builds** (linux/amd64, linux/arm64)
 - 🏷️ **Automatic version tagging** from pyproject.toml
 - 📦 **Multiple image variants:**
-  - `axiestudio/axiestudio:latest`
-  - `axiestudio/axiestudio:version`
-  - `axiestudio/axiestudio-backend:latest`
-  - `axiestudio/axiestudio-frontend:latest`
+  - `axiestudio/swedish:latest`
+  - `axiestudio/swedish:version`
+  - `axiestudio/swedish-backend:latest`
+  - `axiestudio/swedish-frontend:latest`
 
 **Docker Hub Images Created:**
 ```
-axiestudio/axiestudio:latest
-axiestudio/axiestudio:1.x.x
-axiestudio/axiestudio-backend:latest
-axiestudio/axiestudio-frontend:latest
+axiestudio/swedish:latest
+axiestudio/swedish:1.x.x
+axiestudio/swedish-backend:latest
+axiestudio/swedish-frontend:latest
 ```
 
 ### **2. Docker Image CI Workflow**
@@ -74,8 +74,8 @@ graph LR
     B --> C[Build Docker Image]
     C --> D[Run Tests]
     D --> E[Push to Docker Hub]
-    E --> F[axiestudio/axiestudio:latest]
-    E --> G[axiestudio/axiestudio:version]
+    E --> F[axiestudio/swedish:latest]
+    E --> G[axiestudio/swedish:version]
 ```
 
 ## 📋 **DEPLOYMENT CHECKLIST**
@@ -91,7 +91,7 @@ graph LR
 ### **🔧 Required Setup:**
 - [ ] Configure DOCKERHUB_USERNAME secret
 - [ ] Configure DOCKERHUB_TOKEN secret
-- [ ] Verify Docker Hub repository exists: `axiestudio/axiestudio`
+- [ ] Verify Docker Hub repository exists: `axiestudio/swedish`
 
 ## 🎯 **NEXT STEPS**
 

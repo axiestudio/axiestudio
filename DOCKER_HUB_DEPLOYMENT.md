@@ -73,8 +73,8 @@ docker buildx inspect --bootstrap
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   --file docker/build_and_push.Dockerfile \
-  --tag axiestudio/axiestudio:latest \
-  --tag axiestudio/axiestudio:$(grep "^version" pyproject.toml | sed 's/.*"\(.*\)"$/\1/') \
+  --tag axiestudio/swedish:latest \
+  --tag axiestudio/swedish:$(grep "^version" pyproject.toml | sed 's/.*"\(.*\)"$/\1/') \
   --push \
   .
 
@@ -82,8 +82,8 @@ docker buildx build \
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   --file docker/build_and_push_backend.Dockerfile \
-  --build-arg AXIESTUDIO_IMAGE=axiestudio/axiestudio:latest \
-  --tag axiestudio/axiestudio-backend:latest \
+  --build-arg AXIESTUDIO_IMAGE=axiestudio/swedish:latest \
+  --tag axiestudio/swedish-backend:latest \
   --push \
   .
 ```

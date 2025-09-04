@@ -63,15 +63,15 @@ docker-compose --profile microservices up -d  # Separate containers
 ## 🏷️ **Image Tagging Strategy**
 
 ### **Automatic Tags:**
-- `axiestudio/axiestudio-fullstack:latest`
-- `axiestudio/axiestudio-fullstack:1.5.0` (version from pyproject.toml)
-- `axiestudio/axiestudio-frontend:latest`
-- `axiestudio/axiestudio-frontend:1.5.0`
-- `axiestudio/axiestudio-backend:latest`
-- `axiestudio/axiestudio-backend:1.5.0`
+- `axiestudio/swedish:latest`
+- `axiestudio/swedish:1.5.0` (version from pyproject.toml)
+- `axiestudio/swedish-frontend:latest`
+- `axiestudio/swedish-frontend:1.5.0`
+- `axiestudio/swedish-backend:latest`
+- `axiestudio/swedish-backend:1.5.0`
 
 ### **Special Tags:**
-- `axiestudio/axiestudio:latest` → Points to fullstack image (backward compatibility)
+- `axiestudio/swedish:latest` → Points to fullstack image (backward compatibility)
 
 ---
 
@@ -113,19 +113,19 @@ build_type: "all" | "fullstack" | "frontend" | "backend"
 
 ### **1. 🏠 Single Container (Fullstack)**
 ```bash
-docker run -p 7860:7860 axiestudio/axiestudio-fullstack:latest
+docker run -p 7860:7860 axiestudio/swedish:latest
 ```
 **Use case:** Simple deployment, development, demos
 
 ### **2. 🎯 Microservices (Separate Containers)**
 ```bash
 # Backend
-docker run -d --name backend -p 7860:7860 axiestudio/axiestudio-backend:latest
+docker run -d --name backend -p 7860:7860 axiestudio/swedish-backend:latest
 
 # Frontend
 docker run -d --name frontend -p 80:80 \
   -e BACKEND_URL=http://backend:7860 \
-  axiestudio/axiestudio-frontend:latest
+  axiestudio/swedish-frontend:latest
 ```
 **Use case:** Production, scaling, load balancing
 

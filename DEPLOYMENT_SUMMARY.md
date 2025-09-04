@@ -131,7 +131,7 @@ git push origin main
 ### 3. Deploy to Production
 ```bash
 # Using Docker Hub image
-docker run -p 7860:7860 axiestudio/axiestudio:latest
+docker run -p 7860:7860 axiestudio/swedish:latest
 
 # Using docker-compose
 docker-compose -f docker-compose.production.yml up
