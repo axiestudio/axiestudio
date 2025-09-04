@@ -1,21 +1,30 @@
-name: Build Swedish Backend Docker Image
-run-name: Building Swedish Backend Docker Image by @${{ github.actor }}
+name: Build Multi-Platform Docker Images
+run-name: Building Multi-Platform Docker Images by @${{ github.actor }}
 
 on:
-  # Trigger on push to mainbackup branch
+  # Trigger on push to master branch
   push:
     branches:
-      - mainbackup
+      - master
     paths-ignore:
       - 'docs/**'
       - '*.md'
       - '.github/workflows/docs_*.yml'
       - '.github/workflows/deploy-docs-*.yml'
-      - 'src/frontend/**'
 
   # Manual trigger
   workflow_dispatch:
     inputs:
+      build_type:
+        description: "Type of build to execute"
+        required: true
+        type: choice
+        options:
+          - "all"
+          - "fullstack"
+          - "frontend"
+          - "backend"
+        default: "all"
       tag_suffix:
         description: "Additional tag suffix (e.g., 'v1.0', 'beta')"
         required: false
@@ -24,12 +33,110 @@ on:
 
 env:
   PYTHON_VERSION: "3.13"
-  DOCKER_IMAGE_NAME: "axiestudio/swedish"
+  DOCKER_BASE_NAME: "axiestudio/axiestudio"
 
 jobs:
-  build-swedish-backend:
-    name: Build Swedish Backend
+  setup:
+    name: Setup Build Matrix
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      version: ${{ steps.get-version.outputs.version }}
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          persist-credentials: true
+
+      - name: Get version from pyproject.toml
+        id: get-version
+        run: |
+          version=$(grep '^version = ' src/backend/base/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          if [ -z "$version" ]; then
+            echo "Failed to extract version from backend pyproject.toml, using default"
+            version="1.0.0"
+          fi
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "Extracted version: $version"
+
+      - name: Set build matrix
+        id: set-matrix
+        run: |
+          build_type="${{ inputs.build_type || 'all' }}"
+
+          if [[ "$build_type" == "all" ]]; then
+            matrix='[
+              {
+                "name": "fullstack",
+                "dockerfile": "./docker/fullstack.Dockerfile",
+                "image_name": "fullstack",
+                "description": "Full-stack application with frontend and backend",
+                "ports": "7860:7860",
+                "run_command": "docker run -p 7860:7860"
+              },
+              {
+                "name": "frontend",
+                "dockerfile": "./docker/frontend-only.Dockerfile",
+                "image_name": "frontend",
+                "description": "Frontend-only application with nginx",
+                "ports": "80:80",
+                "run_command": "docker run -p 80:80 -e BACKEND_URL=http://your-backend:7860"
+              },
+              {
+                "name": "backend",
+                "dockerfile": "./docker/backend-only.Dockerfile",
+                "image_name": "backend",
+                "description": "Backend-only API server",
+                "ports": "7860:7860",
+                "run_command": "docker run -p 7860:7860"
+              }
+            ]'
+          elif [[ "$build_type" == "fullstack" ]]; then
+            matrix='[
+              {
+                "name": "fullstack",
+                "dockerfile": "./docker/fullstack.Dockerfile",
+                "image_name": "fullstack",
+                "description": "Full-stack application with frontend and backend",
+                "ports": "7860:7860",
+                "run_command": "docker run -p 7860:7860"
+              }
+            ]'
+          elif [[ "$build_type" == "frontend" ]]; then
+            matrix='[
+              {
+                "name": "frontend",
+                "dockerfile": "./docker/frontend-only.Dockerfile",
+                "image_name": "frontend",
+                "description": "Frontend-only application with nginx",
+                "ports": "80:80",
+                "run_command": "docker run -p 80:80 -e BACKEND_URL=http://your-backend:7860"
+              }
+            ]'
+          elif [[ "$build_type" == "backend" ]]; then
+            matrix='[
+              {
+                "name": "backend",
+                "dockerfile": "./docker/backend-only.Dockerfile",
+                "image_name": "backend",
+                "description": "Backend-only API server",
+                "ports": "7860:7860",
+                "run_command": "docker run -p 7860:7860"
+              }
+            ]'
+          fi
+
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+          echo "Build matrix: $matrix"
+
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: setup
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
       - name: Free up disk space
         run: |
@@ -45,29 +152,20 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v4
         with:
-          ref: mainbackup
+          ref: master
           persist-credentials: true
 
-      - name: Setup UV and Python
+      - name: Setup UV and Python (for backend builds)
+        if: matrix.name == 'backend' || matrix.name == 'fullstack'
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: false
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install the project
+      - name: Install Python dependencies (for backend builds)
+        if: matrix.name == 'backend' || matrix.name == 'fullstack'
         run: |
           uv sync --no-dev --no-sources
-
-      - name: Get version from pyproject.toml
-        id: get-version
-        run: |
-          version=$(grep '^version = ' src/backend/base/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
-          if [ -z "$version" ]; then
-            echo "Failed to extract version from backend pyproject.toml, using default"
-            version="1.0.0"
-          fi
-          echo "version=$version" >> $GITHUB_OUTPUT
-          echo "Extracted version: $version"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -88,37 +186,86 @@ jobs:
       - name: Set Docker tags
         id: set-tags
         run: |
-          base_tag="${{ env.DOCKER_IMAGE_NAME }}"
-          version_tag="${base_tag}:${{ steps.get-version.outputs.version }}"
+          base_tag="${{ env.DOCKER_BASE_NAME }}-${{ matrix.image_name }}"
+          version_tag="${base_tag}:${{ needs.setup.outputs.version }}"
           latest_tag="${base_tag}:latest"
-          
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.tag_suffix }}" != "latest" ]]; then
-            custom_tag="${base_tag}:${{ inputs.tag_suffix }}"
-            tags="${version_tag},${latest_tag},${custom_tag}"
+
+          # Add semantic tags based on image type
+          if [[ "${{ matrix.name }}" == "fullstack" ]]; then
+            semantic_tag="${{ env.DOCKER_BASE_NAME }}:latest"
+            tags="${version_tag},${latest_tag},${semantic_tag}"
           else
             tags="${version_tag},${latest_tag}"
           fi
-          
-          echo "tags=$tags" >> $GITHUB_OUTPUT
-          echo "Docker tags: $tags"
 
-      - name: Build and Push Swedish Backend Docker Image
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.tag_suffix }}" != "latest" ]]; then
+            custom_tag="${base_tag}:${{ inputs.tag_suffix }}"
+            tags="${tags},${custom_tag}"
+          fi
+
+          echo "tags=$tags" >> $GITHUB_OUTPUT
+          echo "Docker tags for ${{ matrix.name }}: $tags"
+
+      - name: Build and Push ${{ matrix.name }} Docker Image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          file: ./docker/swedish-backend.Dockerfile
+          file: ${{ matrix.dockerfile }}
           tags: ${{ steps.set-tags.outputs.tags }}
           platforms: linux/amd64,linux/arm64
           no-cache: true
 
       - name: Image build summary
         run: |
-          echo "✅ Successfully built and pushed Swedish backend Docker image!"
+          echo "✅ Successfully built and pushed ${{ matrix.name }} Docker image!"
+          echo "📝 Description: ${{ matrix.description }}"
           echo "🏷️  Tags: ${{ steps.set-tags.outputs.tags }}"
           echo "🌍 Platforms: linux/amd64, linux/arm64"
-          echo "📦 Image: ${{ env.DOCKER_IMAGE_NAME }}"
+          echo "📦 Image: ${{ env.DOCKER_BASE_NAME }}-${{ matrix.image_name }}"
+          echo "🔌 Ports: ${{ matrix.ports }}"
           echo ""
           echo "To use this image:"
-          echo "docker pull ${{ env.DOCKER_IMAGE_NAME }}:latest"
-          echo "docker run -p 7860:7860 ${{ env.DOCKER_IMAGE_NAME }}:latest"
+          echo "docker pull ${{ env.DOCKER_BASE_NAME }}-${{ matrix.image_name }}:latest"
+          echo "${{ matrix.run_command }} ${{ env.DOCKER_BASE_NAME }}-${{ matrix.image_name }}:latest"
+
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [setup, build]
+    if: always()
+    steps:
+      - name: Build Summary
+        run: |
+          echo "🚀 Multi-Platform Docker Build Complete!"
+          echo ""
+          echo "📊 Build Results:"
+          echo "- Version: ${{ needs.setup.outputs.version }}"
+          echo "- Branch: master"
+          echo "- Build Type: ${{ inputs.build_type || 'all' }}"
+          echo ""
+          echo "🐳 Available Images:"
+          echo "- axiestudio/axiestudio-fullstack:latest (Full-stack app)"
+          echo "- axiestudio/axiestudio-frontend:latest (Frontend only)"
+          echo "- axiestudio/axiestudio-backend:latest (Backend only)"
+          echo ""
+          echo "📚 Usage Examples:"
+          echo "# Full-stack deployment (all-in-one)"
+          echo "docker run -p 7860:7860 axiestudio/axiestudio-fullstack:latest"
+          echo ""
+          echo "# Microservices deployment (separate containers)"
+          echo "docker run -d --name axiestudio-backend -p 7860:7860 axiestudio/axiestudio-backend:latest"
+          echo "docker run -d --name axiestudio-frontend -p 80:80 -e BACKEND_URL=http://backend:7860 axiestudio/axiestudio-frontend:latest"
+          echo ""
+          echo "# Docker Compose deployment"
+          echo "version: '3.8'"
+          echo "services:"
+          echo "  backend:"
+          echo "    image: axiestudio/axiestudio-backend:latest"
+          echo "    ports: ['7860:7860']"
+          echo "  frontend:"
+          echo "    image: axiestudio/axiestudio-frontend:latest"
+          echo "    ports: ['80:80']"
+          echo "    environment:"
+          echo "      BACKEND_URL: http://backend:7860"
+          echo "    depends_on: [backend]"
