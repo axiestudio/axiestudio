@@ -33,7 +33,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.13"
-  DOCKER_BASE_NAME: "axiestudio/axiestudio"
+  DOCKER_BASE_NAME: "axiestudio"
 
 jobs:
   setup:
@@ -68,26 +68,26 @@ jobs:
           if [[ "$build_type" == "all" ]]; then
             matrix='[
               {
-                "name": "fullstack",
-                "dockerfile": "./docker/fullstack.Dockerfile",
-                "image_name": "fullstack",
-                "description": "Full-stack application with frontend and backend",
+                "name": "swedish",
+                "dockerfile": "./docker/build_and_push.Dockerfile",
+                "image_name": "swedish",
+                "description": "Swedish full-stack application with frontend and backend",
                 "ports": "7860:7860",
                 "run_command": "docker run -p 7860:7860"
               },
               {
-                "name": "frontend",
-                "dockerfile": "./docker/frontend-only.Dockerfile",
-                "image_name": "frontend",
-                "description": "Frontend-only application with nginx",
+                "name": "swedish-frontend",
+                "dockerfile": "./docker/frontend/build_and_push_frontend.Dockerfile",
+                "image_name": "swedish-frontend",
+                "description": "Swedish frontend-only application with nginx",
                 "ports": "80:80",
                 "run_command": "docker run -p 80:80 -e BACKEND_URL=http://your-backend:7860"
               },
               {
-                "name": "backend",
-                "dockerfile": "./docker/backend-only.Dockerfile",
-                "image_name": "backend",
-                "description": "Backend-only API server",
+                "name": "swedish-backend",
+                "dockerfile": "./docker/swedish-backend.Dockerfile",
+                "image_name": "swedish-backend",
+                "description": "Swedish backend-only API server",
                 "ports": "7860:7860",
                 "run_command": "docker run -p 7860:7860"
               }
@@ -95,10 +95,10 @@ jobs:
           elif [[ "$build_type" == "fullstack" ]]; then
             matrix='[
               {
-                "name": "fullstack",
-                "dockerfile": "./docker/fullstack.Dockerfile",
-                "image_name": "fullstack",
-                "description": "Full-stack application with frontend and backend",
+                "name": "swedish",
+                "dockerfile": "./docker/build_and_push.Dockerfile",
+                "image_name": "swedish",
+                "description": "Swedish full-stack application with frontend and backend",
                 "ports": "7860:7860",
                 "run_command": "docker run -p 7860:7860"
               }
@@ -106,10 +106,10 @@ jobs:
           elif [[ "$build_type" == "frontend" ]]; then
             matrix='[
               {
-                "name": "frontend",
-                "dockerfile": "./docker/frontend-only.Dockerfile",
-                "image_name": "frontend",
-                "description": "Frontend-only application with nginx",
+                "name": "swedish-frontend",
+                "dockerfile": "./docker/frontend/build_and_push_frontend.Dockerfile",
+                "image_name": "swedish-frontend",
+                "description": "Swedish frontend-only application with nginx",
                 "ports": "80:80",
                 "run_command": "docker run -p 80:80 -e BACKEND_URL=http://your-backend:7860"
               }
@@ -117,10 +117,10 @@ jobs:
           elif [[ "$build_type" == "backend" ]]; then
             matrix='[
               {
-                "name": "backend",
-                "dockerfile": "./docker/backend-only.Dockerfile",
-                "image_name": "backend",
-                "description": "Backend-only API server",
+                "name": "swedish-backend",
+                "dockerfile": "./docker/swedish-backend.Dockerfile",
+                "image_name": "swedish-backend",
+                "description": "Swedish backend-only API server",
                 "ports": "7860:7860",
                 "run_command": "docker run -p 7860:7860"
               }
@@ -186,17 +186,11 @@ jobs:
       - name: Set Docker tags
         id: set-tags
         run: |
-          base_tag="${{ env.DOCKER_BASE_NAME }}-${{ matrix.image_name }}"
+          base_tag="${{ env.DOCKER_BASE_NAME }}/${{ matrix.image_name }}"
           version_tag="${base_tag}:${{ needs.setup.outputs.version }}"
           latest_tag="${base_tag}:latest"
 
-          # Add semantic tags based on image type
-          if [[ "${{ matrix.name }}" == "fullstack" ]]; then
-            semantic_tag="${{ env.DOCKER_BASE_NAME }}:latest"
-            tags="${version_tag},${latest_tag},${semantic_tag}"
-          else
-            tags="${version_tag},${latest_tag}"
-          fi
+          tags="${version_tag},${latest_tag}"
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.tag_suffix }}" != "latest" ]]; then
             custom_tag="${base_tag}:${{ inputs.tag_suffix }}"
@@ -222,12 +216,12 @@ jobs:
           echo "📝 Description: ${{ matrix.description }}"
           echo "🏷️  Tags: ${{ steps.set-tags.outputs.tags }}"
           echo "🌍 Platforms: linux/amd64, linux/arm64"
-          echo "📦 Image: ${{ env.DOCKER_BASE_NAME }}-${{ matrix.image_name }}"
+          echo "📦 Image: ${{ env.DOCKER_BASE_NAME }}/${{ matrix.image_name }}"
           echo "🔌 Ports: ${{ matrix.ports }}"
           echo ""
           echo "To use this image:"
-          echo "docker pull ${{ env.DOCKER_BASE_NAME }}-${{ matrix.image_name }}:latest"
-          echo "${{ matrix.run_command }} ${{ env.DOCKER_BASE_NAME }}-${{ matrix.image_name }}:latest"
+          echo "docker pull ${{ env.DOCKER_BASE_NAME }}/${{ matrix.image_name }}:latest"
+          echo "${{ matrix.run_command }} ${{ env.DOCKER_BASE_NAME }}/${{ matrix.image_name }}:latest"
 
   summary:
     name: Build Summary
@@ -244,27 +238,27 @@ jobs:
           echo "- Branch: master"
           echo "- Build Type: ${{ inputs.build_type || 'all' }}"
           echo ""
-          echo "🐳 Available Images:"
-          echo "- axiestudio/axiestudio-fullstack:latest (Full-stack app)"
-          echo "- axiestudio/axiestudio-frontend:latest (Frontend only)"
-          echo "- axiestudio/axiestudio-backend:latest (Backend only)"
+          echo "🐳 Available Swedish Images:"
+          echo "- axiestudio/swedish:latest (Swedish full-stack app)"
+          echo "- axiestudio/swedish-frontend:latest (Swedish frontend only)"
+          echo "- axiestudio/swedish-backend:latest (Swedish backend only)"
           echo ""
           echo "📚 Usage Examples:"
-          echo "# Full-stack deployment (all-in-one)"
-          echo "docker run -p 7860:7860 axiestudio/axiestudio-fullstack:latest"
+          echo "# Swedish full-stack deployment (all-in-one)"
+          echo "docker run -p 7860:7860 axiestudio/swedish:latest"
           echo ""
-          echo "# Microservices deployment (separate containers)"
-          echo "docker run -d --name axiestudio-backend -p 7860:7860 axiestudio/axiestudio-backend:latest"
-          echo "docker run -d --name axiestudio-frontend -p 80:80 -e BACKEND_URL=http://backend:7860 axiestudio/axiestudio-frontend:latest"
+          echo "# Swedish microservices deployment (separate containers)"
+          echo "docker run -d --name swedish-backend -p 7860:7860 axiestudio/swedish-backend:latest"
+          echo "docker run -d --name swedish-frontend -p 80:80 -e BACKEND_URL=http://backend:7860 axiestudio/swedish-frontend:latest"
           echo ""
-          echo "# Docker Compose deployment"
+          echo "# Swedish Docker Compose deployment"
           echo "version: '3.8'"
           echo "services:"
           echo "  backend:"
-          echo "    image: axiestudio/axiestudio-backend:latest"
+          echo "    image: axiestudio/swedish-backend:latest"
           echo "    ports: ['7860:7860']"
           echo "  frontend:"
-          echo "    image: axiestudio/axiestudio-frontend:latest"
+          echo "    image: axiestudio/swedish-frontend:latest"
           echo "    ports: ['80:80']"
           echo "    environment:"
           echo "      BACKEND_URL: http://backend:7860"
