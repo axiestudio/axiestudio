@@ -8,8 +8,8 @@
 
 # 1. use python:3.12.3-slim as the base image until https://github.com/pydantic/pydantic-core/issues/1292 gets resolved
 # 2. do not add --platform=$BUILDPLATFORM because the pydantic binaries must be resolved for the final architecture
-# Use standard Python image and install UV manually (more reliable)
-FROM python:3.12-slim-bookworm AS builder
+# Use a Python image with uv pre-installed
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
 # Install the project into `/app`
 WORKDIR /app
@@ -24,7 +24,6 @@ ENV UV_LINK_MODE=copy
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
-# Install UV and system dependencies
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update \
@@ -37,17 +36,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     npm \
     # gcc
     gcc \
-    # curl for UV installation
-    curl \
     # locale support for UTF-8
     locales \
     && apt-get clean \
     # Generate UTF-8 locale
     && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
-    && locale-gen \
-    # Install UV package manager
-    && curl -LsSf https://astral.sh/uv/install.sh | sh \
-    && mv /root/.cargo/bin/uv /usr/local/bin/uv
+    && locale-gen
 
 # Copy necessary files for dependency installation
 COPY ./uv.lock ./pyproject.toml ./README.md ./
