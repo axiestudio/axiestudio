@@ -57,12 +57,134 @@
       type="module"
     ></script>
 
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Axie Studio">
+
+    <!-- Apple Touch Icons - COMPLETE SET for 30/30 PWA Score -->
+    <link rel="apple-touch-icon" sizes="120x120" href="/favicon_io/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/favicon_io/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/favicon_io/apple-touch-icon-167x167.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon_io/apple-touch-icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="1024x1024" href="/favicon_io/icon-1024x1024.png">
+    <link rel="apple-touch-icon" href="/favicon_io/apple-touch-icon-180x180.png">
+
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#1a1a1a">
+    <meta name="msapplication-TileImage" content="/favicon_io/mstile-144x144.png">
+    <meta name="msapplication-config" content="/favicon_io/browserconfig.xml">
+
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Axie Studio">
+    <link rel="apple-touch-icon" href="/favicon_io/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/favicon_io/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon_io/apple-touch-icon-180x180.png">
+
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#1a1a1a">
+    <meta name="msapplication-TileImage" content="/favicon_io/mstile-144x144.png">
+
     <!-- Page Title -->
     <title>Axie Studio - AI Arbetsflödesbyggare</title>
   </head>
   <body id="body" class="dark" style="width: 100%; height: 100%">
     <noscript>Du behöver aktivera JavaScript för att köra denna app.</noscript>
     <div style="width: 100vw; height: 100vh" id="root"></div>
+
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+
+              // Check for updates
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // New content is available, show update notification
+                    if (confirm('En ny version av Axie Studio är tillgänglig. Vill du uppdatera?')) {
+                      newWorker.postMessage({ type: 'SKIP_WAITING' });
+                      window.location.reload();
+                    }
+                  }
+                });
+              });
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+
+        // Listen for service worker messages
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'SW_UPDATED') {
+            window.location.reload();
+          }
+        });
+      }
+
+      // Install prompt handling
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+
+        // Show custom install button
+        const installButton = document.createElement('button');
+        installButton.textContent = '📱 Installera Axie Studio';
+        installButton.style.cssText = `
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          background: #1a1a1a;
+          color: white;
+          border: none;
+          padding: 12px 20px;
+          border-radius: 25px;
+          cursor: pointer;
+          font-weight: bold;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          z-index: 1000;
+          font-size: 14px;
+        `;
+
+        installButton.addEventListener('click', async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            deferredPrompt = null;
+            installButton.remove();
+          }
+        });
+
+        document.body.appendChild(installButton);
+
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+          if (installButton.parentNode) {
+            installButton.remove();
+          }
+        }, 10000);
+      });
+
+      // Track app install
+      window.addEventListener('appinstalled', (evt) => {
+        console.log('Axie Studio has been installed');
+        // Track installation analytics here
+      });
+    </script>
+
     <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
