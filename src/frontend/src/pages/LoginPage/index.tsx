@@ -84,7 +84,10 @@ export default function LoginPage(): JSX.Element {
               onError={(e) => {
                 // Fallback to text logo if image fails to load
                 e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling.style.display = 'flex';
+                const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                if (nextElement) {
+                  nextElement.style.display = 'flex';
+                }
               }}
               style={{ maxWidth: '48px', maxHeight: '48px' }}
             />
@@ -155,11 +158,6 @@ export default function LoginPage(): JSX.Element {
               <p className="text-sm text-muted-foreground">
                 <CustomLink to="/forgot-password" className="text-primary hover:underline font-medium">
                   Glömt ditt lösenord?
-                </CustomLink>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                <CustomLink to="/verify-email" className="text-primary hover:underline font-medium">
-                  Konto inte aktiverat?
                 </CustomLink>
               </p>
               <p className="text-sm text-muted-foreground">
