@@ -20,7 +20,7 @@ RUN --mount=type=cache,target=/root/.npm \
 # BACKEND BUILDER
 # Build the Python backend with dependencies
 ################################
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS backend-builder
+FROM python:3.12-slim-bookworm AS backend-builder
 
 WORKDIR /app
 
@@ -30,7 +30,7 @@ ENV UV_LINK_MODE=copy
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
-# Install system dependencies
+# Install UV and system dependencies
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update \
@@ -39,10 +39,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     build-essential \
     git \
     gcc \
+    curl \
     locales \
     && apt-get clean \
     && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
-    && locale-gen
+    && locale-gen \
+    # Install UV package manager
+    && curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && mv /root/.cargo/bin/uv /usr/local/bin/uv
 
 # Copy dependency files
 COPY ./uv.lock ./pyproject.toml ./README.md ./

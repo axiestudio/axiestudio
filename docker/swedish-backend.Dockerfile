@@ -6,8 +6,8 @@
 # Used to build deps + create our virtual environment
 ################################
 
-# Use a Python image with uv pre-installed
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+# Use standard Python image and install UV manually (more reliable)
+FROM python:3.12-slim-bookworm AS builder
 
 # Install the project into `/app`
 WORKDIR /app
@@ -22,6 +22,7 @@ ENV UV_LINK_MODE=copy
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
+# Install UV and system dependencies
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update \
@@ -32,12 +33,17 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     git \
     # gcc
     gcc \
+    # curl for UV installation
+    curl \
     # locale support for UTF-8
     locales \
     && apt-get clean \
     # Generate UTF-8 locale
     && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
-    && locale-gen
+    && locale-gen \
+    # Install UV package manager
+    && curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && mv /root/.cargo/bin/uv /usr/local/bin/uv
 
 # Copy necessary files for dependency installation
 COPY ./uv.lock ./pyproject.toml ./README.md ./
