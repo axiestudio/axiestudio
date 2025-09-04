@@ -1,0 +1,367 @@
+{
+  "id": "4d01ffa9-19af-45f3-8b31-8f98b61de857",
+  "name": "AudioCompressor",
+  "description": "Compresses audio from hexadecimal input ! (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "arthurkaromm",
+    "first_name": "Arthur",
+    "last_name": "Quet",
+    "id": "8741fbb0-5283-442f-beb7-895feea9ec4a",
+    "full_name": "Arthur Quet"
+  },
+  "store_url": "https://www.langflow.store/store/component/4d01ffa9-19af-45f3-8b31-8f98b61de857",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-12-05T17:15:44.855Z",
+    "updated": "2024-12-05T17:15:45.048Z",
+    "downloaded": "2025-08-19T17:50:07.449Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Chain",
+        "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.1.1",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from pathlib import Path\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import DropdownInput, IntInput, Output\r\nfrom axiestudio.schema.message import Message\r\nfrom pydub import AudioSegment\r\nfrom io import BytesIO\r\nimport numpy as np\r\nfrom loguru import logger\r\n\r\nclass CompressAudioHex(Component):\r\n    display_name = \"Compress Audio to Hex\"\r\n    description = \"Compresses audio from hexadecimal input !\"\r\n    icon = \"file-audio\"\r\n    name = \"AudioCompressor\"\r\n    beta = True\r\n    \r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"hex_message\",\r\n            display_name=\"Hexadecimal Message\",\r\n            info=\"The hexadecimal string representing the audio file data (wav/mp3).\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"compression_format\",\r\n            display_name=\"Compression Format\",\r\n            options=[\"mp3\", \"wav\"],\r\n            info=\"Choose the compression format: 'mp3' or 'wav'.\",\r\n        ),\r\n        IntInput(\r\n            name=\"compression_ratio\",\r\n            display_name=\"Compression Ratio\",\r\n            info=\"Ratio for compression (value between 0 and 99). Higher means more compression.\",\r\n            value=40,  # default value\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Compressed Hexadecimal Data\", name=\"compressed_hex_data\", method=\"compress_audio\"),\r\n    ]\r\n\r\n    def compress_audio(self) -> Message:\r\n        if not self.hex_message or not isinstance(self.hex_message, str):\r\n            raise ValueError(\"Hexadecimal message must be a valid string\")\r\n\r\n        if not self.compression_format:\r\n            raise ValueError(\"Compression format must be provided\")\r\n\r\n        if self.compression_format not in ['mp3', 'wav']:\r\n            raise ValueError(\"Compression format must be 'mp3' or 'wav'\")\r\n\r\n        if self.compression_ratio is None or not (0 <= self.compression_ratio <= 99):\r\n            raise ValueError(\"Compression ratio must be between 0 and 99\")\r\n\r\n        # Convert hexadecimal input to binary data\r\n        try:\r\n            binary_data = bytes.fromhex(self.hex_message)\r\n            audio_segment = AudioSegment.from_file(BytesIO(binary_data), format='wav')\r\n        except Exception as e:\r\n            error_message = f\"Error decoding hexadecimal input: {str(e)}\"\r\n            self.status = error_message\r\n            raise ValueError(error_message)\r\n\r\n        logger.debug(f\"Audio loaded successfully.\")\r\n\r\n        # Apply compression\r\n        compressed_audio = self.apply_compression(audio_segment, compression_format=self.compression_format, compression_ratio=self.compression_ratio)\r\n\r\n        # Convert the compressed audio back to bytes and then to hex\r\n        with BytesIO() as output_audio_file:\r\n            # Export the compressed audio to the BytesIO buffer\r\n            compressed_audio.export(output_audio_file, format=self.compression_format)\r\n            output_audio_file.seek(0)\r\n            compressed_binary_data = output_audio_file.read()\r\n\r\n        # Convert the compressed binary data to hexadecimal\r\n        compressed_hex_data = compressed_binary_data.hex()\r\n\r\n        logger.debug(f\"Compressed audio data (first 50 chars): {compressed_hex_data[:50]}...\")\r\n\r\n        return Message(text=compressed_hex_data)\r\n\r\n    def apply_compression(self, audio_segment: AudioSegment, compression_format: str, compression_ratio: int) -> AudioSegment:\r\n        \"\"\"Apply compression on the audio.\"\"\"\r\n        if compression_format == 'mp3':\r\n            # MP3 compression (use a lower bitrate for more compression)\r\n            # Adjust bitrate based on the compression ratio\r\n            bitrate = 320 - int(compression_ratio * 2.8)  # More sensitive scaling\r\n            bitrate = max(32, bitrate)  # ensure the bitrate is not too low\r\n            logger.debug(f\"Applying MP3 compression with bitrate: {bitrate} kbps\")\r\n            # Export to MP3 with the specified bitrate\r\n            output = BytesIO()\r\n            audio_segment.export(output, format='mp3', bitrate=f\"{bitrate}k\")\r\n            output.seek(0)\r\n            return AudioSegment.from_mp3(output)  # Load back the MP3 file into AudioSegment\r\n\r\n        else:\r\n            # WAV compression (reduce sample width and frequency for size reduction)\r\n            logger.debug(f\"Applying WAV compression with reduced sample width and sample rate.\")\r\n            # Subtly reduce the sample width based on compression ratio\r\n            sample_width = max(1, int(4 - (compression_ratio / 20)))  # Compression ratio impacts sample width\r\n            logger.debug(f\"Sample width set to: {sample_width}\")\r\n            \r\n            # Reduce the sample rate for stronger compression\r\n            sample_rate = int(audio_segment.frame_rate * (1 - (compression_ratio / 100)))  # Linear scaling\r\n            logger.debug(f\"Sample rate set to: {sample_rate}\")\r\n\r\n            # Apply the new sample width and rate, while reducing channels to mono if necessary\r\n            return audio_segment.set_sample_width(sample_width).set_channels(1).set_frame_rate(sample_rate)\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "compression_format": {
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "options": [
+                  "mp3",
+                  "wav"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "compression_format",
+                "value": "wav",
+                "display_name": "Compression Format",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Choose the compression format: 'mp3' or 'wav'.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput",
+                "load_from_db": false
+              },
+              "compression_ratio": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "compression_ratio",
+                "value": 40,
+                "display_name": "Compression Ratio",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Ratio for compression (value between 0 and 99). Higher means more compression.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "hex_message": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "hex_message",
+                "value": "",
+                "display_name": "Hexadecimal Message",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The hexadecimal string representing the audio file data (wav/mp3).",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Compresses audio from hexadecimal input !",
+            "icon": "file-audio",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "AudioCompressor",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "compressed_hex_data",
+                "display_name": "Compressed Hexadecimal Data",
+                "method": "compress_audio",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "hex_message",
+              "compression_format",
+              "compression_ratio"
+            ],
+            "beta": true,
+            "legacy": false,
+            "edited": true,
+            "metadata": {},
+            "tool_mode": false,
+            "official": false
+          },
+          "type": "File",
+          "id": "File-7c5B6"
+        },
+        "id": "File-7c5B6",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "File": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "4d01ffa9-19af-45f3-8b31-8f98b61de857",
+    "name": "AudioCompressor",
+    "description": "Compresses audio from hexadecimal input !",
+    "is_component": true,
+    "liked_by_count": "2",
+    "downloads_count": "17",
+    "metadata": {
+      "File": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.1.1",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from pathlib import Path\r\nfrom axiestudio.custom import Component\r\nfrom axiestudio.io import DropdownInput, IntInput, Output\r\nfrom axiestudio.schema.message import Message\r\nfrom pydub import AudioSegment\r\nfrom io import BytesIO\r\nimport numpy as np\r\nfrom loguru import logger\r\n\r\nclass CompressAudioHex(Component):\r\n    display_name = \"Compress Audio to Hex\"\r\n    description = \"Compresses audio from hexadecimal input !\"\r\n    icon = \"file-audio\"\r\n    name = \"AudioCompressor\"\r\n    beta = True\r\n    \r\n    inputs = [\r\n        MessageTextInput(\r\n            name=\"hex_message\",\r\n            display_name=\"Hexadecimal Message\",\r\n            info=\"The hexadecimal string representing the audio file data (wav/mp3).\",\r\n        ),\r\n        DropdownInput(\r\n            name=\"compression_format\",\r\n            display_name=\"Compression Format\",\r\n            options=[\"mp3\", \"wav\"],\r\n            info=\"Choose the compression format: 'mp3' or 'wav'.\",\r\n        ),\r\n        IntInput(\r\n            name=\"compression_ratio\",\r\n            display_name=\"Compression Ratio\",\r\n            info=\"Ratio for compression (value between 0 and 99). Higher means more compression.\",\r\n            value=40,  # default value\r\n        ),\r\n    ]\r\n\r\n    outputs = [\r\n        Output(display_name=\"Compressed Hexadecimal Data\", name=\"compressed_hex_data\", method=\"compress_audio\"),\r\n    ]\r\n\r\n    def compress_audio(self) -> Message:\r\n        if not self.hex_message or not isinstance(self.hex_message, str):\r\n            raise ValueError(\"Hexadecimal message must be a valid string\")\r\n\r\n        if not self.compression_format:\r\n            raise ValueError(\"Compression format must be provided\")\r\n\r\n        if self.compression_format not in ['mp3', 'wav']:\r\n            raise ValueError(\"Compression format must be 'mp3' or 'wav'\")\r\n\r\n        if self.compression_ratio is None or not (0 <= self.compression_ratio <= 99):\r\n            raise ValueError(\"Compression ratio must be between 0 and 99\")\r\n\r\n        # Convert hexadecimal input to binary data\r\n        try:\r\n            binary_data = bytes.fromhex(self.hex_message)\r\n            audio_segment = AudioSegment.from_file(BytesIO(binary_data), format='wav')\r\n        except Exception as e:\r\n            error_message = f\"Error decoding hexadecimal input: {str(e)}\"\r\n            self.status = error_message\r\n            raise ValueError(error_message)\r\n\r\n        logger.debug(f\"Audio loaded successfully.\")\r\n\r\n        # Apply compression\r\n        compressed_audio = self.apply_compression(audio_segment, compression_format=self.compression_format, compression_ratio=self.compression_ratio)\r\n\r\n        # Convert the compressed audio back to bytes and then to hex\r\n        with BytesIO() as output_audio_file:\r\n            # Export the compressed audio to the BytesIO buffer\r\n            compressed_audio.export(output_audio_file, format=self.compression_format)\r\n            output_audio_file.seek(0)\r\n            compressed_binary_data = output_audio_file.read()\r\n\r\n        # Convert the compressed binary data to hexadecimal\r\n        compressed_hex_data = compressed_binary_data.hex()\r\n\r\n        logger.debug(f\"Compressed audio data (first 50 chars): {compressed_hex_data[:50]}...\")\r\n\r\n        return Message(text=compressed_hex_data)\r\n\r\n    def apply_compression(self, audio_segment: AudioSegment, compression_format: str, compression_ratio: int) -> AudioSegment:\r\n        \"\"\"Apply compression on the audio.\"\"\"\r\n        if compression_format == 'mp3':\r\n            # MP3 compression (use a lower bitrate for more compression)\r\n            # Adjust bitrate based on the compression ratio\r\n            bitrate = 320 - int(compression_ratio * 2.8)  # More sensitive scaling\r\n            bitrate = max(32, bitrate)  # ensure the bitrate is not too low\r\n            logger.debug(f\"Applying MP3 compression with bitrate: {bitrate} kbps\")\r\n            # Export to MP3 with the specified bitrate\r\n            output = BytesIO()\r\n            audio_segment.export(output, format='mp3', bitrate=f\"{bitrate}k\")\r\n            output.seek(0)\r\n            return AudioSegment.from_mp3(output)  # Load back the MP3 file into AudioSegment\r\n\r\n        else:\r\n            # WAV compression (reduce sample width and frequency for size reduction)\r\n            logger.debug(f\"Applying WAV compression with reduced sample width and sample rate.\")\r\n            # Subtly reduce the sample width based on compression ratio\r\n            sample_width = max(1, int(4 - (compression_ratio / 20)))  # Compression ratio impacts sample width\r\n            logger.debug(f\"Sample width set to: {sample_width}\")\r\n            \r\n            # Reduce the sample rate for stronger compression\r\n            sample_rate = int(audio_segment.frame_rate * (1 - (compression_ratio / 100)))  # Linear scaling\r\n            logger.debug(f\"Sample rate set to: {sample_rate}\")\r\n\r\n            # Apply the new sample width and rate, while reducing channels to mono if necessary\r\n            return audio_segment.set_sample_width(sample_width).set_channels(1).set_frame_rate(sample_rate)\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "compression_format": {
+                  "tool_mode": false,
+                  "trace_as_metadata": true,
+                  "options": [
+                    "mp3",
+                    "wav"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "compression_format",
+                  "value": "wav",
+                  "display_name": "Compression Format",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Choose the compression format: 'mp3' or 'wav'.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput",
+                  "load_from_db": false
+                },
+                "compression_ratio": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "compression_ratio",
+                  "value": 40,
+                  "display_name": "Compression Ratio",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Ratio for compression (value between 0 and 99). Higher means more compression.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "hex_message": {
+                  "tool_mode": false,
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "hex_message",
+                  "value": "",
+                  "display_name": "Hexadecimal Message",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The hexadecimal string representing the audio file data (wav/mp3).",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Compresses audio from hexadecimal input !",
+              "icon": "file-audio",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "AudioCompressor",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "compressed_hex_data",
+                  "display_name": "Compressed Hexadecimal Data",
+                  "method": "compress_audio",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "hex_message",
+                "compression_format",
+                "compression_ratio"
+              ],
+              "beta": true,
+              "legacy": false,
+              "edited": true,
+              "metadata": {},
+              "tool_mode": false,
+              "official": false
+            },
+            "type": "File",
+            "id": "File-7c5B6"
+          },
+          "id": "File-7c5B6",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-12-05T17:15:44.855Z",
+    "date_updated": "2024-12-05T17:15:45.048Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "8741fbb0-5283-442f-beb7-895feea9ec4a",
+    "user_created": {
+      "username": "arthurkaromm",
+      "first_name": "Arthur",
+      "last_name": "Quet",
+      "id": "8741fbb0-5283-442f-beb7-895feea9ec4a"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Chain",
+          "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.944Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

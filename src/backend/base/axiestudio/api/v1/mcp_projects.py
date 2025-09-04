@@ -361,8 +361,20 @@ async def install_mcp_config(
         # Get settings service to build the SSE URL
         settings_service = get_settings_service()
         host = getattr(settings_service.settings, "host", "localhost")
-        port = getattr(settings_service.settings, "port", 3000)
-        base_url = f"http://{host}:{port}".rstrip("/")
+        port = getattr(settings_service.settings, "port", 7860)  # Fixed: Use correct port 7860
+
+        # Detect if running online vs localhost
+        import os
+        is_online = os.getenv("AXIESTUDIO_ONLINE", "false").lower() == "true"
+
+        if is_online:
+            # Use HTTPS for online deployment
+            online_host = os.getenv("AXIESTUDIO_HOST", host)
+            base_url = f"https://{online_host}".rstrip("/")
+        else:
+            # Use HTTP for localhost
+            base_url = f"http://{host}:{port}".rstrip("/")
+
         sse_url = f"{base_url}/api/v1/mcp/project/{project_id}/sse"
 
         # Determine command and args based on operating system

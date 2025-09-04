@@ -1,0 +1,2535 @@
+{
+  "id": "e1b7eec8-bb43-4431-8125-3b037d8f0d63",
+  "name": " REST API 构建流程",
+  "description": "此流程展示了如何使用 REST API 连接器组件来发出 REST API 请求。它演示了配置 URL、设置 HTTP 方法、添加自定义头信息以及包含查询参数以从 API 获取数据。 (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "longxu",
+    "first_name": "long",
+    "last_name": "xu",
+    "id": "3b24dc04-ce5b-4f17-8207-f84f4c1bbfc5",
+    "full_name": "long xu"
+  },
+  "store_url": "https://www.langflow.store/store/component/e1b7eec8-bb43-4431-8125-3b037d8f0d63",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-01T02:38:33.569Z",
+    "updated": "2024-10-01T02:38:33.720Z",
+    "downloaded": "2025-08-19T17:50:06.996Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Chain",
+        "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "RESTAPIConnector-mYmiq",
+        "type": "genericNode",
+        "position": {
+          "x": 616.6323102447514,
+          "y": 1145.3354747290227
+        },
+        "data": {
+          "type": "RESTAPIConnector",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "api_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "auth_type": {
+                "trace_as_metadata": true,
+                "options": [
+                  "None",
+                  "Basic",
+                  "Bearer"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "auth_type",
+                "value": "None",
+                "display_name": "Authentication Type",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Choose the type of authentication for the request.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "body": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "body",
+                "value": {},
+                "display_name": "Body Parameters",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Body parameters for POST, PUT, PATCH requests.",
+                "title_case": false,
+                "type": "NestedDict",
+                "_input_type": "NestedDictInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import json\nfrom typing import Any, Dict, List, Optional\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\n\nimport requests\nfrom loguru import logger\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, MultilineInput, NestedDictInput, Output, SecretStrInput, StrInput\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\nclass RESTAPIConnector(Component):\n    display_name = \"REST API Connector\"\n    description = (\n        \"This component enables making advanced REST API requests to one or more URLs. \"\n        \"You can configure headers, body, and query parameters dynamically and externally, as well as manage \"\n        \"timeouts and choose from various HTTP methods. Additionally, you can parse a cURL command \"\n        \"to auto-fill these fields.\"\n    )\n    icon = \"Globe\"\n    name = \"RESTAPIConnector\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"urls\",\n            display_name=\"URLs\",\n            is_list=True,\n            info=\"Enter one or more URLs, separated by commas.\",\n        ),\n        DropdownInput(\n            name=\"method\",\n            display_name=\"HTTP Method\",\n            options=[\"GET\", \"POST\", \"PUT\", \"PATCH\", \"DELETE\"],\n            value=\"GET\",\n            info=\"Select the HTTP method for the request.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout (seconds)\",\n            value=5,\n            info=\"Specify the timeout duration for the request.\",\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"API Key\",\n            value=\"None\",\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"auth_type\",\n            display_name=\"Authentication Type\",\n            options=[\"None\", \"Basic\", \"Bearer\"],\n            value=\"None\",\n            advanced=True,\n            info=\"Choose the type of authentication for the request.\",\n        ),\n        StrInput(\n            name=\"username\",\n            display_name=\"Username (for Basic Auth)\",\n            advanced=True,\n            value=\"\",\n        ),\n        SecretStrInput(\n            name=\"password\",\n            display_name=\"Password (for Basic Auth)\",\n            advanced=True,\n            value=\"None\",\n        ),\n        NestedDictInput(\n            name=\"headers\",\n            display_name=\"Custom Headers\",\n            info=\"Headers to include with the request.\",\n            input_types=[\"Data\"],\n            advanced=True,\n        ),\n        NestedDictInput(\n            name=\"body\",\n            display_name=\"Body Parameters\",\n            info=\"Body parameters for POST, PUT, PATCH requests.\",\n            input_types=[\"Data\"],\n            advanced=True,\n        ),\n        NestedDictInput(\n            name=\"query_params\",\n            display_name=\"Query Parameters\",\n            info=\"Query parameters to append to the URL.\",\n            input_types=[\"Data\"],\n            advanced=True,\n        ),\n        MultilineInput(\n            name=\"curl\",\n            display_name=\"cURL Command\",\n            info=\"Paste a cURL command to auto-fill fields.\",\n            advanced=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Response Data\", name=\"data\", method=\"make_requests\"),\n    ]\n\n    def parse_curl(self, curl: str, build_config: dotdict) -> dotdict:\n        try:\n            # Parse cURL command into components\n            parsed = parse_context(curl)\n            build_config[\"urls\"][\"value\"] = [parsed.url]\n            build_config[\"method\"][\"value\"] = parsed.method.upper()\n            build_config[\"headers\"][\"value\"] = dict(parsed.headers)\n\n            if parsed.data:\n                try:\n                    json_data = json.loads(parsed.data)\n                    build_config[\"body\"][\"value\"] = json_data\n                except json.JSONDecodeError as e:\n                    logger.error(f\"Error decoding JSON data: {e}\")\n            else:\n                build_config[\"body\"][\"value\"] = {}\n        except Exception as exc:\n            logger.error(f\"Error parsing cURL: {exc}\")\n            raise ValueError(f\"Error parsing cURL: {exc}\")\n        return build_config\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: Optional[str] = None):\n        if field_name == \"curl\" and field_value:\n            build_config = self.parse_curl(field_value, build_config)\n        return build_config\n\n    def make_request(\n        self,\n        method: str,\n        url: str,\n        headers: Optional[dict] = None,\n        body: Optional[dict] = None,\n        timeout: int = 5,\n        auth: Optional[Any] = None,  # Adding auth parameter\n    ) -> Data:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            raise ValueError(f\"Unsupported method: {method}\")\n\n        try:\n            response = requests.request(\n                method, url, headers=headers, json=body, timeout=timeout, auth=auth\n            )\n            try:\n                result = response.json()\n            except json.JSONDecodeError:\n                result = response.text\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except requests.exceptions.Timeout:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except requests.exceptions.RequestException as exc:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    def add_query_params(self, url: str, params: dict) -> str:\n        url_parts = list(urlparse(url))\n        query = dict(parse_qsl(url_parts[4]))\n        query.update(params)\n        url_parts[4] = urlencode(query)\n        return urlunparse(url_parts)\n\n    def make_requests(self) -> List[Data]:\n        method = self.method or \"GET\"\n        urls = [url.strip() for url in self.urls if url.strip()] if self.urls else []\n        headers = self.headers.data if isinstance(self.headers, Data) else self.headers or {}\n        body = self.body.data if isinstance(self.body, Data) else self.body or {}\n        timeout = self.timeout or 5\n        query_params = self.query_params.data if isinstance(self.query_params, Data) else {}\n        auth = None\n        # Handling Authentication\n        if self.auth_type == \"Bearer\" and self.api_key:\n            headers[\"Authorization\"] = f\"Bearer {self.api_key}\"\n        elif self.auth_type == \"Basic\" and self.username and self.password:\n            from requests.auth import HTTPBasicAuth\n            auth = HTTPBasicAuth(self.username, self.password)\n        else:\n            auth = None\n\n        bodies = [body] * len(urls)\n        urls = [self.add_query_params(url, query_params) for url in urls]\n\n        if not urls:\n            logger.warning(\"No URLs provided; returning empty result set.\")\n            return []\n\n        results = [\n            self.make_request(method, url, headers, rec, timeout, auth=auth) for url, rec in zip(urls, bodies)\n        ]\n        self.status = results\n        return results",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "curl": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "curl",
+                "value": "",
+                "display_name": "cURL Command",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Paste a cURL command to auto-fill fields.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "headers": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "headers",
+                "value": {},
+                "display_name": "Custom Headers",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Headers to include with the request.",
+                "title_case": false,
+                "type": "NestedDict",
+                "_input_type": "NestedDictInput"
+              },
+              "method": {
+                "trace_as_metadata": true,
+                "options": [
+                  "GET",
+                  "POST",
+                  "PUT",
+                  "PATCH",
+                  "DELETE"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "method",
+                "value": "POST",
+                "display_name": "HTTP Method",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Select the HTTP method for the request.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "password": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "password",
+                "value": "",
+                "display_name": "Password (for Basic Auth)",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "query_params": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "query_params",
+                "value": {},
+                "display_name": "Query Parameters",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Query parameters to append to the URL.",
+                "title_case": false,
+                "type": "NestedDict",
+                "_input_type": "NestedDictInput"
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "timeout",
+                "value": 55,
+                "display_name": "Timeout (seconds)",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Specify the timeout duration for the request.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "urls": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "urls",
+                "value": [
+                  "http://192.168.0.117:8080/api/1/add"
+                ],
+                "display_name": "URLs",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter one or more URLs, separated by commas.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "username": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "username",
+                "value": "",
+                "display_name": "Username (for Basic Auth)",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              }
+            },
+            "description": "Perform REST API requests with multiple URLs, custom headers, parameters, HTTP methods, and authentication.",
+            "icon": "Globe",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "REST API Connector",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Response Data",
+                "method": "make_requests",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "urls",
+              "method",
+              "timeout",
+              "api_key",
+              "auth_type",
+              "username",
+              "password",
+              "headers",
+              "body",
+              "query_params",
+              "curl"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.18"
+          },
+          "id": "RESTAPIConnector-mYmiq"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 1132,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 616.6323102447514,
+          "y": 1145.3354747290227
+        }
+      },
+      {
+        "id": "ParseData-YgonV",
+        "type": "genericNode",
+        "position": {
+          "x": 1528.1377080870502,
+          "y": 1687.6253968727322
+        },
+        "data": {
+          "type": "ParseData",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "data": {
+                "trace_as_metadata": true,
+                "list": false,
+                "trace_as_input": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "data",
+                "value": "",
+                "display_name": "Data",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The data to convert to text.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.helpers.data import data_to_text\nfrom axiestudio.io import DataInput, MultilineInput, Output, StrInput\nfrom axiestudio.schema.message import Message\n\n\nclass ParseDataComponent(Component):\n    display_name = \"Parse Data\"\n    description = \"Convert Data into plain text following a specified template.\"\n    icon = \"braces\"\n    name = \"ParseData\"\n\n    inputs = [\n        DataInput(name=\"data\", display_name=\"Data\", info=\"The data to convert to text.\"),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.\",\n            value=\"{text}\",\n        ),\n        StrInput(name=\"sep\", display_name=\"Separator\", advanced=True, value=\"\\n\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"parse_data\"),\n    ]\n\n    def parse_data(self) -> Message:\n        data = self.data if isinstance(self.data, list) else [self.data]\n        template = self.template\n\n        result_string = data_to_text(template, data, sep=self.sep)\n        self.status = result_string\n        return Message(text=result_string)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "sep": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sep",
+                "value": "\n",
+                "display_name": "Separator",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "template": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "template",
+                "value": "{text}",
+                "display_name": "Template",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "Convert Data into plain text following a specified template.",
+            "icon": "braces",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Parse Data",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text",
+                "display_name": "Text",
+                "method": "parse_data",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "data",
+              "template",
+              "sep"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.18"
+          },
+          "id": "ParseData-YgonV"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 378,
+        "positionAbsolute": {
+          "x": 1528.1377080870502,
+          "y": 1687.6253968727322
+        },
+        "dragging": false
+      },
+      {
+        "id": "ParseJSONData-jyT8O",
+        "type": "genericNode",
+        "position": {
+          "x": 1158.1449868265952,
+          "y": 1270.3165275181577
+        },
+        "data": {
+          "type": "ParseJSONData",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "input_value": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message",
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "Data object to filter.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import json\nfrom json import JSONDecodeError\n\nimport jq\nfrom json_repair import repair_json\n\nfrom axiestudio.custom import Component\nfrom axiestudio.inputs import HandleInput, MessageTextInput\nfrom axiestudio.io import Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.message import Message\n\n\nclass ParseJSONDataComponent(Component):\n    display_name = \"Parse JSON\"\n    description = \"Convert and extract JSON fields.\"\n    icon = \"braces\"\n    name = \"ParseJSONData\"\n\n    inputs = [\n        HandleInput(\n            name=\"input_value\",\n            display_name=\"Input\",\n            info=\"Data object to filter.\",\n            required=True,\n            input_types=[\"Message\", \"Data\"],\n        ),\n        MessageTextInput(\n            name=\"query\",\n            display_name=\"JQ Query\",\n            info=\"JQ Query to filter the data. The input is always a JSON list.\",\n            required=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Filtered Data\", name=\"filtered_data\", method=\"filter_data\"),\n    ]\n\n    def _parse_data(self, input_value) -> str:\n        if isinstance(input_value, Message) and isinstance(input_value.text, str):\n            return input_value.text\n        if isinstance(input_value, Data):\n            return json.dumps(input_value.data)\n        return str(input_value)\n\n    def filter_data(self) -> list[Data]:\n        to_filter = self.input_value\n        if not to_filter:\n            return []\n        if isinstance(to_filter, list):\n            to_filter = [self._parse_data(f) for f in to_filter]\n        else:\n            to_filter = [self._parse_data(to_filter)]\n\n        to_filter = [repair_json(f) for f in to_filter]\n        to_filter_as_dict = []\n        for f in to_filter:\n            try:\n                to_filter_as_dict.append(json.loads(f))\n            except JSONDecodeError:\n                try:\n                    to_filter_as_dict.append(json.loads(repair_json(f)))\n                except JSONDecodeError as e:\n                    raise ValueError(f\"Invalid JSON: {e}\")\n\n        full_filter_str = json.dumps(to_filter_as_dict)\n\n        print(\"to_filter: \", to_filter)\n\n        results = jq.compile(self.query).input_text(full_filter_str).all()\n        print(\"results: \", results)\n        docs = [Data(data=value) if isinstance(value, dict) else Data(text=str(value)) for value in results]\n        return docs\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "query": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "query",
+                "value": ".[].result",
+                "display_name": "JQ Query",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "JQ Query to filter the data. The input is always a JSON list.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Convert and extract JSON fields.",
+            "icon": "braces",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Parse JSON",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "filtered_data",
+                "display_name": "Filtered Data",
+                "method": "filter_data",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "query"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.18"
+          },
+          "id": "ParseJSONData-jyT8O"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 350,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 1158.1449868265952,
+          "y": 1270.3165275181577
+        }
+      },
+      {
+        "id": "TextInput-ZOHcJ",
+        "type": "genericNode",
+        "position": {
+          "x": 58.952713839915646,
+          "y": 1284.566400125055
+        },
+        "data": {
+          "type": "TextInput",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.io.text import TextComponent\r\nfrom axiestudio.io import MultilineInput, Output\r\nfrom axiestudio.schema.data import Data\r\n\r\n\r\nclass TextInputComponent(TextComponent):\r\n    display_name = \"文本输入\"\r\n    description = \"从 Playground 获取文本输入。\"\r\n    icon = \"type\"\r\n    name = \"TextInput\"\r\n\r\n    inputs = [\r\n        MultilineInput(\r\n            name=\"input_value\",\r\n            display_name=\"文本\",\r\n            info=\"作为输入传递的文本。\",\r\n        ),\r\n    ]\r\n    outputs = [\r\n        Output(display_name=\"Data\", name=\"processed_data\", method=\"process_text\"),\r\n    ]\r\n\r\n    def process_text(self) -> Data:\r\n        text = self.input_value.strip()\r\n        if \"=\" in text:\r\n            key, value = map(str.strip, text.split(\"=\", 1))\r\n            result = {key: value}\r\n        else:\r\n            result = {\"text\": text}\r\n\r\n        message = Data(\r\n            data=result,\r\n        )\r\n        return message\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "文本",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "作为输入传递的文本。",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "从 Playground 获取文本输入。",
+            "icon": "type",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Text Input",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "processed_data",
+                "display_name": "Data",
+                "method": "process_text",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.18"
+          },
+          "id": "TextInput-ZOHcJ"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 302,
+        "positionAbsolute": {
+          "x": 58.952713839915646,
+          "y": 1284.566400125055
+        },
+        "dragging": false
+      },
+      {
+        "id": "ChatOutput-VV9bf",
+        "type": "genericNode",
+        "position": {
+          "x": 1678.1314398582056,
+          "y": 1146.717400477552
+        },
+        "data": {
+          "type": "ChatOutput",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, MessageTextInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI, MESSAGE_SENDER_USER\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Playground.\"\n    icon = \"ChatOutput\"\n    name = \"ChatOutput\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Message to be passed as output.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_AI,\n            advanced=True,\n            info=\"Type of sender.\",\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_AI,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"data_template\",\n            display_name=\"Data Template\",\n            value=\"{text}\",\n            advanced=True,\n            info=\"Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n\n    def message_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n        )\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "data_template": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "data_template",
+                "value": "{text}",
+                "display_name": "Data Template",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Message to be passed as output.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "sender": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender",
+                "value": "Machine",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Type of sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "sender_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender_name",
+                "value": "AI",
+                "display_name": "Sender Name",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Name of the sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "session_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "session_id",
+                "value": "",
+                "display_name": "Session ID",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "should_store_message": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "should_store_message",
+                "value": true,
+                "display_name": "Store Messages",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Store the message in the history.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Display a chat message in the Playground.",
+            "icon": "ChatOutput",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Chat Output",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "message",
+                "display_name": "Message",
+                "method": "message_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "should_store_message",
+              "sender",
+              "sender_name",
+              "session_id",
+              "data_template"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.18"
+          },
+          "id": "ChatOutput-VV9bf"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 302,
+        "positionAbsolute": {
+          "x": 1678.1314398582056,
+          "y": 1146.717400477552
+        },
+        "dragging": false
+      },
+      {
+        "id": "ChatInput-H9se5",
+        "type": "genericNode",
+        "position": {
+          "x": -418.04858652763437,
+          "y": 1164.2220353534253
+        },
+        "data": {
+          "type": "ChatInput",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "files": {
+                "trace_as_metadata": true,
+                "file_path": "",
+                "fileTypes": [
+                  "txt",
+                  "md",
+                  "mdx",
+                  "csv",
+                  "json",
+                  "yaml",
+                  "yml",
+                  "xml",
+                  "html",
+                  "htm",
+                  "pdf",
+                  "docx",
+                  "py",
+                  "sh",
+                  "sql",
+                  "js",
+                  "ts",
+                  "tsx",
+                  "jpg",
+                  "jpeg",
+                  "png",
+                  "bmp",
+                  "image"
+                ],
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "files",
+                "value": "",
+                "display_name": "Files",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Files to be sent with the message.",
+                "title_case": false,
+                "type": "file",
+                "_input_type": "FileInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.data.utils import IMG_FILE_TYPES, TEXT_FILE_TYPES\nfrom axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, FileInput, MessageTextInput, MultilineInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_USER, MESSAGE_SENDER_NAME_USER\n\n\nclass ChatInput(ChatComponent):\n    display_name = \"Chat Input\"\n    description = \"Get chat inputs from the Playground.\"\n    icon = \"ChatInput\"\n    name = \"ChatInput\"\n\n    inputs = [\n        MultilineInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            value=\"\",\n            info=\"Message to be passed as input.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_USER,\n            info=\"Type of sender.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_USER,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        FileInput(\n            name=\"files\",\n            display_name=\"Files\",\n            file_types=TEXT_FILE_TYPES + IMG_FILE_TYPES,\n            info=\"Files to be sent with the message.\",\n            advanced=True,\n            is_list=True,\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n\n    def message_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n            files=self.files,\n        )\n\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "你好",
+                "display_name": "Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Message to be passed as input.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "sender": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender",
+                "value": "User",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Type of sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "sender_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender_name",
+                "value": "User",
+                "display_name": "Sender Name",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Name of the sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "session_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "session_id",
+                "value": "",
+                "display_name": "Session ID",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "should_store_message": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "should_store_message",
+                "value": true,
+                "display_name": "Store Messages",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Store the message in the history.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Get chat inputs from the Playground.",
+            "icon": "ChatInput",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Chat Input",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "message",
+                "display_name": "Message",
+                "method": "message_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "should_store_message",
+              "sender",
+              "sender_name",
+              "session_id",
+              "files"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.18"
+          },
+          "id": "ChatInput-H9se5"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 302,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": -418.04858652763437,
+          "y": 1164.2220353534253
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "RESTAPIConnector-mYmiq",
+        "sourceHandle": "{œdataTypeœ:œRESTAPIConnectorœ,œidœ:œRESTAPIConnector-mYmiqœ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}",
+        "target": "ParseJSONData-jyT8O",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œParseJSONData-jyT8Oœ,œinputTypesœ:[œMessageœ,œDataœ],œtypeœ:œotherœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "ParseJSONData-jyT8O",
+            "inputTypes": [
+              "Message",
+              "Data"
+            ],
+            "type": "other"
+          },
+          "sourceHandle": {
+            "dataType": "RESTAPIConnector",
+            "id": "RESTAPIConnector-mYmiq",
+            "name": "data",
+            "output_types": [
+              "Data"
+            ]
+          }
+        },
+        "id": "reactflow__edge-RESTAPIConnector-mYmiq{œdataTypeœ:œRESTAPIConnectorœ,œidœ:œRESTAPIConnector-mYmiqœ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}-ParseJSONData-jyT8O{œfieldNameœ:œinput_valueœ,œidœ:œParseJSONData-jyT8Oœ,œinputTypesœ:[œMessageœ,œDataœ],œtypeœ:œotherœ}",
+        "className": ""
+      },
+      {
+        "source": "ParseJSONData-jyT8O",
+        "sourceHandle": "{œdataTypeœ:œParseJSONDataœ,œidœ:œParseJSONData-jyT8Oœ,œnameœ:œfiltered_dataœ,œoutput_typesœ:[œDataœ]}",
+        "target": "ParseData-YgonV",
+        "targetHandle": "{œfieldNameœ:œdataœ,œidœ:œParseData-YgonVœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "data",
+            "id": "ParseData-YgonV",
+            "inputTypes": [
+              "Data"
+            ],
+            "type": "other"
+          },
+          "sourceHandle": {
+            "dataType": "ParseJSONData",
+            "id": "ParseJSONData-jyT8O",
+            "name": "filtered_data",
+            "output_types": [
+              "Data"
+            ]
+          }
+        },
+        "id": "reactflow__edge-ParseJSONData-jyT8O{œdataTypeœ:œParseJSONDataœ,œidœ:œParseJSONData-jyT8Oœ,œnameœ:œfiltered_dataœ,œoutput_typesœ:[œDataœ]}-ParseData-YgonV{œfieldNameœ:œdataœ,œidœ:œParseData-YgonVœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "className": ""
+      },
+      {
+        "source": "TextInput-ZOHcJ",
+        "sourceHandle": "{œdataTypeœ:œTextInputœ,œidœ:œTextInput-ZOHcJœ,œnameœ:œprocessed_dataœ,œoutput_typesœ:[œDataœ]}",
+        "target": "RESTAPIConnector-mYmiq",
+        "targetHandle": "{œfieldNameœ:œbodyœ,œidœ:œRESTAPIConnector-mYmiqœ,œinputTypesœ:[œDataœ],œtypeœ:œNestedDictœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "body",
+            "id": "RESTAPIConnector-mYmiq",
+            "inputTypes": [
+              "Data"
+            ],
+            "type": "NestedDict"
+          },
+          "sourceHandle": {
+            "dataType": "TextInput",
+            "id": "TextInput-ZOHcJ",
+            "name": "processed_data",
+            "output_types": [
+              "Data"
+            ]
+          }
+        },
+        "id": "reactflow__edge-TextInput-ZOHcJ{œdataTypeœ:œTextInputœ,œidœ:œTextInput-ZOHcJœ,œnameœ:œprocessed_dataœ,œoutput_typesœ:[œDataœ]}-RESTAPIConnector-mYmiq{œfieldNameœ:œbodyœ,œidœ:œRESTAPIConnector-mYmiqœ,œinputTypesœ:[œDataœ],œtypeœ:œNestedDictœ}"
+      },
+      {
+        "source": "ParseData-YgonV",
+        "sourceHandle": "{œdataTypeœ:œParseDataœ,œidœ:œParseData-YgonVœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "ChatOutput-VV9bf",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-VV9bfœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "ChatOutput-VV9bf",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "ParseData",
+            "id": "ParseData-YgonV",
+            "name": "text",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-ParseData-YgonV{œdataTypeœ:œParseDataœ,œidœ:œParseData-YgonVœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-VV9bf{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-VV9bfœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+      },
+      {
+        "source": "ChatInput-H9se5",
+        "sourceHandle": "{œdataTypeœ:œChatInputœ,œidœ:œChatInput-H9se5œ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "TextInput-ZOHcJ",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œTextInput-ZOHcJœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "TextInput-ZOHcJ",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "ChatInput",
+            "id": "ChatInput-H9se5",
+            "name": "message",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-ChatInput-H9se5{œdataTypeœ:œChatInputœ,œidœ:œChatInput-H9se5œ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-TextInput-ZOHcJ{œfieldNameœ:œinput_valueœ,œidœ:œTextInput-ZOHcJœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+      }
+    ],
+    "viewport": {
+      "x": 229.05732372805096,
+      "y": -437.4889300349156,
+      "zoom": 0.4570218148923736
+    }
+  },
+  "metadata": {
+    "RESTAPIConnector": {
+      "count": 1
+    },
+    "ParseData": {
+      "count": 1
+    },
+    "ParseJSONData": {
+      "count": 1
+    },
+    "TextInput": {
+      "count": 1
+    },
+    "ChatOutput": {
+      "count": 1
+    },
+    "ChatInput": {
+      "count": 1
+    },
+    "total": 6
+  },
+  "original": {
+    "id": "e1b7eec8-bb43-4431-8125-3b037d8f0d63",
+    "name": " REST API 构建流程",
+    "description": "此流程展示了如何使用 REST API 连接器组件来发出 REST API 请求。它演示了配置 URL、设置 HTTP 方法、添加自定义头信息以及包含查询参数以从 API 获取数据。",
+    "is_component": false,
+    "liked_by_count": "2",
+    "downloads_count": "57",
+    "metadata": {
+      "RESTAPIConnector": {
+        "count": 1
+      },
+      "ParseData": {
+        "count": 1
+      },
+      "ParseJSONData": {
+        "count": 1
+      },
+      "TextInput": {
+        "count": 1
+      },
+      "ChatOutput": {
+        "count": 1
+      },
+      "ChatInput": {
+        "count": 1
+      },
+      "total": 6
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "RESTAPIConnector-mYmiq",
+          "type": "genericNode",
+          "position": {
+            "x": 616.6323102447514,
+            "y": 1145.3354747290227
+          },
+          "data": {
+            "type": "RESTAPIConnector",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "api_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "auth_type": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "None",
+                    "Basic",
+                    "Bearer"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "auth_type",
+                  "value": "None",
+                  "display_name": "Authentication Type",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Choose the type of authentication for the request.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "body": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "body",
+                  "value": {},
+                  "display_name": "Body Parameters",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Body parameters for POST, PUT, PATCH requests.",
+                  "title_case": false,
+                  "type": "NestedDict",
+                  "_input_type": "NestedDictInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import json\nfrom typing import Any, Dict, List, Optional\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\n\nimport requests\nfrom loguru import logger\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, MultilineInput, NestedDictInput, Output, SecretStrInput, StrInput\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\nclass RESTAPIConnector(Component):\n    display_name = \"REST API Connector\"\n    description = (\n        \"This component enables making advanced REST API requests to one or more URLs. \"\n        \"You can configure headers, body, and query parameters dynamically and externally, as well as manage \"\n        \"timeouts and choose from various HTTP methods. Additionally, you can parse a cURL command \"\n        \"to auto-fill these fields.\"\n    )\n    icon = \"Globe\"\n    name = \"RESTAPIConnector\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"urls\",\n            display_name=\"URLs\",\n            is_list=True,\n            info=\"Enter one or more URLs, separated by commas.\",\n        ),\n        DropdownInput(\n            name=\"method\",\n            display_name=\"HTTP Method\",\n            options=[\"GET\", \"POST\", \"PUT\", \"PATCH\", \"DELETE\"],\n            value=\"GET\",\n            info=\"Select the HTTP method for the request.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout (seconds)\",\n            value=5,\n            info=\"Specify the timeout duration for the request.\",\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"API Key\",\n            value=\"None\",\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"auth_type\",\n            display_name=\"Authentication Type\",\n            options=[\"None\", \"Basic\", \"Bearer\"],\n            value=\"None\",\n            advanced=True,\n            info=\"Choose the type of authentication for the request.\",\n        ),\n        StrInput(\n            name=\"username\",\n            display_name=\"Username (for Basic Auth)\",\n            advanced=True,\n            value=\"\",\n        ),\n        SecretStrInput(\n            name=\"password\",\n            display_name=\"Password (for Basic Auth)\",\n            advanced=True,\n            value=\"None\",\n        ),\n        NestedDictInput(\n            name=\"headers\",\n            display_name=\"Custom Headers\",\n            info=\"Headers to include with the request.\",\n            input_types=[\"Data\"],\n            advanced=True,\n        ),\n        NestedDictInput(\n            name=\"body\",\n            display_name=\"Body Parameters\",\n            info=\"Body parameters for POST, PUT, PATCH requests.\",\n            input_types=[\"Data\"],\n            advanced=True,\n        ),\n        NestedDictInput(\n            name=\"query_params\",\n            display_name=\"Query Parameters\",\n            info=\"Query parameters to append to the URL.\",\n            input_types=[\"Data\"],\n            advanced=True,\n        ),\n        MultilineInput(\n            name=\"curl\",\n            display_name=\"cURL Command\",\n            info=\"Paste a cURL command to auto-fill fields.\",\n            advanced=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Response Data\", name=\"data\", method=\"make_requests\"),\n    ]\n\n    def parse_curl(self, curl: str, build_config: dotdict) -> dotdict:\n        try:\n            # Parse cURL command into components\n            parsed = parse_context(curl)\n            build_config[\"urls\"][\"value\"] = [parsed.url]\n            build_config[\"method\"][\"value\"] = parsed.method.upper()\n            build_config[\"headers\"][\"value\"] = dict(parsed.headers)\n\n            if parsed.data:\n                try:\n                    json_data = json.loads(parsed.data)\n                    build_config[\"body\"][\"value\"] = json_data\n                except json.JSONDecodeError as e:\n                    logger.error(f\"Error decoding JSON data: {e}\")\n            else:\n                build_config[\"body\"][\"value\"] = {}\n        except Exception as exc:\n            logger.error(f\"Error parsing cURL: {exc}\")\n            raise ValueError(f\"Error parsing cURL: {exc}\")\n        return build_config\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: Optional[str] = None):\n        if field_name == \"curl\" and field_value:\n            build_config = self.parse_curl(field_value, build_config)\n        return build_config\n\n    def make_request(\n        self,\n        method: str,\n        url: str,\n        headers: Optional[dict] = None,\n        body: Optional[dict] = None,\n        timeout: int = 5,\n        auth: Optional[Any] = None,  # Adding auth parameter\n    ) -> Data:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            raise ValueError(f\"Unsupported method: {method}\")\n\n        try:\n            response = requests.request(\n                method, url, headers=headers, json=body, timeout=timeout, auth=auth\n            )\n            try:\n                result = response.json()\n            except json.JSONDecodeError:\n                result = response.text\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except requests.exceptions.Timeout:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except requests.exceptions.RequestException as exc:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    def add_query_params(self, url: str, params: dict) -> str:\n        url_parts = list(urlparse(url))\n        query = dict(parse_qsl(url_parts[4]))\n        query.update(params)\n        url_parts[4] = urlencode(query)\n        return urlunparse(url_parts)\n\n    def make_requests(self) -> List[Data]:\n        method = self.method or \"GET\"\n        urls = [url.strip() for url in self.urls if url.strip()] if self.urls else []\n        headers = self.headers.data if isinstance(self.headers, Data) else self.headers or {}\n        body = self.body.data if isinstance(self.body, Data) else self.body or {}\n        timeout = self.timeout or 5\n        query_params = self.query_params.data if isinstance(self.query_params, Data) else {}\n        auth = None\n        # Handling Authentication\n        if self.auth_type == \"Bearer\" and self.api_key:\n            headers[\"Authorization\"] = f\"Bearer {self.api_key}\"\n        elif self.auth_type == \"Basic\" and self.username and self.password:\n            from requests.auth import HTTPBasicAuth\n            auth = HTTPBasicAuth(self.username, self.password)\n        else:\n            auth = None\n\n        bodies = [body] * len(urls)\n        urls = [self.add_query_params(url, query_params) for url in urls]\n\n        if not urls:\n            logger.warning(\"No URLs provided; returning empty result set.\")\n            return []\n\n        results = [\n            self.make_request(method, url, headers, rec, timeout, auth=auth) for url, rec in zip(urls, bodies)\n        ]\n        self.status = results\n        return results",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "curl": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "curl",
+                  "value": "",
+                  "display_name": "cURL Command",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Paste a cURL command to auto-fill fields.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "headers": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "headers",
+                  "value": {},
+                  "display_name": "Custom Headers",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Headers to include with the request.",
+                  "title_case": false,
+                  "type": "NestedDict",
+                  "_input_type": "NestedDictInput"
+                },
+                "method": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "GET",
+                    "POST",
+                    "PUT",
+                    "PATCH",
+                    "DELETE"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "method",
+                  "value": "POST",
+                  "display_name": "HTTP Method",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Select the HTTP method for the request.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "password": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "password",
+                  "value": "",
+                  "display_name": "Password (for Basic Auth)",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "query_params": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "query_params",
+                  "value": {},
+                  "display_name": "Query Parameters",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Query parameters to append to the URL.",
+                  "title_case": false,
+                  "type": "NestedDict",
+                  "_input_type": "NestedDictInput"
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "timeout",
+                  "value": 55,
+                  "display_name": "Timeout (seconds)",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Specify the timeout duration for the request.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "urls": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "urls",
+                  "value": [
+                    "http://192.168.0.117:8080/api/1/add"
+                  ],
+                  "display_name": "URLs",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter one or more URLs, separated by commas.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "username": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "username",
+                  "value": "",
+                  "display_name": "Username (for Basic Auth)",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                }
+              },
+              "description": "Perform REST API requests with multiple URLs, custom headers, parameters, HTTP methods, and authentication.",
+              "icon": "Globe",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "REST API Connector",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Response Data",
+                  "method": "make_requests",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "urls",
+                "method",
+                "timeout",
+                "api_key",
+                "auth_type",
+                "username",
+                "password",
+                "headers",
+                "body",
+                "query_params",
+                "curl"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.18"
+            },
+            "id": "RESTAPIConnector-mYmiq"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 1132,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": 616.6323102447514,
+            "y": 1145.3354747290227
+          }
+        },
+        {
+          "id": "ParseData-YgonV",
+          "type": "genericNode",
+          "position": {
+            "x": 1528.1377080870502,
+            "y": 1687.6253968727322
+          },
+          "data": {
+            "type": "ParseData",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "data": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "trace_as_input": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "data",
+                  "value": "",
+                  "display_name": "Data",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The data to convert to text.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.helpers.data import data_to_text\nfrom axiestudio.io import DataInput, MultilineInput, Output, StrInput\nfrom axiestudio.schema.message import Message\n\n\nclass ParseDataComponent(Component):\n    display_name = \"Parse Data\"\n    description = \"Convert Data into plain text following a specified template.\"\n    icon = \"braces\"\n    name = \"ParseData\"\n\n    inputs = [\n        DataInput(name=\"data\", display_name=\"Data\", info=\"The data to convert to text.\"),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.\",\n            value=\"{text}\",\n        ),\n        StrInput(name=\"sep\", display_name=\"Separator\", advanced=True, value=\"\\n\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"parse_data\"),\n    ]\n\n    def parse_data(self) -> Message:\n        data = self.data if isinstance(self.data, list) else [self.data]\n        template = self.template\n\n        result_string = data_to_text(template, data, sep=self.sep)\n        self.status = result_string\n        return Message(text=result_string)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "sep": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sep",
+                  "value": "\n",
+                  "display_name": "Separator",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "template": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "template",
+                  "value": "{text}",
+                  "display_name": "Template",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "Convert Data into plain text following a specified template.",
+              "icon": "braces",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Parse Data",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text",
+                  "display_name": "Text",
+                  "method": "parse_data",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "data",
+                "template",
+                "sep"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.18"
+            },
+            "id": "ParseData-YgonV"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 378,
+          "positionAbsolute": {
+            "x": 1528.1377080870502,
+            "y": 1687.6253968727322
+          },
+          "dragging": false
+        },
+        {
+          "id": "ParseJSONData-jyT8O",
+          "type": "genericNode",
+          "position": {
+            "x": 1158.1449868265952,
+            "y": 1270.3165275181577
+          },
+          "data": {
+            "type": "ParseJSONData",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "input_value": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message",
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "Data object to filter.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import json\nfrom json import JSONDecodeError\n\nimport jq\nfrom json_repair import repair_json\n\nfrom axiestudio.custom import Component\nfrom axiestudio.inputs import HandleInput, MessageTextInput\nfrom axiestudio.io import Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.message import Message\n\n\nclass ParseJSONDataComponent(Component):\n    display_name = \"Parse JSON\"\n    description = \"Convert and extract JSON fields.\"\n    icon = \"braces\"\n    name = \"ParseJSONData\"\n\n    inputs = [\n        HandleInput(\n            name=\"input_value\",\n            display_name=\"Input\",\n            info=\"Data object to filter.\",\n            required=True,\n            input_types=[\"Message\", \"Data\"],\n        ),\n        MessageTextInput(\n            name=\"query\",\n            display_name=\"JQ Query\",\n            info=\"JQ Query to filter the data. The input is always a JSON list.\",\n            required=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Filtered Data\", name=\"filtered_data\", method=\"filter_data\"),\n    ]\n\n    def _parse_data(self, input_value) -> str:\n        if isinstance(input_value, Message) and isinstance(input_value.text, str):\n            return input_value.text\n        if isinstance(input_value, Data):\n            return json.dumps(input_value.data)\n        return str(input_value)\n\n    def filter_data(self) -> list[Data]:\n        to_filter = self.input_value\n        if not to_filter:\n            return []\n        if isinstance(to_filter, list):\n            to_filter = [self._parse_data(f) for f in to_filter]\n        else:\n            to_filter = [self._parse_data(to_filter)]\n\n        to_filter = [repair_json(f) for f in to_filter]\n        to_filter_as_dict = []\n        for f in to_filter:\n            try:\n                to_filter_as_dict.append(json.loads(f))\n            except JSONDecodeError:\n                try:\n                    to_filter_as_dict.append(json.loads(repair_json(f)))\n                except JSONDecodeError as e:\n                    raise ValueError(f\"Invalid JSON: {e}\")\n\n        full_filter_str = json.dumps(to_filter_as_dict)\n\n        print(\"to_filter: \", to_filter)\n\n        results = jq.compile(self.query).input_text(full_filter_str).all()\n        print(\"results: \", results)\n        docs = [Data(data=value) if isinstance(value, dict) else Data(text=str(value)) for value in results]\n        return docs\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "query": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "query",
+                  "value": ".[].result",
+                  "display_name": "JQ Query",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "JQ Query to filter the data. The input is always a JSON list.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Convert and extract JSON fields.",
+              "icon": "braces",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Parse JSON",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "filtered_data",
+                  "display_name": "Filtered Data",
+                  "method": "filter_data",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "query"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.18"
+            },
+            "id": "ParseJSONData-jyT8O"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 350,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": 1158.1449868265952,
+            "y": 1270.3165275181577
+          }
+        },
+        {
+          "id": "TextInput-ZOHcJ",
+          "type": "genericNode",
+          "position": {
+            "x": 58.952713839915646,
+            "y": 1284.566400125055
+          },
+          "data": {
+            "type": "TextInput",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.io.text import TextComponent\r\nfrom axiestudio.io import MultilineInput, Output\r\nfrom axiestudio.schema.data import Data\r\n\r\n\r\nclass TextInputComponent(TextComponent):\r\n    display_name = \"文本输入\"\r\n    description = \"从 Playground 获取文本输入。\"\r\n    icon = \"type\"\r\n    name = \"TextInput\"\r\n\r\n    inputs = [\r\n        MultilineInput(\r\n            name=\"input_value\",\r\n            display_name=\"文本\",\r\n            info=\"作为输入传递的文本。\",\r\n        ),\r\n    ]\r\n    outputs = [\r\n        Output(display_name=\"Data\", name=\"processed_data\", method=\"process_text\"),\r\n    ]\r\n\r\n    def process_text(self) -> Data:\r\n        text = self.input_value.strip()\r\n        if \"=\" in text:\r\n            key, value = map(str.strip, text.split(\"=\", 1))\r\n            result = {key: value}\r\n        else:\r\n            result = {\"text\": text}\r\n\r\n        message = Data(\r\n            data=result,\r\n        )\r\n        return message\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "文本",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "作为输入传递的文本。",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "从 Playground 获取文本输入。",
+              "icon": "type",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Text Input",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "processed_data",
+                  "display_name": "Data",
+                  "method": "process_text",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.18"
+            },
+            "id": "TextInput-ZOHcJ"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 302,
+          "positionAbsolute": {
+            "x": 58.952713839915646,
+            "y": 1284.566400125055
+          },
+          "dragging": false
+        },
+        {
+          "id": "ChatOutput-VV9bf",
+          "type": "genericNode",
+          "position": {
+            "x": 1678.1314398582056,
+            "y": 1146.717400477552
+          },
+          "data": {
+            "type": "ChatOutput",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, MessageTextInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI, MESSAGE_SENDER_USER\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Playground.\"\n    icon = \"ChatOutput\"\n    name = \"ChatOutput\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Message to be passed as output.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_AI,\n            advanced=True,\n            info=\"Type of sender.\",\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_AI,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"data_template\",\n            display_name=\"Data Template\",\n            value=\"{text}\",\n            advanced=True,\n            info=\"Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n\n    def message_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n        )\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "data_template": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "data_template",
+                  "value": "{text}",
+                  "display_name": "Data Template",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Message to be passed as output.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "sender": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Machine",
+                    "User"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender",
+                  "value": "Machine",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Type of sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "sender_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender_name",
+                  "value": "AI",
+                  "display_name": "Sender Name",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Name of the sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "session_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "session_id",
+                  "value": "",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "should_store_message": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "should_store_message",
+                  "value": true,
+                  "display_name": "Store Messages",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Store the message in the history.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Display a chat message in the Playground.",
+              "icon": "ChatOutput",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Chat Output",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "message",
+                  "display_name": "Message",
+                  "method": "message_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "should_store_message",
+                "sender",
+                "sender_name",
+                "session_id",
+                "data_template"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.18"
+            },
+            "id": "ChatOutput-VV9bf"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 302,
+          "positionAbsolute": {
+            "x": 1678.1314398582056,
+            "y": 1146.717400477552
+          },
+          "dragging": false
+        },
+        {
+          "id": "ChatInput-H9se5",
+          "type": "genericNode",
+          "position": {
+            "x": -418.04858652763437,
+            "y": 1164.2220353534253
+          },
+          "data": {
+            "type": "ChatInput",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "files": {
+                  "trace_as_metadata": true,
+                  "file_path": "",
+                  "fileTypes": [
+                    "txt",
+                    "md",
+                    "mdx",
+                    "csv",
+                    "json",
+                    "yaml",
+                    "yml",
+                    "xml",
+                    "html",
+                    "htm",
+                    "pdf",
+                    "docx",
+                    "py",
+                    "sh",
+                    "sql",
+                    "js",
+                    "ts",
+                    "tsx",
+                    "jpg",
+                    "jpeg",
+                    "png",
+                    "bmp",
+                    "image"
+                  ],
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "files",
+                  "value": "",
+                  "display_name": "Files",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Files to be sent with the message.",
+                  "title_case": false,
+                  "type": "file",
+                  "_input_type": "FileInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.data.utils import IMG_FILE_TYPES, TEXT_FILE_TYPES\nfrom axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, FileInput, MessageTextInput, MultilineInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_USER, MESSAGE_SENDER_NAME_USER\n\n\nclass ChatInput(ChatComponent):\n    display_name = \"Chat Input\"\n    description = \"Get chat inputs from the Playground.\"\n    icon = \"ChatInput\"\n    name = \"ChatInput\"\n\n    inputs = [\n        MultilineInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            value=\"\",\n            info=\"Message to be passed as input.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_USER,\n            info=\"Type of sender.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_USER,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        FileInput(\n            name=\"files\",\n            display_name=\"Files\",\n            file_types=TEXT_FILE_TYPES + IMG_FILE_TYPES,\n            info=\"Files to be sent with the message.\",\n            advanced=True,\n            is_list=True,\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n\n    def message_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n            files=self.files,\n        )\n\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "你好",
+                  "display_name": "Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Message to be passed as input.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "sender": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Machine",
+                    "User"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender",
+                  "value": "User",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Type of sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "sender_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender_name",
+                  "value": "User",
+                  "display_name": "Sender Name",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Name of the sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "session_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "session_id",
+                  "value": "",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "should_store_message": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "should_store_message",
+                  "value": true,
+                  "display_name": "Store Messages",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Store the message in the history.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Get chat inputs from the Playground.",
+              "icon": "ChatInput",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Chat Input",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "message",
+                  "display_name": "Message",
+                  "method": "message_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "should_store_message",
+                "sender",
+                "sender_name",
+                "session_id",
+                "files"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.18"
+            },
+            "id": "ChatInput-H9se5"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 302,
+          "dragging": false,
+          "positionAbsolute": {
+            "x": -418.04858652763437,
+            "y": 1164.2220353534253
+          }
+        }
+      ],
+      "edges": [
+        {
+          "source": "RESTAPIConnector-mYmiq",
+          "sourceHandle": "{œdataTypeœ:œRESTAPIConnectorœ,œidœ:œRESTAPIConnector-mYmiqœ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}",
+          "target": "ParseJSONData-jyT8O",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œParseJSONData-jyT8Oœ,œinputTypesœ:[œMessageœ,œDataœ],œtypeœ:œotherœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "ParseJSONData-jyT8O",
+              "inputTypes": [
+                "Message",
+                "Data"
+              ],
+              "type": "other"
+            },
+            "sourceHandle": {
+              "dataType": "RESTAPIConnector",
+              "id": "RESTAPIConnector-mYmiq",
+              "name": "data",
+              "output_types": [
+                "Data"
+              ]
+            }
+          },
+          "id": "reactflow__edge-RESTAPIConnector-mYmiq{œdataTypeœ:œRESTAPIConnectorœ,œidœ:œRESTAPIConnector-mYmiqœ,œnameœ:œdataœ,œoutput_typesœ:[œDataœ]}-ParseJSONData-jyT8O{œfieldNameœ:œinput_valueœ,œidœ:œParseJSONData-jyT8Oœ,œinputTypesœ:[œMessageœ,œDataœ],œtypeœ:œotherœ}",
+          "className": ""
+        },
+        {
+          "source": "ParseJSONData-jyT8O",
+          "sourceHandle": "{œdataTypeœ:œParseJSONDataœ,œidœ:œParseJSONData-jyT8Oœ,œnameœ:œfiltered_dataœ,œoutput_typesœ:[œDataœ]}",
+          "target": "ParseData-YgonV",
+          "targetHandle": "{œfieldNameœ:œdataœ,œidœ:œParseData-YgonVœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "data",
+              "id": "ParseData-YgonV",
+              "inputTypes": [
+                "Data"
+              ],
+              "type": "other"
+            },
+            "sourceHandle": {
+              "dataType": "ParseJSONData",
+              "id": "ParseJSONData-jyT8O",
+              "name": "filtered_data",
+              "output_types": [
+                "Data"
+              ]
+            }
+          },
+          "id": "reactflow__edge-ParseJSONData-jyT8O{œdataTypeœ:œParseJSONDataœ,œidœ:œParseJSONData-jyT8Oœ,œnameœ:œfiltered_dataœ,œoutput_typesœ:[œDataœ]}-ParseData-YgonV{œfieldNameœ:œdataœ,œidœ:œParseData-YgonVœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "className": ""
+        },
+        {
+          "source": "TextInput-ZOHcJ",
+          "sourceHandle": "{œdataTypeœ:œTextInputœ,œidœ:œTextInput-ZOHcJœ,œnameœ:œprocessed_dataœ,œoutput_typesœ:[œDataœ]}",
+          "target": "RESTAPIConnector-mYmiq",
+          "targetHandle": "{œfieldNameœ:œbodyœ,œidœ:œRESTAPIConnector-mYmiqœ,œinputTypesœ:[œDataœ],œtypeœ:œNestedDictœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "body",
+              "id": "RESTAPIConnector-mYmiq",
+              "inputTypes": [
+                "Data"
+              ],
+              "type": "NestedDict"
+            },
+            "sourceHandle": {
+              "dataType": "TextInput",
+              "id": "TextInput-ZOHcJ",
+              "name": "processed_data",
+              "output_types": [
+                "Data"
+              ]
+            }
+          },
+          "id": "reactflow__edge-TextInput-ZOHcJ{œdataTypeœ:œTextInputœ,œidœ:œTextInput-ZOHcJœ,œnameœ:œprocessed_dataœ,œoutput_typesœ:[œDataœ]}-RESTAPIConnector-mYmiq{œfieldNameœ:œbodyœ,œidœ:œRESTAPIConnector-mYmiqœ,œinputTypesœ:[œDataœ],œtypeœ:œNestedDictœ}"
+        },
+        {
+          "source": "ParseData-YgonV",
+          "sourceHandle": "{œdataTypeœ:œParseDataœ,œidœ:œParseData-YgonVœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "ChatOutput-VV9bf",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-VV9bfœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "ChatOutput-VV9bf",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "ParseData",
+              "id": "ParseData-YgonV",
+              "name": "text",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-ParseData-YgonV{œdataTypeœ:œParseDataœ,œidœ:œParseData-YgonVœ,œnameœ:œtextœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-VV9bf{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-VV9bfœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+        },
+        {
+          "source": "ChatInput-H9se5",
+          "sourceHandle": "{œdataTypeœ:œChatInputœ,œidœ:œChatInput-H9se5œ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "TextInput-ZOHcJ",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œTextInput-ZOHcJœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "TextInput-ZOHcJ",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "ChatInput",
+              "id": "ChatInput-H9se5",
+              "name": "message",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-ChatInput-H9se5{œdataTypeœ:œChatInputœ,œidœ:œChatInput-H9se5œ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-TextInput-ZOHcJ{œfieldNameœ:œinput_valueœ,œidœ:œTextInput-ZOHcJœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}"
+        }
+      ],
+      "viewport": {
+        "x": 229.05732372805096,
+        "y": -437.4889300349156,
+        "zoom": 0.4570218148923736
+      }
+    },
+    "date_created": "2024-10-01T02:38:33.569Z",
+    "date_updated": "2024-10-01T02:38:33.720Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "3b24dc04-ce5b-4f17-8207-f84f4c1bbfc5",
+    "user_created": {
+      "username": "longxu",
+      "first_name": "long",
+      "last_name": "xu",
+      "id": "3b24dc04-ce5b-4f17-8207-f84f4c1bbfc5"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Chain",
+          "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:07.033Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 58,
+    "converter_version": "1.0.0"
+  }
+}

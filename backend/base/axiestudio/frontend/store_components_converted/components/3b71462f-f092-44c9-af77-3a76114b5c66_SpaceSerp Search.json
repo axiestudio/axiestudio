@@ -1,0 +1,719 @@
+{
+  "id": "3b71462f-f092-44c9-af77-3a76114b5c66",
+  "name": "SpaceSerp Search",
+  "description": "Performs a Google search using the SpaceSerp API. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "newar.ai",
+    "first_name": "Erick",
+    "last_name": "Heslan",
+    "id": "bea66886-7747-45d6-91c3-4088baaa95f3",
+    "full_name": "Erick Heslan"
+  },
+  "store_url": "https://www.langflow.store/store/component/3b71462f-f092-44c9-af77-3a76114b5c66",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-15T19:06:10.119Z",
+    "updated": "2024-08-17T15:12:45.710Z",
+    "downloaded": "2025-08-19T17:50:06.191Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "SpaceSerpSearchComponent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "apiKey": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "apiKey",
+                "value": "b25d26bd-6f09-4d5b-98e2-ddfa02c54e91",
+                "display_name": "API Key",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "API key to authorize the request.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Union\nfrom axiestudio.custom import Component\nfrom axiestudio.inputs import MessageTextInput, IntInput, DropdownInput\nfrom axiestudio.template import Output\nfrom axiestudio.schema import Data\nfrom axiestudio.field_typing import Tool\nimport requests\n\nclass SpaceSerpSearchComponent(Component):\n    display_name = \"SpaceSerp Search\"\n    description = \"Performs a Google search using the SpaceSerp API.\"\n    icon = \"search\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"apiKey\",\n            display_name=\"API Key\",\n            info=\"API key to authorize the request.\",\n        ),\n        MessageTextInput(\n            name=\"q\",\n            display_name=\"Search Query\",\n            info=\"The search term to be used in the query.\",\n        ),\n        MessageTextInput(\n            name=\"location\",\n            display_name=\"Location\",\n            info=\"Location where the query is executed.\",\n        ),\n        MessageTextInput(\n            name=\"domain\",\n            display_name=\"Google Domain\",\n            info=\"Google domain that performs the search.\",\n        ),\n        MessageTextInput(\n            name=\"gl\",\n            display_name=\"Country\",\n            info=\"Indicates the country for the Google results page.\",\n        ),\n        MessageTextInput(\n            name=\"hl\",\n            display_name=\"Language\",\n            info=\"Specifies the language for the Google results page interface.\",\n        ),\n        DropdownInput(\n            name=\"resultFormat\",\n            display_name=\"Result Format\",\n            options=[\"json\", \"csv\", \"html\"],\n            info=\"Format of the search results.\",\n        ),\n        DropdownInput(\n            name=\"device\",\n            display_name=\"Device\",\n            options=[\"desktop\", \"mobile\", \"tablet\"],\n            info=\"The device that performed the search.\",\n        ),\n        DropdownInput(\n            name=\"mobileOs\",\n            display_name=\"Mobile Operating System\",\n            options=[\"ios\", \"android\"],\n            info=\"Operating system of the mobile device (if applicable).\",\n        ),\n        IntInput(\n            name=\"pageSize\",\n            display_name=\"Page Size\",\n            info=\"Number of results per page (1 to 100).\",\n        ),\n        IntInput(\n            name=\"pageNumber\",\n            display_name=\"Page Number\",\n            info=\"Results page number.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Search Results\", name=\"search_results\", method=\"fetch_search_results\"),\n        Output(display_name=\"Tool\", name=\"tool\", method=\"build_tool\"),\n    ]\n\n    def fetch_search_results(self) -> Union[Data, list[Data]]:\n        params = {\n            \"apiKey\": self.apiKey,\n            \"q\": self.q,\n            \"location\": self.location,\n            \"domain\": self.domain,\n            \"gl\": self.gl,\n            \"hl\": self.hl,\n            \"resultFormat\": self.resultFormat,\n            \"device\": self.device,\n            \"mobileOs\": self.mobileOs,\n            \"pageSize\": self.pageSize,\n            \"pageNumber\": self.pageNumber,\n        }\n\n        # Remove parâmetros que não foram definidos (vazios ou None)\n        params = {k: v for k, v in params.items() if v}\n\n        url = \"https://api.spaceserp.com/google/search\"\n        \n        response = requests.get(url, params=params)\n        response.raise_for_status()\n        \n        results = response.json()\n        data = Data(data={\"results\": results})\n        self.status = data\n        return data\n\n    def build_tool(self) -> Tool:\n        def tool_function(query: str):\n            params = {\n                \"apiKey\": self.apiKey,\n                \"q\": query,\n                \"location\": self.location,\n                \"domain\": self.domain,\n                \"gl\": self.gl,\n                \"hl\": self.hl,\n                \"resultFormat\": self.resultFormat,\n                \"device\": self.device,\n                \"mobileOs\": self.mobileOs,\n                \"pageSize\": self.pageSize,\n                \"pageNumber\": self.pageNumber,\n            }\n            \n            # Remover parâmetros que não foram definidos (vazios ou None)\n            params = {k: v for k, v in params.items() if v}\n            \n            url = \"https://api.spaceserp.com/google/search\"\n            \n            response = requests.get(url, params=params)\n            response.raise_for_status()\n            \n            results = response.json()\n            return results\n\n        return Tool(\n            name=\"space_serp_search\",\n            description=\"Performs a Google search using the SpaceSerp API.\",\n            func=tool_function,\n        )\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "device": {
+                "trace_as_metadata": true,
+                "options": [
+                  "desktop",
+                  "mobile",
+                  "tablet"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "device",
+                "value": "",
+                "display_name": "Device",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The device that performed the search.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "domain": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "domain",
+                "value": "google.com.br",
+                "display_name": "Google Domain",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Google domain that performs the search.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "gl": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "gl",
+                "value": "br",
+                "display_name": "Country",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Indicates the country for the Google results page.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "hl": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "hl",
+                "value": "pt-br",
+                "display_name": "Language",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Specifies the language for the Google results page interface.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "location": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "location",
+                "value": "",
+                "display_name": "Location",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Location where the query is executed.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "mobileOs": {
+                "trace_as_metadata": true,
+                "options": [
+                  "ios",
+                  "android"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "mobileOs",
+                "value": "",
+                "display_name": "Mobile Operating System",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Operating system of the mobile device (if applicable).",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "pageNumber": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "pageNumber",
+                "value": "",
+                "display_name": "Page Number",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Results page number.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "pageSize": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "pageSize",
+                "value": "10",
+                "display_name": "Page Size",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Number of results per page (1 to 100).",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput",
+                "load_from_db": false
+              },
+              "q": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "q",
+                "value": "{search}",
+                "display_name": "Search Query",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The search term to be used in the query.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "resultFormat": {
+                "trace_as_metadata": true,
+                "options": [
+                  "json",
+                  "csv",
+                  "html"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "resultFormat",
+                "value": "json",
+                "display_name": "Result Format",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Format of the search results.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput",
+                "load_from_db": false
+              }
+            },
+            "description": "Performs a Google search using the SpaceSerp API.",
+            "icon": "search",
+            "base_classes": [
+              "Data",
+              "list",
+              "Tool"
+            ],
+            "display_name": "SpaceSerp Search",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data",
+                  "list"
+                ],
+                "selected": "Data",
+                "name": "search_results",
+                "display_name": "Search Results",
+                "method": "fetch_search_results",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "hidden": false
+              }
+            ],
+            "field_order": [
+              "apiKey",
+              "q",
+              "location",
+              "domain",
+              "gl",
+              "hl",
+              "resultFormat",
+              "device",
+              "mobileOs",
+              "pageSize",
+              "pageNumber"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.15",
+            "official": false
+          },
+          "id": "SpaceSerpSearchComponent-CJNhC"
+        },
+        "id": "SpaceSerpSearchComponent-CJNhC",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "SpaceSerpSearchComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "3b71462f-f092-44c9-af77-3a76114b5c66",
+    "name": "SpaceSerp Search",
+    "description": "Performs a Google search using the SpaceSerp API.",
+    "is_component": true,
+    "liked_by_count": "9",
+    "downloads_count": "34",
+    "metadata": {
+      "SpaceSerpSearchComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.15",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "SpaceSerpSearchComponent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "apiKey": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "apiKey",
+                  "value": "b25d26bd-6f09-4d5b-98e2-ddfa02c54e91",
+                  "display_name": "API Key",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "API key to authorize the request.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Union\nfrom axiestudio.custom import Component\nfrom axiestudio.inputs import MessageTextInput, IntInput, DropdownInput\nfrom axiestudio.template import Output\nfrom axiestudio.schema import Data\nfrom axiestudio.field_typing import Tool\nimport requests\n\nclass SpaceSerpSearchComponent(Component):\n    display_name = \"SpaceSerp Search\"\n    description = \"Performs a Google search using the SpaceSerp API.\"\n    icon = \"search\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"apiKey\",\n            display_name=\"API Key\",\n            info=\"API key to authorize the request.\",\n        ),\n        MessageTextInput(\n            name=\"q\",\n            display_name=\"Search Query\",\n            info=\"The search term to be used in the query.\",\n        ),\n        MessageTextInput(\n            name=\"location\",\n            display_name=\"Location\",\n            info=\"Location where the query is executed.\",\n        ),\n        MessageTextInput(\n            name=\"domain\",\n            display_name=\"Google Domain\",\n            info=\"Google domain that performs the search.\",\n        ),\n        MessageTextInput(\n            name=\"gl\",\n            display_name=\"Country\",\n            info=\"Indicates the country for the Google results page.\",\n        ),\n        MessageTextInput(\n            name=\"hl\",\n            display_name=\"Language\",\n            info=\"Specifies the language for the Google results page interface.\",\n        ),\n        DropdownInput(\n            name=\"resultFormat\",\n            display_name=\"Result Format\",\n            options=[\"json\", \"csv\", \"html\"],\n            info=\"Format of the search results.\",\n        ),\n        DropdownInput(\n            name=\"device\",\n            display_name=\"Device\",\n            options=[\"desktop\", \"mobile\", \"tablet\"],\n            info=\"The device that performed the search.\",\n        ),\n        DropdownInput(\n            name=\"mobileOs\",\n            display_name=\"Mobile Operating System\",\n            options=[\"ios\", \"android\"],\n            info=\"Operating system of the mobile device (if applicable).\",\n        ),\n        IntInput(\n            name=\"pageSize\",\n            display_name=\"Page Size\",\n            info=\"Number of results per page (1 to 100).\",\n        ),\n        IntInput(\n            name=\"pageNumber\",\n            display_name=\"Page Number\",\n            info=\"Results page number.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Search Results\", name=\"search_results\", method=\"fetch_search_results\"),\n        Output(display_name=\"Tool\", name=\"tool\", method=\"build_tool\"),\n    ]\n\n    def fetch_search_results(self) -> Union[Data, list[Data]]:\n        params = {\n            \"apiKey\": self.apiKey,\n            \"q\": self.q,\n            \"location\": self.location,\n            \"domain\": self.domain,\n            \"gl\": self.gl,\n            \"hl\": self.hl,\n            \"resultFormat\": self.resultFormat,\n            \"device\": self.device,\n            \"mobileOs\": self.mobileOs,\n            \"pageSize\": self.pageSize,\n            \"pageNumber\": self.pageNumber,\n        }\n\n        # Remove parâmetros que não foram definidos (vazios ou None)\n        params = {k: v for k, v in params.items() if v}\n\n        url = \"https://api.spaceserp.com/google/search\"\n        \n        response = requests.get(url, params=params)\n        response.raise_for_status()\n        \n        results = response.json()\n        data = Data(data={\"results\": results})\n        self.status = data\n        return data\n\n    def build_tool(self) -> Tool:\n        def tool_function(query: str):\n            params = {\n                \"apiKey\": self.apiKey,\n                \"q\": query,\n                \"location\": self.location,\n                \"domain\": self.domain,\n                \"gl\": self.gl,\n                \"hl\": self.hl,\n                \"resultFormat\": self.resultFormat,\n                \"device\": self.device,\n                \"mobileOs\": self.mobileOs,\n                \"pageSize\": self.pageSize,\n                \"pageNumber\": self.pageNumber,\n            }\n            \n            # Remover parâmetros que não foram definidos (vazios ou None)\n            params = {k: v for k, v in params.items() if v}\n            \n            url = \"https://api.spaceserp.com/google/search\"\n            \n            response = requests.get(url, params=params)\n            response.raise_for_status()\n            \n            results = response.json()\n            return results\n\n        return Tool(\n            name=\"space_serp_search\",\n            description=\"Performs a Google search using the SpaceSerp API.\",\n            func=tool_function,\n        )\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "device": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "desktop",
+                    "mobile",
+                    "tablet"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "device",
+                  "value": "",
+                  "display_name": "Device",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The device that performed the search.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "domain": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "domain",
+                  "value": "google.com.br",
+                  "display_name": "Google Domain",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Google domain that performs the search.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "gl": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "gl",
+                  "value": "br",
+                  "display_name": "Country",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Indicates the country for the Google results page.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "hl": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "hl",
+                  "value": "pt-br",
+                  "display_name": "Language",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Specifies the language for the Google results page interface.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "location": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "location",
+                  "value": "",
+                  "display_name": "Location",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Location where the query is executed.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "mobileOs": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "ios",
+                    "android"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "mobileOs",
+                  "value": "",
+                  "display_name": "Mobile Operating System",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Operating system of the mobile device (if applicable).",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "pageNumber": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "pageNumber",
+                  "value": "",
+                  "display_name": "Page Number",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Results page number.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "pageSize": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "pageSize",
+                  "value": "10",
+                  "display_name": "Page Size",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Number of results per page (1 to 100).",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput",
+                  "load_from_db": false
+                },
+                "q": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "q",
+                  "value": "{search}",
+                  "display_name": "Search Query",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The search term to be used in the query.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "resultFormat": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "json",
+                    "csv",
+                    "html"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "resultFormat",
+                  "value": "json",
+                  "display_name": "Result Format",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Format of the search results.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput",
+                  "load_from_db": false
+                }
+              },
+              "description": "Performs a Google search using the SpaceSerp API.",
+              "icon": "search",
+              "base_classes": [
+                "Data",
+                "list",
+                "Tool"
+              ],
+              "display_name": "SpaceSerp Search",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data",
+                    "list"
+                  ],
+                  "selected": "Data",
+                  "name": "search_results",
+                  "display_name": "Search Results",
+                  "method": "fetch_search_results",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true,
+                  "hidden": false
+                }
+              ],
+              "field_order": [
+                "apiKey",
+                "q",
+                "location",
+                "domain",
+                "gl",
+                "hl",
+                "resultFormat",
+                "device",
+                "mobileOs",
+                "pageSize",
+                "pageNumber"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.15",
+              "official": false
+            },
+            "id": "SpaceSerpSearchComponent-CJNhC"
+          },
+          "id": "SpaceSerpSearchComponent-CJNhC",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-15T19:06:10.119Z",
+    "date_updated": "2024-08-17T15:12:45.710Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "bea66886-7747-45d6-91c3-4088baaa95f3",
+    "user_created": {
+      "username": "newar.ai",
+      "first_name": "Erick",
+      "last_name": "Heslan",
+      "id": "bea66886-7747-45d6-91c3-4088baaa95f3"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.683Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1001,6 +1001,14 @@ async def create_or_update_starter_projects(all_types_dict: dict) -> None:
                     successfully_created_projects += 1
                 logger.debug(f"Successfully created {successfully_created_projects} starter projects")
 
+        # Clear the basic examples cache so the frontend can see the updated starter projects
+        try:
+            from axiestudio.api.v1.flows import clear_basic_examples_cache
+            clear_basic_examples_cache()
+            logger.debug("Cleared basic examples cache after starter projects update")
+        except ImportError:
+            logger.warning("Could not import clear_basic_examples_cache function")
+
 
 async def initialize_super_user_if_needed() -> None:
     settings_service = get_settings_service()

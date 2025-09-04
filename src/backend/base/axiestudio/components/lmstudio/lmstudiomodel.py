@@ -25,8 +25,10 @@ class LMStudioModelComponent(LCModelComponent):
             base_url_value = base_url_dict.get("value")
             if base_url_load_from_db:
                 base_url_value = await self.get_variables(base_url_value, field_name)
-            elif not base_url_value:
-                base_url_value = "http://localhost:1234/v1"
+            # Only proceed if user has provided a base_url
+            if not base_url_value:
+                build_config["model_name"]["options"] = []
+                return build_config
             build_config["model_name"]["options"] = await self.get_model(base_url_value)
 
         return build_config
@@ -63,9 +65,9 @@ class LMStudioModelComponent(LCModelComponent):
         ),
         StrInput(
             name="base_url",
-            display_name="Bas-URL",
+            display_name="LM Studio Server URL",
             advanced=False,
-            info="Endpoint för LM Studio API. Standard är 'http://localhost:1234/v1' om inte specificerat.",
+            info="URL till din LM Studio server. Exempel: http://localhost:1234/v1, https://my-server.com:8080/v1, http://192.168.1.100:1234/v1",
             value="http://localhost:1234/v1",
         ),
         SecretStrInput(
@@ -96,7 +98,11 @@ class LMStudioModelComponent(LCModelComponent):
         model_name: str = self.model_name
         max_tokens = self.max_tokens
         model_kwargs = self.model_kwargs or {}
-        base_url = self.base_url or "http://localhost:1234/v1"
+        base_url = self.base_url
+
+        # Validate that base_url is provided
+        if not base_url:
+            raise ValueError("LM Studio Server URL är obligatorisk. Vänligen ange URL:en till din LM Studio server.")
         seed = self.seed
 
         return ChatOpenAI(

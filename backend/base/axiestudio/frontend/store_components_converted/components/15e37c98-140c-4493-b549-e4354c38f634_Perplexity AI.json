@@ -1,0 +1,425 @@
+{
+  "id": "15e37c98-140c-4493-b549-e4354c38f634",
+  "name": "Perplexity AI",
+  "description": "Send queries to the Perplexity AI API. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "jakeywow",
+    "first_name": "",
+    "last_name": "",
+    "id": "37e001a6-f7a3-42ee-acb5-8baac89a3e8d",
+    "full_name": "jakeywow"
+  },
+  "store_url": "https://www.langflow.store/store/component/15e37c98-140c-4493-b549-e4354c38f634",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-12-10T10:35:52.858Z",
+    "updated": "2024-12-10T10:35:52.929Z",
+    "downloaded": "2025-08-19T17:50:07.630Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Prompt",
+        "id": "57f5c681-a1f5-4053-be33-e9525e7eb00a"
+      }
+    },
+    {
+      "tags_id": {
+        "name": "Chain",
+        "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.1.1",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "node": {
+            "template": {
+              "_type": "Component",
+              "api_key": {
+                "load_from_db": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Your Perplexity API key.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, SecretStrInput, DropdownInput, PromptInput, Output\nfrom axiestudio.schema import Data\nimport requests\nfrom datetime import datetime\n\n\nclass PerplexityComponent(Component):\n    display_name = \"Perplexity AI\"\n    description = \"Send queries to the Perplexity AI API.\"\n    icon = \"🚀\"  # Rocket emoji for the icon\n    name = \"PerplexityTool\"\n\n    inputs = [\n        DropdownInput(\n            name=\"model\",\n            display_name=\"Model\",\n            options=[\n                \"llama-3.1-sonar-small-128k-online\",\n                \"llama-3.1-sonar-large-128k-online\",\n                \"llama-3.1-sonar-huge-128k-online\",\n            ],\n            info=(\n                \"Select the model to use for the chat completion. \"\n                \"Options include:\\n\"\n                \"- **Small**: 8B, Context: 127,072 tokens\\n\"\n                \"- **Large**: 70B, Context: 127,072 tokens\\n\"\n                \"- **Huge**: 405B, Context: 127,072 tokens\"\n            ),\n            value=\"llama-3.1-sonar-small-128k-online\",  # Default model\n        ),\n        MessageTextInput(\n            name=\"system_prompt\",\n            display_name=\"System Prompt\",\n            info=\"The system's prompt for the assistant (role=system).\",\n            value=\"You're a helpful bot\",\n        ),\n        PromptInput(\n            name=\"user_prompt\",\n            display_name=\"User Input\",\n            info=\"The user's question or input (role=user).\",\n            tool_mode=True,  # Allow tool mode for dynamic usage\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"API Key\",\n            info=\"Your Perplexity API key.\",\n            password=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"API Response\", name=\"api_response\", method=\"fetch_response\"),\n    ]\n\n    def fetch_response(self) -> Data:\n        url = \"https://api.perplexity.ai/chat/completions\"\n        \n        current_datetime = datetime.utcnow().strftime(\"%Y-%m-%d %H:%M:%S\")\n        datetime_message = f\"The current datetime (UTC) is: {current_datetime}\"\n        \n        self.user_prompt = f\"{datetime_message}\\n\\n{self.user_prompt}\"\n\n        payload = {\n            \"model\": self.model,  # Use the selected model\n            \"messages\": [\n                {\"role\": \"system\", \"content\": self.system_prompt},\n                {\"role\": \"user\", \"content\": self.user_prompt},   # User's actual question\n            ],\n        }\n        headers = {\n            \"Authorization\": f\"Bearer {self.api_key}\",\n            \"Content-Type\": \"application/json\",\n        }\n\n        try:\n            response = requests.post(url, json=payload, headers=headers)\n            response.raise_for_status()\n            result = response.json()\n\n            # Extract the `choices[0].message.content`\n            content = result[\"choices\"][0][\"message\"][\"content\"]\n            return Data(data={\"response\": content})\n\n        except requests.exceptions.RequestException as e:\n            return Data(data={\"error\": str(e)})",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "model": {
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "options": [
+                  "llama-3.1-sonar-small-128k-online",
+                  "llama-3.1-sonar-large-128k-online",
+                  "llama-3.1-sonar-huge-128k-online"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "model",
+                "value": "llama-3.1-sonar-huge-128k-online",
+                "display_name": "Model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Select the model to use for the chat completion. Options include:\n- **Small**: 8B, Context: 127,072 tokens\n- **Large**: 70B, Context: 127,072 tokens\n- **Huge**: 405B, Context: 127,072 tokens",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput",
+                "load_from_db": false
+              },
+              "system_prompt": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "system_prompt",
+                "value": "You provide highly detailed, highly organized reports.",
+                "display_name": "System Prompt",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The system's prompt for the assistant (role=system).",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "user_prompt": {
+                "tool_mode": true,
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "user_prompt",
+                "value": "",
+                "display_name": "User Input",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The user's question or input (role=user).",
+                "title_case": false,
+                "type": "prompt",
+                "_input_type": "PromptInput"
+              }
+            },
+            "description": "Send queries to the Perplexity AI API.",
+            "icon": "🚀",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Perplexity AI",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "api_response",
+                "display_name": "API Response",
+                "method": "fetch_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "model",
+              "system_prompt",
+              "user_prompt",
+              "api_key"
+            ],
+            "beta": false,
+            "legacy": false,
+            "edited": true,
+            "metadata": {},
+            "tool_mode": false,
+            "lf_version": "1.1.1",
+            "official": false
+          },
+          "type": "CustomComponent",
+          "id": "CustomComponent-iegyJ"
+        },
+        "id": "CustomComponent-iegyJ",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "15e37c98-140c-4493-b549-e4354c38f634",
+    "name": "Perplexity AI",
+    "description": "Send queries to the Perplexity AI API.",
+    "is_component": true,
+    "liked_by_count": "5",
+    "downloads_count": "36",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.1.1",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "node": {
+              "template": {
+                "_type": "Component",
+                "api_key": {
+                  "load_from_db": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Your Perplexity API key.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, SecretStrInput, DropdownInput, PromptInput, Output\nfrom axiestudio.schema import Data\nimport requests\nfrom datetime import datetime\n\n\nclass PerplexityComponent(Component):\n    display_name = \"Perplexity AI\"\n    description = \"Send queries to the Perplexity AI API.\"\n    icon = \"🚀\"  # Rocket emoji for the icon\n    name = \"PerplexityTool\"\n\n    inputs = [\n        DropdownInput(\n            name=\"model\",\n            display_name=\"Model\",\n            options=[\n                \"llama-3.1-sonar-small-128k-online\",\n                \"llama-3.1-sonar-large-128k-online\",\n                \"llama-3.1-sonar-huge-128k-online\",\n            ],\n            info=(\n                \"Select the model to use for the chat completion. \"\n                \"Options include:\\n\"\n                \"- **Small**: 8B, Context: 127,072 tokens\\n\"\n                \"- **Large**: 70B, Context: 127,072 tokens\\n\"\n                \"- **Huge**: 405B, Context: 127,072 tokens\"\n            ),\n            value=\"llama-3.1-sonar-small-128k-online\",  # Default model\n        ),\n        MessageTextInput(\n            name=\"system_prompt\",\n            display_name=\"System Prompt\",\n            info=\"The system's prompt for the assistant (role=system).\",\n            value=\"You're a helpful bot\",\n        ),\n        PromptInput(\n            name=\"user_prompt\",\n            display_name=\"User Input\",\n            info=\"The user's question or input (role=user).\",\n            tool_mode=True,  # Allow tool mode for dynamic usage\n        ),\n        SecretStrInput(\n            name=\"api_key\",\n            display_name=\"API Key\",\n            info=\"Your Perplexity API key.\",\n            password=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"API Response\", name=\"api_response\", method=\"fetch_response\"),\n    ]\n\n    def fetch_response(self) -> Data:\n        url = \"https://api.perplexity.ai/chat/completions\"\n        \n        current_datetime = datetime.utcnow().strftime(\"%Y-%m-%d %H:%M:%S\")\n        datetime_message = f\"The current datetime (UTC) is: {current_datetime}\"\n        \n        self.user_prompt = f\"{datetime_message}\\n\\n{self.user_prompt}\"\n\n        payload = {\n            \"model\": self.model,  # Use the selected model\n            \"messages\": [\n                {\"role\": \"system\", \"content\": self.system_prompt},\n                {\"role\": \"user\", \"content\": self.user_prompt},   # User's actual question\n            ],\n        }\n        headers = {\n            \"Authorization\": f\"Bearer {self.api_key}\",\n            \"Content-Type\": \"application/json\",\n        }\n\n        try:\n            response = requests.post(url, json=payload, headers=headers)\n            response.raise_for_status()\n            result = response.json()\n\n            # Extract the `choices[0].message.content`\n            content = result[\"choices\"][0][\"message\"][\"content\"]\n            return Data(data={\"response\": content})\n\n        except requests.exceptions.RequestException as e:\n            return Data(data={\"error\": str(e)})",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "model": {
+                  "tool_mode": false,
+                  "trace_as_metadata": true,
+                  "options": [
+                    "llama-3.1-sonar-small-128k-online",
+                    "llama-3.1-sonar-large-128k-online",
+                    "llama-3.1-sonar-huge-128k-online"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "model",
+                  "value": "llama-3.1-sonar-huge-128k-online",
+                  "display_name": "Model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Select the model to use for the chat completion. Options include:\n- **Small**: 8B, Context: 127,072 tokens\n- **Large**: 70B, Context: 127,072 tokens\n- **Huge**: 405B, Context: 127,072 tokens",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput",
+                  "load_from_db": false
+                },
+                "system_prompt": {
+                  "tool_mode": false,
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "system_prompt",
+                  "value": "You provide highly detailed, highly organized reports.",
+                  "display_name": "System Prompt",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The system's prompt for the assistant (role=system).",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "user_prompt": {
+                  "tool_mode": true,
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "user_prompt",
+                  "value": "",
+                  "display_name": "User Input",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The user's question or input (role=user).",
+                  "title_case": false,
+                  "type": "prompt",
+                  "_input_type": "PromptInput"
+                }
+              },
+              "description": "Send queries to the Perplexity AI API.",
+              "icon": "🚀",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Perplexity AI",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "api_response",
+                  "display_name": "API Response",
+                  "method": "fetch_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "model",
+                "system_prompt",
+                "user_prompt",
+                "api_key"
+              ],
+              "beta": false,
+              "legacy": false,
+              "edited": true,
+              "metadata": {},
+              "tool_mode": false,
+              "lf_version": "1.1.1",
+              "official": false
+            },
+            "type": "CustomComponent",
+            "id": "CustomComponent-iegyJ"
+          },
+          "id": "CustomComponent-iegyJ",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-12-10T10:35:52.858Z",
+    "date_updated": "2024-12-10T10:35:52.929Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "37e001a6-f7a3-42ee-acb5-8baac89a3e8d",
+    "user_created": {
+      "username": "jakeywow",
+      "first_name": null,
+      "last_name": null,
+      "id": "37e001a6-f7a3-42ee-acb5-8baac89a3e8d"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Prompt",
+          "id": "57f5c681-a1f5-4053-be33-e9525e7eb00a"
+        }
+      },
+      {
+        "tags_id": {
+          "name": "Chain",
+          "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.032Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

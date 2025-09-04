@@ -15,7 +15,7 @@ export const AddFolderButton = ({
     <Button
       variant="ghost"
       size="icon"
-      className="h-7 w-7 border-0 text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+      className="h-8 w-8 border border-zinc-300 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white"
       onClick={onClick}
       data-testid="add-project-button"
       disabled={disabled}

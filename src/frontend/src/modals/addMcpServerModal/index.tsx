@@ -127,7 +127,7 @@ export default function AddMcpServerModal({
     setError(null);
     if (type === "STDIO") {
       if (!stdioName.trim() || !stdioCommand.trim()) {
-        setError("Name and command are required.");
+        setError("Namn och kommando krävs.");
         return;
       }
       const name = parseString(stdioName, [
@@ -155,13 +155,13 @@ export default function AddMcpServerModal({
         setStdioEnv([]);
         setError(null);
       } catch (err: any) {
-        setError(err?.message || "Failed to add MCP server.");
+        setError(err?.message || "Misslyckades med att lägga till MCP server.");
       }
       return;
     }
     if (type === "SSE") {
       if (!sseName.trim() || !sseUrl.trim()) {
-        setError("Name and URL are required.");
+        setError("Namn och URL krävs.");
         return;
       }
       const name = parseString(sseName, [
@@ -189,7 +189,7 @@ export default function AddMcpServerModal({
         setSseHeaders([]);
         setError(null);
       } catch (err: any) {
-        setError(err?.message || "Failed to add MCP server.");
+        setError(err?.message || "Misslyckades med att lägga till MCP server.");
       }
       return;
     }
@@ -209,7 +209,7 @@ export default function AddMcpServerModal({
       return;
     }
     if (servers.length === 0) {
-      setError("No valid MCP server found in the input.");
+      setError("Ingen giltig MCP server hittades i inmatningen.");
       return;
     }
     try {
@@ -230,7 +230,7 @@ export default function AddMcpServerModal({
       setJsonValue("");
       setError(null);
     } catch (err: any) {
-      setError(err?.message || "Failed to add one or more MCP servers.");
+      setError(err?.message || "Misslyckades med att lägga till en eller flera MCP servrar.");
     }
   }
 
@@ -252,12 +252,12 @@ export default function AddMcpServerModal({
                 className="h-4 w-4 text-primary"
                 aria-hidden="true"
               />
-              {initialData ? "Update MCP Server" : "Add MCP Server"}
+              {initialData ? "Uppdatera MCP Server" : "Lägg till MCP Server"}
             </div>
             <span className="text-mmd font-normal text-muted-foreground">
-              Save MCP Servers. Manage added servers in{" "}
+              Spara MCP Servrar. Hantera tillagda servrar i{" "}
               <CustomLink className="underline" to="/settings/mcp-servers">
-                settings
+                inställningar
               </CustomLink>
               .
             </span>
@@ -311,13 +311,13 @@ export default function AddMcpServerModal({
                 )}
                 <TabsContent value="JSON">
                   <div className="flex flex-col gap-2">
-                    <Label className="!text-mmd">Paste in JSON config</Label>
+                    <Label className="!text-mmd">Klistra in JSON-konfiguration</Label>
                     <Textarea
                       value={jsonValue}
                       data-testid="json-input"
                       onChange={(e) => setJsonValue(e.target.value)}
                       className="min-h-[225px] font-mono text-mmd"
-                      placeholder="Paste in JSON config to add server"
+                      placeholder="Klistra in JSON-konfiguration för att lägga till server"
                       disabled={isPending}
                     />
                   </div>
@@ -326,24 +326,24 @@ export default function AddMcpServerModal({
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col gap-2">
                       <Label className="flex items-start gap-1 !text-mmd">
-                        Name <span className="text-red-500">*</span>
+                        Namn <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         value={stdioName}
                         onChange={(e) => setStdioName(e.target.value)}
-                        placeholder="Type server name..."
+                        placeholder="Skriv servernamn..."
                         data-testid="stdio-name-input"
                         disabled={isPending}
                       />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label className="flex items-start gap-1 !text-mmd">
-                        Command<span className="text-red-500">*</span>
+                        Kommando<span className="text-red-500">*</span>
                       </Label>
                       <Input
                         value={stdioCommand}
                         onChange={(e) => setStdioCommand(e.target.value)}
-                        placeholder="Type command..."
+                        placeholder="Skriv kommando..."
                         data-testid="stdio-command-input"
                         disabled={isPending}
                       />
@@ -354,7 +354,7 @@ export default function AddMcpServerModal({
                         value={stdioArgs}
                         handleOnNewValue={({ value }) => setStdioArgs(value)}
                         disabled={isPending}
-                        placeholder="Type argument..."
+                        placeholder="Skriv argument..."
                         listAddLabel="Lägg till Argument"
                         editNode={false}
                         id="stdio-args"
@@ -362,7 +362,7 @@ export default function AddMcpServerModal({
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label className="!text-mmd">Environment Variables</Label>
+                      <Label className="!text-mmd">Miljövariabler</Label>
                       <IOKeyPairInput
                         value={stdioEnv}
                         onChange={setStdioEnv}
@@ -378,7 +378,7 @@ export default function AddMcpServerModal({
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col gap-2">
                       <Label className="flex items-start gap-1 !text-mmd">
-                        Name<span className="text-red-500">*</span>
+                        Namn<span className="text-red-500">*</span>
                       </Label>
                       <Input
                         value={sseName}
@@ -412,7 +412,7 @@ export default function AddMcpServerModal({
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Label className="!text-mmd">Environment Variables</Label>
+                      <Label className="!text-mmd">Miljövariabler</Label>
                       <IOKeyPairInput
                         value={sseEnv}
                         onChange={setSseEnv}

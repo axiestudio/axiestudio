@@ -11,6 +11,8 @@ import { ENABLE_MCP } from "@/customization/feature-flags";
 import DeleteConfirmationModal from "@/modals/deleteConfirmationModal";
 import useAlertStore from "@/stores/alertStore";
 import { cn } from "@/utils/utils";
+import TutorialModal from "@/components/tutorial/TutorialModal";
+import { useTutorial } from "@/hooks/use-tutorial";
 
 interface HeaderComponentProps {
   flowType: "flows" | "components" | "mcp";
@@ -38,6 +40,7 @@ const HeaderComponent = ({
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const isMCPEnabled = ENABLE_MCP;
   const setSuccessData = useAlertStore((state) => state.setSuccessData);
+  const { isTutorialOpen, openTutorial, closeTutorial } = useTutorial();
   // Debounce the setSearch function from the parent
   const debouncedSetSearch = useCallback(
     debounce((value: string) => {
@@ -77,7 +80,7 @@ const HeaderComponent = ({
 
   const handleDownload = () => {
     downloadFlows({ ids: selectedFlows });
-    setSuccessData({ title: "Flows downloaded successfully" });
+    setSuccessData({ title: "Flöden laddades ner framgångsrikt" });
   };
 
   const handleDelete = () => {
@@ -145,7 +148,7 @@ const HeaderComponent = ({
                   icon="Search"
                   data-testid="search-store-input"
                   type="text"
-                  placeholder={`Search ${flowType}...`}
+                  placeholder={`Sök ${flowType === 'flows' ? 'flöden' : flowType === 'components' ? 'komponenter' : flowType}...`}
                   className="mr-2 !text-mmd"
                   inputClassName="!text-mmd"
                   value={debouncedSearch}
@@ -222,6 +225,25 @@ const HeaderComponent = ({
                     </Button>
                   </DeleteConfirmationModal>
                 </div>
+                <ShadTooltip content="Tutorial" side="bottom">
+                  <Button
+                    variant="outline"
+                    size="iconMd"
+                    className="px-2.5 !text-mmd"
+                    onClick={openTutorial}
+                    id="tutorial-btn"
+                    data-testid="tutorial-btn"
+                  >
+                    <ForwardedIconComponent
+                      name="GraduationCap"
+                      aria-hidden="true"
+                      className="h-4 w-4"
+                    />
+                    <span className="hidden whitespace-nowrap font-semibold md:inline">
+                      Tutorial
+                    </span>
+                  </Button>
+                </ShadTooltip>
                 <ShadTooltip content="Nytt flöde" side="bottom">
                   <Button
                     variant="default"
@@ -246,6 +268,7 @@ const HeaderComponent = ({
           )}
         </>
       )}
+      <TutorialModal isOpen={isTutorialOpen} onClose={closeTutorial} />
     </>
   );
 };

@@ -12,6 +12,7 @@ import BaseModal from "../baseModal";
 import GetStartedComponent from "./components/GetStartedComponent";
 import { Nav } from "./components/navComponent";
 import TemplateContentComponent from "./components/TemplateContentComponent";
+import TutorialComponent from "./components/TutorialComponent";
 
 export default function TemplatesModal({
   open,
@@ -28,6 +29,7 @@ export default function TemplatesModal({
       title: "Mallar",
       items: [
         { title: "Kom igång", icon: "SquarePlay", id: "get-started" },
+        { title: "🎓 Tutorial", icon: "GraduationCap", id: "tutorial" },
         { title: "Alla mallar", icon: "LayoutPanelTop", id: "all-templates" },
       ],
     },
@@ -70,6 +72,8 @@ export default function TemplatesModal({
             <main className="flex flex-1 flex-col gap-4 overflow-auto p-6 md:gap-8">
               {currentTab === "get-started" ? (
                 <GetStartedComponent />
+              ) : currentTab === "tutorial" ? (
+                <TutorialComponent />
               ) : (
                 <TemplateContentComponent
                   currentTab={currentTab}

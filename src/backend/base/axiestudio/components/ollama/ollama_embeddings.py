@@ -32,8 +32,9 @@ class OllamaEmbeddingsComponent(LCModelComponent):
         ),
         MessageTextInput(
             name="base_url",
-            display_name="Ollama bas-URL",
-            value="",
+            display_name="Ollama Server URL",
+            info="URL till din Ollama server. Exempel: http://localhost:11434, https://my-server.com:8080, http://192.168.1.100:11434",
+            value="http://localhost:11434",
             required=True,
         ),
     ]

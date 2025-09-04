@@ -5,6 +5,11 @@ import { ForwardedIconComponent } from "@/components/common/genericIconComponent
 import CardsWrapComponent from "@/components/core/cardsWrapComponent";
 import { Button } from "@/components/ui/button";
 import { DotBackgroundDemo } from "@/components/ui/dot-background";
+import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
+import { track } from "@/customization/utils/analytics";
+import { useGetTutorialQuery } from "@/controllers/API/queries/flows/use-get-tutorial";
+import useAddFlow from "@/hooks/flows/use-add-flow";
+import useFlowsManagerStore from "@/stores/flowsManagerStore";
 import { useFolderStore } from "@/stores/foldersStore";
 import useFileDrop from "../hooks/use-on-file-drop";
 
@@ -22,6 +27,36 @@ export const EmptyPageCommunity = ({
 }) => {
   const handleFileDrop = useFileDrop(undefined);
   const folders = useFolderStore((state) => state.folders);
+  const navigate = useCustomNavigate();
+  const addFlow = useAddFlow();
+  const setCurrentFlow = useFlowsManagerStore((state) => state.setCurrentFlow);
+
+  const { data: tutorialFlow } = useGetTutorialQuery({});
+
+  const handleStartTutorial = async () => {
+    if (tutorialFlow) {
+      // Create a new flow based on the tutorial
+      const newFlowId = await addFlow();
+
+      // Set the tutorial flow as the current flow
+      const tutorialFlowCopy = {
+        ...tutorialFlow,
+        id: newFlowId as string,
+        name: `${tutorialFlow.name} - Kopia`,
+      };
+
+      setCurrentFlow(tutorialFlowCopy);
+
+      // Navigate to the new flow
+      navigate(`/flow/${newFlowId}`);
+
+      // Track the tutorial start
+      track("Tutorial Started", {
+        tutorial_name: tutorialFlow.name,
+        source: "empty_page"
+      });
+    }
+  };
 
   return (
     <DotBackgroundDemo>
@@ -87,6 +122,30 @@ export const EmptyPageCommunity = ({
                   </div>
                 </div>
               </Button>
+
+              {tutorialFlow && (
+                <Button
+                  className="group mx-3 h-[84px] sm:mx-0"
+                  onClick={handleStartTutorial}
+                  data-testid="empty_page_tutorial_button"
+                >
+                  <div className="relative flex flex-col rounded-lg border-[1px] bg-background p-4 transition-all duration-300 hover:border-primary">
+                    <div className="grid w-full items-center justify-between gap-2">
+                      <div className="flex gap-3">
+                        <ForwardedIconComponent name="GraduationCap" className="h-6 w-6 text-primary" />
+                        <div>
+                          <span className="font-semibold">🎓 Starta Tutorial</span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-base text-secondary-foreground">
+                          Lär dig Axie Studio steg för steg (15-20 min)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Button>
+              )}
 
               <Button
                 className="group mx-3 h-[84px] sm:mx-0"

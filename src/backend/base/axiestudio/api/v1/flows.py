@@ -16,7 +16,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlmodel import apaginate
-from sqlmodel import and_, col, select
+from sqlmodel import and_, col, or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axiestudio.api.utils import CurrentActiveUser, DbSession, cascade_delete_flow, remove_api_keys, validate_is_component
@@ -542,6 +542,13 @@ async def download_multiple_file(
 all_starter_folder_flows_response: Response | None = None
 
 
+def clear_basic_examples_cache():
+    """Clear the cached basic examples response to force refresh."""
+    global all_starter_folder_flows_response  # noqa: PLW0603
+    all_starter_folder_flows_response = None
+    logger.debug("Cleared basic examples cache")
+
+
 @router.get("/basic_examples/", response_model=list[FlowRead], status_code=200)
 async def read_basic_examples(
     *,
@@ -564,10 +571,12 @@ async def read_basic_examples(
         starter_folder = (await session.exec(select(Folder).where(Folder.name == STARTER_FOLDER_NAME))).first()
 
         if not starter_folder:
+            logger.debug("No starter folder found, returning empty list")
             return []
 
         # Get all flows in the starter folder
         all_starter_folder_flows = (await session.exec(select(Flow).where(Flow.folder_id == starter_folder.id))).all()
+        logger.debug(f"Found {len(all_starter_folder_flows)} flows in starter folder")
 
         flow_reads = [FlowRead.model_validate(flow, from_attributes=True) for flow in all_starter_folder_flows]
         all_starter_folder_flows_response = compress_response(flow_reads)
@@ -576,4 +585,51 @@ async def read_basic_examples(
         return all_starter_folder_flows_response  # noqa: TRY300
 
     except Exception as e:
+        logger.error(f"Error retrieving basic examples: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/tutorial/", response_model=FlowRead | None, status_code=200)
+async def get_tutorial_flow(
+    *,
+    session: DbSession,
+):
+    """Retrieve the tutorial flow.
+
+    Args:
+        session (Session): The database session.
+
+    Returns:
+        FlowRead | None: The tutorial flow if found, None otherwise.
+    """
+    try:
+        # Get the starter folder
+        starter_folder = (await session.exec(select(Folder).where(Folder.name == STARTER_FOLDER_NAME))).first()
+
+        if not starter_folder:
+            logger.debug("No starter folder found, returning None")
+            return None
+
+        # Look for the tutorial flow by name (try multiple patterns)
+        tutorial_flow = (await session.exec(
+            select(Flow).where(
+                Flow.folder_id == starter_folder.id,
+                or_(
+                    Flow.name.ilike("%tutorial%"),
+                    Flow.name.ilike("%handledning%"),
+                    Flow.name.ilike("%välkommen%"),
+                    Flow.name.ilike("%welcome%")
+                )
+            )
+        )).first()
+
+        if not tutorial_flow:
+            logger.debug("No tutorial flow found, returning None")
+            return None
+
+        logger.debug(f"Found tutorial flow: {tutorial_flow.name}")
+        return FlowRead.model_validate(tutorial_flow, from_attributes=True)
+
+    except Exception as e:
+        logger.error(f"Error retrieving tutorial flow: {e}")
         raise HTTPException(status_code=500, detail=str(e)) from e

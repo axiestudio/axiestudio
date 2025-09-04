@@ -1,0 +1,561 @@
+{
+  "id": "9b6d8f04-e159-4ac1-9dc8-39993f21cea3",
+  "name": "Yamon Tool Calling Agent",
+  "description": "Agent that uses tools. Only models that are compatible with function calling are supported. with callback (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "yamon",
+    "first_name": "YamonCompany",
+    "last_name": "kim",
+    "id": "23c5d1e9-66fe-4789-85da-d07be25ec3cc",
+    "full_name": "YamonCompany kim"
+  },
+  "store_url": "https://www.langflow.store/store/component/9b6d8f04-e159-4ac1-9dc8-39993f21cea3",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-06-10T04:06:31.901Z",
+    "updated": "2024-06-10T04:06:31.929Z",
+    "downloaded": "2025-08-19T17:50:05.206Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.0a49",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "callbacks": {
+                "type": "BaseCallbackHandler",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "callbacks",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "llm": {
+                "type": "BaseLanguageModel",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "llm",
+                "display_name": "LLM",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "message_history": {
+                "type": "Record",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "message_history",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "tools": {
+                "type": "Tool",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "tools",
+                "display_name": "Tools",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List, Optional\n\nfrom langchain.agents.tool_calling_agent.base import create_tool_calling_agent\nfrom langchain_core.prompts import ChatPromptTemplate\n\nfrom axiestudio.base.agents.agent import LCAgentComponent\nfrom axiestudio.field_typing import BaseLanguageModel, Text, Tool\n\n\n#추후 통폐합예정 run_agent 오바라이드 때문에 쓰임\nfrom axiestudio.schema.schema import Record\nfrom axiestudio.base.agents.utils import records_to_messages\n\nfrom langchain.agents.format_scratchpad.log import format_log_to_str\nfrom langchain_core.callbacks.base import AsyncCallbackHandler\nfrom langchain.agents import AgentExecutor, BaseMultiActionAgent, BaseSingleActionAgent\nfrom langchain.globals import set_debug,set_verbose\n\n\n\nfrom langchain.callbacks.base import BaseCallbackHandler\n\nfrom langsmith import traceable\n\nclass YamonToolCallingAgentComponent(LCAgentComponent):\n    display_name: str = \"Yamon Tool Calling Agent\"\n    description: str = \"Agent that uses tools. Only models that are compatible with function calling are supported. with callback\"\n    icon: \"👻\"\n\n    def build_config(self):\n        return {\n            \"llm\": {\"display_name\": \"LLM\"},\n            \"tools\": {\"display_name\": \"Tools\"},\n            \"user_prompt\": {\n                \"display_name\": \"Prompt\",\n                \"multiline\": True,\n                \"info\": \"This prompt must contain 'input' key.\",\n            },\n            \"handle_parsing_errors\": {\n                \"display_name\": \"Handle Parsing Errors\",\n                \"info\": \"If True, the agent will handle parsing errors. If False, the agent will raise an error.\",\n                \"advanced\": True,\n            },\n            \"memory\": {\n                \"display_name\": \"Memory\",\n                \"info\": \"Memory to use for the agent.\",\n            },\n            \"input_value\": {\n                \"display_name\": \"Inputs\",\n                \"info\": \"Input text to pass to the agent.\",\n            },\n        }\n        \n\n    async def run_agent(\n        self,\n        agent: Union[Runnable, BaseSingleActionAgent, BaseMultiActionAgent, AgentExecutor],\n        inputs: str,\n        tools: List[Tool],\n        message_history: Optional[List[Record]] = None,\n        handle_parsing_errors: bool = True,\n        output_key: str = \"output\",\n        callback: Optional[List[Callable]] = None,  # 콜백이랑 맥스 이터 추가함\n        max_iterations : int = 5,\n    ) -> Text:\n        if isinstance(agent, AgentExecutor):\n            runnable = agent\n        else:\n            runnable = AgentExecutor.from_agent_and_tools(\n                agent=agent,  # type: ignore\n                tools=tools,\n                verbose=True,\n                handle_parsing_errors=handle_parsing_errors,\n                max_iterations = max_iterations\n            )\n        input_dict: dict[str, str | list[BaseMessage]] = {\"input\": inputs}\n        if message_history:\n            input_dict[\"chat_history\"] = records_to_messages(message_history)\n        \n        # Pass the callback to the acall method\n        result = await runnable.acall(input_dict, callbacks=callback if callback else [])\n        \n        self.status = result\n        if output_key in result:\n            return cast(str, result.get(output_key))\n        elif \"output\" not in result:\n            if output_key != \"output\":\n                raise ValueError(f\"Output key not found in result. Tried '{output_key}' and 'output'.\")\n            else:\n                raise ValueError(\"Output key not found in result. Tried 'output'.\")\n    \n        return cast(str, result.get(\"output\"))\n\n    async def build(\n        self,\n        input_value: str,\n        llm: BaseLanguageModel,\n        tools: List[Tool],\n        user_prompt: str = \"{input}\",\n        max_iterations : int = 5,\n        message_history: Optional[List[Record]] = None,\n        system_message: str = \"You are a helpful assistant\",\n        handle_parsing_errors: bool = True,\n        callbacks: Optional[List[BaseCallbackHandler]] = None,\n    ) -> Text:\n        #set_debug(False)\n        #set_verbose(False)\n        \n\n        \n        if \"input\" not in user_prompt:\n            raise ValueError(\"Prompt must contain 'input' key.\")\n        messages = [\n            (\"system\", system_message),\n            (\n                \"placeholder\",\n                \"{chat_history}\",\n            ),\n            (\"human\", user_prompt),\n            (\"placeholder\", \"{agent_scratchpad}\"),\n        ]\n        \n\n        \n        prompt = ChatPromptTemplate.from_messages(messages)\n        agent = create_tool_calling_agent(llm, tools, prompt)\n\n        result = await self.run_agent(agent, input_value, tools, message_history, handle_parsing_errors,callback=callbacks, max_iterations=max_iterations) # 콜백이랑 맥스 이터 추가함\n        self.status = result\n\n\n        \n        return result\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "handle_parsing_errors": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": true,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "handle_parsing_errors",
+                "display_name": "Handle Parsing Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If True, the agent will handle parsing errors. If False, the agent will raise an error.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Inputs",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Input text to pass to the agent.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "max_iterations": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 5,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "max_iterations",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "system_message": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "You are a helpful assistant",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "system_message",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "user_prompt": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "{input}",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "user_prompt",
+                "display_name": "Prompt",
+                "advanced": false,
+                "dynamic": false,
+                "info": "This prompt must contain 'input' key.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Agent that uses tools. Only models that are compatible with function calling are supported. with callback",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "Yamon Tool Calling Agent",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null,
+              "llm": null,
+              "tools": null,
+              "user_prompt": null,
+              "max_iterations": null,
+              "message_history": null,
+              "system_message": null,
+              "handle_parsing_errors": null,
+              "callbacks": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-LmeRY",
+          "description": "Agent that uses tools. Only models that are compatible with function calling are supported. with callback",
+          "display_name": "Custom Component"
+        },
+        "id": "CustomComponent-LmeRY",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "9b6d8f04-e159-4ac1-9dc8-39993f21cea3",
+    "name": "Yamon Tool Calling Agent",
+    "description": "Agent that uses tools. Only models that are compatible with function calling are supported. with callback",
+    "is_component": true,
+    "liked_by_count": "11",
+    "downloads_count": "77",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.0a49",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "callbacks": {
+                  "type": "BaseCallbackHandler",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "callbacks",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "llm": {
+                  "type": "BaseLanguageModel",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "llm",
+                  "display_name": "LLM",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "message_history": {
+                  "type": "Record",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "message_history",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "tools": {
+                  "type": "Tool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "tools",
+                  "display_name": "Tools",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List, Optional\n\nfrom langchain.agents.tool_calling_agent.base import create_tool_calling_agent\nfrom langchain_core.prompts import ChatPromptTemplate\n\nfrom axiestudio.base.agents.agent import LCAgentComponent\nfrom axiestudio.field_typing import BaseLanguageModel, Text, Tool\n\n\n#추후 통폐합예정 run_agent 오바라이드 때문에 쓰임\nfrom axiestudio.schema.schema import Record\nfrom axiestudio.base.agents.utils import records_to_messages\n\nfrom langchain.agents.format_scratchpad.log import format_log_to_str\nfrom langchain_core.callbacks.base import AsyncCallbackHandler\nfrom langchain.agents import AgentExecutor, BaseMultiActionAgent, BaseSingleActionAgent\nfrom langchain.globals import set_debug,set_verbose\n\n\n\nfrom langchain.callbacks.base import BaseCallbackHandler\n\nfrom langsmith import traceable\n\nclass YamonToolCallingAgentComponent(LCAgentComponent):\n    display_name: str = \"Yamon Tool Calling Agent\"\n    description: str = \"Agent that uses tools. Only models that are compatible with function calling are supported. with callback\"\n    icon: \"👻\"\n\n    def build_config(self):\n        return {\n            \"llm\": {\"display_name\": \"LLM\"},\n            \"tools\": {\"display_name\": \"Tools\"},\n            \"user_prompt\": {\n                \"display_name\": \"Prompt\",\n                \"multiline\": True,\n                \"info\": \"This prompt must contain 'input' key.\",\n            },\n            \"handle_parsing_errors\": {\n                \"display_name\": \"Handle Parsing Errors\",\n                \"info\": \"If True, the agent will handle parsing errors. If False, the agent will raise an error.\",\n                \"advanced\": True,\n            },\n            \"memory\": {\n                \"display_name\": \"Memory\",\n                \"info\": \"Memory to use for the agent.\",\n            },\n            \"input_value\": {\n                \"display_name\": \"Inputs\",\n                \"info\": \"Input text to pass to the agent.\",\n            },\n        }\n        \n\n    async def run_agent(\n        self,\n        agent: Union[Runnable, BaseSingleActionAgent, BaseMultiActionAgent, AgentExecutor],\n        inputs: str,\n        tools: List[Tool],\n        message_history: Optional[List[Record]] = None,\n        handle_parsing_errors: bool = True,\n        output_key: str = \"output\",\n        callback: Optional[List[Callable]] = None,  # 콜백이랑 맥스 이터 추가함\n        max_iterations : int = 5,\n    ) -> Text:\n        if isinstance(agent, AgentExecutor):\n            runnable = agent\n        else:\n            runnable = AgentExecutor.from_agent_and_tools(\n                agent=agent,  # type: ignore\n                tools=tools,\n                verbose=True,\n                handle_parsing_errors=handle_parsing_errors,\n                max_iterations = max_iterations\n            )\n        input_dict: dict[str, str | list[BaseMessage]] = {\"input\": inputs}\n        if message_history:\n            input_dict[\"chat_history\"] = records_to_messages(message_history)\n        \n        # Pass the callback to the acall method\n        result = await runnable.acall(input_dict, callbacks=callback if callback else [])\n        \n        self.status = result\n        if output_key in result:\n            return cast(str, result.get(output_key))\n        elif \"output\" not in result:\n            if output_key != \"output\":\n                raise ValueError(f\"Output key not found in result. Tried '{output_key}' and 'output'.\")\n            else:\n                raise ValueError(\"Output key not found in result. Tried 'output'.\")\n    \n        return cast(str, result.get(\"output\"))\n\n    async def build(\n        self,\n        input_value: str,\n        llm: BaseLanguageModel,\n        tools: List[Tool],\n        user_prompt: str = \"{input}\",\n        max_iterations : int = 5,\n        message_history: Optional[List[Record]] = None,\n        system_message: str = \"You are a helpful assistant\",\n        handle_parsing_errors: bool = True,\n        callbacks: Optional[List[BaseCallbackHandler]] = None,\n    ) -> Text:\n        #set_debug(False)\n        #set_verbose(False)\n        \n\n        \n        if \"input\" not in user_prompt:\n            raise ValueError(\"Prompt must contain 'input' key.\")\n        messages = [\n            (\"system\", system_message),\n            (\n                \"placeholder\",\n                \"{chat_history}\",\n            ),\n            (\"human\", user_prompt),\n            (\"placeholder\", \"{agent_scratchpad}\"),\n        ]\n        \n\n        \n        prompt = ChatPromptTemplate.from_messages(messages)\n        agent = create_tool_calling_agent(llm, tools, prompt)\n\n        result = await self.run_agent(agent, input_value, tools, message_history, handle_parsing_errors,callback=callbacks, max_iterations=max_iterations) # 콜백이랑 맥스 이터 추가함\n        self.status = result\n\n\n        \n        return result\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "handle_parsing_errors": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": true,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "handle_parsing_errors",
+                  "display_name": "Handle Parsing Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If True, the agent will handle parsing errors. If False, the agent will raise an error.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Inputs",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Input text to pass to the agent.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "max_iterations": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 5,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "max_iterations",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "system_message": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "You are a helpful assistant",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "system_message",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "user_prompt": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "{input}",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "user_prompt",
+                  "display_name": "Prompt",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "This prompt must contain 'input' key.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Agent that uses tools. Only models that are compatible with function calling are supported. with callback",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "Yamon Tool Calling Agent",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null,
+                "llm": null,
+                "tools": null,
+                "user_prompt": null,
+                "max_iterations": null,
+                "message_history": null,
+                "system_message": null,
+                "handle_parsing_errors": null,
+                "callbacks": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-LmeRY",
+            "description": "Agent that uses tools. Only models that are compatible with function calling are supported. with callback",
+            "display_name": "Custom Component"
+          },
+          "id": "CustomComponent-LmeRY",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-06-10T04:06:31.901Z",
+    "date_updated": "2024-06-10T04:06:31.929Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "23c5d1e9-66fe-4789-85da-d07be25ec3cc",
+    "user_created": {
+      "username": "yamon",
+      "first_name": "YamonCompany",
+      "last_name": "kim",
+      "id": "23c5d1e9-66fe-4789-85da-d07be25ec3cc"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.144Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

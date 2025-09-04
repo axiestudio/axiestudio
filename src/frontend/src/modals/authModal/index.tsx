@@ -133,13 +133,13 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
             name="Fingerprint"
             className="h-4 w-4 shrink-0"
           />
-          Configure MCP Server Authentication
+          Konfigurera MCP Server-autentisering
         </div>
         <div className="flex h-full p-0 border-t rounded-none">
           {/* Left column - Radio buttons */}
           <div className="flex flex-col p-4 gap-2 flex-1 items-start min-h-[400px]">
             <span className="text-mmd font-medium text-muted-foreground">
-              Auth type
+              Autentiseringstyp
             </span>
             <RadioGroup value={authType} onValueChange={handleAuthTypeChange}>
               {AUTH_METHODS_ARRAY.map((option) => (
@@ -156,8 +156,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                           name="AlertTriangle"
                           className="h-3.5 w-3.5 shrink-0"
                         />
-                        Public endpoint - no auth. Use only in dev or trusted
-                        envs.
+                        Offentlig slutpunkt - ingen autentisering. Använd endast i utvecklings- eller betrodda miljöer.
                       </span>
                     )}
                   </Label>
@@ -174,12 +173,12 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
               {authType === "apikey" && (
                 <div className="flex flex-col items-start gap-2">
                   <Label htmlFor="api-key" className="!text-mmd font-medium">
-                    API Key Value
+                    API-nyckel värde
                   </Label>
                   <Input
                     id="api-key"
                     type="password"
-                    placeholder="Enter API Key"
+                    placeholder="Ange API-nyckel"
                     value={authFields.apiKey || ""}
                     onChange={(e) =>
                       handleAuthFieldChange("apiKey", e.target.value)
@@ -192,12 +191,12 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="username" className="!text-mmd font-medium">
-                      Username
+                      Användarnamn
                     </Label>
                     <Input
                       id="username"
                       type="text"
-                      placeholder="Enter Username"
+                      placeholder="Ange användarnamn"
                       value={authFields.username || ""}
                       onChange={(e) =>
                         handleAuthFieldChange("username", e.target.value)
@@ -206,12 +205,12 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="password" className="!text-mmd font-medium">
-                      Password
+                      Lösenord
                     </Label>
                     <Input
                       id="password"
                       type="password"
-                      placeholder="Enter Password"
+                      placeholder="Ange lösenord"
                       value={authFields.password || ""}
                       onChange={(e) =>
                         handleAuthFieldChange("password", e.target.value)
@@ -232,7 +231,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                   <Input
                     id="bearer-token"
                     type="password"
-                    placeholder="Enter Bearer Token"
+                    placeholder="Ange Bearer Token"
                     value={authFields.bearerToken || ""}
                     onChange={(e) =>
                       handleAuthFieldChange("bearerToken", e.target.value)
@@ -248,12 +247,12 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                       htmlFor="iam-endpoint"
                       className="!text-mmd font-medium"
                     >
-                      IAM Endpoint
+                      IAM Slutpunkt
                     </Label>
                     <Input
                       id="iam-endpoint"
                       type="text"
-                      placeholder="Enter IAM Endpoint"
+                      placeholder="Ange IAM Slutpunkt"
                       value={authFields.iamEndpoint || ""}
                       onChange={(e) =>
                         handleAuthFieldChange("iamEndpoint", e.target.value)
@@ -262,12 +261,12 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="api-key" className="!text-mmd font-medium">
-                      API Key or Token
+                      API-nyckel eller Token
                     </Label>
                     <Input
                       id="password"
                       type="password"
-                      placeholder="Enter API Key or Token"
+                      placeholder="Ange API-nyckel eller Token"
                       value={authFields.apiKey || ""}
                       onChange={(e) =>
                         handleAuthFieldChange("apiKey", e.target.value)
@@ -280,7 +279,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
               {authType === "oauth" && (
                 <div className="flex flex-col gap-4 h-full">
                   <span className="text-mmd font-medium text-muted-foreground">
-                    OAuth settings
+                    OAuth-inställningar
                   </span>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="flex flex-col gap-2">
@@ -288,7 +287,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                         htmlFor="oauth-host"
                         className="!text-mmd font-medium"
                       >
-                        Host
+                        Värd
                       </Label>
                       <Input
                         id="oauth-host"
@@ -323,7 +322,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                       htmlFor="oauth-server-url"
                       className="!text-mmd font-medium"
                     >
-                      Server URL
+                      Server-URL
                     </Label>
                     <Input
                       id="oauth-server-url"
@@ -340,7 +339,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                       htmlFor="oauth-callback-path"
                       className="!text-mmd font-medium"
                     >
-                      Callback Path
+                      Återanropsväg
                     </Label>
                     <Input
                       id="oauth-callback-path"
@@ -360,12 +359,12 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                       htmlFor="oauth-client-id"
                       className="!text-mmd font-medium"
                     >
-                      Client ID
+                      Klient-ID
                     </Label>
                     <Input
                       id="oauth-client-id"
                       type="text"
-                      placeholder="Enter Client ID"
+                      placeholder="Ange Klient-ID"
                       value={authFields.oauthClientId || ""}
                       onChange={(e) =>
                         handleAuthFieldChange("oauthClientId", e.target.value)
@@ -377,12 +376,12 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                       htmlFor="oauth-client-secret"
                       className="!text-mmd font-medium"
                     >
-                      Client Secret
+                      Klienthemlighet
                     </Label>
                     <Input
                       id="oauth-client-secret"
                       type="password"
-                      placeholder="Enter Client Secret"
+                      placeholder="Ange Klienthemlighet"
                       value={authFields.oauthClientSecret || ""}
                       onChange={(e) =>
                         handleAuthFieldChange(
@@ -397,7 +396,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                       htmlFor="oauth-auth-url"
                       className="!text-mmd font-medium"
                     >
-                      Authorization URL
+                      Auktoriserings-URL
                     </Label>
                     <Input
                       id="oauth-auth-url"
@@ -414,7 +413,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                       htmlFor="oauth-token-url"
                       className="!text-mmd font-medium"
                     >
-                      Token URL
+                      Token-URL
                     </Label>
                     <Input
                       id="oauth-token-url"
@@ -431,7 +430,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                       htmlFor="oauth-mcp-scope"
                       className="!text-mmd font-medium"
                     >
-                      MCP Scope
+                      MCP Omfattning
                     </Label>
                     <Input
                       id="oauth-mcp-scope"
@@ -448,7 +447,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
                       htmlFor="oauth-provider-scope"
                       className="!text-mmd font-medium"
                     >
-                      Provider Scope
+                      Leverantörsomfattning
                     </Label>
                     <Input
                       id="oauth-provider-scope"
@@ -471,7 +470,7 @@ const AuthModal = ({ open, setOpen, authSettings, onSave }: AuthModalProps) => {
       </BaseModal.Content>
       <BaseModal.Footer
         submit={{
-          label: "Save",
+          label: "Spara",
           onClick: handleSave,
         }}
         className="p-4 border-t"

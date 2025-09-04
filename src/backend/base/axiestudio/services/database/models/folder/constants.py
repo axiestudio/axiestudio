@@ -1,2 +1,2 @@
-DEFAULT_FOLDER_DESCRIPTION = "Hantera dina egna flöden. Ladda ner och ladda upp projekt."
-DEFAULT_FOLDER_NAME = "Startprojekt"
+DEFAULT_FOLDER_DESCRIPTION = "Välkommen till Axie Studio! Här hittar du handledning och hjälp för att komma igång."
+DEFAULT_FOLDER_NAME = "Välkommen"

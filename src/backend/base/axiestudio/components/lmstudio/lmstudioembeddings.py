@@ -21,8 +21,10 @@ class LMStudioEmbeddingsComponent(LCEmbeddingsModel):
             base_url_value = base_url_dict.get("value")
             if base_url_load_from_db:
                 base_url_value = await self.get_variables(base_url_value, field_name)
-            elif not base_url_value:
-                base_url_value = "http://localhost:1234/v1"
+            # Only proceed if user has provided a base_url
+            if not base_url_value:
+                build_config["model"]["options"] = []
+                return build_config
             build_config["model"]["options"] = await self.get_model(base_url_value)
 
         return build_config
@@ -51,7 +53,8 @@ class LMStudioEmbeddingsComponent(LCEmbeddingsModel):
         ),
         MessageTextInput(
             name="base_url",
-            display_name="LM Studio bas-URL",
+            display_name="LM Studio Server URL",
+            info="URL till din LM Studio server. Exempel: http://localhost:1234/v1, https://my-server.com:8080/v1, http://192.168.1.100:1234/v1",
             refresh_button=True,
             value="http://localhost:1234/v1",
             required=True,
