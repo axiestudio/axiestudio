@@ -2,7 +2,7 @@
 // Check if we're in Tauri environment
 const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 
-// Production backend URL
+// Production backend URL - Updated to match your architecture
 const PRODUCTION_BACKEND_URL = 'https://flow.axiestudio.se';
 
 // Development backend URL
