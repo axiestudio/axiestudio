@@ -22,17 +22,19 @@ on:
     branches:
       - master
       - main
+      - tauri-sv
     paths-ignore:
       - 'docs/**'
       - '*.md'
       - '.github/workflows/docs_*.yml'
       - '.github/workflows/deploy-docs-*.yml'
-      - 'axiestudio/docker/**'
-      - 'axiestudio/scripts/**'
+      - 'docker/**'
+      - 'scripts/**'
   pull_request:
     branches:
       - master
       - main
+      - tauri-sv
     paths-ignore:
       - 'docs/**'
       - '*.md'
@@ -74,7 +76,7 @@ jobs:
       - name: Get app version from package.json
         id: get-app-version
         run: |
-          app_version=$(jq -r '.version' axiestudio/src/frontend/package.json)
+          app_version=$(jq -r '.version' src/frontend/package.json)
           echo "version=$app_version" >> $GITHUB_OUTPUT
           echo "App version from package.json: $app_version"
 
@@ -152,7 +154,7 @@ jobs:
         with:
           node-version: 'lts/*'
           cache: 'npm'
-          cache-dependency-path: 'axiestudio/src/frontend/package-lock.json'
+          cache-dependency-path: 'src/frontend/package-lock.json'
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -163,11 +165,11 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './axiestudio/src-tauri -> target'
+          workspaces: './src-tauri -> target'
           cache-on-failure: true
 
       - name: Install frontend dependencies
-        working-directory: ./axiestudio/src/frontend
+        working-directory: ./src/frontend
         run: |
           if [ -f package-lock.json ]; then
             npm ci
@@ -176,20 +178,20 @@ jobs:
           fi
 
       - name: Build frontend
-        working-directory: ./axiestudio/src/frontend
+        working-directory: ./src/frontend
         run: npm run build
 
       - name: Create placeholder icons (temporary)
         run: |
-          mkdir -p axiestudio/src-tauri/icons
+          mkdir -p src-tauri/icons
           # Create minimal placeholder icons for build
           echo "Creating placeholder icons..."
           # This is temporary - replace with actual icons
-          touch axiestudio/src-tauri/icons/32x32.png
-          touch axiestudio/src-tauri/icons/128x128.png
-          touch axiestudio/src-tauri/icons/128x128@2x.png
-          touch axiestudio/src-tauri/icons/icon.icns
-          touch axiestudio/src-tauri/icons/icon.ico
+          touch src-tauri/icons/32x32.png
+          touch src-tauri/icons/128x128.png
+          touch src-tauri/icons/128x128@2x.png
+          touch src-tauri/icons/icon.icns
+          touch src-tauri/icons/icon.ico
 
       - name: Build Tauri application
         if: ${{ !inputs.skip_build }}
@@ -220,7 +222,8 @@ jobs:
 
             ### Windows
             - **`.msi`** - Windows Installer (Recommended)
-            - **`.exe`** - Portable executable
+            - **`.exe`** - NSIS Installer
+            - **Portable** - Standalone executable (no installation required)
 
             ### macOS
             - **`.dmg`** - macOS Disk Image (Universal: Intel + Apple Silicon)
@@ -273,6 +276,6 @@ jobs:
         with:
           name: tauri-artifacts-${{ matrix.os }}-${{ matrix.arch }}
           path: |
-            axiestudio/src-tauri/target/release/bundle/
-            !axiestudio/src-tauri/target/release/bundle/**/*.dSYM/
+            src-tauri/target/release/bundle/
+            !src-tauri/target/release/bundle/**/*.dSYM/
           retention-days: 30
