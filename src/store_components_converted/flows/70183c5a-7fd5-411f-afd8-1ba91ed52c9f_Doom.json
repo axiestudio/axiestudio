@@ -1,0 +1,1073 @@
+{
+  "id": "70183c5a-7fd5-411f-afd8-1ba91ed52c9f",
+  "name": "Doom",
+  "description": "Changed! (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "Zod12",
+    "first_name": "General",
+    "last_name": "Zod",
+    "id": "c076bce5-81d3-4b8b-a6a3-dee007e34c3d",
+    "full_name": "General Zod"
+  },
+  "store_url": "https://www.langflow.store/store/component/70183c5a-7fd5-411f-afd8-1ba91ed52c9f",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-11T06:40:54.139Z",
+    "updated": "2024-07-11T08:31:29.950Z",
+    "downloaded": "2025-08-19T17:50:06.198Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Vector Store",
+        "id": "cd614b49-dd57-4c8b-a5eb-f8bb5f957b9a"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.7",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "APIRequest-AnF89",
+        "type": "genericNode",
+        "position": {
+          "x": -14.236147275547864,
+          "y": -63.478002514826045
+        },
+        "data": {
+          "type": "APIRequest",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "query_params": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "query_params",
+                "display_name": "Query Parameters",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The query parameters to append to the URL.",
+                "title_case": false,
+                "type": "other"
+              },
+              "body": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": {},
+                "name": "body",
+                "display_name": "Body",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.",
+                "title_case": false,
+                "type": "NestedDict"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import asyncio\nimport json\nfrom typing import Any, List, Optional\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\n\nimport httpx\nfrom loguru import logger\n\nfrom axiestudio.base.curl.parse import parse_context\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, NestedDictInput, Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\n\nclass APIRequestComponent(Component):\n    display_name = \"API Request\"\n    description = (\n        \"This component allows you to make HTTP requests to one or more URLs. \"\n        \"You can provide headers and body as either dictionaries or Data objects. \"\n        \"Additionally, you can append query parameters to the URLs.\\n\\n\"\n        \"**Note:** Check advanced options for more settings.\"\n    )\n    icon = \"Globe\"\n    name = \"APIRequest\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"urls\",\n            display_name=\"URLs\",\n            is_list=True,\n            info=\"Enter one or more URLs, separated by commas.\",\n        ),\n        MessageTextInput(\n            name=\"curl\",\n            display_name=\"Curl\",\n            info=\"Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.\",\n            advanced=False,\n            refresh_button=True,\n        ),\n        DropdownInput(\n            name=\"method\",\n            display_name=\"Method\",\n            options=[\"GET\", \"POST\", \"PATCH\", \"PUT\"],\n            value=\"GET\",\n            info=\"The HTTP method to use (GET, POST, PATCH, PUT).\",\n        ),\n        NestedDictInput(\n            name=\"headers\",\n            display_name=\"Headers\",\n            info=\"The headers to send with the request as a dictionary. This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        NestedDictInput(\n            name=\"body\",\n            display_name=\"Body\",\n            info=\"The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        DataInput(\n            name=\"query_params\",\n            display_name=\"Query Parameters\",\n            info=\"The query parameters to append to the URL.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            value=5,\n            info=\"The timeout to use for the request.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"make_requests\"),\n    ]\n\n    def parse_curl(self, curl: str, build_config: dotdict) -> dotdict:\n        try:\n            parsed = parse_context(curl)\n            build_config[\"urls\"][\"value\"] = [parsed.url]\n            build_config[\"method\"][\"value\"] = parsed.method.upper()\n            build_config[\"headers\"][\"value\"] = dict(parsed.headers)\n\n            if parsed.data:\n                try:\n                    json_data = json.loads(parsed.data)\n                    build_config[\"body\"][\"value\"] = json_data\n                except json.JSONDecodeError as e:\n                    logger.error(f\"Error decoding JSON data: {e}\")\n            else:\n                build_config[\"body\"][\"value\"] = {}\n        except Exception as exc:\n            logger.error(f\"Error parsing curl: {exc}\")\n            raise ValueError(f\"Error parsing curl: {exc}\")\n        return build_config\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\n        if field_name == \"curl\" and field_value:\n            build_config = self.parse_curl(field_value, build_config)\n        return build_config\n\n    async def make_request(\n        self,\n        client: httpx.AsyncClient,\n        method: str,\n        url: str,\n        headers: Optional[dict] = None,\n        body: Optional[dict] = None,\n        timeout: int = 5,\n    ) -> Data:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            raise ValueError(f\"Unsupported method: {method}\")\n\n        if isinstance(body, str) and body:\n            try:\n                body = json.loads(body)\n            except Exception as e:\n                logger.error(f\"Error decoding JSON data: {e}\")\n                body = None\n                raise ValueError(f\"Error decoding JSON data: {e}\")\n\n        data = body if body else None\n\n        try:\n            response = await client.request(method, url, headers=headers, json=data, timeout=timeout)\n            try:\n                result = response.json()\n            except Exception:\n                result = response.text\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except httpx.TimeoutException:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except Exception as exc:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    def add_query_params(self, url: str, params: dict) -> str:\n        url_parts = list(urlparse(url))\n        query = dict(parse_qsl(url_parts[4]))\n        query.update(params)\n        url_parts[4] = urlencode(query)\n        return urlunparse(url_parts)\n\n    async def make_requests(self) -> List[Data]:\n        method = self.method\n        urls = [url.strip() for url in self.urls if url.strip()]\n        curl = self.curl\n        headers = self.headers or {}\n        body = self.body or {}\n        timeout = self.timeout\n        query_params = self.query_params.data if self.query_params else {}\n\n        if curl:\n            self._build_config = self.parse_curl(curl, dotdict())\n\n        if isinstance(headers, Data):\n            headers = headers.data\n\n        if isinstance(body, Data):\n            body = body.data\n\n        bodies = [body] * len(urls)\n\n        urls = [self.add_query_params(url, query_params) for url in urls]\n\n        async with httpx.AsyncClient() as client:\n            results = await asyncio.gather(\n                *[self.make_request(client, method, u, headers, rec, timeout) for u, rec in zip(urls, bodies)]\n            )\n        self.status = results\n        return results\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "curl": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "curl",
+                "display_name": "Curl",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.",
+                "refresh_button": true,
+                "title_case": false,
+                "type": "str"
+              },
+              "headers": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": {},
+                "name": "headers",
+                "display_name": "Headers",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The headers to send with the request as a dictionary. This is populated when using the CURL field.",
+                "title_case": false,
+                "type": "NestedDict"
+              },
+              "method": {
+                "trace_as_metadata": true,
+                "options": [
+                  "GET",
+                  "POST",
+                  "PATCH",
+                  "PUT"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "GET",
+                "name": "method",
+                "display_name": "Method",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The HTTP method to use (GET, POST, PATCH, PUT).",
+                "title_case": false,
+                "type": "str"
+              },
+              "timeout": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": 5,
+                "name": "timeout",
+                "display_name": "Timeout",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The timeout to use for the request.",
+                "title_case": false,
+                "type": "int"
+              },
+              "urls": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "urls",
+                "display_name": "URLs",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Enter one or more URLs, separated by commas.",
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "This component allows you to make HTTP requests to one or more URLs. You can provide headers and body as either dictionaries or Data objects. Additionally, you can append query parameters to the URLs.\n\n**Note:** Check advanced options for more settings.",
+            "icon": "Globe",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "API Request",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "data",
+                "display_name": "Data",
+                "method": "make_requests",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "urls",
+              "curl",
+              "method",
+              "headers",
+              "body",
+              "query_params",
+              "timeout"
+            ],
+            "beta": false,
+            "edited": false
+          },
+          "id": "APIRequest-AnF89"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 1022,
+        "positionAbsolute": {
+          "x": -14.236147275547864,
+          "y": -63.478002514826045
+        },
+        "dragging": false
+      },
+      {
+        "id": "AmazonBedrockModel-vo3MT",
+        "type": "genericNode",
+        "position": {
+          "x": 423.190653453531,
+          "y": 61.9613110977395
+        },
+        "data": {
+          "type": "AmazonBedrockModel",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langchain_aws import ChatBedrock\n\nfrom axiestudio.base.constants import STREAM_INFO_TEXT\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.field_typing import LanguageModel\nfrom axiestudio.inputs import MessageTextInput\nfrom axiestudio.io import BoolInput, DictInput, DropdownInput, MessageInput\n\n\nclass AmazonBedrockComponent(LCModelComponent):\n    display_name: str = \"Amazon Bedrock\"\n    description: str = \"Generate text using Amazon Bedrock LLMs.\"\n    icon = \"Amazon\"\n    name = \"AmazonBedrockModel\"\n\n    inputs = [\n        MessageInput(name=\"input_value\", display_name=\"Input\"),\n        DropdownInput(\n            name=\"model_id\",\n            display_name=\"Model ID\",\n            options=[\n                \"amazon.titan-text-express-v1\",\n                \"amazon.titan-text-lite-v1\",\n                \"amazon.titan-text-premier-v1:0\",\n                \"amazon.titan-embed-text-v1\",\n                \"amazon.titan-embed-text-v2:0\",\n                \"amazon.titan-embed-image-v1\",\n                \"amazon.titan-image-generator-v1\",\n                \"anthropic.claude-v2\",\n                \"anthropic.claude-v2:1\",\n                \"anthropic.claude-3-sonnet-20240229-v1:0\",\n                \"anthropic.claude-3-haiku-20240307-v1:0\",\n                \"anthropic.claude-3-opus-20240229-v1:0\",\n                \"anthropic.claude-instant-v1\",\n                \"ai21.j2-mid-v1\",\n                \"ai21.j2-ultra-v1\",\n                \"cohere.command-text-v14\",\n                \"cohere.command-light-text-v14\",\n                \"cohere.command-r-v1:0\",\n                \"cohere.command-r-plus-v1:0\",\n                \"cohere.embed-english-v3\",\n                \"cohere.embed-multilingual-v3\",\n                \"meta.llama2-13b-chat-v1\",\n                \"meta.llama2-70b-chat-v1\",\n                \"meta.llama3-8b-instruct-v1:0\",\n                \"meta.llama3-70b-instruct-v1:0\",\n                \"mistral.mistral-7b-instruct-v0:2\",\n                \"mistral.mixtral-8x7b-instruct-v0:1\",\n                \"mistral.mistral-large-2402-v1:0\",\n                \"mistral.mistral-small-2402-v1:0\",\n                \"stability.stable-diffusion-xl-v0\",\n                \"stability.stable-diffusion-xl-v1\",\n            ],\n            value=\"anthropic.claude-3-haiku-20240307-v1:0\",\n        ),\n        MessageTextInput(name=\"credentials_profile_name\", display_name=\"Credentials Profile Name\"),\n        MessageTextInput(name=\"region_name\", display_name=\"Region Name\", value=\"us-east-1\"),\n        DictInput(name=\"model_kwargs\", display_name=\"Model Kwargs\", advanced=True, is_list=True),\n        MessageTextInput(name=\"endpoint_url\", display_name=\"Endpoint URL\", advanced=True),\n        MessageTextInput(\n            name=\"system_message\",\n            display_name=\"System Message\",\n            info=\"System message to pass to the model.\",\n            advanced=True,\n        ),\n        BoolInput(name=\"stream\", display_name=\"Stream\", info=STREAM_INFO_TEXT, advanced=True),\n    ]\n\n    def build_model(self) -> LanguageModel:  # type: ignore[type-var]\n        model_id = self.model_id\n        credentials_profile_name = self.credentials_profile_name\n        region_name = self.region_name\n        model_kwargs = self.model_kwargs\n        endpoint_url = self.endpoint_url\n        stream = self.stream\n        try:\n            output = ChatBedrock(  # type: ignore\n                credentials_profile_name=credentials_profile_name,\n                model_id=model_id,\n                region_name=region_name,\n                model_kwargs=model_kwargs,\n                endpoint_url=endpoint_url,\n                streaming=stream,\n            )\n        except Exception as e:\n            raise ValueError(\"Could not connect to AmazonBedrock API.\") from e\n        return output  # type: ignore\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "credentials_profile_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "credentials_profile_name",
+                "display_name": "Credentials Profile Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str"
+              },
+              "endpoint_url": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "endpoint_url",
+                "display_name": "Endpoint URL",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "input_value",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str"
+              },
+              "model_id": {
+                "trace_as_metadata": true,
+                "options": [
+                  "amazon.titan-text-express-v1",
+                  "amazon.titan-text-lite-v1",
+                  "amazon.titan-text-premier-v1:0",
+                  "amazon.titan-embed-text-v1",
+                  "amazon.titan-embed-text-v2:0",
+                  "amazon.titan-embed-image-v1",
+                  "amazon.titan-image-generator-v1",
+                  "anthropic.claude-v2",
+                  "anthropic.claude-v2:1",
+                  "anthropic.claude-3-sonnet-20240229-v1:0",
+                  "anthropic.claude-3-haiku-20240307-v1:0",
+                  "anthropic.claude-3-opus-20240229-v1:0",
+                  "anthropic.claude-instant-v1",
+                  "ai21.j2-mid-v1",
+                  "ai21.j2-ultra-v1",
+                  "cohere.command-text-v14",
+                  "cohere.command-light-text-v14",
+                  "cohere.command-r-v1:0",
+                  "cohere.command-r-plus-v1:0",
+                  "cohere.embed-english-v3",
+                  "cohere.embed-multilingual-v3",
+                  "meta.llama2-13b-chat-v1",
+                  "meta.llama2-70b-chat-v1",
+                  "meta.llama3-8b-instruct-v1:0",
+                  "meta.llama3-70b-instruct-v1:0",
+                  "mistral.mistral-7b-instruct-v0:2",
+                  "mistral.mixtral-8x7b-instruct-v0:1",
+                  "mistral.mistral-large-2402-v1:0",
+                  "mistral.mistral-small-2402-v1:0",
+                  "stability.stable-diffusion-xl-v0",
+                  "stability.stable-diffusion-xl-v1"
+                ],
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "anthropic.claude-3-haiku-20240307-v1:0",
+                "name": "model_id",
+                "display_name": "Model ID",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str"
+              },
+              "model_kwargs": {
+                "trace_as_input": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": {},
+                "name": "model_kwargs",
+                "display_name": "Model Kwargs",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "dict"
+              },
+              "region_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "us-east-1",
+                "name": "region_name",
+                "display_name": "Region Name",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str"
+              },
+              "stream": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": false,
+                "name": "stream",
+                "display_name": "Stream",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Stream the response from the model. Streaming works only in Chat.",
+                "title_case": false,
+                "type": "bool"
+              },
+              "system_message": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "value": "",
+                "name": "system_message",
+                "display_name": "System Message",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "System message to pass to the model.",
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "Generate text using Amazon Bedrock LLMs.",
+            "icon": "Amazon",
+            "base_classes": [
+              "LanguageModel",
+              "Message"
+            ],
+            "display_name": "Amazon Bedrock",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text_output",
+                "display_name": "Text",
+                "method": "text_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "LanguageModel"
+                ],
+                "selected": "LanguageModel",
+                "name": "model_output",
+                "display_name": "Language Model",
+                "method": "build_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "model_id",
+              "credentials_profile_name",
+              "region_name",
+              "model_kwargs",
+              "endpoint_url",
+              "system_message",
+              "stream"
+            ],
+            "beta": false,
+            "edited": false
+          },
+          "id": "AmazonBedrockModel-vo3MT"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 629,
+        "positionAbsolute": {
+          "x": 423.190653453531,
+          "y": 61.9613110977395
+        },
+        "dragging": true
+      }
+    ],
+    "edges": [],
+    "viewport": {
+      "x": 38.52668555937144,
+      "y": 78.62619126723882,
+      "zoom": 0.6299605249474366
+    }
+  },
+  "metadata": {
+    "APIRequest": {
+      "count": 1
+    },
+    "AmazonBedrockModel": {
+      "count": 1
+    },
+    "total": 2
+  },
+  "original": {
+    "id": "70183c5a-7fd5-411f-afd8-1ba91ed52c9f",
+    "name": "Doom",
+    "description": "Changed!",
+    "is_component": false,
+    "liked_by_count": "0",
+    "downloads_count": "0",
+    "metadata": {
+      "APIRequest": {
+        "count": 1
+      },
+      "AmazonBedrockModel": {
+        "count": 1
+      },
+      "total": 2
+    },
+    "last_tested_version": "1.0.7",
+    "private": true,
+    "data": {
+      "nodes": [
+        {
+          "id": "APIRequest-AnF89",
+          "type": "genericNode",
+          "position": {
+            "x": -14.236147275547864,
+            "y": -63.478002514826045
+          },
+          "data": {
+            "type": "APIRequest",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "query_params": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "query_params",
+                  "display_name": "Query Parameters",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The query parameters to append to the URL.",
+                  "title_case": false,
+                  "type": "other"
+                },
+                "body": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": {},
+                  "name": "body",
+                  "display_name": "Body",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.",
+                  "title_case": false,
+                  "type": "NestedDict"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import asyncio\nimport json\nfrom typing import Any, List, Optional\nfrom urllib.parse import parse_qsl, urlencode, urlparse, urlunparse\n\nimport httpx\nfrom loguru import logger\n\nfrom axiestudio.base.curl.parse import parse_context\nfrom axiestudio.custom import Component\nfrom axiestudio.io import DataInput, DropdownInput, IntInput, MessageTextInput, NestedDictInput, Output\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.dotdict import dotdict\n\n\nclass APIRequestComponent(Component):\n    display_name = \"API Request\"\n    description = (\n        \"This component allows you to make HTTP requests to one or more URLs. \"\n        \"You can provide headers and body as either dictionaries or Data objects. \"\n        \"Additionally, you can append query parameters to the URLs.\\n\\n\"\n        \"**Note:** Check advanced options for more settings.\"\n    )\n    icon = \"Globe\"\n    name = \"APIRequest\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"urls\",\n            display_name=\"URLs\",\n            is_list=True,\n            info=\"Enter one or more URLs, separated by commas.\",\n        ),\n        MessageTextInput(\n            name=\"curl\",\n            display_name=\"Curl\",\n            info=\"Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.\",\n            advanced=False,\n            refresh_button=True,\n        ),\n        DropdownInput(\n            name=\"method\",\n            display_name=\"Method\",\n            options=[\"GET\", \"POST\", \"PATCH\", \"PUT\"],\n            value=\"GET\",\n            info=\"The HTTP method to use (GET, POST, PATCH, PUT).\",\n        ),\n        NestedDictInput(\n            name=\"headers\",\n            display_name=\"Headers\",\n            info=\"The headers to send with the request as a dictionary. This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        NestedDictInput(\n            name=\"body\",\n            display_name=\"Body\",\n            info=\"The body to send with the request as a dictionary (for POST, PATCH, PUT). This is populated when using the CURL field.\",\n            input_types=[\"Data\"],\n        ),\n        DataInput(\n            name=\"query_params\",\n            display_name=\"Query Parameters\",\n            info=\"The query parameters to append to the URL.\",\n        ),\n        IntInput(\n            name=\"timeout\",\n            display_name=\"Timeout\",\n            value=5,\n            info=\"The timeout to use for the request.\",\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Data\", name=\"data\", method=\"make_requests\"),\n    ]\n\n    def parse_curl(self, curl: str, build_config: dotdict) -> dotdict:\n        try:\n            parsed = parse_context(curl)\n            build_config[\"urls\"][\"value\"] = [parsed.url]\n            build_config[\"method\"][\"value\"] = parsed.method.upper()\n            build_config[\"headers\"][\"value\"] = dict(parsed.headers)\n\n            if parsed.data:\n                try:\n                    json_data = json.loads(parsed.data)\n                    build_config[\"body\"][\"value\"] = json_data\n                except json.JSONDecodeError as e:\n                    logger.error(f\"Error decoding JSON data: {e}\")\n            else:\n                build_config[\"body\"][\"value\"] = {}\n        except Exception as exc:\n            logger.error(f\"Error parsing curl: {exc}\")\n            raise ValueError(f\"Error parsing curl: {exc}\")\n        return build_config\n\n    def update_build_config(self, build_config: dotdict, field_value: Any, field_name: str | None = None):\n        if field_name == \"curl\" and field_value:\n            build_config = self.parse_curl(field_value, build_config)\n        return build_config\n\n    async def make_request(\n        self,\n        client: httpx.AsyncClient,\n        method: str,\n        url: str,\n        headers: Optional[dict] = None,\n        body: Optional[dict] = None,\n        timeout: int = 5,\n    ) -> Data:\n        method = method.upper()\n        if method not in [\"GET\", \"POST\", \"PATCH\", \"PUT\", \"DELETE\"]:\n            raise ValueError(f\"Unsupported method: {method}\")\n\n        if isinstance(body, str) and body:\n            try:\n                body = json.loads(body)\n            except Exception as e:\n                logger.error(f\"Error decoding JSON data: {e}\")\n                body = None\n                raise ValueError(f\"Error decoding JSON data: {e}\")\n\n        data = body if body else None\n\n        try:\n            response = await client.request(method, url, headers=headers, json=data, timeout=timeout)\n            try:\n                result = response.json()\n            except Exception:\n                result = response.text\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": response.status_code,\n                    \"result\": result,\n                },\n            )\n        except httpx.TimeoutException:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 408,\n                    \"error\": \"Request timed out\",\n                },\n            )\n        except Exception as exc:\n            return Data(\n                data={\n                    \"source\": url,\n                    \"headers\": headers,\n                    \"status_code\": 500,\n                    \"error\": str(exc),\n                },\n            )\n\n    def add_query_params(self, url: str, params: dict) -> str:\n        url_parts = list(urlparse(url))\n        query = dict(parse_qsl(url_parts[4]))\n        query.update(params)\n        url_parts[4] = urlencode(query)\n        return urlunparse(url_parts)\n\n    async def make_requests(self) -> List[Data]:\n        method = self.method\n        urls = [url.strip() for url in self.urls if url.strip()]\n        curl = self.curl\n        headers = self.headers or {}\n        body = self.body or {}\n        timeout = self.timeout\n        query_params = self.query_params.data if self.query_params else {}\n\n        if curl:\n            self._build_config = self.parse_curl(curl, dotdict())\n\n        if isinstance(headers, Data):\n            headers = headers.data\n\n        if isinstance(body, Data):\n            body = body.data\n\n        bodies = [body] * len(urls)\n\n        urls = [self.add_query_params(url, query_params) for url in urls]\n\n        async with httpx.AsyncClient() as client:\n            results = await asyncio.gather(\n                *[self.make_request(client, method, u, headers, rec, timeout) for u, rec in zip(urls, bodies)]\n            )\n        self.status = results\n        return results\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "curl": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "curl",
+                  "display_name": "Curl",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Paste a curl command to populate the fields. This will fill in the dictionary fields for headers and body.",
+                  "refresh_button": true,
+                  "title_case": false,
+                  "type": "str"
+                },
+                "headers": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": {},
+                  "name": "headers",
+                  "display_name": "Headers",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The headers to send with the request as a dictionary. This is populated when using the CURL field.",
+                  "title_case": false,
+                  "type": "NestedDict"
+                },
+                "method": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "GET",
+                    "POST",
+                    "PATCH",
+                    "PUT"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "GET",
+                  "name": "method",
+                  "display_name": "Method",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The HTTP method to use (GET, POST, PATCH, PUT).",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "timeout": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": 5,
+                  "name": "timeout",
+                  "display_name": "Timeout",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The timeout to use for the request.",
+                  "title_case": false,
+                  "type": "int"
+                },
+                "urls": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "urls",
+                  "display_name": "URLs",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Enter one or more URLs, separated by commas.",
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "This component allows you to make HTTP requests to one or more URLs. You can provide headers and body as either dictionaries or Data objects. Additionally, you can append query parameters to the URLs.\n\n**Note:** Check advanced options for more settings.",
+              "icon": "Globe",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "API Request",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "data",
+                  "display_name": "Data",
+                  "method": "make_requests",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "urls",
+                "curl",
+                "method",
+                "headers",
+                "body",
+                "query_params",
+                "timeout"
+              ],
+              "beta": false,
+              "edited": false
+            },
+            "id": "APIRequest-AnF89"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 1022,
+          "positionAbsolute": {
+            "x": -14.236147275547864,
+            "y": -63.478002514826045
+          },
+          "dragging": false
+        },
+        {
+          "id": "AmazonBedrockModel-vo3MT",
+          "type": "genericNode",
+          "position": {
+            "x": 423.190653453531,
+            "y": 61.9613110977395
+          },
+          "data": {
+            "type": "AmazonBedrockModel",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from langchain_aws import ChatBedrock\n\nfrom axiestudio.base.constants import STREAM_INFO_TEXT\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.field_typing import LanguageModel\nfrom axiestudio.inputs import MessageTextInput\nfrom axiestudio.io import BoolInput, DictInput, DropdownInput, MessageInput\n\n\nclass AmazonBedrockComponent(LCModelComponent):\n    display_name: str = \"Amazon Bedrock\"\n    description: str = \"Generate text using Amazon Bedrock LLMs.\"\n    icon = \"Amazon\"\n    name = \"AmazonBedrockModel\"\n\n    inputs = [\n        MessageInput(name=\"input_value\", display_name=\"Input\"),\n        DropdownInput(\n            name=\"model_id\",\n            display_name=\"Model ID\",\n            options=[\n                \"amazon.titan-text-express-v1\",\n                \"amazon.titan-text-lite-v1\",\n                \"amazon.titan-text-premier-v1:0\",\n                \"amazon.titan-embed-text-v1\",\n                \"amazon.titan-embed-text-v2:0\",\n                \"amazon.titan-embed-image-v1\",\n                \"amazon.titan-image-generator-v1\",\n                \"anthropic.claude-v2\",\n                \"anthropic.claude-v2:1\",\n                \"anthropic.claude-3-sonnet-20240229-v1:0\",\n                \"anthropic.claude-3-haiku-20240307-v1:0\",\n                \"anthropic.claude-3-opus-20240229-v1:0\",\n                \"anthropic.claude-instant-v1\",\n                \"ai21.j2-mid-v1\",\n                \"ai21.j2-ultra-v1\",\n                \"cohere.command-text-v14\",\n                \"cohere.command-light-text-v14\",\n                \"cohere.command-r-v1:0\",\n                \"cohere.command-r-plus-v1:0\",\n                \"cohere.embed-english-v3\",\n                \"cohere.embed-multilingual-v3\",\n                \"meta.llama2-13b-chat-v1\",\n                \"meta.llama2-70b-chat-v1\",\n                \"meta.llama3-8b-instruct-v1:0\",\n                \"meta.llama3-70b-instruct-v1:0\",\n                \"mistral.mistral-7b-instruct-v0:2\",\n                \"mistral.mixtral-8x7b-instruct-v0:1\",\n                \"mistral.mistral-large-2402-v1:0\",\n                \"mistral.mistral-small-2402-v1:0\",\n                \"stability.stable-diffusion-xl-v0\",\n                \"stability.stable-diffusion-xl-v1\",\n            ],\n            value=\"anthropic.claude-3-haiku-20240307-v1:0\",\n        ),\n        MessageTextInput(name=\"credentials_profile_name\", display_name=\"Credentials Profile Name\"),\n        MessageTextInput(name=\"region_name\", display_name=\"Region Name\", value=\"us-east-1\"),\n        DictInput(name=\"model_kwargs\", display_name=\"Model Kwargs\", advanced=True, is_list=True),\n        MessageTextInput(name=\"endpoint_url\", display_name=\"Endpoint URL\", advanced=True),\n        MessageTextInput(\n            name=\"system_message\",\n            display_name=\"System Message\",\n            info=\"System message to pass to the model.\",\n            advanced=True,\n        ),\n        BoolInput(name=\"stream\", display_name=\"Stream\", info=STREAM_INFO_TEXT, advanced=True),\n    ]\n\n    def build_model(self) -> LanguageModel:  # type: ignore[type-var]\n        model_id = self.model_id\n        credentials_profile_name = self.credentials_profile_name\n        region_name = self.region_name\n        model_kwargs = self.model_kwargs\n        endpoint_url = self.endpoint_url\n        stream = self.stream\n        try:\n            output = ChatBedrock(  # type: ignore\n                credentials_profile_name=credentials_profile_name,\n                model_id=model_id,\n                region_name=region_name,\n                model_kwargs=model_kwargs,\n                endpoint_url=endpoint_url,\n                streaming=stream,\n            )\n        except Exception as e:\n            raise ValueError(\"Could not connect to AmazonBedrock API.\") from e\n        return output  # type: ignore\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "credentials_profile_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "credentials_profile_name",
+                  "display_name": "Credentials Profile Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "endpoint_url": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "endpoint_url",
+                  "display_name": "Endpoint URL",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "input_value",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "model_id": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "amazon.titan-text-express-v1",
+                    "amazon.titan-text-lite-v1",
+                    "amazon.titan-text-premier-v1:0",
+                    "amazon.titan-embed-text-v1",
+                    "amazon.titan-embed-text-v2:0",
+                    "amazon.titan-embed-image-v1",
+                    "amazon.titan-image-generator-v1",
+                    "anthropic.claude-v2",
+                    "anthropic.claude-v2:1",
+                    "anthropic.claude-3-sonnet-20240229-v1:0",
+                    "anthropic.claude-3-haiku-20240307-v1:0",
+                    "anthropic.claude-3-opus-20240229-v1:0",
+                    "anthropic.claude-instant-v1",
+                    "ai21.j2-mid-v1",
+                    "ai21.j2-ultra-v1",
+                    "cohere.command-text-v14",
+                    "cohere.command-light-text-v14",
+                    "cohere.command-r-v1:0",
+                    "cohere.command-r-plus-v1:0",
+                    "cohere.embed-english-v3",
+                    "cohere.embed-multilingual-v3",
+                    "meta.llama2-13b-chat-v1",
+                    "meta.llama2-70b-chat-v1",
+                    "meta.llama3-8b-instruct-v1:0",
+                    "meta.llama3-70b-instruct-v1:0",
+                    "mistral.mistral-7b-instruct-v0:2",
+                    "mistral.mixtral-8x7b-instruct-v0:1",
+                    "mistral.mistral-large-2402-v1:0",
+                    "mistral.mistral-small-2402-v1:0",
+                    "stability.stable-diffusion-xl-v0",
+                    "stability.stable-diffusion-xl-v1"
+                  ],
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "anthropic.claude-3-haiku-20240307-v1:0",
+                  "name": "model_id",
+                  "display_name": "Model ID",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "model_kwargs": {
+                  "trace_as_input": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": {},
+                  "name": "model_kwargs",
+                  "display_name": "Model Kwargs",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "dict"
+                },
+                "region_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "us-east-1",
+                  "name": "region_name",
+                  "display_name": "Region Name",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str"
+                },
+                "stream": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": false,
+                  "name": "stream",
+                  "display_name": "Stream",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Stream the response from the model. Streaming works only in Chat.",
+                  "title_case": false,
+                  "type": "bool"
+                },
+                "system_message": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "value": "",
+                  "name": "system_message",
+                  "display_name": "System Message",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "System message to pass to the model.",
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "Generate text using Amazon Bedrock LLMs.",
+              "icon": "Amazon",
+              "base_classes": [
+                "LanguageModel",
+                "Message"
+              ],
+              "display_name": "Amazon Bedrock",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text_output",
+                  "display_name": "Text",
+                  "method": "text_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "LanguageModel"
+                  ],
+                  "selected": "LanguageModel",
+                  "name": "model_output",
+                  "display_name": "Language Model",
+                  "method": "build_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "model_id",
+                "credentials_profile_name",
+                "region_name",
+                "model_kwargs",
+                "endpoint_url",
+                "system_message",
+                "stream"
+              ],
+              "beta": false,
+              "edited": false
+            },
+            "id": "AmazonBedrockModel-vo3MT"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 629,
+          "positionAbsolute": {
+            "x": 423.190653453531,
+            "y": 61.9613110977395
+          },
+          "dragging": true
+        }
+      ],
+      "edges": [],
+      "viewport": {
+        "x": 38.52668555937144,
+        "y": 78.62619126723882,
+        "zoom": 0.6299605249474366
+      }
+    },
+    "date_created": "2024-07-11T06:40:54.139Z",
+    "date_updated": "2024-07-11T08:31:29.950Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "c076bce5-81d3-4b8b-a6a3-dee007e34c3d",
+    "user_created": {
+      "username": "Zod12",
+      "first_name": "General",
+      "last_name": "Zod",
+      "id": "c076bce5-81d3-4b8b-a6a3-dee007e34c3d"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Vector Store",
+          "id": "cd614b49-dd57-4c8b-a5eb-f8bb5f957b9a"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:08:59.851Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 20,
+    "converter_version": "1.0.0"
+  }
+}

@@ -1,0 +1,345 @@
+{
+  "id": "8f0ae24e-6efa-4772-9836-c9a0666ca75d",
+  "name": "GitHub Releases",
+  "description": "Fetches all release versions from a GitHub repository and returns the latest release. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "viniciossilva3",
+    "first_name": "Vinicios",
+    "last_name": "Batista Da Silva",
+    "id": "6a3a88e2-cc6b-4f37-aebb-a747c97c7489",
+    "full_name": "Vinicios Batista Da Silva"
+  },
+  "store_url": "https://www.langflow.store/store/component/8f0ae24e-6efa-4772-9836-c9a0666ca75d",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-19T13:38:55.394Z",
+    "updated": "2024-09-13T19:42:58.296Z",
+    "downloaded": "2025-08-19T17:50:07.113Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "GitHubReleases",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "api_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "api_key",
+                "value": "",
+                "display_name": "GitHub API Key",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Dict\nimport requests\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom axiestudio.inputs import StrInput, SecretStrInput\nfrom axiestudio.schema import Data\nfrom axiestudio.field_typing import Tool, Output\n\nclass GitHubReleasesComponent(LCToolComponent):\n    display_name = \"GitHub Releases Fetcher\"\n    description = \"Fetches all release versions from a GitHub repository and returns the latest release.\"\n    icon = \"github\"\n    name = \"GitHubReleases\"\n\n    inputs = [\n        StrInput(name=\"repository\", display_name=\"Repository\", value=\"axiestudio-ai/axiestudio\"),\n        SecretStrInput(name=\"api_key\", display_name=\"GitHub API Key\", advanced=True),\n    ]\n\n    outputs = [\n        Output(display_name=\"Tool\", name=\"tool\", method=\"build_tool\"),\n        Output(display_name=\"Latest Release\", name=\"latest_release\", method=\"fetch_latest_release\"),\n        Output(display_name=\"Release Date\", name=\"release_date\", method=\"fetch_release_date\"),\n    ]\n\n    def api_request(self, repo: str, api_key: str) -> Dict:\n        url = f\"https://api.github.com/repos/{repo}/releases\"\n        api_key = self.api_key\n        headers = {\"Authorization\": f\"token {api_key}\"} if api_key else {}  # Use empty dict if no key\n\n        try:\n            response = requests.get(url, headers=headers)\n            response.raise_for_status()\n            releases = response.json()\n            if releases:\n                latest_release_info = releases[0]\n                latest_release = latest_release_info['tag_name']\n                release_date = latest_release_info['published_at']\n                return {\n                    \"latest_release\": latest_release,\n                    \"release_date\": release_date\n                }\n            else:\n                return {\"status\": \"error\", \"message\": \"No releases found\"}\n\n        except requests.RequestException as e:\n            return {\"status\": \"error\", \"message\": str(e)}\n\n    def build_tool(self) -> Tool:\n        def tool_function(repo: str, api_key: str) -> Dict:\n            return self.api_request(repo, api_key)\n        return Tool(name=\"GitHubReleasesTool\", func=tool_function, description=\"Fetches the latest release version and date from a GitHub repository.\")\n\n    def fetch_latest_release(self) -> str:\n        repo = self.repository\n        api_key = self.api_key\n\n        result = self.api_request(repo, api_key)\n        latest_release = result.get(\"latest_release\", \"No releases found\")\n        \n        self.status = f\"Latest release version is: {latest_release}\"\n        return latest_release\n\n    def fetch_release_date(self) -> str:\n        repo = self.repository\n        api_key = self.api_key\n\n        result = self.api_request(repo, api_key)\n        release_date = result.get(\"release_date\", \"No release date found\")\n        \n        self.status = f\"Release date is: {release_date}\"\n        return release_date\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "repository": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "repository",
+                "value": "axiestudio-ai/axiestudio",
+                "display_name": "Repository",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              }
+            },
+            "description": "Fetches all release versions from a GitHub repository and returns the latest release.",
+            "icon": "github",
+            "base_classes": [
+              "Text",
+              "Tool"
+            ],
+            "display_name": "GitHub Releases",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "tool",
+                "display_name": "Tool",
+                "method": "build_tool",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Text"
+                ],
+                "selected": "Text",
+                "name": "latest_release",
+                "display_name": "Latest Release",
+                "method": "fetch_latest_release",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Text"
+                ],
+                "selected": "Text",
+                "name": "release_date",
+                "display_name": "Release Date",
+                "method": "fetch_release_date",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "repository",
+              "api_key"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.18",
+            "official": false
+          },
+          "id": "GitHubReleases-7paUe"
+        },
+        "id": "GitHubReleases-7paUe",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "GitHubReleases": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "8f0ae24e-6efa-4772-9836-c9a0666ca75d",
+    "name": "GitHub Releases",
+    "description": "Fetches all release versions from a GitHub repository and returns the latest release.",
+    "is_component": true,
+    "liked_by_count": "7",
+    "downloads_count": "32",
+    "metadata": {
+      "GitHubReleases": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "GitHubReleases",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "api_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "api_key",
+                  "value": "",
+                  "display_name": "GitHub API Key",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Dict\nimport requests\nfrom axiestudio.base.langchain_utilities.model import LCToolComponent\nfrom axiestudio.inputs import StrInput, SecretStrInput\nfrom axiestudio.schema import Data\nfrom axiestudio.field_typing import Tool, Output\n\nclass GitHubReleasesComponent(LCToolComponent):\n    display_name = \"GitHub Releases Fetcher\"\n    description = \"Fetches all release versions from a GitHub repository and returns the latest release.\"\n    icon = \"github\"\n    name = \"GitHubReleases\"\n\n    inputs = [\n        StrInput(name=\"repository\", display_name=\"Repository\", value=\"axiestudio-ai/axiestudio\"),\n        SecretStrInput(name=\"api_key\", display_name=\"GitHub API Key\", advanced=True),\n    ]\n\n    outputs = [\n        Output(display_name=\"Tool\", name=\"tool\", method=\"build_tool\"),\n        Output(display_name=\"Latest Release\", name=\"latest_release\", method=\"fetch_latest_release\"),\n        Output(display_name=\"Release Date\", name=\"release_date\", method=\"fetch_release_date\"),\n    ]\n\n    def api_request(self, repo: str, api_key: str) -> Dict:\n        url = f\"https://api.github.com/repos/{repo}/releases\"\n        api_key = self.api_key\n        headers = {\"Authorization\": f\"token {api_key}\"} if api_key else {}  # Use empty dict if no key\n\n        try:\n            response = requests.get(url, headers=headers)\n            response.raise_for_status()\n            releases = response.json()\n            if releases:\n                latest_release_info = releases[0]\n                latest_release = latest_release_info['tag_name']\n                release_date = latest_release_info['published_at']\n                return {\n                    \"latest_release\": latest_release,\n                    \"release_date\": release_date\n                }\n            else:\n                return {\"status\": \"error\", \"message\": \"No releases found\"}\n\n        except requests.RequestException as e:\n            return {\"status\": \"error\", \"message\": str(e)}\n\n    def build_tool(self) -> Tool:\n        def tool_function(repo: str, api_key: str) -> Dict:\n            return self.api_request(repo, api_key)\n        return Tool(name=\"GitHubReleasesTool\", func=tool_function, description=\"Fetches the latest release version and date from a GitHub repository.\")\n\n    def fetch_latest_release(self) -> str:\n        repo = self.repository\n        api_key = self.api_key\n\n        result = self.api_request(repo, api_key)\n        latest_release = result.get(\"latest_release\", \"No releases found\")\n        \n        self.status = f\"Latest release version is: {latest_release}\"\n        return latest_release\n\n    def fetch_release_date(self) -> str:\n        repo = self.repository\n        api_key = self.api_key\n\n        result = self.api_request(repo, api_key)\n        release_date = result.get(\"release_date\", \"No release date found\")\n        \n        self.status = f\"Release date is: {release_date}\"\n        return release_date\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "repository": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "repository",
+                  "value": "axiestudio-ai/axiestudio",
+                  "display_name": "Repository",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                }
+              },
+              "description": "Fetches all release versions from a GitHub repository and returns the latest release.",
+              "icon": "github",
+              "base_classes": [
+                "Text",
+                "Tool"
+              ],
+              "display_name": "GitHub Releases",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Tool"
+                  ],
+                  "selected": "Tool",
+                  "name": "tool",
+                  "display_name": "Tool",
+                  "method": "build_tool",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Text"
+                  ],
+                  "selected": "Text",
+                  "name": "latest_release",
+                  "display_name": "Latest Release",
+                  "method": "fetch_latest_release",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Text"
+                  ],
+                  "selected": "Text",
+                  "name": "release_date",
+                  "display_name": "Release Date",
+                  "method": "fetch_release_date",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "repository",
+                "api_key"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.18",
+              "official": false
+            },
+            "id": "GitHubReleases-7paUe"
+          },
+          "id": "GitHubReleases-7paUe",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-08-19T13:38:55.394Z",
+    "date_updated": "2024-09-13T19:42:58.296Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "6a3a88e2-cc6b-4f37-aebb-a747c97c7489",
+    "user_created": {
+      "username": "viniciossilva3",
+      "first_name": "Vinicios",
+      "last_name": "Batista Da Silva",
+      "id": "6a3a88e2-cc6b-4f37-aebb-a747c97c7489"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.009Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 16,
+    "converter_version": "1.0.0"
+  }
+}

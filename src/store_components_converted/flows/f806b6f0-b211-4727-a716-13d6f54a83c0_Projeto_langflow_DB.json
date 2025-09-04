@@ -1,0 +1,2837 @@
+{
+  "id": "f806b6f0-b211-4727-a716-13d6f54a83c0",
+  "name": "Projeto_langflow_DB",
+  "description": "Text Generation Meets Business Transformation. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "RafaelSantos",
+    "first_name": "Tenyears",
+    "last_name": "Aliprodutos",
+    "id": "970b4389-07f8-481c-9047-89dc5a0f901d",
+    "full_name": "Tenyears Aliprodutos"
+  },
+  "store_url": "https://www.langflow.store/store/component/f806b6f0-b211-4727-a716-13d6f54a83c0",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-08-30T20:40:01.160Z",
+    "updated": "2024-08-30T20:40:01.249Z",
+    "downloaded": "2025-08-19T17:50:06.705Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Agent",
+        "id": "ccabb590-c9e8-4e56-9d6c-309955936c6c"
+      }
+    },
+    {
+      "tags_id": {
+        "name": "Memory",
+        "id": "e660a9ea-35fb-4587-bfbd-13dba4c556d1"
+      }
+    },
+    {
+      "tags_id": {
+        "name": "Chain",
+        "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+      }
+    },
+    {
+      "tags_id": {
+        "name": "Vector Store",
+        "id": "cd614b49-dd57-4c8b-a5eb-f8bb5f957b9a"
+      }
+    },
+    {
+      "tags_id": {
+        "name": "Prompt",
+        "id": "57f5c681-a1f5-4053-be33-e9525e7eb00a"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "ChatInput-wQtHU",
+        "type": "genericNode",
+        "position": {
+          "x": -256.0321874999999,
+          "y": 104.44234375000002
+        },
+        "data": {
+          "type": "ChatInput",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "files": {
+                "trace_as_metadata": true,
+                "file_path": "",
+                "fileTypes": [
+                  "txt",
+                  "md",
+                  "mdx",
+                  "csv",
+                  "json",
+                  "yaml",
+                  "yml",
+                  "xml",
+                  "html",
+                  "htm",
+                  "pdf",
+                  "docx",
+                  "py",
+                  "sh",
+                  "sql",
+                  "js",
+                  "ts",
+                  "tsx",
+                  "jpg",
+                  "jpeg",
+                  "png",
+                  "bmp",
+                  "image"
+                ],
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "files",
+                "value": "",
+                "display_name": "Files",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Files to be sent with the message.",
+                "title_case": false,
+                "type": "file",
+                "_input_type": "FileInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.data.utils import IMG_FILE_TYPES, TEXT_FILE_TYPES\nfrom axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, FileInput, MessageTextInput, MultilineInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_USER, MESSAGE_SENDER_NAME_USER\n\n\nclass ChatInput(ChatComponent):\n    display_name = \"Chat Input\"\n    description = \"Get chat inputs from the Playground.\"\n    icon = \"ChatInput\"\n    name = \"ChatInput\"\n\n    inputs = [\n        MultilineInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            value=\"\",\n            info=\"Message to be passed as input.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_USER,\n            info=\"Type of sender.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_USER,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        FileInput(\n            name=\"files\",\n            display_name=\"Files\",\n            file_types=TEXT_FILE_TYPES + IMG_FILE_TYPES,\n            info=\"Files to be sent with the message.\",\n            advanced=True,\n            is_list=True,\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n\n    def message_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n            files=self.files,\n        )\n\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "Qual é a capital de istambull?",
+                "display_name": "Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Message to be passed as input.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "sender": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender",
+                "value": "User",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Type of sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "sender_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender_name",
+                "value": "User",
+                "display_name": "Sender Name",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Name of the sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "session_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "session_id",
+                "value": "",
+                "display_name": "Session ID",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "should_store_message": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "should_store_message",
+                "value": true,
+                "display_name": "Store Messages",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Store the message in the history.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Get chat inputs from the Playground.",
+            "icon": "ChatInput",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Chat Input",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "message",
+                "display_name": "Message",
+                "method": "message_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "should_store_message",
+              "sender",
+              "sender_name",
+              "session_id",
+              "files"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.17"
+          },
+          "id": "ChatInput-wQtHU"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 300,
+        "positionAbsolute": {
+          "x": -256.0321874999999,
+          "y": 104.44234375000002
+        },
+        "dragging": false
+      },
+      {
+        "id": "ChatOutput-35OoO",
+        "type": "genericNode",
+        "position": {
+          "x": 1092.2077343749995,
+          "y": 59.39609375000019
+        },
+        "data": {
+          "type": "ChatOutput",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, MessageTextInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_NAME_AI, MESSAGE_SENDER_USER, MESSAGE_SENDER_AI\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Playground.\"\n    icon = \"ChatOutput\"\n    name = \"ChatOutput\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Message to be passed as output.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_AI,\n            advanced=True,\n            info=\"Type of sender.\",\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_AI,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"data_template\",\n            display_name=\"Data Template\",\n            value=\"{text}\",\n            advanced=True,\n            info=\"Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n\n    def message_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n        )\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "data_template": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "data_template",
+                "value": "{text}",
+                "display_name": "Data Template",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Message to be passed as output.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "sender": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender",
+                "value": "Machine",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Type of sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "sender_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender_name",
+                "value": "AI",
+                "display_name": "Sender Name",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Name of the sender.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "session_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "session_id",
+                "value": "",
+                "display_name": "Session ID",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "should_store_message": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "should_store_message",
+                "value": true,
+                "display_name": "Store Messages",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Store the message in the history.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "Display a chat message in the Playground.",
+            "icon": "ChatOutput",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Chat Output",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "message",
+                "display_name": "Message",
+                "method": "message_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "should_store_message",
+              "sender",
+              "sender_name",
+              "session_id",
+              "data_template"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.17"
+          },
+          "id": "ChatOutput-35OoO"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 297,
+        "positionAbsolute": {
+          "x": 1092.2077343749995,
+          "y": 59.39609375000019
+        },
+        "dragging": false
+      },
+      {
+        "id": "Prompt-ZJuSJ",
+        "type": "genericNode",
+        "position": {
+          "x": 633.1678125000001,
+          "y": 31.70609375000012
+        },
+        "data": {
+          "type": "Prompt",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.base.prompts.api_utils import process_prompt_template\nfrom axiestudio.custom import Component\nfrom axiestudio.inputs.inputs import DefaultPromptField\nfrom axiestudio.io import Output, PromptInput\nfrom axiestudio.schema.message import Message\nfrom axiestudio.template.utils import update_template_values\n\n\nclass PromptComponent(Component):\n    display_name: str = \"Prompt\"\n    description: str = \"Create a prompt template with dynamic variables.\"\n    icon = \"prompts\"\n    trace_type = \"prompt\"\n    name = \"Prompt\"\n\n    inputs = [\n        PromptInput(name=\"template\", display_name=\"Template\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Prompt Message\", name=\"prompt\", method=\"build_prompt\"),\n    ]\n\n    async def build_prompt(\n        self,\n    ) -> Message:\n        prompt = await Message.from_template_and_variables(**self._attributes)\n        self.status = prompt.text\n        return prompt\n\n    def _update_template(self, frontend_node: dict):\n        prompt_template = frontend_node[\"template\"][\"template\"][\"value\"]\n        custom_fields = frontend_node[\"custom_fields\"]\n        frontend_node_template = frontend_node[\"template\"]\n        _ = process_prompt_template(\n            template=prompt_template,\n            name=\"template\",\n            custom_fields=custom_fields,\n            frontend_node_template=frontend_node_template,\n        )\n        return frontend_node\n\n    def post_code_processing(self, new_frontend_node: dict, current_frontend_node: dict):\n        \"\"\"\n        This function is called after the code validation is done.\n        \"\"\"\n        frontend_node = super().post_code_processing(new_frontend_node, current_frontend_node)\n        template = frontend_node[\"template\"][\"template\"][\"value\"]\n        # Kept it duplicated for backwards compatibility\n        _ = process_prompt_template(\n            template=template,\n            name=\"template\",\n            custom_fields=frontend_node[\"custom_fields\"],\n            frontend_node_template=frontend_node[\"template\"],\n        )\n        # Now that template is updated, we need to grab any values that were set in the current_frontend_node\n        # and update the frontend_node with those values\n        update_template_values(new_template=frontend_node, previous_template=current_frontend_node[\"template\"])\n        return frontend_node\n\n    def _get_fallback_input(self, **kwargs):\n        return DefaultPromptField(**kwargs)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "template": {
+                "trace_as_input": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "template",
+                "value": "Texto: {text}",
+                "display_name": "Template",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "prompt",
+                "_input_type": "PromptInput"
+              },
+              "text": {
+                "field_type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "text",
+                "display_name": "text",
+                "advanced": false,
+                "input_types": [
+                  "Message",
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "type": "str"
+              }
+            },
+            "description": "Create a prompt template with dynamic variables.",
+            "icon": "prompts",
+            "is_input": null,
+            "is_output": null,
+            "is_composition": null,
+            "base_classes": [
+              "Message"
+            ],
+            "name": "",
+            "display_name": "Prompt",
+            "documentation": "",
+            "custom_fields": {
+              "template": [
+                "text"
+              ]
+            },
+            "output_types": [],
+            "full_path": null,
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "prompt",
+                "hidden": null,
+                "display_name": "Prompt Message",
+                "method": "build_prompt",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "template"
+            ],
+            "beta": false,
+            "error": null,
+            "edited": false,
+            "lf_version": "1.0.17"
+          },
+          "id": "Prompt-ZJuSJ"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 415,
+        "positionAbsolute": {
+          "x": 633.1678125000001,
+          "y": 31.70609375000012
+        },
+        "dragging": false
+      },
+      {
+        "id": "GroqModel-EAiYx",
+        "type": "genericNode",
+        "position": {
+          "x": 171.74725000000012,
+          "y": 18.78237499999996
+        },
+        "data": {
+          "type": "GroqModel",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import requests\nfrom typing import List\nfrom langchain_groq import ChatGroq\nfrom pydantic.v1 import SecretStr\n\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.field_typing import LanguageModel\nfrom axiestudio.io import DropdownInput, FloatInput, IntInput, MessageTextInput, SecretStrInput\n\n\nclass GroqModel(LCModelComponent):\n    display_name: str = \"Groq\"\n    description: str = \"Generate text using Groq.\"\n    icon = \"Groq\"\n    name = \"GroqModel\"\n\n    inputs = LCModelComponent._base_inputs + [\n        SecretStrInput(\n            name=\"groq_api_key\",\n            display_name=\"Groq API Key\",\n            info=\"API key for the Groq API.\",\n        ),\n        MessageTextInput(\n            name=\"groq_api_base\",\n            display_name=\"Groq API Base\",\n            info=\"Base URL path for API requests, leave blank if not using a proxy or service emulator.\",\n            advanced=True,\n            value=\"https://api.groq.com\",\n        ),\n        IntInput(\n            name=\"max_tokens\",\n            display_name=\"Max Output Tokens\",\n            info=\"The maximum number of tokens to generate.\",\n            advanced=True,\n        ),\n        FloatInput(\n            name=\"temperature\",\n            display_name=\"Temperature\",\n            info=\"Run inference with this temperature. Must by in the closed interval [0.0, 1.0].\",\n            value=0.1,\n        ),\n        IntInput(\n            name=\"n\",\n            display_name=\"N\",\n            info=\"Number of chat completions to generate for each prompt. Note that the API may not return the full n completions if duplicates are generated.\",\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"model_name\",\n            display_name=\"Model\",\n            info=\"The name of the model to use.\",\n            options=[],\n            refresh_button=True,\n        ),\n    ]\n\n    def get_models(self) -> List[str]:\n        api_key = self.groq_api_key\n        base_url = self.groq_api_base or \"https://api.groq.com\"\n        url = f\"{base_url}/openai/v1/models\"\n\n        headers = {\"Authorization\": f\"Bearer {api_key}\", \"Content-Type\": \"application/json\"}\n\n        try:\n            response = requests.get(url, headers=headers)\n            response.raise_for_status()\n            model_list = response.json()\n            return [model[\"id\"] for model in model_list.get(\"data\", [])]\n        except requests.RequestException as e:\n            self.status = f\"Error fetching models: {str(e)}\"\n            return []\n\n    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None = None):\n        if field_name == \"groq_api_key\" or field_name == \"groq_api_base\" or field_name == \"model_name\":\n            models = self.get_models()\n            build_config[\"model_name\"][\"options\"] = models\n        return build_config\n\n    def build_model(self) -> LanguageModel:  # type: ignore[type-var]\n        groq_api_key = self.groq_api_key\n        model_name = self.model_name\n        max_tokens = self.max_tokens\n        temperature = self.temperature\n        groq_api_base = self.groq_api_base\n        n = self.n\n        stream = self.stream\n\n        output = ChatGroq(  # type: ignore\n            model=model_name,\n            max_tokens=max_tokens or None,\n            temperature=temperature,\n            base_url=groq_api_base,\n            n=n or 1,\n            api_key=SecretStr(groq_api_key),\n            streaming=stream,\n        )\n\n        return output  # type: ignore\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "groq_api_base": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "groq_api_base",
+                "value": "https://api.groq.com",
+                "display_name": "Groq API Base",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Base URL path for API requests, leave blank if not using a proxy or service emulator.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "groq_api_key": {
+                "load_from_db": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "groq_api_key",
+                "value": "",
+                "display_name": "Groq API Key",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "API key for the Groq API.",
+                "title_case": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageInput"
+              },
+              "max_tokens": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_tokens",
+                "value": "",
+                "display_name": "Max Output Tokens",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The maximum number of tokens to generate.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "model_name": {
+                "trace_as_metadata": true,
+                "options": [
+                  "distil-whisper-large-v3-en",
+                  "gemma2-9b-it",
+                  "gemma-7b-it",
+                  "llama-3.1-70b-versatile",
+                  "llama-3.1-8b-instant",
+                  "llama3-70b-8192",
+                  "llama3-8b-8192",
+                  "llama3-groq-70b-8192-tool-use-preview",
+                  "llama3-groq-8b-8192-tool-use-preview",
+                  "llama-guard-3-8b",
+                  "mixtral-8x7b-32768",
+                  "whisper-large-v3"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "model_name",
+                "value": "llama3-groq-8b-8192-tool-use-preview",
+                "display_name": "Model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The name of the model to use.",
+                "refresh_button": true,
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "n": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "n",
+                "value": "",
+                "display_name": "N",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Number of chat completions to generate for each prompt. Note that the API may not return the full n completions if duplicates are generated.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "stream": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "stream",
+                "value": false,
+                "display_name": "Stream",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Stream the response from the model. Streaming works only in Chat.",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "system_message": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "system_message",
+                "value": "",
+                "display_name": "System Message",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "System message to pass to the model.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "temperature": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "temperature",
+                "value": 0.1,
+                "display_name": "Temperature",
+                "advanced": false,
+                "dynamic": false,
+                "info": "Run inference with this temperature. Must by in the closed interval [0.0, 1.0].",
+                "title_case": false,
+                "type": "float",
+                "_input_type": "FloatInput"
+              }
+            },
+            "description": "Generate text using Groq.",
+            "icon": "Groq",
+            "base_classes": [
+              "LanguageModel",
+              "Message"
+            ],
+            "display_name": "Groq",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text_output",
+                "display_name": "Text",
+                "method": "text_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "LanguageModel"
+                ],
+                "selected": "LanguageModel",
+                "name": "model_output",
+                "display_name": "Language Model",
+                "method": "build_model",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "system_message",
+              "stream",
+              "groq_api_key",
+              "groq_api_base",
+              "max_tokens",
+              "temperature",
+              "n",
+              "model_name"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.17"
+          },
+          "id": "GroqModel-EAiYx"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 621,
+        "positionAbsolute": {
+          "x": 171.74725000000012,
+          "y": 18.78237499999996
+        },
+        "dragging": false
+      },
+      {
+        "id": "Memory-6ih44",
+        "type": "genericNode",
+        "position": {
+          "x": -269.6679583333337,
+          "y": 478.8610208333331
+        },
+        "data": {
+          "type": "Memory",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "memory": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "memory",
+                "value": "",
+                "display_name": "External Memory",
+                "advanced": false,
+                "input_types": [
+                  "BaseChatMessageHistory"
+                ],
+                "dynamic": false,
+                "info": "Retrieve messages from an external memory. If empty, it will use the Langflow tables.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langchain.memory import ConversationBufferMemory\n\nfrom axiestudio.custom import Component\nfrom axiestudio.field_typing import BaseChatMemory\nfrom axiestudio.helpers.data import data_to_text\nfrom axiestudio.inputs import HandleInput\nfrom axiestudio.io import DropdownInput, IntInput, MessageTextInput, MultilineInput, Output\nfrom axiestudio.memory import LCBuiltinChatMemory, get_messages\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_USER\n\n\nclass MemoryComponent(Component):\n    display_name = \"Chat Memory\"\n    description = \"Retrieves stored chat messages from Langflow tables or an external memory.\"\n    icon = \"message-square-more\"\n    name = \"Memory\"\n\n    inputs = [\n        HandleInput(\n            name=\"memory\",\n            display_name=\"External Memory\",\n            input_types=[\"BaseChatMessageHistory\"],\n            info=\"Retrieve messages from an external memory. If empty, it will use the Langflow tables.\",\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER, \"Machine and User\"],\n            value=\"Machine and User\",\n            info=\"Filter by sender type.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Filter by sender name.\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"n_messages\",\n            display_name=\"Number of Messages\",\n            value=100,\n            info=\"Number of messages to retrieve.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"order\",\n            display_name=\"Order\",\n            options=[\"Ascending\", \"Descending\"],\n            value=\"Ascending\",\n            info=\"Order of the messages.\",\n            advanced=True,\n        ),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {sender} or any other key in the message data.\",\n            value=\"{sender_name}: {text}\",\n            advanced=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Messages (Data)\", name=\"messages\", method=\"retrieve_messages\"),\n        Output(display_name=\"Messages (Text)\", name=\"messages_text\", method=\"retrieve_messages_as_text\"),\n        Output(display_name=\"Memory\", name=\"lc_memory\", method=\"build_lc_memory\"),\n    ]\n\n    def retrieve_messages(self) -> Data:\n        sender = self.sender\n        sender_name = self.sender_name\n        session_id = self.session_id\n        n_messages = self.n_messages\n        order = \"DESC\" if self.order == \"Descending\" else \"ASC\"\n\n        if sender == \"Machine and User\":\n            sender = None\n\n        if self.memory:\n            # override session_id\n            self.memory.session_id = session_id\n\n            stored = self.memory.messages\n            # langchain memories are supposed to return messages in ascending order\n            if order == \"DESC\":\n                stored = stored[::-1]\n            if n_messages:\n                stored = stored[:n_messages]\n            stored = [Message.from_lc_message(m) for m in stored]\n            if sender:\n                expected_type = MESSAGE_SENDER_AI if sender == MESSAGE_SENDER_AI else MESSAGE_SENDER_USER\n                stored = [m for m in stored if m.type == expected_type]\n        else:\n            stored = get_messages(\n                sender=sender,\n                sender_name=sender_name,\n                session_id=session_id,\n                limit=n_messages,\n                order=order,\n            )\n        self.status = stored\n        return stored\n\n    def retrieve_messages_as_text(self) -> Message:\n        stored_text = data_to_text(self.template, self.retrieve_messages())\n        self.status = stored_text\n        return Message(text=stored_text)\n\n    def build_lc_memory(self) -> BaseChatMemory:\n        if self.memory:\n            chat_memory = self.memory\n        else:\n            chat_memory = LCBuiltinChatMemory(flow_id=self.flow_id, session_id=self.session_id)\n        return ConversationBufferMemory(chat_memory=chat_memory)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "n_messages": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "n_messages",
+                "value": 100,
+                "display_name": "Number of Messages",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Number of messages to retrieve.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "order": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Ascending",
+                  "Descending"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "order",
+                "value": "Ascending",
+                "display_name": "Order",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Order of the messages.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "sender": {
+                "trace_as_metadata": true,
+                "options": [
+                  "Machine",
+                  "User",
+                  "Machine and User"
+                ],
+                "combobox": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender",
+                "value": "Machine and User",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Filter by sender type.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "DropdownInput"
+              },
+              "sender_name": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sender_name",
+                "value": "",
+                "display_name": "Sender Name",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "Filter by sender name.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "session_id": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "session_id",
+                "value": "",
+                "display_name": "Session ID",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "template": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "template",
+                "value": "{sender_name}: {text}",
+                "display_name": "Template",
+                "advanced": true,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The template to use for formatting the data. It can contain the keys {text}, {sender} or any other key in the message data.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "Retrieves stored chat messages from Langflow tables or an external memory.",
+            "icon": "message-square-more",
+            "base_classes": [
+              "BaseChatMemory",
+              "Data",
+              "Message"
+            ],
+            "display_name": "Chat Memory",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "messages",
+                "display_name": "Messages (Data)",
+                "method": "retrieve_messages",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "messages_text",
+                "display_name": "Messages (Text)",
+                "method": "retrieve_messages_as_text",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "BaseChatMemory"
+                ],
+                "selected": "BaseChatMemory",
+                "name": "lc_memory",
+                "display_name": "Memory",
+                "method": "build_lc_memory",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "memory",
+              "sender",
+              "sender_name",
+              "n_messages",
+              "session_id",
+              "order",
+              "template"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.17"
+          },
+          "id": "Memory-6ih44"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 380,
+        "positionAbsolute": {
+          "x": -269.6679583333337,
+          "y": 478.8610208333331
+        },
+        "dragging": false
+      },
+      {
+        "id": "ParseData-PsQJw",
+        "type": "genericNode",
+        "position": {
+          "x": 1114.9918072916676,
+          "y": 402.7411249999999
+        },
+        "data": {
+          "type": "ParseData",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "data": {
+                "trace_as_metadata": true,
+                "list": false,
+                "trace_as_input": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "data",
+                "value": "",
+                "display_name": "Data",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "The data to convert to text.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.helpers.data import data_to_text\nfrom axiestudio.io import DataInput, MultilineInput, Output, StrInput\nfrom axiestudio.schema.message import Message\n\n\nclass ParseDataComponent(Component):\n    display_name = \"Parse Data\"\n    description = \"Convert Data into plain text following a specified template.\"\n    icon = \"braces\"\n    name = \"ParseData\"\n\n    inputs = [\n        DataInput(name=\"data\", display_name=\"Data\", info=\"The data to convert to text.\"),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.\",\n            value=\"{text}\",\n        ),\n        StrInput(name=\"sep\", display_name=\"Separator\", advanced=True, value=\"\\n\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"parse_data\"),\n    ]\n\n    def parse_data(self) -> Message:\n        data = self.data if isinstance(self.data, list) else [self.data]\n        template = self.template\n\n        result_string = data_to_text(template, data, sep=self.sep)\n        self.status = result_string\n        return Message(text=result_string)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "sep": {
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "sep",
+                "value": "\n",
+                "display_name": "Separator",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "StrInput"
+              },
+              "template": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "template",
+                "value": "",
+                "display_name": "Template",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              }
+            },
+            "description": "Convert Data into plain text following a specified template.",
+            "icon": "braces",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Parse Data",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text",
+                "display_name": "Text",
+                "method": "parse_data",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "data",
+              "template",
+              "sep"
+            ],
+            "beta": false,
+            "edited": false,
+            "lf_version": "1.0.17"
+          },
+          "id": "ParseData-PsQJw"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 373,
+        "positionAbsolute": {
+          "x": 1114.9918072916676,
+          "y": 402.7411249999999
+        },
+        "dragging": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "GroqModel-EAiYx",
+        "sourceHandle": "{œdataTypeœ:œGroqModelœ,œidœ:œGroqModel-EAiYxœ,œnameœ:œtext_outputœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "Prompt-ZJuSJ",
+        "targetHandle": "{œfieldNameœ:œtextœ,œidœ:œPrompt-ZJuSJœ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "text",
+            "id": "Prompt-ZJuSJ",
+            "inputTypes": [
+              "Message",
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "GroqModel",
+            "id": "GroqModel-EAiYx",
+            "name": "text_output",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-GroqModel-EAiYx{œdataTypeœ:œGroqModelœ,œidœ:œGroqModel-EAiYxœ,œnameœ:œtext_outputœ,œoutput_typesœ:[œMessageœ]}-Prompt-ZJuSJ{œfieldNameœ:œtextœ,œidœ:œPrompt-ZJuSJœ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}",
+        "className": ""
+      },
+      {
+        "source": "ChatInput-wQtHU",
+        "sourceHandle": "{œdataTypeœ:œChatInputœ,œidœ:œChatInput-wQtHUœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "GroqModel-EAiYx",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œGroqModel-EAiYxœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "GroqModel-EAiYx",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "ChatInput",
+            "id": "ChatInput-wQtHU",
+            "name": "message",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-ChatInput-wQtHU{œdataTypeœ:œChatInputœ,œidœ:œChatInput-wQtHUœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-GroqModel-EAiYx{œfieldNameœ:œinput_valueœ,œidœ:œGroqModel-EAiYxœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "className": ""
+      },
+      {
+        "source": "Prompt-ZJuSJ",
+        "sourceHandle": "{œdataTypeœ:œPromptœ,œidœ:œPrompt-ZJuSJœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "ChatOutput-35OoO",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-35OoOœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "ChatOutput-35OoO",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "Prompt",
+            "id": "Prompt-ZJuSJ",
+            "name": "prompt",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-Prompt-ZJuSJ{œdataTypeœ:œPromptœ,œidœ:œPrompt-ZJuSJœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-35OoO{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-35OoOœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "className": ""
+      },
+      {
+        "source": "GroqModel-EAiYx",
+        "sourceHandle": "{œdataTypeœ:œGroqModelœ,œidœ:œGroqModel-EAiYxœ,œnameœ:œtext_outputœ,œoutput_typesœ:[œMessageœ]}",
+        "target": "ParseData-PsQJw",
+        "targetHandle": "{œfieldNameœ:œtemplateœ,œidœ:œParseData-PsQJwœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "template",
+            "id": "ParseData-PsQJw",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "dataType": "GroqModel",
+            "id": "GroqModel-EAiYx",
+            "name": "text_output",
+            "output_types": [
+              "Message"
+            ]
+          }
+        },
+        "id": "reactflow__edge-GroqModel-EAiYx{œdataTypeœ:œGroqModelœ,œidœ:œGroqModel-EAiYxœ,œnameœ:œtext_outputœ,œoutput_typesœ:[œMessageœ]}-ParseData-PsQJw{œfieldNameœ:œtemplateœ,œidœ:œParseData-PsQJwœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "className": ""
+      },
+      {
+        "source": "Memory-6ih44",
+        "sourceHandle": "{œdataTypeœ:œMemoryœ,œidœ:œMemory-6ih44œ,œnameœ:œmessagesœ,œoutput_typesœ:[œDataœ]}",
+        "target": "ParseData-PsQJw",
+        "targetHandle": "{œfieldNameœ:œdataœ,œidœ:œParseData-PsQJwœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "data",
+            "id": "ParseData-PsQJw",
+            "inputTypes": [
+              "Data"
+            ],
+            "type": "other"
+          },
+          "sourceHandle": {
+            "dataType": "Memory",
+            "id": "Memory-6ih44",
+            "name": "messages",
+            "output_types": [
+              "Data"
+            ]
+          }
+        },
+        "id": "reactflow__edge-Memory-6ih44{œdataTypeœ:œMemoryœ,œidœ:œMemory-6ih44œ,œnameœ:œmessagesœ,œoutput_typesœ:[œDataœ]}-ParseData-PsQJw{œfieldNameœ:œdataœ,œidœ:œParseData-PsQJwœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+        "className": ""
+      }
+    ],
+    "viewport": {
+      "x": 230.3818272569439,
+      "y": 10.281354166666619,
+      "zoom": 0.8333333333333334
+    }
+  },
+  "metadata": {
+    "ChatInput": {
+      "count": 1
+    },
+    "ChatOutput": {
+      "count": 1
+    },
+    "Prompt": {
+      "count": 1
+    },
+    "GroqModel": {
+      "count": 1
+    },
+    "Memory": {
+      "count": 1
+    },
+    "ParseData": {
+      "count": 1
+    },
+    "total": 6
+  },
+  "original": {
+    "id": "f806b6f0-b211-4727-a716-13d6f54a83c0",
+    "name": "Projeto_langflow_DB",
+    "description": "Text Generation Meets Business Transformation.",
+    "is_component": false,
+    "liked_by_count": "3",
+    "downloads_count": "37",
+    "metadata": {
+      "ChatInput": {
+        "count": 1
+      },
+      "ChatOutput": {
+        "count": 1
+      },
+      "Prompt": {
+        "count": 1
+      },
+      "GroqModel": {
+        "count": 1
+      },
+      "Memory": {
+        "count": 1
+      },
+      "ParseData": {
+        "count": 1
+      },
+      "total": 6
+    },
+    "last_tested_version": "1.0.17",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "ChatInput-wQtHU",
+          "type": "genericNode",
+          "position": {
+            "x": -256.0321874999999,
+            "y": 104.44234375000002
+          },
+          "data": {
+            "type": "ChatInput",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "files": {
+                  "trace_as_metadata": true,
+                  "file_path": "",
+                  "fileTypes": [
+                    "txt",
+                    "md",
+                    "mdx",
+                    "csv",
+                    "json",
+                    "yaml",
+                    "yml",
+                    "xml",
+                    "html",
+                    "htm",
+                    "pdf",
+                    "docx",
+                    "py",
+                    "sh",
+                    "sql",
+                    "js",
+                    "ts",
+                    "tsx",
+                    "jpg",
+                    "jpeg",
+                    "png",
+                    "bmp",
+                    "image"
+                  ],
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "files",
+                  "value": "",
+                  "display_name": "Files",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Files to be sent with the message.",
+                  "title_case": false,
+                  "type": "file",
+                  "_input_type": "FileInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.data.utils import IMG_FILE_TYPES, TEXT_FILE_TYPES\nfrom axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, FileInput, MessageTextInput, MultilineInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_USER, MESSAGE_SENDER_NAME_USER\n\n\nclass ChatInput(ChatComponent):\n    display_name = \"Chat Input\"\n    description = \"Get chat inputs from the Playground.\"\n    icon = \"ChatInput\"\n    name = \"ChatInput\"\n\n    inputs = [\n        MultilineInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            value=\"\",\n            info=\"Message to be passed as input.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_USER,\n            info=\"Type of sender.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_USER,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        FileInput(\n            name=\"files\",\n            display_name=\"Files\",\n            file_types=TEXT_FILE_TYPES + IMG_FILE_TYPES,\n            info=\"Files to be sent with the message.\",\n            advanced=True,\n            is_list=True,\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n\n    def message_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n            files=self.files,\n        )\n\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "Qual é a capital de istambull?",
+                  "display_name": "Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Message to be passed as input.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "sender": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Machine",
+                    "User"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender",
+                  "value": "User",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Type of sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "sender_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender_name",
+                  "value": "User",
+                  "display_name": "Sender Name",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Name of the sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "session_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "session_id",
+                  "value": "",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "should_store_message": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "should_store_message",
+                  "value": true,
+                  "display_name": "Store Messages",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Store the message in the history.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Get chat inputs from the Playground.",
+              "icon": "ChatInput",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Chat Input",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "message",
+                  "display_name": "Message",
+                  "method": "message_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "should_store_message",
+                "sender",
+                "sender_name",
+                "session_id",
+                "files"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.17"
+            },
+            "id": "ChatInput-wQtHU"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 300,
+          "positionAbsolute": {
+            "x": -256.0321874999999,
+            "y": 104.44234375000002
+          },
+          "dragging": false
+        },
+        {
+          "id": "ChatOutput-35OoO",
+          "type": "genericNode",
+          "position": {
+            "x": 1092.2077343749995,
+            "y": 59.39609375000019
+          },
+          "data": {
+            "type": "ChatOutput",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.inputs import BoolInput\nfrom axiestudio.io import DropdownInput, MessageTextInput, Output\nfrom axiestudio.memory import store_message\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_NAME_AI, MESSAGE_SENDER_USER, MESSAGE_SENDER_AI\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Playground.\"\n    icon = \"ChatOutput\"\n    name = \"ChatOutput\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"input_value\",\n            display_name=\"Text\",\n            info=\"Message to be passed as output.\",\n        ),\n        BoolInput(\n            name=\"should_store_message\",\n            display_name=\"Store Messages\",\n            info=\"Store the message in the history.\",\n            value=True,\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER],\n            value=MESSAGE_SENDER_AI,\n            advanced=True,\n            info=\"Type of sender.\",\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Name of the sender.\",\n            value=MESSAGE_SENDER_NAME_AI,\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"data_template\",\n            display_name=\"Data Template\",\n            value=\"{text}\",\n            advanced=True,\n            info=\"Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Message\", name=\"message\", method=\"message_response\"),\n    ]\n\n    def message_response(self) -> Message:\n        message = Message(\n            text=self.input_value,\n            sender=self.sender,\n            sender_name=self.sender_name,\n            session_id=self.session_id,\n        )\n        if (\n            self.session_id\n            and isinstance(message, Message)\n            and isinstance(message.text, str)\n            and self.should_store_message\n        ):\n            store_message(\n                message,\n                flow_id=self.graph.flow_id,\n            )\n            self.message.value = message\n\n        self.status = message\n        return message\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "data_template": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "data_template",
+                  "value": "{text}",
+                  "display_name": "Data Template",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Message to be passed as output.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "sender": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Machine",
+                    "User"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender",
+                  "value": "Machine",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Type of sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "sender_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender_name",
+                  "value": "AI",
+                  "display_name": "Sender Name",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Name of the sender.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "session_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "session_id",
+                  "value": "",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "should_store_message": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "should_store_message",
+                  "value": true,
+                  "display_name": "Store Messages",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Store the message in the history.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "Display a chat message in the Playground.",
+              "icon": "ChatOutput",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Chat Output",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "message",
+                  "display_name": "Message",
+                  "method": "message_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "should_store_message",
+                "sender",
+                "sender_name",
+                "session_id",
+                "data_template"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.17"
+            },
+            "id": "ChatOutput-35OoO"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 297,
+          "positionAbsolute": {
+            "x": 1092.2077343749995,
+            "y": 59.39609375000019
+          },
+          "dragging": false
+        },
+        {
+          "id": "Prompt-ZJuSJ",
+          "type": "genericNode",
+          "position": {
+            "x": 633.1678125000001,
+            "y": 31.70609375000012
+          },
+          "data": {
+            "type": "Prompt",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.base.prompts.api_utils import process_prompt_template\nfrom axiestudio.custom import Component\nfrom axiestudio.inputs.inputs import DefaultPromptField\nfrom axiestudio.io import Output, PromptInput\nfrom axiestudio.schema.message import Message\nfrom axiestudio.template.utils import update_template_values\n\n\nclass PromptComponent(Component):\n    display_name: str = \"Prompt\"\n    description: str = \"Create a prompt template with dynamic variables.\"\n    icon = \"prompts\"\n    trace_type = \"prompt\"\n    name = \"Prompt\"\n\n    inputs = [\n        PromptInput(name=\"template\", display_name=\"Template\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Prompt Message\", name=\"prompt\", method=\"build_prompt\"),\n    ]\n\n    async def build_prompt(\n        self,\n    ) -> Message:\n        prompt = await Message.from_template_and_variables(**self._attributes)\n        self.status = prompt.text\n        return prompt\n\n    def _update_template(self, frontend_node: dict):\n        prompt_template = frontend_node[\"template\"][\"template\"][\"value\"]\n        custom_fields = frontend_node[\"custom_fields\"]\n        frontend_node_template = frontend_node[\"template\"]\n        _ = process_prompt_template(\n            template=prompt_template,\n            name=\"template\",\n            custom_fields=custom_fields,\n            frontend_node_template=frontend_node_template,\n        )\n        return frontend_node\n\n    def post_code_processing(self, new_frontend_node: dict, current_frontend_node: dict):\n        \"\"\"\n        This function is called after the code validation is done.\n        \"\"\"\n        frontend_node = super().post_code_processing(new_frontend_node, current_frontend_node)\n        template = frontend_node[\"template\"][\"template\"][\"value\"]\n        # Kept it duplicated for backwards compatibility\n        _ = process_prompt_template(\n            template=template,\n            name=\"template\",\n            custom_fields=frontend_node[\"custom_fields\"],\n            frontend_node_template=frontend_node[\"template\"],\n        )\n        # Now that template is updated, we need to grab any values that were set in the current_frontend_node\n        # and update the frontend_node with those values\n        update_template_values(new_template=frontend_node, previous_template=current_frontend_node[\"template\"])\n        return frontend_node\n\n    def _get_fallback_input(self, **kwargs):\n        return DefaultPromptField(**kwargs)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "template": {
+                  "trace_as_input": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "template",
+                  "value": "Texto: {text}",
+                  "display_name": "Template",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "prompt",
+                  "_input_type": "PromptInput"
+                },
+                "text": {
+                  "field_type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "text",
+                  "display_name": "text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message",
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "type": "str"
+                }
+              },
+              "description": "Create a prompt template with dynamic variables.",
+              "icon": "prompts",
+              "is_input": null,
+              "is_output": null,
+              "is_composition": null,
+              "base_classes": [
+                "Message"
+              ],
+              "name": "",
+              "display_name": "Prompt",
+              "documentation": "",
+              "custom_fields": {
+                "template": [
+                  "text"
+                ]
+              },
+              "output_types": [],
+              "full_path": null,
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "prompt",
+                  "hidden": null,
+                  "display_name": "Prompt Message",
+                  "method": "build_prompt",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "template"
+              ],
+              "beta": false,
+              "error": null,
+              "edited": false,
+              "lf_version": "1.0.17"
+            },
+            "id": "Prompt-ZJuSJ"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 415,
+          "positionAbsolute": {
+            "x": 633.1678125000001,
+            "y": 31.70609375000012
+          },
+          "dragging": false
+        },
+        {
+          "id": "GroqModel-EAiYx",
+          "type": "genericNode",
+          "position": {
+            "x": 171.74725000000012,
+            "y": 18.78237499999996
+          },
+          "data": {
+            "type": "GroqModel",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import requests\nfrom typing import List\nfrom langchain_groq import ChatGroq\nfrom pydantic.v1 import SecretStr\n\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.field_typing import LanguageModel\nfrom axiestudio.io import DropdownInput, FloatInput, IntInput, MessageTextInput, SecretStrInput\n\n\nclass GroqModel(LCModelComponent):\n    display_name: str = \"Groq\"\n    description: str = \"Generate text using Groq.\"\n    icon = \"Groq\"\n    name = \"GroqModel\"\n\n    inputs = LCModelComponent._base_inputs + [\n        SecretStrInput(\n            name=\"groq_api_key\",\n            display_name=\"Groq API Key\",\n            info=\"API key for the Groq API.\",\n        ),\n        MessageTextInput(\n            name=\"groq_api_base\",\n            display_name=\"Groq API Base\",\n            info=\"Base URL path for API requests, leave blank if not using a proxy or service emulator.\",\n            advanced=True,\n            value=\"https://api.groq.com\",\n        ),\n        IntInput(\n            name=\"max_tokens\",\n            display_name=\"Max Output Tokens\",\n            info=\"The maximum number of tokens to generate.\",\n            advanced=True,\n        ),\n        FloatInput(\n            name=\"temperature\",\n            display_name=\"Temperature\",\n            info=\"Run inference with this temperature. Must by in the closed interval [0.0, 1.0].\",\n            value=0.1,\n        ),\n        IntInput(\n            name=\"n\",\n            display_name=\"N\",\n            info=\"Number of chat completions to generate for each prompt. Note that the API may not return the full n completions if duplicates are generated.\",\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"model_name\",\n            display_name=\"Model\",\n            info=\"The name of the model to use.\",\n            options=[],\n            refresh_button=True,\n        ),\n    ]\n\n    def get_models(self) -> List[str]:\n        api_key = self.groq_api_key\n        base_url = self.groq_api_base or \"https://api.groq.com\"\n        url = f\"{base_url}/openai/v1/models\"\n\n        headers = {\"Authorization\": f\"Bearer {api_key}\", \"Content-Type\": \"application/json\"}\n\n        try:\n            response = requests.get(url, headers=headers)\n            response.raise_for_status()\n            model_list = response.json()\n            return [model[\"id\"] for model in model_list.get(\"data\", [])]\n        except requests.RequestException as e:\n            self.status = f\"Error fetching models: {str(e)}\"\n            return []\n\n    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None = None):\n        if field_name == \"groq_api_key\" or field_name == \"groq_api_base\" or field_name == \"model_name\":\n            models = self.get_models()\n            build_config[\"model_name\"][\"options\"] = models\n        return build_config\n\n    def build_model(self) -> LanguageModel:  # type: ignore[type-var]\n        groq_api_key = self.groq_api_key\n        model_name = self.model_name\n        max_tokens = self.max_tokens\n        temperature = self.temperature\n        groq_api_base = self.groq_api_base\n        n = self.n\n        stream = self.stream\n\n        output = ChatGroq(  # type: ignore\n            model=model_name,\n            max_tokens=max_tokens or None,\n            temperature=temperature,\n            base_url=groq_api_base,\n            n=n or 1,\n            api_key=SecretStr(groq_api_key),\n            streaming=stream,\n        )\n\n        return output  # type: ignore\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "groq_api_base": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "groq_api_base",
+                  "value": "https://api.groq.com",
+                  "display_name": "Groq API Base",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Base URL path for API requests, leave blank if not using a proxy or service emulator.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "groq_api_key": {
+                  "load_from_db": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "groq_api_key",
+                  "value": "",
+                  "display_name": "Groq API Key",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "API key for the Groq API.",
+                  "title_case": false,
+                  "password": true,
+                  "type": "str",
+                  "_input_type": "SecretStrInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageInput"
+                },
+                "max_tokens": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_tokens",
+                  "value": "",
+                  "display_name": "Max Output Tokens",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The maximum number of tokens to generate.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "model_name": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "distil-whisper-large-v3-en",
+                    "gemma2-9b-it",
+                    "gemma-7b-it",
+                    "llama-3.1-70b-versatile",
+                    "llama-3.1-8b-instant",
+                    "llama3-70b-8192",
+                    "llama3-8b-8192",
+                    "llama3-groq-70b-8192-tool-use-preview",
+                    "llama3-groq-8b-8192-tool-use-preview",
+                    "llama-guard-3-8b",
+                    "mixtral-8x7b-32768",
+                    "whisper-large-v3"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "model_name",
+                  "value": "llama3-groq-8b-8192-tool-use-preview",
+                  "display_name": "Model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The name of the model to use.",
+                  "refresh_button": true,
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "n": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "n",
+                  "value": "",
+                  "display_name": "N",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Number of chat completions to generate for each prompt. Note that the API may not return the full n completions if duplicates are generated.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "stream": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "stream",
+                  "value": false,
+                  "display_name": "Stream",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Stream the response from the model. Streaming works only in Chat.",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "system_message": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "system_message",
+                  "value": "",
+                  "display_name": "System Message",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "System message to pass to the model.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "temperature": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "temperature",
+                  "value": 0.1,
+                  "display_name": "Temperature",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "Run inference with this temperature. Must by in the closed interval [0.0, 1.0].",
+                  "title_case": false,
+                  "type": "float",
+                  "_input_type": "FloatInput"
+                }
+              },
+              "description": "Generate text using Groq.",
+              "icon": "Groq",
+              "base_classes": [
+                "LanguageModel",
+                "Message"
+              ],
+              "display_name": "Groq",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text_output",
+                  "display_name": "Text",
+                  "method": "text_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "LanguageModel"
+                  ],
+                  "selected": "LanguageModel",
+                  "name": "model_output",
+                  "display_name": "Language Model",
+                  "method": "build_model",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "system_message",
+                "stream",
+                "groq_api_key",
+                "groq_api_base",
+                "max_tokens",
+                "temperature",
+                "n",
+                "model_name"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.17"
+            },
+            "id": "GroqModel-EAiYx"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 621,
+          "positionAbsolute": {
+            "x": 171.74725000000012,
+            "y": 18.78237499999996
+          },
+          "dragging": false
+        },
+        {
+          "id": "Memory-6ih44",
+          "type": "genericNode",
+          "position": {
+            "x": -269.6679583333337,
+            "y": 478.8610208333331
+          },
+          "data": {
+            "type": "Memory",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "memory": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "memory",
+                  "value": "",
+                  "display_name": "External Memory",
+                  "advanced": false,
+                  "input_types": [
+                    "BaseChatMessageHistory"
+                  ],
+                  "dynamic": false,
+                  "info": "Retrieve messages from an external memory. If empty, it will use the Langflow tables.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from langchain.memory import ConversationBufferMemory\n\nfrom axiestudio.custom import Component\nfrom axiestudio.field_typing import BaseChatMemory\nfrom axiestudio.helpers.data import data_to_text\nfrom axiestudio.inputs import HandleInput\nfrom axiestudio.io import DropdownInput, IntInput, MessageTextInput, MultilineInput, Output\nfrom axiestudio.memory import LCBuiltinChatMemory, get_messages\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.message import Message\nfrom axiestudio.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_USER\n\n\nclass MemoryComponent(Component):\n    display_name = \"Chat Memory\"\n    description = \"Retrieves stored chat messages from Langflow tables or an external memory.\"\n    icon = \"message-square-more\"\n    name = \"Memory\"\n\n    inputs = [\n        HandleInput(\n            name=\"memory\",\n            display_name=\"External Memory\",\n            input_types=[\"BaseChatMessageHistory\"],\n            info=\"Retrieve messages from an external memory. If empty, it will use the Langflow tables.\",\n        ),\n        DropdownInput(\n            name=\"sender\",\n            display_name=\"Sender Type\",\n            options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER, \"Machine and User\"],\n            value=\"Machine and User\",\n            info=\"Filter by sender type.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"sender_name\",\n            display_name=\"Sender Name\",\n            info=\"Filter by sender name.\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"n_messages\",\n            display_name=\"Number of Messages\",\n            value=100,\n            info=\"Number of messages to retrieve.\",\n            advanced=True,\n        ),\n        MessageTextInput(\n            name=\"session_id\",\n            display_name=\"Session ID\",\n            info=\"The session ID of the chat. If empty, the current session ID parameter will be used.\",\n            advanced=True,\n        ),\n        DropdownInput(\n            name=\"order\",\n            display_name=\"Order\",\n            options=[\"Ascending\", \"Descending\"],\n            value=\"Ascending\",\n            info=\"Order of the messages.\",\n            advanced=True,\n        ),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {sender} or any other key in the message data.\",\n            value=\"{sender_name}: {text}\",\n            advanced=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Messages (Data)\", name=\"messages\", method=\"retrieve_messages\"),\n        Output(display_name=\"Messages (Text)\", name=\"messages_text\", method=\"retrieve_messages_as_text\"),\n        Output(display_name=\"Memory\", name=\"lc_memory\", method=\"build_lc_memory\"),\n    ]\n\n    def retrieve_messages(self) -> Data:\n        sender = self.sender\n        sender_name = self.sender_name\n        session_id = self.session_id\n        n_messages = self.n_messages\n        order = \"DESC\" if self.order == \"Descending\" else \"ASC\"\n\n        if sender == \"Machine and User\":\n            sender = None\n\n        if self.memory:\n            # override session_id\n            self.memory.session_id = session_id\n\n            stored = self.memory.messages\n            # langchain memories are supposed to return messages in ascending order\n            if order == \"DESC\":\n                stored = stored[::-1]\n            if n_messages:\n                stored = stored[:n_messages]\n            stored = [Message.from_lc_message(m) for m in stored]\n            if sender:\n                expected_type = MESSAGE_SENDER_AI if sender == MESSAGE_SENDER_AI else MESSAGE_SENDER_USER\n                stored = [m for m in stored if m.type == expected_type]\n        else:\n            stored = get_messages(\n                sender=sender,\n                sender_name=sender_name,\n                session_id=session_id,\n                limit=n_messages,\n                order=order,\n            )\n        self.status = stored\n        return stored\n\n    def retrieve_messages_as_text(self) -> Message:\n        stored_text = data_to_text(self.template, self.retrieve_messages())\n        self.status = stored_text\n        return Message(text=stored_text)\n\n    def build_lc_memory(self) -> BaseChatMemory:\n        if self.memory:\n            chat_memory = self.memory\n        else:\n            chat_memory = LCBuiltinChatMemory(flow_id=self.flow_id, session_id=self.session_id)\n        return ConversationBufferMemory(chat_memory=chat_memory)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "n_messages": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "n_messages",
+                  "value": 100,
+                  "display_name": "Number of Messages",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Number of messages to retrieve.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "order": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Ascending",
+                    "Descending"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "order",
+                  "value": "Ascending",
+                  "display_name": "Order",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Order of the messages.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "sender": {
+                  "trace_as_metadata": true,
+                  "options": [
+                    "Machine",
+                    "User",
+                    "Machine and User"
+                  ],
+                  "combobox": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender",
+                  "value": "Machine and User",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Filter by sender type.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "DropdownInput"
+                },
+                "sender_name": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sender_name",
+                  "value": "",
+                  "display_name": "Sender Name",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "Filter by sender name.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "session_id": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "session_id",
+                  "value": "",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The session ID of the chat. If empty, the current session ID parameter will be used.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "template": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "template",
+                  "value": "{sender_name}: {text}",
+                  "display_name": "Template",
+                  "advanced": true,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The template to use for formatting the data. It can contain the keys {text}, {sender} or any other key in the message data.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "Retrieves stored chat messages from Langflow tables or an external memory.",
+              "icon": "message-square-more",
+              "base_classes": [
+                "BaseChatMemory",
+                "Data",
+                "Message"
+              ],
+              "display_name": "Chat Memory",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "messages",
+                  "display_name": "Messages (Data)",
+                  "method": "retrieve_messages",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "messages_text",
+                  "display_name": "Messages (Text)",
+                  "method": "retrieve_messages_as_text",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "BaseChatMemory"
+                  ],
+                  "selected": "BaseChatMemory",
+                  "name": "lc_memory",
+                  "display_name": "Memory",
+                  "method": "build_lc_memory",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "memory",
+                "sender",
+                "sender_name",
+                "n_messages",
+                "session_id",
+                "order",
+                "template"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.17"
+            },
+            "id": "Memory-6ih44"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 380,
+          "positionAbsolute": {
+            "x": -269.6679583333337,
+            "y": 478.8610208333331
+          },
+          "dragging": false
+        },
+        {
+          "id": "ParseData-PsQJw",
+          "type": "genericNode",
+          "position": {
+            "x": 1114.9918072916676,
+            "y": 402.7411249999999
+          },
+          "data": {
+            "type": "ParseData",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "data": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "trace_as_input": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "data",
+                  "value": "",
+                  "display_name": "Data",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "The data to convert to text.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.helpers.data import data_to_text\nfrom axiestudio.io import DataInput, MultilineInput, Output, StrInput\nfrom axiestudio.schema.message import Message\n\n\nclass ParseDataComponent(Component):\n    display_name = \"Parse Data\"\n    description = \"Convert Data into plain text following a specified template.\"\n    icon = \"braces\"\n    name = \"ParseData\"\n\n    inputs = [\n        DataInput(name=\"data\", display_name=\"Data\", info=\"The data to convert to text.\"),\n        MultilineInput(\n            name=\"template\",\n            display_name=\"Template\",\n            info=\"The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.\",\n            value=\"{text}\",\n        ),\n        StrInput(name=\"sep\", display_name=\"Separator\", advanced=True, value=\"\\n\"),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"parse_data\"),\n    ]\n\n    def parse_data(self) -> Message:\n        data = self.data if isinstance(self.data, list) else [self.data]\n        template = self.template\n\n        result_string = data_to_text(template, data, sep=self.sep)\n        self.status = result_string\n        return Message(text=result_string)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "sep": {
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "sep",
+                  "value": "\n",
+                  "display_name": "Separator",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "StrInput"
+                },
+                "template": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "template",
+                  "value": "",
+                  "display_name": "Template",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The template to use for formatting the data. It can contain the keys {text}, {data} or any other key in the Data.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                }
+              },
+              "description": "Convert Data into plain text following a specified template.",
+              "icon": "braces",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Parse Data",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text",
+                  "display_name": "Text",
+                  "method": "parse_data",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "data",
+                "template",
+                "sep"
+              ],
+              "beta": false,
+              "edited": false,
+              "lf_version": "1.0.17"
+            },
+            "id": "ParseData-PsQJw"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 373,
+          "positionAbsolute": {
+            "x": 1114.9918072916676,
+            "y": 402.7411249999999
+          },
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "source": "GroqModel-EAiYx",
+          "sourceHandle": "{œdataTypeœ:œGroqModelœ,œidœ:œGroqModel-EAiYxœ,œnameœ:œtext_outputœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "Prompt-ZJuSJ",
+          "targetHandle": "{œfieldNameœ:œtextœ,œidœ:œPrompt-ZJuSJœ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "text",
+              "id": "Prompt-ZJuSJ",
+              "inputTypes": [
+                "Message",
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "GroqModel",
+              "id": "GroqModel-EAiYx",
+              "name": "text_output",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-GroqModel-EAiYx{œdataTypeœ:œGroqModelœ,œidœ:œGroqModel-EAiYxœ,œnameœ:œtext_outputœ,œoutput_typesœ:[œMessageœ]}-Prompt-ZJuSJ{œfieldNameœ:œtextœ,œidœ:œPrompt-ZJuSJœ,œinputTypesœ:[œMessageœ,œTextœ],œtypeœ:œstrœ}",
+          "className": ""
+        },
+        {
+          "source": "ChatInput-wQtHU",
+          "sourceHandle": "{œdataTypeœ:œChatInputœ,œidœ:œChatInput-wQtHUœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "GroqModel-EAiYx",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œGroqModel-EAiYxœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "GroqModel-EAiYx",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "ChatInput",
+              "id": "ChatInput-wQtHU",
+              "name": "message",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-ChatInput-wQtHU{œdataTypeœ:œChatInputœ,œidœ:œChatInput-wQtHUœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-GroqModel-EAiYx{œfieldNameœ:œinput_valueœ,œidœ:œGroqModel-EAiYxœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "className": ""
+        },
+        {
+          "source": "Prompt-ZJuSJ",
+          "sourceHandle": "{œdataTypeœ:œPromptœ,œidœ:œPrompt-ZJuSJœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "ChatOutput-35OoO",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-35OoOœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "ChatOutput-35OoO",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "Prompt",
+              "id": "Prompt-ZJuSJ",
+              "name": "prompt",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-Prompt-ZJuSJ{œdataTypeœ:œPromptœ,œidœ:œPrompt-ZJuSJœ,œnameœ:œpromptœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-35OoO{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-35OoOœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "className": ""
+        },
+        {
+          "source": "GroqModel-EAiYx",
+          "sourceHandle": "{œdataTypeœ:œGroqModelœ,œidœ:œGroqModel-EAiYxœ,œnameœ:œtext_outputœ,œoutput_typesœ:[œMessageœ]}",
+          "target": "ParseData-PsQJw",
+          "targetHandle": "{œfieldNameœ:œtemplateœ,œidœ:œParseData-PsQJwœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "template",
+              "id": "ParseData-PsQJw",
+              "inputTypes": [
+                "Message"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "dataType": "GroqModel",
+              "id": "GroqModel-EAiYx",
+              "name": "text_output",
+              "output_types": [
+                "Message"
+              ]
+            }
+          },
+          "id": "reactflow__edge-GroqModel-EAiYx{œdataTypeœ:œGroqModelœ,œidœ:œGroqModel-EAiYxœ,œnameœ:œtext_outputœ,œoutput_typesœ:[œMessageœ]}-ParseData-PsQJw{œfieldNameœ:œtemplateœ,œidœ:œParseData-PsQJwœ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+          "className": ""
+        },
+        {
+          "source": "Memory-6ih44",
+          "sourceHandle": "{œdataTypeœ:œMemoryœ,œidœ:œMemory-6ih44œ,œnameœ:œmessagesœ,œoutput_typesœ:[œDataœ]}",
+          "target": "ParseData-PsQJw",
+          "targetHandle": "{œfieldNameœ:œdataœ,œidœ:œParseData-PsQJwœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "data",
+              "id": "ParseData-PsQJw",
+              "inputTypes": [
+                "Data"
+              ],
+              "type": "other"
+            },
+            "sourceHandle": {
+              "dataType": "Memory",
+              "id": "Memory-6ih44",
+              "name": "messages",
+              "output_types": [
+                "Data"
+              ]
+            }
+          },
+          "id": "reactflow__edge-Memory-6ih44{œdataTypeœ:œMemoryœ,œidœ:œMemory-6ih44œ,œnameœ:œmessagesœ,œoutput_typesœ:[œDataœ]}-ParseData-PsQJw{œfieldNameœ:œdataœ,œidœ:œParseData-PsQJwœ,œinputTypesœ:[œDataœ],œtypeœ:œotherœ}",
+          "className": ""
+        }
+      ],
+      "viewport": {
+        "x": 230.3818272569439,
+        "y": 10.281354166666619,
+        "zoom": 0.8333333333333334
+      }
+    },
+    "date_created": "2024-08-30T20:40:01.160Z",
+    "date_updated": "2024-08-30T20:40:01.249Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "970b4389-07f8-481c-9047-89dc5a0f901d",
+    "user_created": {
+      "username": "RafaelSantos",
+      "first_name": "Tenyears",
+      "last_name": "Aliprodutos",
+      "id": "970b4389-07f8-481c-9047-89dc5a0f901d"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Agent",
+          "id": "ccabb590-c9e8-4e56-9d6c-309955936c6c"
+        }
+      },
+      {
+        "tags_id": {
+          "name": "Memory",
+          "id": "e660a9ea-35fb-4587-bfbd-13dba4c556d1"
+        }
+      },
+      {
+        "tags_id": {
+          "name": "Chain",
+          "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+        }
+      },
+      {
+        "tags_id": {
+          "name": "Vector Store",
+          "id": "cd614b49-dd57-4c8b-a5eb-f8bb5f957b9a"
+        }
+      },
+      {
+        "tags_id": {
+          "name": "Prompt",
+          "id": "57f5c681-a1f5-4053-be33-e9525e7eb00a"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:08.164Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 70,
+    "converter_version": "1.0.0"
+  }
+}

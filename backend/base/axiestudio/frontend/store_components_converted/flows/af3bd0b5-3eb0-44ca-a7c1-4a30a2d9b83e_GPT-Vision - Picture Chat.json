@@ -1,0 +1,1343 @@
+{
+  "id": "af3bd0b5-3eb0-44ca-a7c1-4a30a2d9b83e",
+  "name": "GPT-Vision - Picture Chat",
+  "description": "This flow allows you to ask questions (prompts) about an input picture. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "joaoguilhermeS",
+    "first_name": "João",
+    "last_name": "Oliveira",
+    "id": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "full_name": "João Oliveira"
+  },
+  "store_url": "https://www.langflow.store/store/component/af3bd0b5-3eb0-44ca-a7c1-4a30a2d9b83e",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-06-05T19:50:48.584Z",
+    "updated": "2024-06-05T19:50:48.624Z",
+    "downloaded": "2025-08-19T17:50:05.124Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Prompt",
+        "id": "57f5c681-a1f5-4053-be33-e9525e7eb00a"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.0a45",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "CustomComponent-UAL6e",
+        "type": "genericNode",
+        "position": {
+          "x": 631,
+          "y": 90.99493541258127
+        },
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "uploaded_file": {
+                "type": "file",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [
+                  ".jpg",
+                  ".png",
+                  ".jpeg"
+                ],
+                "file_path": "cc223f0b-7f4e-4609-9481-7ba26659a49f/foguete2.jpeg",
+                "password": false,
+                "name": "uploaded_file",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "value": ""
+              },
+              "MaxTokens": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "MaxTokens",
+                "display_name": "MaxTokens",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "300"
+              },
+              "OpenAIKey": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "OpenAIKey",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\nimport requests\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n    \ninstall(\"openai\")\n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"GPT-Vision Input Analyser\"\n    description = \"This component process an image with a prompt by the user to produce information about the input image.\"\n    import assemblyai as aai\n    \n    def build_config(self):\n        return {\n            'uploaded_file': {\n                \"suffixes\": ['.jpg', '.png', '.jpeg'],\n                'field_type': 'file', \n                'file_types': ['jpg', 'png', 'jpeg'],\n                'required': True\n            },\n            \"model\": {\n                \"display_name\": \"model\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"gpt-4-vision-preview\",\n                ],\n            },\n            \"MaxTokens\": {\n                \"display_name\": \"MaxTokens\",\n                \"advanced\": False,\n                \"required\": True,\n                \"default\": 300,\n            },\n            \"OpenAIKey\":{\n                \"password\": True\n            }\n        }\n    \n    def build(self, uploaded_file: bytes, model: str, prompt: str, OpenAIKey: str, MaxTokens: int) -> str:\n        from openai import OpenAI\n        client = OpenAI(\n            api_key=OpenAIKey\n        )\n        \n        with open(uploaded_file, 'rb') as file:\n            file_contents = file.read()\n        b64_contents = base64.b64encode(file_contents).decode('utf-8')\n        \n        \n        headers = {\n          \"Content-Type\": \"application/json\",\n          \"Authorization\": f\"Bearer {OpenAIKey}\"\n        }\n        \n        payload = {\n        \"model\": model,\n        \"messages\": [\n            {\n              \"role\": \"user\",\n              \"content\": [\n                {\n                  \"type\": \"text\",\n                  \"text\": prompt\n                },\n                {\n                  \"type\": \"image_url\",\n                  \"image_url\": {\n                    \"url\": f\"data:image/jpeg;base64,{b64_contents}\"\n                  }\n                }\n              ]\n            }\n          ],\n          \"max_tokens\": MaxTokens\n        }\n\n        response = requests.post(\"https://api.openai.com/v1/chat/completions\", headers=headers, json=payload)\n        return str(response.json()['choices'][0]['message']['content'])",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "model": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "gpt-4-vision-preview"
+                ],
+                "name": "model",
+                "display_name": "model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "gpt-4-vision-preview"
+              },
+              "prompt": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "prompt",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "This component process an image with a prompt by the user to produce information about the input image.",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "GPT-Vision Input Analyser",
+            "documentation": "",
+            "custom_fields": {
+              "uploaded_file": null,
+              "model": null,
+              "prompt": null,
+              "OpenAIKey": null,
+              "MaxTokens": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "CustomComponent-UAL6e",
+          "description": "This component process an image with a prompt by the user to produce information about the input image.",
+          "display_name": "GPT-Vision Input Analyser"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 689,
+        "positionAbsolute": {
+          "x": 631,
+          "y": 90.99493541258127
+        },
+        "dragging": false
+      },
+      {
+        "id": "ChatInput-hLFpw",
+        "type": "genericNode",
+        "position": {
+          "x": 110.68820367190665,
+          "y": 174.10738606349244
+        },
+        "data": {
+          "type": "ChatInput",
+          "node": {
+            "template": {
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional, Union\n\nfrom axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.field_typing import Text\nfrom axiestudio.schema import Record\n\n\nclass ChatInput(ChatComponent):\n    display_name = \"Chat Input\"\n    description = \"Get chat inputs from the Playground.\"\n    icon = \"ChatInput\"\n\n    def build_config(self):\n        build_config = super().build_config()\n        build_config[\"input_value\"] = {\n            \"input_types\": [],\n            \"display_name\": \"Message\",\n            \"multiline\": True,\n        }\n\n        return build_config\n\n    def build(\n        self,\n        sender: Optional[str] = \"User\",\n        sender_name: Optional[str] = \"User\",\n        input_value: Optional[str] = None,\n        session_id: Optional[str] = None,\n        return_record: Optional[bool] = False,\n    ) -> Union[Text, Record]:\n        return super().build_no_record(\n            sender=sender,\n            sender_name=sender_name,\n            input_value=input_value,\n            session_id=session_id,\n            return_record=return_record,\n        )\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Message",
+                "advanced": false,
+                "input_types": [],
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "What do you see in this picture?"
+              },
+              "return_record": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "return_record",
+                "display_name": "Return Record",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Return the message as a record containing the sender, sender_name, and session_id.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "sender": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "User",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "name": "sender",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "sender_name": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "User",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "sender_name",
+                "display_name": "Sender Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "session_id": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "session_id",
+                "display_name": "Session ID",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If provided, the message will be stored in the memory.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Get chat inputs from the Playground.",
+            "icon": "ChatInput",
+            "base_classes": [
+              "object",
+              "Record",
+              "str",
+              "Text"
+            ],
+            "display_name": "Chat Input",
+            "documentation": "",
+            "custom_fields": {
+              "sender": null,
+              "sender_name": null,
+              "input_value": null,
+              "session_id": null,
+              "return_record": null
+            },
+            "output_types": [
+              "Text",
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "ChatInput-hLFpw"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 375,
+        "positionAbsolute": {
+          "x": 110.68820367190665,
+          "y": 174.10738606349244
+        },
+        "dragging": false
+      },
+      {
+        "id": "ChatOutput-G0LAW",
+        "type": "genericNode",
+        "position": {
+          "x": 1129.886037094721,
+          "y": 244.06578378161282
+        },
+        "data": {
+          "type": "ChatOutput",
+          "node": {
+            "template": {
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional, Union\n\nfrom axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.field_typing import Text\nfrom axiestudio.schema import Record\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Playground.\"\n    icon = \"ChatOutput\"\n\n    def build(\n        self,\n        sender: Optional[str] = \"Machine\",\n        sender_name: Optional[str] = \"AI\",\n        input_value: Optional[str] = None,\n        session_id: Optional[str] = None,\n        return_record: Optional[bool] = False,\n        record_template: Optional[str] = \"{text}\",\n    ) -> Union[Text, Record]:\n        return super().build_with_record(\n            sender=sender,\n            sender_name=sender_name,\n            input_value=input_value,\n            session_id=session_id,\n            return_record=return_record,\n            record_template=record_template or \"\",\n        )\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Message",
+                "advanced": false,
+                "input_types": [
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "record_template": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "{text}",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "record_template",
+                "display_name": "Record Template",
+                "advanced": true,
+                "dynamic": false,
+                "info": "In case of Message being a Record, this template will be used to convert it to text.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "return_record": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "return_record",
+                "display_name": "Return Record",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Return the message as a record containing the sender, sender_name, and session_id.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "sender": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "Machine",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "name": "sender",
+                "display_name": "Sender Type",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "sender_name": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "AI",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "sender_name",
+                "display_name": "Sender Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "session_id": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "session_id",
+                "display_name": "Session ID",
+                "advanced": true,
+                "dynamic": false,
+                "info": "If provided, the message will be stored in the memory.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Display a chat message in the Playground.",
+            "icon": "ChatOutput",
+            "base_classes": [
+              "object",
+              "Record",
+              "str",
+              "Text"
+            ],
+            "display_name": "Chat Output",
+            "documentation": "",
+            "custom_fields": {
+              "sender": null,
+              "sender_name": null,
+              "input_value": null,
+              "session_id": null,
+              "return_record": null,
+              "record_template": null
+            },
+            "output_types": [
+              "Text",
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false
+          },
+          "id": "ChatOutput-G0LAW"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 383,
+        "positionAbsolute": {
+          "x": 1129.886037094721,
+          "y": 244.06578378161282
+        },
+        "dragging": false
+      }
+    ],
+    "edges": [
+      {
+        "source": "ChatInput-hLFpw",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œRecordœ,œstrœ,œTextœ],œdataTypeœ:œChatInputœ,œidœ:œChatInput-hLFpwœ}",
+        "target": "CustomComponent-UAL6e",
+        "targetHandle": "{œfieldNameœ:œpromptœ,œidœ:œCustomComponent-UAL6eœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "prompt",
+            "id": "CustomComponent-UAL6e",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "Record",
+              "str",
+              "Text"
+            ],
+            "dataType": "ChatInput",
+            "id": "ChatInput-hLFpw"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-foreground stroke-connection",
+        "id": "reactflow__edge-ChatInput-hLFpw{œbaseClassesœ:[œobjectœ,œRecordœ,œstrœ,œTextœ],œdataTypeœ:œChatInputœ,œidœ:œChatInput-hLFpwœ}-CustomComponent-UAL6e{œfieldNameœ:œpromptœ,œidœ:œCustomComponent-UAL6eœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+      },
+      {
+        "source": "CustomComponent-UAL6e",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-UAL6eœ}",
+        "target": "ChatOutput-G0LAW",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-G0LAWœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "ChatOutput-G0LAW",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "CustomComponent",
+            "id": "CustomComponent-UAL6e"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-foreground stroke-connection",
+        "id": "reactflow__edge-CustomComponent-UAL6e{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-UAL6eœ}-ChatOutput-G0LAW{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-G0LAWœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+      }
+    ],
+    "viewport": {
+      "x": 63.307780461000334,
+      "y": 95.44156780026651,
+      "zoom": 0.7290046894082893
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "ChatInput": {
+      "count": 1
+    },
+    "ChatOutput": {
+      "count": 1
+    },
+    "total": 3
+  },
+  "original": {
+    "id": "af3bd0b5-3eb0-44ca-a7c1-4a30a2d9b83e",
+    "name": "GPT-Vision - Picture Chat",
+    "description": "This flow allows you to ask questions (prompts) about an input picture.",
+    "is_component": false,
+    "liked_by_count": "21",
+    "downloads_count": "231",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "ChatInput": {
+        "count": 1
+      },
+      "ChatOutput": {
+        "count": 1
+      },
+      "total": 3
+    },
+    "last_tested_version": "1.0.0a45",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "CustomComponent-UAL6e",
+          "type": "genericNode",
+          "position": {
+            "x": 631,
+            "y": 90.99493541258127
+          },
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "uploaded_file": {
+                  "type": "file",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [
+                    ".jpg",
+                    ".png",
+                    ".jpeg"
+                  ],
+                  "file_path": "cc223f0b-7f4e-4609-9481-7ba26659a49f/foguete2.jpeg",
+                  "password": false,
+                  "name": "uploaded_file",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": ""
+                },
+                "MaxTokens": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "MaxTokens",
+                  "display_name": "MaxTokens",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "300"
+                },
+                "OpenAIKey": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "OpenAIKey",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\nimport requests\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n    \ninstall(\"openai\")\n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"GPT-Vision Input Analyser\"\n    description = \"This component process an image with a prompt by the user to produce information about the input image.\"\n    import assemblyai as aai\n    \n    def build_config(self):\n        return {\n            'uploaded_file': {\n                \"suffixes\": ['.jpg', '.png', '.jpeg'],\n                'field_type': 'file', \n                'file_types': ['jpg', 'png', 'jpeg'],\n                'required': True\n            },\n            \"model\": {\n                \"display_name\": \"model\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"gpt-4-vision-preview\",\n                ],\n            },\n            \"MaxTokens\": {\n                \"display_name\": \"MaxTokens\",\n                \"advanced\": False,\n                \"required\": True,\n                \"default\": 300,\n            },\n            \"OpenAIKey\":{\n                \"password\": True\n            }\n        }\n    \n    def build(self, uploaded_file: bytes, model: str, prompt: str, OpenAIKey: str, MaxTokens: int) -> str:\n        from openai import OpenAI\n        client = OpenAI(\n            api_key=OpenAIKey\n        )\n        \n        with open(uploaded_file, 'rb') as file:\n            file_contents = file.read()\n        b64_contents = base64.b64encode(file_contents).decode('utf-8')\n        \n        \n        headers = {\n          \"Content-Type\": \"application/json\",\n          \"Authorization\": f\"Bearer {OpenAIKey}\"\n        }\n        \n        payload = {\n        \"model\": model,\n        \"messages\": [\n            {\n              \"role\": \"user\",\n              \"content\": [\n                {\n                  \"type\": \"text\",\n                  \"text\": prompt\n                },\n                {\n                  \"type\": \"image_url\",\n                  \"image_url\": {\n                    \"url\": f\"data:image/jpeg;base64,{b64_contents}\"\n                  }\n                }\n              ]\n            }\n          ],\n          \"max_tokens\": MaxTokens\n        }\n\n        response = requests.post(\"https://api.openai.com/v1/chat/completions\", headers=headers, json=payload)\n        return str(response.json()['choices'][0]['message']['content'])",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "model": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "gpt-4-vision-preview"
+                  ],
+                  "name": "model",
+                  "display_name": "model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "gpt-4-vision-preview"
+                },
+                "prompt": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "prompt",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "This component process an image with a prompt by the user to produce information about the input image.",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "GPT-Vision Input Analyser",
+              "documentation": "",
+              "custom_fields": {
+                "uploaded_file": null,
+                "model": null,
+                "prompt": null,
+                "OpenAIKey": null,
+                "MaxTokens": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "CustomComponent-UAL6e",
+            "description": "This component process an image with a prompt by the user to produce information about the input image.",
+            "display_name": "GPT-Vision Input Analyser"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 689,
+          "positionAbsolute": {
+            "x": 631,
+            "y": 90.99493541258127
+          },
+          "dragging": false
+        },
+        {
+          "id": "ChatInput-hLFpw",
+          "type": "genericNode",
+          "position": {
+            "x": 110.68820367190665,
+            "y": 174.10738606349244
+          },
+          "data": {
+            "type": "ChatInput",
+            "node": {
+              "template": {
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional, Union\n\nfrom axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.field_typing import Text\nfrom axiestudio.schema import Record\n\n\nclass ChatInput(ChatComponent):\n    display_name = \"Chat Input\"\n    description = \"Get chat inputs from the Playground.\"\n    icon = \"ChatInput\"\n\n    def build_config(self):\n        build_config = super().build_config()\n        build_config[\"input_value\"] = {\n            \"input_types\": [],\n            \"display_name\": \"Message\",\n            \"multiline\": True,\n        }\n\n        return build_config\n\n    def build(\n        self,\n        sender: Optional[str] = \"User\",\n        sender_name: Optional[str] = \"User\",\n        input_value: Optional[str] = None,\n        session_id: Optional[str] = None,\n        return_record: Optional[bool] = False,\n    ) -> Union[Text, Record]:\n        return super().build_no_record(\n            sender=sender,\n            sender_name=sender_name,\n            input_value=input_value,\n            session_id=session_id,\n            return_record=return_record,\n        )\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Message",
+                  "advanced": false,
+                  "input_types": [],
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "What do you see in this picture?"
+                },
+                "return_record": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "return_record",
+                  "display_name": "Return Record",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Return the message as a record containing the sender, sender_name, and session_id.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "sender": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "User",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Machine",
+                    "User"
+                  ],
+                  "name": "sender",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "sender_name": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "User",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "sender_name",
+                  "display_name": "Sender Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "session_id": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "session_id",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If provided, the message will be stored in the memory.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Get chat inputs from the Playground.",
+              "icon": "ChatInput",
+              "base_classes": [
+                "object",
+                "Record",
+                "str",
+                "Text"
+              ],
+              "display_name": "Chat Input",
+              "documentation": "",
+              "custom_fields": {
+                "sender": null,
+                "sender_name": null,
+                "input_value": null,
+                "session_id": null,
+                "return_record": null
+              },
+              "output_types": [
+                "Text",
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "ChatInput-hLFpw"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 375,
+          "positionAbsolute": {
+            "x": 110.68820367190665,
+            "y": 174.10738606349244
+          },
+          "dragging": false
+        },
+        {
+          "id": "ChatOutput-G0LAW",
+          "type": "genericNode",
+          "position": {
+            "x": 1129.886037094721,
+            "y": 244.06578378161282
+          },
+          "data": {
+            "type": "ChatOutput",
+            "node": {
+              "template": {
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional, Union\n\nfrom axiestudio.base.io.chat import ChatComponent\nfrom axiestudio.field_typing import Text\nfrom axiestudio.schema import Record\n\n\nclass ChatOutput(ChatComponent):\n    display_name = \"Chat Output\"\n    description = \"Display a chat message in the Playground.\"\n    icon = \"ChatOutput\"\n\n    def build(\n        self,\n        sender: Optional[str] = \"Machine\",\n        sender_name: Optional[str] = \"AI\",\n        input_value: Optional[str] = None,\n        session_id: Optional[str] = None,\n        return_record: Optional[bool] = False,\n        record_template: Optional[str] = \"{text}\",\n    ) -> Union[Text, Record]:\n        return super().build_with_record(\n            sender=sender,\n            sender_name=sender_name,\n            input_value=input_value,\n            session_id=session_id,\n            return_record=return_record,\n            record_template=record_template or \"\",\n        )\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Message",
+                  "advanced": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "record_template": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "{text}",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "record_template",
+                  "display_name": "Record Template",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "In case of Message being a Record, this template will be used to convert it to text.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "return_record": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "return_record",
+                  "display_name": "Return Record",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Return the message as a record containing the sender, sender_name, and session_id.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "sender": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "Machine",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "Machine",
+                    "User"
+                  ],
+                  "name": "sender",
+                  "display_name": "Sender Type",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "sender_name": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "AI",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "sender_name",
+                  "display_name": "Sender Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "session_id": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "session_id",
+                  "display_name": "Session ID",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "If provided, the message will be stored in the memory.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Display a chat message in the Playground.",
+              "icon": "ChatOutput",
+              "base_classes": [
+                "object",
+                "Record",
+                "str",
+                "Text"
+              ],
+              "display_name": "Chat Output",
+              "documentation": "",
+              "custom_fields": {
+                "sender": null,
+                "sender_name": null,
+                "input_value": null,
+                "session_id": null,
+                "return_record": null,
+                "record_template": null
+              },
+              "output_types": [
+                "Text",
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false
+            },
+            "id": "ChatOutput-G0LAW"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 383,
+          "positionAbsolute": {
+            "x": 1129.886037094721,
+            "y": 244.06578378161282
+          },
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "source": "ChatInput-hLFpw",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œRecordœ,œstrœ,œTextœ],œdataTypeœ:œChatInputœ,œidœ:œChatInput-hLFpwœ}",
+          "target": "CustomComponent-UAL6e",
+          "targetHandle": "{œfieldNameœ:œpromptœ,œidœ:œCustomComponent-UAL6eœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "prompt",
+              "id": "CustomComponent-UAL6e",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "Record",
+                "str",
+                "Text"
+              ],
+              "dataType": "ChatInput",
+              "id": "ChatInput-hLFpw"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-foreground stroke-connection",
+          "id": "reactflow__edge-ChatInput-hLFpw{œbaseClassesœ:[œobjectœ,œRecordœ,œstrœ,œTextœ],œdataTypeœ:œChatInputœ,œidœ:œChatInput-hLFpwœ}-CustomComponent-UAL6e{œfieldNameœ:œpromptœ,œidœ:œCustomComponent-UAL6eœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+        },
+        {
+          "source": "CustomComponent-UAL6e",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-UAL6eœ}",
+          "target": "ChatOutput-G0LAW",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-G0LAWœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "ChatOutput-G0LAW",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "CustomComponent",
+              "id": "CustomComponent-UAL6e"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-foreground stroke-connection",
+          "id": "reactflow__edge-CustomComponent-UAL6e{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-UAL6eœ}-ChatOutput-G0LAW{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-G0LAWœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}"
+        }
+      ],
+      "viewport": {
+        "x": 63.307780461000334,
+        "y": 95.44156780026651,
+        "zoom": 0.7290046894082893
+      }
+    },
+    "date_created": "2024-06-05T19:50:48.584Z",
+    "date_updated": "2024-06-05T19:50:48.624Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "94b2e207-1a44-4905-856c-4f5a69c168ce",
+    "user_created": {
+      "username": "joaoguilhermeS",
+      "first_name": "João",
+      "last_name": "Oliveira",
+      "id": "94b2e207-1a44-4905-856c-4f5a69c168ce"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Prompt",
+          "id": "57f5c681-a1f5-4053-be33-e9525e7eb00a"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:03.887Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 18,
+    "converter_version": "1.0.0"
+  }
+}

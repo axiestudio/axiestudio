@@ -1,0 +1,355 @@
+{
+  "id": "29f238e7-7da9-4105-a0af-4229b9416ced",
+  "name": "Semantic Router",
+  "description": "Selects best matching category based on semantic similarity of input text. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "jt9986",
+    "first_name": "Jordan",
+    "last_name": "Thompson",
+    "id": "4a8d64a1-e802-4a45-ab01-fbf0a0ea9151",
+    "full_name": "Jordan Thompson"
+  },
+  "store_url": "https://www.langflow.store/store/component/29f238e7-7da9-4105-a0af-4229b9416ced",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-08T15:03:21.108Z",
+    "updated": "2024-10-08T15:07:42.300Z",
+    "downloaded": "2025-08-19T17:50:07.515Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "SemanticRouter",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "embedding_model": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "embedding_model",
+                "value": "",
+                "display_name": "Embedding Model",
+                "advanced": false,
+                "input_types": [
+                  "Embeddings"
+                ],
+                "dynamic": false,
+                "info": "The embedding model to use for generating embeddings.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "categories": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "categories",
+                "value": [
+                  "book",
+                  "worm"
+                ],
+                "display_name": "topics",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "List of topics/categories to score.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List\nfrom axiestudio.custom import Component\nfrom axiestudio.io import HandleInput, StrInput, Output, MessageTextInput\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.message import Message\nimport numpy as np\n\nclass SemanticRouterComponent(Component):\n    display_name = \"Semantic Router\"\n    description = \"Selects best matching category based on semantic similarity of input text.\"\n    icon = \"shapes\"\n    name = \"SemanticRouter\"\n\n    inputs = [\n        HandleInput(\n            name=\"embedding_model\",\n            display_name=\"Embedding Model\",\n            info=\"The embedding model to use for generating embeddings.\",\n            input_types=[\"Embeddings\"],\n        ),\n        MessageTextInput(\n            name=\"input_text\",\n            display_name=\"Input Text\",\n            info=\"The text to test semantics.\",\n        ),\n        MessageTextInput(\n            name=\"categories\",\n            display_name=\"topics\",\n            info=\"List of topics/categories to score.\",\n            is_list=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"route\"),\n    ]\n\n    def embed_texts(self, texts: List[str]) -> np.ndarray:\n        \"\"\"Embed a list of texts using the specified embeddings model.\"\"\"\n        embeddings = self.embedding_model.embed_documents(texts or [])\n        return np.array(embeddings)\n\n    def embed_text(self, text: str) -> np.ndarray:\n        \"\"\"Embed a single text using the specified embeddings model.\"\"\"\n        embedding = self.embedding_model.embed_query(text)\n        return np.array(embedding)\n\n    def calculate_cosine_similarity(self, query_embedding: np.ndarray, target_embeddings: np.ndarray) -> np.ndarray:\n        \"\"\"Calculate cosine similarity between a query embedding and a list of target embeddings.\"\"\"\n        # Normalize the embeddings\n        target_embeddings_norm = target_embeddings / np.linalg.norm(target_embeddings, axis=1, keepdims=True)\n        query_embedding_norm = query_embedding / np.linalg.norm(query_embedding)\n        # Compute cosine similarities\n        return np.dot(target_embeddings_norm, query_embedding_norm)\n\n    def get_best_match(self, similarities: np.ndarray) -> int:\n        \"\"\"Return the index of the highest cosine similarity.\"\"\"\n        return np.argmax(similarities)\n\n    def route(self) -> Message:\n        \"\"\"Determine the best matching category for the input text.\"\"\"\n        embedding_model = self.embedding_model\n        input_text = self.input_text\n        categories = self.categories\n\n        # Embed the categories\n        category_embeddings = self.embed_texts(categories)\n        # Embed the input text\n        input_embedding = self.embed_text(input_text)\n\n        # Calculate cosine similarities\n        similarities = self.calculate_cosine_similarity(input_embedding, category_embeddings)\n\n        # Get the index of the highest similarity\n        best_match_index = self.get_best_match(similarities)\n\n        # Get the winning category\n        winning_category = categories[best_match_index]\n\n        # Update the component's status\n        self.status = {\n            'winning_category': winning_category,\n            'similarities': similarities.tolist(),\n            'input_text': input_text,\n            'categories': categories\n        }\n        print(winning_category)\n\n        return Message(text=winning_category)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_text": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_text",
+                "value": "scroll",
+                "display_name": "Input Text",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The text to test semantics.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Selects best matching category based on semantic similarity of input text.",
+            "icon": "shapes",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Semantic Router",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text",
+                "display_name": "Text",
+                "method": "route",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "embedding_model",
+              "input_text",
+              "categories"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-Qjq3b"
+        },
+        "id": "CustomComponent-Qjq3b",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "29f238e7-7da9-4105-a0af-4229b9416ced",
+    "name": "Semantic Router",
+    "description": "Selects best matching category based on semantic similarity of input text.",
+    "is_component": true,
+    "liked_by_count": "6",
+    "downloads_count": "95",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "SemanticRouter",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "embedding_model": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "embedding_model",
+                  "value": "",
+                  "display_name": "Embedding Model",
+                  "advanced": false,
+                  "input_types": [
+                    "Embeddings"
+                  ],
+                  "dynamic": false,
+                  "info": "The embedding model to use for generating embeddings.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "categories": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "categories",
+                  "value": [
+                    "book",
+                    "worm"
+                  ],
+                  "display_name": "topics",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "List of topics/categories to score.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List\nfrom axiestudio.custom import Component\nfrom axiestudio.io import HandleInput, StrInput, Output, MessageTextInput\nfrom axiestudio.schema import Data\nfrom axiestudio.schema.message import Message\nimport numpy as np\n\nclass SemanticRouterComponent(Component):\n    display_name = \"Semantic Router\"\n    description = \"Selects best matching category based on semantic similarity of input text.\"\n    icon = \"shapes\"\n    name = \"SemanticRouter\"\n\n    inputs = [\n        HandleInput(\n            name=\"embedding_model\",\n            display_name=\"Embedding Model\",\n            info=\"The embedding model to use for generating embeddings.\",\n            input_types=[\"Embeddings\"],\n        ),\n        MessageTextInput(\n            name=\"input_text\",\n            display_name=\"Input Text\",\n            info=\"The text to test semantics.\",\n        ),\n        MessageTextInput(\n            name=\"categories\",\n            display_name=\"topics\",\n            info=\"List of topics/categories to score.\",\n            is_list=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Text\", name=\"text\", method=\"route\"),\n    ]\n\n    def embed_texts(self, texts: List[str]) -> np.ndarray:\n        \"\"\"Embed a list of texts using the specified embeddings model.\"\"\"\n        embeddings = self.embedding_model.embed_documents(texts or [])\n        return np.array(embeddings)\n\n    def embed_text(self, text: str) -> np.ndarray:\n        \"\"\"Embed a single text using the specified embeddings model.\"\"\"\n        embedding = self.embedding_model.embed_query(text)\n        return np.array(embedding)\n\n    def calculate_cosine_similarity(self, query_embedding: np.ndarray, target_embeddings: np.ndarray) -> np.ndarray:\n        \"\"\"Calculate cosine similarity between a query embedding and a list of target embeddings.\"\"\"\n        # Normalize the embeddings\n        target_embeddings_norm = target_embeddings / np.linalg.norm(target_embeddings, axis=1, keepdims=True)\n        query_embedding_norm = query_embedding / np.linalg.norm(query_embedding)\n        # Compute cosine similarities\n        return np.dot(target_embeddings_norm, query_embedding_norm)\n\n    def get_best_match(self, similarities: np.ndarray) -> int:\n        \"\"\"Return the index of the highest cosine similarity.\"\"\"\n        return np.argmax(similarities)\n\n    def route(self) -> Message:\n        \"\"\"Determine the best matching category for the input text.\"\"\"\n        embedding_model = self.embedding_model\n        input_text = self.input_text\n        categories = self.categories\n\n        # Embed the categories\n        category_embeddings = self.embed_texts(categories)\n        # Embed the input text\n        input_embedding = self.embed_text(input_text)\n\n        # Calculate cosine similarities\n        similarities = self.calculate_cosine_similarity(input_embedding, category_embeddings)\n\n        # Get the index of the highest similarity\n        best_match_index = self.get_best_match(similarities)\n\n        # Get the winning category\n        winning_category = categories[best_match_index]\n\n        # Update the component's status\n        self.status = {\n            'winning_category': winning_category,\n            'similarities': similarities.tolist(),\n            'input_text': input_text,\n            'categories': categories\n        }\n        print(winning_category)\n\n        return Message(text=winning_category)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_text": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_text",
+                  "value": "scroll",
+                  "display_name": "Input Text",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The text to test semantics.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Selects best matching category based on semantic similarity of input text.",
+              "icon": "shapes",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Semantic Router",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text",
+                  "display_name": "Text",
+                  "method": "route",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "embedding_model",
+                "input_text",
+                "categories"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-Qjq3b"
+          },
+          "id": "CustomComponent-Qjq3b",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-10-08T15:03:21.108Z",
+    "date_updated": "2024-10-08T15:07:42.300Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "4a8d64a1-e802-4a45-ab01-fbf0a0ea9151",
+    "user_created": {
+      "username": "jt9986",
+      "first_name": "Jordan",
+      "last_name": "Thompson",
+      "id": "4a8d64a1-e802-4a45-ab01-fbf0a0ea9151"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:09.356Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

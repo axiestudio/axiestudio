@@ -1,0 +1,278 @@
+name: 'Build and Release AxieStudio Desktop'
+run-name: 'Build AxieStudio Desktop v${{ inputs.version || github.run_number }} by @${{ github.actor }}'
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.5.0)'
+        required: false
+        type: string
+      pre_release:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+      skip_build:
+        description: 'Skip build (for testing workflow)'
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches:
+      - master
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.github/workflows/docs_*.yml'
+      - '.github/workflows/deploy-docs-*.yml'
+      - 'axiestudio/docker/**'
+      - 'axiestudio/scripts/**'
+  pull_request:
+    branches:
+      - master
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+
+env:
+  # Code signing disabled for initial setup - enable later when ready
+  # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+  # TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+  # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+  # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+  # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+  # APPLE_ID: ${{ secrets.APPLE_ID }}
+  # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+  # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+jobs:
+  get-version:
+    name: Get Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      app-version: ${{ steps.get-app-version.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get version from input or generate
+        id: get-version
+        run: |
+          if [[ "${{ inputs.version }}" != "" ]]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "Using input version: ${{ inputs.version }}"
+          else
+            version="v1.5.${{ github.run_number }}"
+            echo "version=$version" >> $GITHUB_OUTPUT
+            echo "Generated version: $version"
+          fi
+
+      - name: Get app version from package.json
+        id: get-app-version
+        run: |
+          app_version=$(jq -r '.version' axiestudio/src/frontend/package.json)
+          echo "version=$app_version" >> $GITHUB_OUTPUT
+          echo "App version from package.json: $app_version"
+
+  build-tauri:
+    name: Build ${{ matrix.platform }}
+    needs: get-version
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS builds
+          - platform: 'macos-latest'
+            args: '--target aarch64-apple-darwin'
+            target: 'aarch64-apple-darwin'
+            arch: 'arm64'
+            os: 'macOS'
+          - platform: 'macos-latest'
+            args: '--target x86_64-apple-darwin'
+            target: 'x86_64-apple-darwin'
+            arch: 'x64'
+            os: 'macOS'
+          # Linux builds
+          - platform: 'ubuntu-22.04'
+            args: ''
+            target: 'x86_64-unknown-linux-gnu'
+            arch: 'x64'
+            os: 'Linux'
+          # Windows builds
+          - platform: 'windows-latest'
+            args: ''
+            target: 'x86_64-pc-windows-msvc'
+            arch: 'x64'
+            os: 'Windows'
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Free up disk space (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          echo "Cleaning up disk space..."
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo apt-get clean
+          df -h
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            libxdo-dev \
+            libssl-dev \
+            libasound2-dev \
+            libxss1 \
+            libnss3-dev \
+            libgconf-2-4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          cache-dependency-path: 'axiestudio/src/frontend/package-lock.json'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || matrix.target }}
+          components: rustfmt, clippy
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './axiestudio/src-tauri -> target'
+          cache-on-failure: true
+
+      - name: Install frontend dependencies
+        working-directory: ./axiestudio/src/frontend
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Build frontend
+        working-directory: ./axiestudio/src/frontend
+        run: npm run build
+
+      - name: Create placeholder icons (temporary)
+        run: |
+          mkdir -p axiestudio/src-tauri/icons
+          # Create minimal placeholder icons for build
+          echo "Creating placeholder icons..."
+          # This is temporary - replace with actual icons
+          touch axiestudio/src-tauri/icons/32x32.png
+          touch axiestudio/src-tauri/icons/128x128.png
+          touch axiestudio/src-tauri/icons/128x128@2x.png
+          touch axiestudio/src-tauri/icons/icon.icns
+          touch axiestudio/src-tauri/icons/icon.ico
+
+      - name: Build Tauri application
+        if: ${{ !inputs.skip_build }}
+        uses: tauri-apps/tauri-action@v0.5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Code signing disabled for initial setup - apps will be unsigned but functional
+          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          projectPath: './axiestudio'
+          tagName: ${{ needs.get-version.outputs.version }}
+          releaseName: 'AxieStudio Desktop ${{ needs.get-version.outputs.version }}'
+          releaseBody: |
+            # AxieStudio Desktop ${{ needs.get-version.outputs.version }}
+
+            🎉 **New Desktop Release of AxieStudio!**
+
+            AxieStudio is now available as a native desktop application for Windows, macOS, and Linux!
+
+            ## 📦 Downloads
+
+            ### Windows
+            - **`.msi`** - Windows Installer (Recommended)
+            - **`.exe`** - Portable executable
+
+            ### macOS
+            - **`.dmg`** - macOS Disk Image (Universal: Intel + Apple Silicon)
+            - **`.app.tar.gz`** - macOS Application Bundle
+
+            ### Linux
+            - **`.AppImage`** - Universal Linux Application (Recommended)
+            - **`.deb`** - Debian/Ubuntu Package
+            - **`.rpm`** - Red Hat/Fedora Package
+
+            ## ✨ Features
+            - 🚀 **Native Performance** - Faster than web version
+            - 🔒 **Enhanced Security** - Sandboxed environment
+            - 💾 **Offline Capability** - Work without internet
+            - 🎨 **Native UI** - Platform-specific look and feel
+            - 🔄 **Auto-Updates** - Stay up to date automatically
+
+            ## 🛠️ Technical Details
+            - **Frontend Version**: ${{ needs.get-version.outputs.app-version }}
+            - **Tauri Version**: 2.0
+            - **Build**: ${{ github.run_number }}
+            - **Commit**: ${{ github.sha }}
+
+            ## 📋 System Requirements
+
+            ### Windows
+            - Windows 10 version 1903 or later
+            - WebView2 runtime (auto-installed)
+
+            ### macOS
+            - macOS 10.15 (Catalina) or later
+            - Both Intel and Apple Silicon supported
+
+            ### Linux
+            - Modern Linux distribution
+            - GTK 3.24+ and WebKitGTK 2.40+
+
+            ---
+
+            **Full Changelog**: https://github.com/axiestudio/axiestudio/compare/previous...current
+          releaseDraft: ${{ github.event_name == 'pull_request' }}
+          prerelease: ${{ inputs.pre_release || false }}
+          args: ${{ matrix.args }}
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: false
+
+      - name: Upload build artifacts
+        if: ${{ !inputs.skip_build }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-artifacts-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            axiestudio/src-tauri/target/release/bundle/
+            !axiestudio/src-tauri/target/release/bundle/**/*.dSYM/
+          retention-days: 30

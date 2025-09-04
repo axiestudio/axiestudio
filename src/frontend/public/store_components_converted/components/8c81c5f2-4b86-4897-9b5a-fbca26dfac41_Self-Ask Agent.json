@@ -1,0 +1,525 @@
+{
+  "id": "8c81c5f2-4b86-4897-9b5a-fbca26dfac41",
+  "name": "Self-Ask Agent",
+  "description": "The Self-Ask Agent implements an approach where the agent asks itself follow-up questions to break down complex tasks, clarify its own understanding, and guide its reasoning process before providing a final answer. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "misbah",
+    "first_name": "Menlo Park Lab",
+    "last_name": "Lab",
+    "id": "8ca3c638-244a-4d41-ae61-bc145776bd63",
+    "full_name": "Menlo Park Lab Lab"
+  },
+  "store_url": "https://www.langflow.store/store/component/8c81c5f2-4b86-4897-9b5a-fbca26dfac41",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-11T22:57:47.672Z",
+    "updated": "2024-09-11T22:57:47.723Z",
+    "downloaded": "2025-08-19T17:50:06.864Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Self-Ask Agent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "llm": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "llm",
+                "value": "",
+                "display_name": "Language Model",
+                "advanced": false,
+                "input_types": [
+                  "LanguageModel"
+                ],
+                "dynamic": false,
+                "info": "An LLM Model Object.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "tools": {
+                "trace_as_metadata": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "tools",
+                "value": "",
+                "display_name": "Tools",
+                "advanced": false,
+                "input_types": [
+                  "Tool",
+                  "BaseTool"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput",
+                "load_from_db": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, Output, BoolInput\nfrom axiestudio.schema import Data\nfrom axiestudio.field_typing import AgentExecutor\n\nfrom typing import List, Tuple, Union\nimport os\n\nfrom langchain.agents import AgentExecutor, create_self_ask_with_search_agent\nfrom langchain_openai import OpenAI\nfrom langchain_core.prompts import PromptTemplate\n\nfrom axiestudio.base.agents.agent import LCAgentComponent\n\nclass SelfAskAgent(LCToolsAgentComponent):\n    display_name = \"Self-Ask Agent\"\n    description = \"The Self-Ask Agent implements an approach where the agent asks itself follow-up questions to break down complex tasks, clarify its own understanding, and guide its reasoning process before providing a final answer.\"\n    documentation: str = \"https://python.langchain.com/v0.1/docs/modules/agents/agent_types/self_ask_with_search/\"\n    icon = \"LangChain\"\n    name = \"Self-Ask Agent\"\n\n    inputs = LCToolsAgentComponent._base_inputs + [\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True, info=\"An LLM Model Object.\"),\n        MessageTextInput(name=\"input_value\", display_name=\"Input Value\", value=\"Hello, World!\", info=\"User Input Value\"),\n        MultilineInput(\n            name=\"prompt_template\", display_name=\"Prompt\", info=\"The prompt template. It must contain the'input' key.\", value=\"Question: Who lived longer, Muhammad Ali or Alan Turing?\\nAre follow up questions needed here: Yes.\\nFollow up: How old was Muhammad Ali when he died?\\nIntermediate answer: Muhammad Ali was 74 years old when he died.\\nFollow up: How old was Alan Turing when he died?\\nIntermediate answer: Alan Turing was 41 years old when he died.\\nSo the final answer is: Muhammad Ali\\n\\nQuestion: When was the founder of craigslist born?\\nAre follow up questions needed here: Yes.\\nFollow up: Who was the founder of craigslist?\\nIntermediate answer: Craigslist was founded by Craig Newmark.\\nFollow up: When was Craig Newmark born?\\nIntermediate answer: Craig Newmark was born on December 6, 1952.\\nSo the final answer is: December 6, 1952\\n\\nQuestion: Who was the maternal grandfather of George Washington?\\nAre follow up questions needed here: Yes.\\nFollow up: Who was the mother of George Washington?\\nIntermediate answer: The mother of George Washington was Mary Ball Washington.\\nFollow up: Who was the father of Mary Ball Washington?\\nIntermediate answer: The father of Mary Ball Washington was Joseph Ball.\\nSo the final answer is: Joseph Ball\\n\\nQuestion: Are both the directors of Jaws and Casino Royale from the same country?\\nAre follow up questions needed here: Yes.\\nFollow up: Who is the director of Jaws?\\nIntermediate answer: The director of Jaws is Steven Spielberg.\\nFollow up: Where is Steven Spielberg from?\\nIntermediate answer: The United States.\\nFollow up: Who is the director of Casino Royale?\\nIntermediate answer: The director of Casino Royale is Martin Campbell.\\nFollow up: Where is Martin Campbell from?\\nIntermediate answer: New Zealand.\\nSo the final answer is: No\\n\\nQuestion: {input}\\nAre followup questions needed here:{agent_scratchpad}\"\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Response\", name=\"response\", method=\"build_agent_response\"),\n        Output(display_name=\"Agent\", name=\"agent\", method=\"build_agent\"),\n    ]\n\n    def build_agent_response(self) -> Message:\n        tools = []\n        for tool in self.tools:\n            tool.name = \"Intermediate Answer\"\n            tools.append(tool)\n        \n        prompt = PromptTemplate(\n            input_variables = [\"tools\", \"tool_names\", \"input\", \"agent_scratchpad\"],\n            template=self.prompt_template\n        )\n        \n        agent = create_self_ask_with_search_agent(self.llm, tools, prompt)\n        agent_executor = AgentExecutor(agent=agent, tools=self.tools, verbose=self.verbose, max_iterations=self.max_iterations, handle_parsing_errors=self.handle_parsing_errors)\n        output_agent = agent_executor.invoke({\"input\": self.input_value})[\"output\"]\n        self.status = Message(text=output_agent)\n        return Message(text=output_agent)\n    \n    def build_agent(self) -> AgentExecutor:\n        tools = []\n        for tool in self.tools:\n            tool.name = \"Intermediate Answer\"\n            tools.append(tool)\n        \n        prompt = PromptTemplate(\n            input_variables = [\"tools\", \"tool_names\", \"input\", \"agent_scratchpad\"],\n            template=self.prompt_template\n        )\n        \n        agent = create_self_ask_with_search_agent(self.llm, tools, prompt)\n        agent_executor = AgentExecutor(agent=agent, tools=self.tools, verbose=self.verbose, max_iterations=self.max_iterations, handle_parsing_errors=self.handle_parsing_errors)\n        return agent_executor\n        ",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "handle_parsing_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "handle_parsing_errors",
+                "value": true,
+                "display_name": "Handle Parse Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input Value",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "User Input Value",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "max_iterations": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_iterations",
+                "value": 30,
+                "display_name": "Max Iterations",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "prompt_template": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "prompt_template",
+                "value": "Question: Who lived longer, Muhammad Ali or Alan Turing?\nAre follow up questions needed here: Yes.\nFollow up: How old was Muhammad Ali when he died?\nIntermediate answer: Muhammad Ali was 74 years old when he died.\nFollow up: How old was Alan Turing when he died?\nIntermediate answer: Alan Turing was 41 years old when he died.\nSo the final answer is: Muhammad Ali\n\nQuestion: When was the founder of craigslist born?\nAre follow up questions needed here: Yes.\nFollow up: Who was the founder of craigslist?\nIntermediate answer: Craigslist was founded by Craig Newmark.\nFollow up: When was Craig Newmark born?\nIntermediate answer: Craig Newmark was born on December 6, 1952.\nSo the final answer is: December 6, 1952\n\nQuestion: Who was the maternal grandfather of George Washington?\nAre follow up questions needed here: Yes.\nFollow up: Who was the mother of George Washington?\nIntermediate answer: The mother of George Washington was Mary Ball Washington.\nFollow up: Who was the father of Mary Ball Washington?\nIntermediate answer: The father of Mary Ball Washington was Joseph Ball.\nSo the final answer is: Joseph Ball\n\nQuestion: Are both the directors of Jaws and Casino Royale from the same country?\nAre follow up questions needed here: Yes.\nFollow up: Who is the director of Jaws?\nIntermediate answer: The director of Jaws is Steven Spielberg.\nFollow up: Where is Steven Spielberg from?\nIntermediate answer: The United States.\nFollow up: Who is the director of Casino Royale?\nIntermediate answer: The director of Casino Royale is Martin Campbell.\nFollow up: Where is Martin Campbell from?\nIntermediate answer: New Zealand.\nSo the final answer is: No\n\nQuestion: {input}\nAre follow up questions needed here: {agent_scratchpad}",
+                "display_name": "Prompt",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The prompt template. It must contain the'input' key.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "verbose": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "verbose",
+                "value": true,
+                "display_name": "Verbose",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              }
+            },
+            "description": "The Self-Ask Agent implements an approach where the agent asks itself follow-up questions to break down complex tasks, clarify its own understanding, and guide its reasoning process before providing a final answer.",
+            "icon": "LangChain",
+            "base_classes": [
+              "AgentExecutor",
+              "Message"
+            ],
+            "display_name": "Self-Ask Agent",
+            "documentation": "https://python.langchain.com/v0.1/docs/modules/agents/agent_types/self_ask_with_search/",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "response",
+                "display_name": "Response",
+                "method": "build_agent_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "AgentExecutor"
+                ],
+                "selected": "AgentExecutor",
+                "name": "agent",
+                "display_name": "Agent",
+                "method": "build_agent",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "handle_parsing_errors",
+              "verbose",
+              "max_iterations",
+              "tools",
+              "llm",
+              "input_value",
+              "prompt_template"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.16",
+            "official": false
+          },
+          "id": "Self-Ask Agent-ByAS9"
+        },
+        "id": "Self-Ask Agent-ByAS9",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Self": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "8c81c5f2-4b86-4897-9b5a-fbca26dfac41",
+    "name": "Self-Ask Agent",
+    "description": "The Self-Ask Agent implements an approach where the agent asks itself follow-up questions to break down complex tasks, clarify its own understanding, and guide its reasoning process before providing a final answer.",
+    "is_component": true,
+    "liked_by_count": "22",
+    "downloads_count": "148",
+    "metadata": {
+      "Self": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Self-Ask Agent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "llm": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "llm",
+                  "value": "",
+                  "display_name": "Language Model",
+                  "advanced": false,
+                  "input_types": [
+                    "LanguageModel"
+                  ],
+                  "dynamic": false,
+                  "info": "An LLM Model Object.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "tools": {
+                  "trace_as_metadata": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "tools",
+                  "value": "",
+                  "display_name": "Tools",
+                  "advanced": false,
+                  "input_types": [
+                    "Tool",
+                    "BaseTool"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput",
+                  "load_from_db": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, Output, BoolInput\nfrom axiestudio.schema import Data\nfrom axiestudio.field_typing import AgentExecutor\n\nfrom typing import List, Tuple, Union\nimport os\n\nfrom langchain.agents import AgentExecutor, create_self_ask_with_search_agent\nfrom langchain_openai import OpenAI\nfrom langchain_core.prompts import PromptTemplate\n\nfrom axiestudio.base.agents.agent import LCAgentComponent\n\nclass SelfAskAgent(LCToolsAgentComponent):\n    display_name = \"Self-Ask Agent\"\n    description = \"The Self-Ask Agent implements an approach where the agent asks itself follow-up questions to break down complex tasks, clarify its own understanding, and guide its reasoning process before providing a final answer.\"\n    documentation: str = \"https://python.langchain.com/v0.1/docs/modules/agents/agent_types/self_ask_with_search/\"\n    icon = \"LangChain\"\n    name = \"Self-Ask Agent\"\n\n    inputs = LCToolsAgentComponent._base_inputs + [\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True, info=\"An LLM Model Object.\"),\n        MessageTextInput(name=\"input_value\", display_name=\"Input Value\", value=\"Hello, World!\", info=\"User Input Value\"),\n        MultilineInput(\n            name=\"prompt_template\", display_name=\"Prompt\", info=\"The prompt template. It must contain the'input' key.\", value=\"Question: Who lived longer, Muhammad Ali or Alan Turing?\\nAre follow up questions needed here: Yes.\\nFollow up: How old was Muhammad Ali when he died?\\nIntermediate answer: Muhammad Ali was 74 years old when he died.\\nFollow up: How old was Alan Turing when he died?\\nIntermediate answer: Alan Turing was 41 years old when he died.\\nSo the final answer is: Muhammad Ali\\n\\nQuestion: When was the founder of craigslist born?\\nAre follow up questions needed here: Yes.\\nFollow up: Who was the founder of craigslist?\\nIntermediate answer: Craigslist was founded by Craig Newmark.\\nFollow up: When was Craig Newmark born?\\nIntermediate answer: Craig Newmark was born on December 6, 1952.\\nSo the final answer is: December 6, 1952\\n\\nQuestion: Who was the maternal grandfather of George Washington?\\nAre follow up questions needed here: Yes.\\nFollow up: Who was the mother of George Washington?\\nIntermediate answer: The mother of George Washington was Mary Ball Washington.\\nFollow up: Who was the father of Mary Ball Washington?\\nIntermediate answer: The father of Mary Ball Washington was Joseph Ball.\\nSo the final answer is: Joseph Ball\\n\\nQuestion: Are both the directors of Jaws and Casino Royale from the same country?\\nAre follow up questions needed here: Yes.\\nFollow up: Who is the director of Jaws?\\nIntermediate answer: The director of Jaws is Steven Spielberg.\\nFollow up: Where is Steven Spielberg from?\\nIntermediate answer: The United States.\\nFollow up: Who is the director of Casino Royale?\\nIntermediate answer: The director of Casino Royale is Martin Campbell.\\nFollow up: Where is Martin Campbell from?\\nIntermediate answer: New Zealand.\\nSo the final answer is: No\\n\\nQuestion: {input}\\nAre followup questions needed here:{agent_scratchpad}\"\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Response\", name=\"response\", method=\"build_agent_response\"),\n        Output(display_name=\"Agent\", name=\"agent\", method=\"build_agent\"),\n    ]\n\n    def build_agent_response(self) -> Message:\n        tools = []\n        for tool in self.tools:\n            tool.name = \"Intermediate Answer\"\n            tools.append(tool)\n        \n        prompt = PromptTemplate(\n            input_variables = [\"tools\", \"tool_names\", \"input\", \"agent_scratchpad\"],\n            template=self.prompt_template\n        )\n        \n        agent = create_self_ask_with_search_agent(self.llm, tools, prompt)\n        agent_executor = AgentExecutor(agent=agent, tools=self.tools, verbose=self.verbose, max_iterations=self.max_iterations, handle_parsing_errors=self.handle_parsing_errors)\n        output_agent = agent_executor.invoke({\"input\": self.input_value})[\"output\"]\n        self.status = Message(text=output_agent)\n        return Message(text=output_agent)\n    \n    def build_agent(self) -> AgentExecutor:\n        tools = []\n        for tool in self.tools:\n            tool.name = \"Intermediate Answer\"\n            tools.append(tool)\n        \n        prompt = PromptTemplate(\n            input_variables = [\"tools\", \"tool_names\", \"input\", \"agent_scratchpad\"],\n            template=self.prompt_template\n        )\n        \n        agent = create_self_ask_with_search_agent(self.llm, tools, prompt)\n        agent_executor = AgentExecutor(agent=agent, tools=self.tools, verbose=self.verbose, max_iterations=self.max_iterations, handle_parsing_errors=self.handle_parsing_errors)\n        return agent_executor\n        ",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "handle_parsing_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "handle_parsing_errors",
+                  "value": true,
+                  "display_name": "Handle Parse Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input Value",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "User Input Value",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "max_iterations": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_iterations",
+                  "value": 30,
+                  "display_name": "Max Iterations",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "prompt_template": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "prompt_template",
+                  "value": "Question: Who lived longer, Muhammad Ali or Alan Turing?\nAre follow up questions needed here: Yes.\nFollow up: How old was Muhammad Ali when he died?\nIntermediate answer: Muhammad Ali was 74 years old when he died.\nFollow up: How old was Alan Turing when he died?\nIntermediate answer: Alan Turing was 41 years old when he died.\nSo the final answer is: Muhammad Ali\n\nQuestion: When was the founder of craigslist born?\nAre follow up questions needed here: Yes.\nFollow up: Who was the founder of craigslist?\nIntermediate answer: Craigslist was founded by Craig Newmark.\nFollow up: When was Craig Newmark born?\nIntermediate answer: Craig Newmark was born on December 6, 1952.\nSo the final answer is: December 6, 1952\n\nQuestion: Who was the maternal grandfather of George Washington?\nAre follow up questions needed here: Yes.\nFollow up: Who was the mother of George Washington?\nIntermediate answer: The mother of George Washington was Mary Ball Washington.\nFollow up: Who was the father of Mary Ball Washington?\nIntermediate answer: The father of Mary Ball Washington was Joseph Ball.\nSo the final answer is: Joseph Ball\n\nQuestion: Are both the directors of Jaws and Casino Royale from the same country?\nAre follow up questions needed here: Yes.\nFollow up: Who is the director of Jaws?\nIntermediate answer: The director of Jaws is Steven Spielberg.\nFollow up: Where is Steven Spielberg from?\nIntermediate answer: The United States.\nFollow up: Who is the director of Casino Royale?\nIntermediate answer: The director of Casino Royale is Martin Campbell.\nFollow up: Where is Martin Campbell from?\nIntermediate answer: New Zealand.\nSo the final answer is: No\n\nQuestion: {input}\nAre follow up questions needed here: {agent_scratchpad}",
+                  "display_name": "Prompt",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The prompt template. It must contain the'input' key.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "verbose": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "verbose",
+                  "value": true,
+                  "display_name": "Verbose",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                }
+              },
+              "description": "The Self-Ask Agent implements an approach where the agent asks itself follow-up questions to break down complex tasks, clarify its own understanding, and guide its reasoning process before providing a final answer.",
+              "icon": "LangChain",
+              "base_classes": [
+                "AgentExecutor",
+                "Message"
+              ],
+              "display_name": "Self-Ask Agent",
+              "documentation": "https://python.langchain.com/v0.1/docs/modules/agents/agent_types/self_ask_with_search/",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "response",
+                  "display_name": "Response",
+                  "method": "build_agent_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "AgentExecutor"
+                  ],
+                  "selected": "AgentExecutor",
+                  "name": "agent",
+                  "display_name": "Agent",
+                  "method": "build_agent",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "handle_parsing_errors",
+                "verbose",
+                "max_iterations",
+                "tools",
+                "llm",
+                "input_value",
+                "prompt_template"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.16",
+              "official": false
+            },
+            "id": "Self-Ask Agent-ByAS9"
+          },
+          "id": "Self-Ask Agent-ByAS9",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-11T22:57:47.672Z",
+    "date_updated": "2024-09-11T22:57:47.723Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "8ca3c638-244a-4d41-ae61-bc145776bd63",
+    "user_created": {
+      "username": "misbah",
+      "first_name": "Menlo Park Lab",
+      "last_name": "Lab",
+      "id": "8ca3c638-244a-4d41-ae61-bc145776bd63"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:10.982Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

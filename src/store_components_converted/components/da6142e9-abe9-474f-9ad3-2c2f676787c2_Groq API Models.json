@@ -1,0 +1,383 @@
+{
+  "id": "da6142e9-abe9-474f-9ad3-2c2f676787c2",
+  "name": "Groq API Models",
+  "description": "This component uses Groq API to do predictions using LPU - Language Processing Units. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "or",
+    "first_name": "or",
+    "last_name": "en",
+    "id": "f276b474-8db7-4049-9887-d547610bf7a8",
+    "full_name": "or en"
+  },
+  "store_url": "https://www.langflow.store/store/component/da6142e9-abe9-474f-9ad3-2c2f676787c2",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-06-16T10:12:37.942Z",
+    "updated": "2024-06-16T10:12:37.967Z",
+    "downloaded": "2025-08-19T17:50:05.644Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "0.6.19",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "GroqAPIKey": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "GroqAPIKey",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "Input": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "Input",
+                "display_name": "Input",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "Model": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "llama3-8b-8192",
+                  "llama3-70b-8192",
+                  "mixtral-8x7b-32768",
+                  "gemma-7b-it"
+                ],
+                "name": "Model",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "llama3-70b-8192"
+              },
+              "Stream": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": true,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "Stream",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nfrom fastapi.responses import StreamingResponse\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"groq\")\n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"Groq API Component for LLM Models Usage with LPUs.\"\n    description = \"This component uses Groq API to do predictions using LPU - Language Processing Units.\"\n    import assemblyai as aai\n    \n    def build_config(self):\n        return {\n            \"Input\": {\n                \"required\": True,\n                \"display_name\": \"Input\"\n            },\n            \"GroqAPIKey\":{\n                \"password\": True\n            },\n            \"Model\":{\n                \"options\":[\n                    \"llama3-8b-8192\",\n                    \"llama3-70b-8192\",\n                    \"mixtral-8x7b-32768\",\n                    \"gemma-7b-it\"\n                ],\n            },\n            \"Stream\":{\n                \"required\": False\n            }\n        }\n    \n    def build(self, Input: str, GroqAPIKey: str, Model: str, Stream: bool) -> str:\n        def install(package):\n            subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n            return 1\n        install(\"groq\")\n        import os\n        from groq import Groq\n        \n        if(Stream == True):\n            client = Groq(\n                api_key=GroqAPIKey,\n            )\n            \n            chat_completion = client.chat.completions.create(\n                messages=[\n                    {\n                        \"role\": \"user\",\n                        \"content\": str(Input),\n                    }\n                ],\n                model=str(Model),\n                stream=True\n            )\n            \n            for chunk in chat_completion:\n                print(f\"chunk = {chunk}\")\n                if chunk.choices[0].delta.content is not None:\n                    print(chunk.choices[0].delta.content, end='')\n                    yield chunk.choices[0].delta.content\n            \n            return \"\"\n            \n        else:\n            client = Groq(\n                api_key=GroqAPIKey,\n            )\n            \n            chat_completion = client.chat.completions.create(\n                messages=[\n                    {\n                        \"role\": \"user\",\n                        \"content\": str(Input),\n                    }\n                ],\n                model=Model,\n            )\n            \n            yield (chat_completion.choices[0].message.content)",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "This component uses Groq API to do predictions using LPU - Language Processing Units.",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "Groq API Models",
+            "documentation": "",
+            "custom_fields": {
+              "Input": null,
+              "GroqAPIKey": null,
+              "Model": null,
+              "Stream": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-OoKxb",
+          "description": "This component uses Groq API to do predictions using LPU - Language Processing Units.",
+          "display_name": "Groq API Models"
+        },
+        "id": "CustomComponent-OoKxb",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "da6142e9-abe9-474f-9ad3-2c2f676787c2",
+    "name": "Groq API Models",
+    "description": "This component uses Groq API to do predictions using LPU - Language Processing Units.",
+    "is_component": true,
+    "liked_by_count": "0",
+    "downloads_count": "0",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "0.6.19",
+    "private": true,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "GroqAPIKey": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "GroqAPIKey",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "Input": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "Input",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "Model": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "llama3-8b-8192",
+                    "llama3-70b-8192",
+                    "mixtral-8x7b-32768",
+                    "gemma-7b-it"
+                  ],
+                  "name": "Model",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "llama3-70b-8192"
+                },
+                "Stream": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": true,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "Stream",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nfrom fastapi.responses import StreamingResponse\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"groq\")\n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"Groq API Component for LLM Models Usage with LPUs.\"\n    description = \"This component uses Groq API to do predictions using LPU - Language Processing Units.\"\n    import assemblyai as aai\n    \n    def build_config(self):\n        return {\n            \"Input\": {\n                \"required\": True,\n                \"display_name\": \"Input\"\n            },\n            \"GroqAPIKey\":{\n                \"password\": True\n            },\n            \"Model\":{\n                \"options\":[\n                    \"llama3-8b-8192\",\n                    \"llama3-70b-8192\",\n                    \"mixtral-8x7b-32768\",\n                    \"gemma-7b-it\"\n                ],\n            },\n            \"Stream\":{\n                \"required\": False\n            }\n        }\n    \n    def build(self, Input: str, GroqAPIKey: str, Model: str, Stream: bool) -> str:\n        def install(package):\n            subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n            return 1\n        install(\"groq\")\n        import os\n        from groq import Groq\n        \n        if(Stream == True):\n            client = Groq(\n                api_key=GroqAPIKey,\n            )\n            \n            chat_completion = client.chat.completions.create(\n                messages=[\n                    {\n                        \"role\": \"user\",\n                        \"content\": str(Input),\n                    }\n                ],\n                model=str(Model),\n                stream=True\n            )\n            \n            for chunk in chat_completion:\n                print(f\"chunk = {chunk}\")\n                if chunk.choices[0].delta.content is not None:\n                    print(chunk.choices[0].delta.content, end='')\n                    yield chunk.choices[0].delta.content\n            \n            return \"\"\n            \n        else:\n            client = Groq(\n                api_key=GroqAPIKey,\n            )\n            \n            chat_completion = client.chat.completions.create(\n                messages=[\n                    {\n                        \"role\": \"user\",\n                        \"content\": str(Input),\n                    }\n                ],\n                model=Model,\n            )\n            \n            yield (chat_completion.choices[0].message.content)",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "This component uses Groq API to do predictions using LPU - Language Processing Units.",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "Groq API Models",
+              "documentation": "",
+              "custom_fields": {
+                "Input": null,
+                "GroqAPIKey": null,
+                "Model": null,
+                "Stream": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-OoKxb",
+            "description": "This component uses Groq API to do predictions using LPU - Language Processing Units.",
+            "display_name": "Groq API Models"
+          },
+          "id": "CustomComponent-OoKxb",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-06-16T10:12:37.942Z",
+    "date_updated": "2024-06-16T10:12:37.967Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "f276b474-8db7-4049-9887-d547610bf7a8",
+    "user_created": {
+      "username": "or",
+      "first_name": "or",
+      "last_name": "en",
+      "id": "f276b474-8db7-4049-9887-d547610bf7a8"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:12.078Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 6,
+    "converter_version": "1.0.0"
+  }
+}

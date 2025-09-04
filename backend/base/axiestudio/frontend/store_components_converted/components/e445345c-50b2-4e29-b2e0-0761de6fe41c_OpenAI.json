@@ -1,0 +1,675 @@
+{
+  "id": "e445345c-50b2-4e29-b2e0-0761de6fe41c",
+  "name": "OpenAI",
+  "description": "Generates text using OpenAI LLMs. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "iguuuu",
+    "first_name": "Igor",
+    "last_name": "Carvalho",
+    "id": "30c42bd5-6e68-4b08-9347-1a6a9310fb36",
+    "full_name": "Igor Carvalho"
+  },
+  "store_url": "https://www.langflow.store/store/component/e445345c-50b2-4e29-b2e0-0761de6fe41c",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-07-12T22:54:47.285Z",
+    "updated": "2024-07-12T22:54:47.334Z",
+    "downloaded": "2025-08-19T17:50:05.959Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Chain",
+        "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.9",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "id": "OpenAIModel-L8Fkc",
+          "node": {
+            "base_classes": [
+              "LanguageModel",
+              "Message"
+            ],
+            "beta": false,
+            "conditional_paths": [],
+            "custom_fields": {},
+            "description": "Generates text using OpenAI LLMs.",
+            "display_name": "OpenAI",
+            "documentation": "",
+            "edited": false,
+            "field_order": [
+              "input_value",
+              "max_tokens",
+              "model_kwargs",
+              "json_mode",
+              "output_schema",
+              "model_name",
+              "openai_api_base",
+              "openai_api_key",
+              "temperature",
+              "stream",
+              "system_message",
+              "seed"
+            ],
+            "frozen": false,
+            "icon": "OpenAI",
+            "output_types": [],
+            "outputs": [
+              {
+                "cache": true,
+                "display_name": "Text",
+                "hidden": false,
+                "method": "text_response",
+                "name": "text_output",
+                "selected": "Message",
+                "types": [
+                  "Message"
+                ],
+                "value": "__UNDEFINED__"
+              },
+              {
+                "cache": true,
+                "display_name": "Language Model",
+                "method": "build_model",
+                "name": "model_output",
+                "selected": "LanguageModel",
+                "types": [
+                  "LanguageModel"
+                ],
+                "value": "__UNDEFINED__"
+              }
+            ],
+            "pinned": false,
+            "template": {
+              "_type": "Component",
+              "code": {
+                "advanced": true,
+                "dynamic": true,
+                "fileTypes": [],
+                "file_path": "",
+                "info": "",
+                "list": false,
+                "load_from_db": false,
+                "multiline": true,
+                "name": "code",
+                "password": false,
+                "placeholder": "",
+                "required": true,
+                "show": true,
+                "title_case": false,
+                "type": "code",
+                "value": "import operator\nfrom functools import reduce\n\nfrom langchain_openai import ChatOpenAI\nfrom pydantic.v1 import SecretStr\n\nfrom axiestudio.base.constants import STREAM_INFO_TEXT\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.base.models.openai_constants import MODEL_NAMES\nfrom axiestudio.field_typing import LanguageModel\nfrom axiestudio.inputs import (\n    BoolInput,\n    DictInput,\n    DropdownInput,\n    FloatInput,\n    IntInput,\n    MessageInput,\n    SecretStrInput,\n    StrInput,\n)\n\n\nclass OpenAIModelComponent(LCModelComponent):\n    display_name = \"OpenAI\"\n    description = \"Generates text using OpenAI LLMs.\"\n    icon = \"OpenAI\"\n\n    inputs = [\n        MessageInput(name=\"input_value\", display_name=\"Input\"),\n        IntInput(\n            name=\"max_tokens\",\n            display_name=\"Max Tokens\",\n            advanced=True,\n            info=\"The maximum number of tokens to generate. Set to 0 for unlimited tokens.\",\n        ),\n        DictInput(name=\"model_kwargs\", display_name=\"Model Kwargs\", advanced=True),\n        BoolInput(\n            name=\"json_mode\",\n            display_name=\"JSON Mode\",\n            advanced=True,\n            info=\"If True, it will output JSON regardless of passing a schema.\",\n        ),\n        DictInput(\n            name=\"output_schema\",\n            is_list=True,\n            display_name=\"Schema\",\n            advanced=True,\n            info=\"The schema for the Output of the model. You must pass the word JSON in the prompt. If left blank, JSON mode will be disabled.\",\n        ),\n        DropdownInput(\n            name=\"model_name\", display_name=\"Model Name\", advanced=False, options=MODEL_NAMES, value=MODEL_NAMES[0]\n        ),\n        StrInput(\n            name=\"openai_api_base\",\n            display_name=\"OpenAI API Base\",\n            advanced=True,\n            info=\"The base URL of the OpenAI API. Defaults to https://api.openai.com/v1. You can change this to use other APIs like JinaChat, LocalAI and Prem.\",\n        ),\n        SecretStrInput(\n            name=\"openai_api_key\",\n            display_name=\"OpenAI API Key\",\n            info=\"The OpenAI API Key to use for the OpenAI model.\",\n            advanced=False,\n            value=\"OPENAI_API_KEY\",\n        ),\n        FloatInput(name=\"temperature\", display_name=\"Temperature\", value=0.1),\n        BoolInput(name=\"stream\", display_name=\"Stream\", info=STREAM_INFO_TEXT, advanced=True),\n        StrInput(\n            name=\"system_message\",\n            display_name=\"System Message\",\n            info=\"System message to pass to the model.\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"seed\",\n            display_name=\"Seed\",\n            info=\"The seed controls the reproducibility of the job.\",\n            advanced=True,\n            value=1,\n        ),\n    ]\n\n    def build_model(self) -> LanguageModel:  # type: ignore[type-var]\n        # self.output_schea is a list of dictionarie s\n        # let's convert it to a dictionary\n        output_schema_dict: dict[str, str] = reduce(operator.ior, self.output_schema or {}, {})\n        openai_api_key = self.openai_api_key\n        temperature = self.temperature\n        model_name: str = self.model_name\n        max_tokens = self.max_tokens\n        model_kwargs = self.model_kwargs or {}\n        openai_api_base = self.openai_api_base or \"https://api.openai.com/v1\"\n        json_mode = bool(output_schema_dict) or self.json_mode\n        seed = self.seed\n        model_kwargs[\"seed\"] = seed\n\n        if openai_api_key:\n            api_key = SecretStr(openai_api_key)\n        else:\n            api_key = None\n        output = ChatOpenAI(\n            max_tokens=max_tokens or None,\n            model_kwargs=model_kwargs,\n            model=model_name,\n            base_url=openai_api_base,\n            api_key=api_key,\n            temperature=temperature or 0.1,\n        )\n        if json_mode:\n            if output_schema_dict:\n                output = output.with_structured_output(schema=output_schema_dict, method=\"json_mode\")  # type: ignore\n            else:\n                output = output.bind(response_format={\"type\": \"json_object\"})  # type: ignore\n\n        return output  # type: ignore\n\n    def _get_exception_message(self, e: Exception):\n        \"\"\"\n        Get a message from an OpenAI exception.\n\n        Args:\n            exception (Exception): The exception to get the message from.\n\n        Returns:\n            str: The message from the exception.\n        \"\"\"\n\n        try:\n            from openai import BadRequestError\n        except ImportError:\n            return\n        if isinstance(e, BadRequestError):\n            message = e.body.get(\"message\")  # type: ignore\n            if message:\n                return message\n        return\n"
+              },
+              "input_value": {
+                "advanced": false,
+                "display_name": "Input",
+                "dynamic": false,
+                "info": "",
+                "input_types": [
+                  "Message"
+                ],
+                "list": false,
+                "load_from_db": false,
+                "name": "input_value",
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": ""
+              },
+              "json_mode": {
+                "advanced": true,
+                "display_name": "JSON Mode",
+                "dynamic": false,
+                "info": "If True, it will output JSON regardless of passing a schema.",
+                "list": false,
+                "name": "json_mode",
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_metadata": true,
+                "type": "bool",
+                "value": false
+              },
+              "max_tokens": {
+                "advanced": true,
+                "display_name": "Max Tokens",
+                "dynamic": false,
+                "info": "The maximum number of tokens to generate. Set to 0 for unlimited tokens.",
+                "list": false,
+                "name": "max_tokens",
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_metadata": true,
+                "type": "int",
+                "value": ""
+              },
+              "model_kwargs": {
+                "advanced": true,
+                "display_name": "Model Kwargs",
+                "dynamic": false,
+                "info": "",
+                "list": false,
+                "name": "model_kwargs",
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_input": true,
+                "type": "dict",
+                "value": {}
+              },
+              "model_name": {
+                "advanced": false,
+                "display_name": "Model Name",
+                "dynamic": false,
+                "info": "",
+                "name": "model_name",
+                "options": [
+                  "gpt-4o",
+                  "gpt-4-turbo",
+                  "gpt-4-turbo-preview",
+                  "gpt-4",
+                  "gpt-3.5-turbo",
+                  "gpt-3.5-turbo-0125"
+                ],
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": "gpt-4o"
+              },
+              "openai_api_base": {
+                "advanced": true,
+                "display_name": "OpenAI API Base",
+                "dynamic": false,
+                "info": "The base URL of the OpenAI API. Defaults to https://api.openai.com/v1. You can change this to use other APIs like JinaChat, LocalAI and Prem.",
+                "list": false,
+                "load_from_db": false,
+                "name": "openai_api_base",
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": ""
+              },
+              "openai_api_key": {
+                "advanced": false,
+                "display_name": "OpenAI API Key",
+                "dynamic": false,
+                "info": "The OpenAI API Key to use for the OpenAI model.",
+                "input_types": [],
+                "load_from_db": false,
+                "name": "openai_api_key",
+                "password": true,
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "type": "str",
+                "value": ""
+              },
+              "output_schema": {
+                "advanced": true,
+                "display_name": "Schema",
+                "dynamic": false,
+                "info": "The schema for the Output of the model. You must pass the word JSON in the prompt. If left blank, JSON mode will be disabled.",
+                "list": true,
+                "name": "output_schema",
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_input": true,
+                "type": "dict",
+                "value": {}
+              },
+              "seed": {
+                "advanced": true,
+                "display_name": "Seed",
+                "dynamic": false,
+                "info": "The seed controls the reproducibility of the job.",
+                "list": false,
+                "name": "seed",
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_metadata": true,
+                "type": "int",
+                "value": 1
+              },
+              "stream": {
+                "advanced": true,
+                "display_name": "Stream",
+                "dynamic": false,
+                "info": "Stream the response from the model. Streaming works only in Chat.",
+                "list": false,
+                "name": "stream",
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_metadata": true,
+                "type": "bool",
+                "value": false
+              },
+              "system_message": {
+                "advanced": true,
+                "display_name": "System Message",
+                "dynamic": false,
+                "info": "System message to pass to the model.",
+                "list": false,
+                "load_from_db": false,
+                "name": "system_message",
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": ""
+              },
+              "temperature": {
+                "advanced": false,
+                "display_name": "Temperature",
+                "dynamic": false,
+                "info": "",
+                "list": false,
+                "name": "temperature",
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "trace_as_metadata": true,
+                "type": "float",
+                "value": 0.1
+              }
+            },
+            "official": false
+          },
+          "type": "OpenAIModel"
+        },
+        "id": "OpenAIModel-L8Fkc",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "OpenAIModel": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "e445345c-50b2-4e29-b2e0-0761de6fe41c",
+    "name": "OpenAI",
+    "description": "Generates text using OpenAI LLMs.",
+    "is_component": true,
+    "liked_by_count": "3",
+    "downloads_count": "19",
+    "metadata": {
+      "OpenAIModel": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.9",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "id": "OpenAIModel-L8Fkc",
+            "node": {
+              "base_classes": [
+                "LanguageModel",
+                "Message"
+              ],
+              "beta": false,
+              "conditional_paths": [],
+              "custom_fields": {},
+              "description": "Generates text using OpenAI LLMs.",
+              "display_name": "OpenAI",
+              "documentation": "",
+              "edited": false,
+              "field_order": [
+                "input_value",
+                "max_tokens",
+                "model_kwargs",
+                "json_mode",
+                "output_schema",
+                "model_name",
+                "openai_api_base",
+                "openai_api_key",
+                "temperature",
+                "stream",
+                "system_message",
+                "seed"
+              ],
+              "frozen": false,
+              "icon": "OpenAI",
+              "output_types": [],
+              "outputs": [
+                {
+                  "cache": true,
+                  "display_name": "Text",
+                  "hidden": false,
+                  "method": "text_response",
+                  "name": "text_output",
+                  "selected": "Message",
+                  "types": [
+                    "Message"
+                  ],
+                  "value": "__UNDEFINED__"
+                },
+                {
+                  "cache": true,
+                  "display_name": "Language Model",
+                  "method": "build_model",
+                  "name": "model_output",
+                  "selected": "LanguageModel",
+                  "types": [
+                    "LanguageModel"
+                  ],
+                  "value": "__UNDEFINED__"
+                }
+              ],
+              "pinned": false,
+              "template": {
+                "_type": "Component",
+                "code": {
+                  "advanced": true,
+                  "dynamic": true,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "info": "",
+                  "list": false,
+                  "load_from_db": false,
+                  "multiline": true,
+                  "name": "code",
+                  "password": false,
+                  "placeholder": "",
+                  "required": true,
+                  "show": true,
+                  "title_case": false,
+                  "type": "code",
+                  "value": "import operator\nfrom functools import reduce\n\nfrom langchain_openai import ChatOpenAI\nfrom pydantic.v1 import SecretStr\n\nfrom axiestudio.base.constants import STREAM_INFO_TEXT\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.base.models.openai_constants import MODEL_NAMES\nfrom axiestudio.field_typing import LanguageModel\nfrom axiestudio.inputs import (\n    BoolInput,\n    DictInput,\n    DropdownInput,\n    FloatInput,\n    IntInput,\n    MessageInput,\n    SecretStrInput,\n    StrInput,\n)\n\n\nclass OpenAIModelComponent(LCModelComponent):\n    display_name = \"OpenAI\"\n    description = \"Generates text using OpenAI LLMs.\"\n    icon = \"OpenAI\"\n\n    inputs = [\n        MessageInput(name=\"input_value\", display_name=\"Input\"),\n        IntInput(\n            name=\"max_tokens\",\n            display_name=\"Max Tokens\",\n            advanced=True,\n            info=\"The maximum number of tokens to generate. Set to 0 for unlimited tokens.\",\n        ),\n        DictInput(name=\"model_kwargs\", display_name=\"Model Kwargs\", advanced=True),\n        BoolInput(\n            name=\"json_mode\",\n            display_name=\"JSON Mode\",\n            advanced=True,\n            info=\"If True, it will output JSON regardless of passing a schema.\",\n        ),\n        DictInput(\n            name=\"output_schema\",\n            is_list=True,\n            display_name=\"Schema\",\n            advanced=True,\n            info=\"The schema for the Output of the model. You must pass the word JSON in the prompt. If left blank, JSON mode will be disabled.\",\n        ),\n        DropdownInput(\n            name=\"model_name\", display_name=\"Model Name\", advanced=False, options=MODEL_NAMES, value=MODEL_NAMES[0]\n        ),\n        StrInput(\n            name=\"openai_api_base\",\n            display_name=\"OpenAI API Base\",\n            advanced=True,\n            info=\"The base URL of the OpenAI API. Defaults to https://api.openai.com/v1. You can change this to use other APIs like JinaChat, LocalAI and Prem.\",\n        ),\n        SecretStrInput(\n            name=\"openai_api_key\",\n            display_name=\"OpenAI API Key\",\n            info=\"The OpenAI API Key to use for the OpenAI model.\",\n            advanced=False,\n            value=\"OPENAI_API_KEY\",\n        ),\n        FloatInput(name=\"temperature\", display_name=\"Temperature\", value=0.1),\n        BoolInput(name=\"stream\", display_name=\"Stream\", info=STREAM_INFO_TEXT, advanced=True),\n        StrInput(\n            name=\"system_message\",\n            display_name=\"System Message\",\n            info=\"System message to pass to the model.\",\n            advanced=True,\n        ),\n        IntInput(\n            name=\"seed\",\n            display_name=\"Seed\",\n            info=\"The seed controls the reproducibility of the job.\",\n            advanced=True,\n            value=1,\n        ),\n    ]\n\n    def build_model(self) -> LanguageModel:  # type: ignore[type-var]\n        # self.output_schea is a list of dictionarie s\n        # let's convert it to a dictionary\n        output_schema_dict: dict[str, str] = reduce(operator.ior, self.output_schema or {}, {})\n        openai_api_key = self.openai_api_key\n        temperature = self.temperature\n        model_name: str = self.model_name\n        max_tokens = self.max_tokens\n        model_kwargs = self.model_kwargs or {}\n        openai_api_base = self.openai_api_base or \"https://api.openai.com/v1\"\n        json_mode = bool(output_schema_dict) or self.json_mode\n        seed = self.seed\n        model_kwargs[\"seed\"] = seed\n\n        if openai_api_key:\n            api_key = SecretStr(openai_api_key)\n        else:\n            api_key = None\n        output = ChatOpenAI(\n            max_tokens=max_tokens or None,\n            model_kwargs=model_kwargs,\n            model=model_name,\n            base_url=openai_api_base,\n            api_key=api_key,\n            temperature=temperature or 0.1,\n        )\n        if json_mode:\n            if output_schema_dict:\n                output = output.with_structured_output(schema=output_schema_dict, method=\"json_mode\")  # type: ignore\n            else:\n                output = output.bind(response_format={\"type\": \"json_object\"})  # type: ignore\n\n        return output  # type: ignore\n\n    def _get_exception_message(self, e: Exception):\n        \"\"\"\n        Get a message from an OpenAI exception.\n\n        Args:\n            exception (Exception): The exception to get the message from.\n\n        Returns:\n            str: The message from the exception.\n        \"\"\"\n\n        try:\n            from openai import BadRequestError\n        except ImportError:\n            return\n        if isinstance(e, BadRequestError):\n            message = e.body.get(\"message\")  # type: ignore\n            if message:\n                return message\n        return\n"
+                },
+                "input_value": {
+                  "advanced": false,
+                  "display_name": "Input",
+                  "dynamic": false,
+                  "info": "",
+                  "input_types": [
+                    "Message"
+                  ],
+                  "list": false,
+                  "load_from_db": false,
+                  "name": "input_value",
+                  "placeholder": "",
+                  "required": false,
+                  "show": true,
+                  "title_case": false,
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "type": "str",
+                  "value": ""
+                },
+                "json_mode": {
+                  "advanced": true,
+                  "display_name": "JSON Mode",
+                  "dynamic": false,
+                  "info": "If True, it will output JSON regardless of passing a schema.",
+                  "list": false,
+                  "name": "json_mode",
+                  "placeholder": "",
+                  "required": false,
+                  "show": true,
+                  "title_case": false,
+                  "trace_as_metadata": true,
+                  "type": "bool",
+                  "value": false
+                },
+                "max_tokens": {
+                  "advanced": true,
+                  "display_name": "Max Tokens",
+                  "dynamic": false,
+                  "info": "The maximum number of tokens to generate. Set to 0 for unlimited tokens.",
+                  "list": false,
+                  "name": "max_tokens",
+                  "placeholder": "",
+                  "required": false,
+                  "show": true,
+                  "title_case": false,
+                  "trace_as_metadata": true,
+                  "type": "int",
+                  "value": ""
+                },
+                "model_kwargs": {
+                  "advanced": true,
+                  "display_name": "Model Kwargs",
+                  "dynamic": false,
+                  "info": "",
+                  "list": false,
+                  "name": "model_kwargs",
+                  "placeholder": "",
+                  "required": false,
+                  "show": true,
+                  "title_case": false,
+                  "trace_as_input": true,
+                  "type": "dict",
+                  "value": {}
+                },
+                "model_name": {
+                  "advanced": false,
+                  "display_name": "Model Name",
+                  "dynamic": false,
+                  "info": "",
+                  "name": "model_name",
+                  "options": [
+                    "gpt-4o",
+                    "gpt-4-turbo",
+                    "gpt-4-turbo-preview",
+                    "gpt-4",
+                    "gpt-3.5-turbo",
+                    "gpt-3.5-turbo-0125"
+                  ],
+                  "placeholder": "",
+                  "required": false,
+                  "show": true,
+                  "title_case": false,
+                  "trace_as_metadata": true,
+                  "type": "str",
+                  "value": "gpt-4o"
+                },
+                "openai_api_base": {
+                  "advanced": true,
+                  "display_name": "OpenAI API Base",
+                  "dynamic": false,
+                  "info": "The base URL of the OpenAI API. Defaults to https://api.openai.com/v1. You can change this to use other APIs like JinaChat, LocalAI and Prem.",
+                  "list": false,
+                  "load_from_db": false,
+                  "name": "openai_api_base",
+                  "placeholder": "",
+                  "required": false,
+                  "show": true,
+                  "title_case": false,
+                  "trace_as_metadata": true,
+                  "type": "str",
+                  "value": ""
+                },
+                "openai_api_key": {
+                  "advanced": false,
+                  "display_name": "OpenAI API Key",
+                  "dynamic": false,
+                  "info": "The OpenAI API Key to use for the OpenAI model.",
+                  "input_types": [],
+                  "load_from_db": false,
+                  "name": "openai_api_key",
+                  "password": true,
+                  "placeholder": "",
+                  "required": false,
+                  "show": true,
+                  "title_case": false,
+                  "type": "str",
+                  "value": ""
+                },
+                "output_schema": {
+                  "advanced": true,
+                  "display_name": "Schema",
+                  "dynamic": false,
+                  "info": "The schema for the Output of the model. You must pass the word JSON in the prompt. If left blank, JSON mode will be disabled.",
+                  "list": true,
+                  "name": "output_schema",
+                  "placeholder": "",
+                  "required": false,
+                  "show": true,
+                  "title_case": false,
+                  "trace_as_input": true,
+                  "type": "dict",
+                  "value": {}
+                },
+                "seed": {
+                  "advanced": true,
+                  "display_name": "Seed",
+                  "dynamic": false,
+                  "info": "The seed controls the reproducibility of the job.",
+                  "list": false,
+                  "name": "seed",
+                  "placeholder": "",
+                  "required": false,
+                  "show": true,
+                  "title_case": false,
+                  "trace_as_metadata": true,
+                  "type": "int",
+                  "value": 1
+                },
+                "stream": {
+                  "advanced": true,
+                  "display_name": "Stream",
+                  "dynamic": false,
+                  "info": "Stream the response from the model. Streaming works only in Chat.",
+                  "list": false,
+                  "name": "stream",
+                  "placeholder": "",
+                  "required": false,
+                  "show": true,
+                  "title_case": false,
+                  "trace_as_metadata": true,
+                  "type": "bool",
+                  "value": false
+                },
+                "system_message": {
+                  "advanced": true,
+                  "display_name": "System Message",
+                  "dynamic": false,
+                  "info": "System message to pass to the model.",
+                  "list": false,
+                  "load_from_db": false,
+                  "name": "system_message",
+                  "placeholder": "",
+                  "required": false,
+                  "show": true,
+                  "title_case": false,
+                  "trace_as_metadata": true,
+                  "type": "str",
+                  "value": ""
+                },
+                "temperature": {
+                  "advanced": false,
+                  "display_name": "Temperature",
+                  "dynamic": false,
+                  "info": "",
+                  "list": false,
+                  "name": "temperature",
+                  "placeholder": "",
+                  "required": false,
+                  "show": true,
+                  "title_case": false,
+                  "trace_as_metadata": true,
+                  "type": "float",
+                  "value": 0.1
+                }
+              },
+              "official": false
+            },
+            "type": "OpenAIModel"
+          },
+          "id": "OpenAIModel-L8Fkc",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-07-12T22:54:47.285Z",
+    "date_updated": "2024-07-12T22:54:47.334Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "30c42bd5-6e68-4b08-9347-1a6a9310fb36",
+    "user_created": {
+      "username": "iguuuu",
+      "first_name": "Igor",
+      "last_name": "Carvalho",
+      "id": "30c42bd5-6e68-4b08-9347-1a6a9310fb36"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Chain",
+          "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:12.254Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

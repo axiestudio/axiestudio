@@ -1,0 +1,289 @@
+{
+  "id": "cc177475-3d93-40f3-a666-ec727548c16c",
+  "name": "Page Content Viewer [Notion] ",
+  "description": "Retrieve the content of a Notion page as plain text. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "NamastexLabs",
+    "first_name": "Felipe",
+    "last_name": "Rosa",
+    "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "full_name": "Felipe Rosa"
+  },
+  "store_url": "https://www.langflow.store/store/component/cc177475-3d93-40f3-a666-ec727548c16c",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-05-21T00:00:32.143Z",
+    "updated": "2024-05-23T21:01:13.645Z",
+    "downloaded": "2025-08-19T17:50:05.123Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import requests\r\nfrom typing import Dict, Any\r\n\r\nfrom axiestudio import CustomComponent\r\nfrom axiestudio.schema import Record\r\n\r\n\r\nclass NotionPageContent(CustomComponent):\r\n    display_name = \"Page Content Viewer [Notion]\"\r\n    description = \"Retrieve the content of a Notion page as plain text.\"\r\n    documentation: str = \"https://docs.axiestudio.org/integrations/notion/page-content-viewer\"\r\n    icon = \"NotionDirectoryLoader\"\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"page_id\": {\r\n                \"display_name\": \"Page ID\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The ID of the Notion page to retrieve.\",\r\n            },\r\n            \"notion_secret\": {\r\n                \"display_name\": \"Notion Secret\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The Notion integration token.\",\r\n                \"password\": True,\r\n            },\r\n        }\r\n\r\n    def build(\r\n        self,\r\n        page_id: str,\r\n        notion_secret: str,\r\n    ) -> Record:\r\n        blocks_url = f\"https://api.notion.com/v1/blocks/{page_id}/children?page_size=100\"\r\n        headers = {\r\n            \"Authorization\": f\"Bearer {notion_secret}\",\r\n            \"Notion-Version\": \"2022-06-28\",  # Use the latest supported version\r\n        }\r\n\r\n        # Retrieve the child blocks\r\n        blocks_response = requests.get(blocks_url, headers=headers)\r\n        blocks_response.raise_for_status()\r\n        blocks_data = blocks_response.json()\r\n\r\n        # Parse the blocks and extract the content as plain text\r\n        content = self.parse_blocks(blocks_data[\"results\"])\r\n\r\n        self.status = content\r\n        return Record(data={\"content\": content}, text=content)\r\n\r\n    def parse_blocks(self, blocks: list) -> str:\r\n        content = \"\"\r\n        for block in blocks:\r\n            block_type = block[\"type\"]\r\n            if block_type in [\"paragraph\", \"heading_1\", \"heading_2\", \"heading_3\", \"quote\"]:\r\n                content += self.parse_rich_text(block[block_type][\"rich_text\"]) + \"\\n\\n\"\r\n            elif block_type in [\"bulleted_list_item\", \"numbered_list_item\"]:\r\n                content += self.parse_rich_text(block[block_type][\"rich_text\"]) + \"\\n\"\r\n            elif block_type == \"to_do\":\r\n                content += self.parse_rich_text(block[\"to_do\"][\"rich_text\"]) + \"\\n\"\r\n            elif block_type == \"code\":\r\n                content += self.parse_rich_text(block[\"code\"][\"rich_text\"]) + \"\\n\\n\"\r\n            elif block_type == \"image\":\r\n                content += f\"[Image: {block['image']['external']['url']}]\\n\\n\"\r\n            elif block_type == \"divider\":\r\n                content += \"---\\n\\n\"\r\n        return content.strip()\r\n\r\n    def parse_rich_text(self, rich_text: list) -> str:\r\n        text = \"\"\r\n        for segment in rich_text:\r\n            text += segment[\"plain_text\"]\r\n        return text",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "notion_secret": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "notion_secret",
+                "display_name": "Notion Secret",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The Notion integration token.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "page_id": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "page_id",
+                "display_name": "Page ID",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The ID of the Notion page to retrieve.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Retrieve the content of a Notion page as plain text.",
+            "icon": "NotionDirectoryLoader",
+            "base_classes": [
+              "Record"
+            ],
+            "display_name": "Page Content Viewer [Notion] ",
+            "documentation": "https://docs.axiestudio.org/integrations/notion/page-content-viewer",
+            "custom_fields": {
+              "page_id": null,
+              "notion_secret": null
+            },
+            "output_types": [
+              "Record"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-oelYw",
+          "description": "Retrieve the content of a Notion page as plain text.",
+          "display_name": "Page Content Viewer [Notion] "
+        },
+        "id": "CustomComponent-oelYw",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "cc177475-3d93-40f3-a666-ec727548c16c",
+    "name": "Page Content Viewer [Notion] ",
+    "description": "Retrieve the content of a Notion page as plain text.",
+    "is_component": true,
+    "liked_by_count": "14",
+    "downloads_count": "54",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import requests\r\nfrom typing import Dict, Any\r\n\r\nfrom axiestudio import CustomComponent\r\nfrom axiestudio.schema import Record\r\n\r\n\r\nclass NotionPageContent(CustomComponent):\r\n    display_name = \"Page Content Viewer [Notion]\"\r\n    description = \"Retrieve the content of a Notion page as plain text.\"\r\n    documentation: str = \"https://docs.axiestudio.org/integrations/notion/page-content-viewer\"\r\n    icon = \"NotionDirectoryLoader\"\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"page_id\": {\r\n                \"display_name\": \"Page ID\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The ID of the Notion page to retrieve.\",\r\n            },\r\n            \"notion_secret\": {\r\n                \"display_name\": \"Notion Secret\",\r\n                \"field_type\": \"str\",\r\n                \"info\": \"The Notion integration token.\",\r\n                \"password\": True,\r\n            },\r\n        }\r\n\r\n    def build(\r\n        self,\r\n        page_id: str,\r\n        notion_secret: str,\r\n    ) -> Record:\r\n        blocks_url = f\"https://api.notion.com/v1/blocks/{page_id}/children?page_size=100\"\r\n        headers = {\r\n            \"Authorization\": f\"Bearer {notion_secret}\",\r\n            \"Notion-Version\": \"2022-06-28\",  # Use the latest supported version\r\n        }\r\n\r\n        # Retrieve the child blocks\r\n        blocks_response = requests.get(blocks_url, headers=headers)\r\n        blocks_response.raise_for_status()\r\n        blocks_data = blocks_response.json()\r\n\r\n        # Parse the blocks and extract the content as plain text\r\n        content = self.parse_blocks(blocks_data[\"results\"])\r\n\r\n        self.status = content\r\n        return Record(data={\"content\": content}, text=content)\r\n\r\n    def parse_blocks(self, blocks: list) -> str:\r\n        content = \"\"\r\n        for block in blocks:\r\n            block_type = block[\"type\"]\r\n            if block_type in [\"paragraph\", \"heading_1\", \"heading_2\", \"heading_3\", \"quote\"]:\r\n                content += self.parse_rich_text(block[block_type][\"rich_text\"]) + \"\\n\\n\"\r\n            elif block_type in [\"bulleted_list_item\", \"numbered_list_item\"]:\r\n                content += self.parse_rich_text(block[block_type][\"rich_text\"]) + \"\\n\"\r\n            elif block_type == \"to_do\":\r\n                content += self.parse_rich_text(block[\"to_do\"][\"rich_text\"]) + \"\\n\"\r\n            elif block_type == \"code\":\r\n                content += self.parse_rich_text(block[\"code\"][\"rich_text\"]) + \"\\n\\n\"\r\n            elif block_type == \"image\":\r\n                content += f\"[Image: {block['image']['external']['url']}]\\n\\n\"\r\n            elif block_type == \"divider\":\r\n                content += \"---\\n\\n\"\r\n        return content.strip()\r\n\r\n    def parse_rich_text(self, rich_text: list) -> str:\r\n        text = \"\"\r\n        for segment in rich_text:\r\n            text += segment[\"plain_text\"]\r\n        return text",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "notion_secret": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "notion_secret",
+                  "display_name": "Notion Secret",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The Notion integration token.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "page_id": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "page_id",
+                  "display_name": "Page ID",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The ID of the Notion page to retrieve.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Retrieve the content of a Notion page as plain text.",
+              "icon": "NotionDirectoryLoader",
+              "base_classes": [
+                "Record"
+              ],
+              "display_name": "Page Content Viewer [Notion] ",
+              "documentation": "https://docs.axiestudio.org/integrations/notion/page-content-viewer",
+              "custom_fields": {
+                "page_id": null,
+                "notion_secret": null
+              },
+              "output_types": [
+                "Record"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-oelYw",
+            "description": "Retrieve the content of a Notion page as plain text.",
+            "display_name": "Page Content Viewer [Notion] "
+          },
+          "id": "CustomComponent-oelYw",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-05-21T00:00:32.143Z",
+    "date_updated": "2024-05-23T21:01:13.645Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7",
+    "user_created": {
+      "username": "NamastexLabs",
+      "first_name": "Felipe",
+      "last_name": "Rosa",
+      "id": "37095b75-b1f7-4e35-aea6-bcc9bbf1e2c7"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.864Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

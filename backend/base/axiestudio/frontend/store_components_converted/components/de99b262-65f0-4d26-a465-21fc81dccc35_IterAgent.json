@@ -1,0 +1,377 @@
+{
+  "id": "de99b262-65f0-4d26-a465-21fc81dccc35",
+  "name": "IterAgent ",
+  "description": "Conversational Agent that can use OpenAI's function calling API (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "yamon",
+    "first_name": "YamonCompany",
+    "last_name": "kim",
+    "id": "23c5d1e9-66fe-4789-85da-d07be25ec3cc",
+    "full_name": "YamonCompany kim"
+  },
+  "store_url": "https://www.langflow.store/store/component/de99b262-65f0-4d26-a465-21fc81dccc35",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-02-19T06:43:29.642Z",
+    "updated": "2024-02-20T04:55:03.397Z",
+    "downloaded": "2025-08-19T17:50:05.090Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Agent",
+        "id": "ccabb590-c9e8-4e56-9d6c-309955936c6c"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "0.6.6",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "Data",
+          "node": {
+            "template": {
+              "llm": {
+                "type": "BaseLanguageModel",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "llm",
+                "display_name": "LLM",
+                "advanced": false,
+                "dynamic": false,
+                "info": ""
+              },
+              "memories_component": {
+                "type": "BaseMemory",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "memories_component",
+                "display_name": "Memory Container",
+                "advanced": false,
+                "dynamic": false,
+                "info": ""
+              },
+              "system_message": {
+                "type": "SystemMessagePromptTemplate",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "system_message",
+                "display_name": "system_message PromptTemplate",
+                "advanced": false,
+                "dynamic": false,
+                "info": ""
+              },
+              "tools": {
+                "type": "Tool",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "tools",
+                "display_name": "Multi Tools",
+                "advanced": false,
+                "dynamic": false,
+                "info": ""
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import List, Optional\r\nfrom axiestudio import CustomComponent\r\nfrom langchain.tools import Tool\r\nfrom langchain.schema.memory import BaseMemory\r\nfrom langchain.llms.base import BaseLanguageModel\r\nfrom langchain.agents.agent import AgentExecutor\r\nfrom langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent\r\nfrom langchain.memory import CombinedMemory\r\nfrom langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import (\r\n    _get_default_system_message,\r\n)\r\nfrom langchain.prompts import SystemMessagePromptTemplate\r\nfrom langchain.schema import BasePromptTemplate\r\nfrom langchain.prompts.chat import MessagesPlaceholder\r\nfrom pprint import pprint\r\nfrom axiestudio.interface.utils import extract_input_variables_from_prompt\r\nfrom langchain.callbacks.streaming_stdout_final_only import (\r\n    FinalStreamingStdOutCallbackHandler,\r\n)\r\n\r\n\r\nclass IterAgent(CustomComponent):\r\n    display_name: str = \"IterAgent \"\r\n    description: str = \"Conversational Agent that can use OpenAI's function calling API\"\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"llm\": {\"display_name\": \"LLM\"},\r\n            \"memories_component\": {\"display_name\": \"Memory Container\"},\r\n            \"tools\": {\"is_list\": True, \"display_name\": \"Multi Tools\"},\r\n            \"system_message\": {\"display_name\": \"system_message PromptTemplate\"},\r\n            \"max_iterations\": {\"display_name\": \"Max Iterations\"},\r\n        }\r\n\r\n    def build(\r\n        self,\r\n        llm: BaseLanguageModel,\r\n        tools: List[Tool],\r\n        max_iterations: int = 4,\r\n        memories_component: Optional[List[BaseMemory]] = None,\r\n        system_message: Optional[SystemMessagePromptTemplate] = None,\r\n    ) -> AgentExecutor:\r\n\r\n        final_callback_handler = FinalStreamingStdOutCallbackHandler(\r\n            answer_prefix_tokens=['AI', ':'])\r\n\r\n        llm.callbacks = [final_callback_handler]\r\n        llm.streaming = True\r\n\r\n        memory_key: List[str] = []\r\n\r\n        if memories_component:\r\n            for memory in memories_component:\r\n                memory_key.extend(memory.memory_variables)\r\n\r\n        # Create a list of BaseMessagePromptTemplate instances with variable_name set\r\n        # to memory_key\r\n\r\n        memory = CombinedMemory(memories=memories_component or [])\r\n\r\n        print(\"=\" * 30)\r\n        print(\"memory keys in memories_component\")\r\n        print(\"=\" * 30)\r\n\r\n        # pprint를 사용하여 가독성 높은 출력을 생성\r\n        pprint(f\"Memory Key: {memory.memory_variables}\")\r\n\r\n        print(\"=\" * 30)\r\n\r\n        _system_message = system_message or _get_default_system_message()\r\n        prompt = OpenAIFunctionsAgent.create_prompt(\r\n            system_message=_system_message,  # type: ignore\r\n\r\n        )\r\n\r\n        agent = OpenAIFunctionsAgent(llm=llm, prompt=prompt, tools=tools)\r\n\r\n        print(\"=\" * 30)\r\n        print(\"Build Parameters\")\r\n        print(\"=\" * 30)\r\n\r\n        pprint(f\"Prompt: {prompt}\")\r\n        print(\"=\" * 30)\r\n\r\n        return AgentExecutor(\r\n            agent=agent,\r\n            tools=tools,\r\n            memory=memory,\r\n            max_iterations=max_iterations,\r\n            verbose=True,\r\n            return_intermediate_steps=True,\r\n        )\r\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": false,
+                "dynamic": true,
+                "info": ""
+              },
+              "max_iterations": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 4,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "max_iterations",
+                "display_name": "Max Iterations",
+                "advanced": false,
+                "dynamic": false,
+                "info": ""
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Conversational Agent that can use OpenAI's function calling API",
+            "base_classes": [
+              "AgentExecutor",
+              "Chain"
+            ],
+            "display_name": "IterAgent ",
+            "documentation": "",
+            "custom_fields": {
+              "llm": null,
+              "max_iterations": null,
+              "memories_component": null,
+              "system_message": null,
+              "tools": null
+            },
+            "output_types": [
+              "AgentExecutor"
+            ],
+            "field_formatters": {},
+            "beta": true,
+            "official": false
+          },
+          "id": "Data-kpvAb",
+          "description": "Conversational Agent that can use OpenAI's function calling API",
+          "display_name": "IterAgent "
+        },
+        "id": "Data-kpvAb",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "Data": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "de99b262-65f0-4d26-a465-21fc81dccc35",
+    "name": "IterAgent ",
+    "description": "Conversational Agent that can use OpenAI's function calling API",
+    "is_component": true,
+    "liked_by_count": "0",
+    "downloads_count": "3",
+    "metadata": {
+      "Data": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "0.6.6",
+    "private": true,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "Data",
+            "node": {
+              "template": {
+                "llm": {
+                  "type": "BaseLanguageModel",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "llm",
+                  "display_name": "LLM",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": ""
+                },
+                "memories_component": {
+                  "type": "BaseMemory",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "memories_component",
+                  "display_name": "Memory Container",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": ""
+                },
+                "system_message": {
+                  "type": "SystemMessagePromptTemplate",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "system_message",
+                  "display_name": "system_message PromptTemplate",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": ""
+                },
+                "tools": {
+                  "type": "Tool",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "tools",
+                  "display_name": "Multi Tools",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": ""
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import List, Optional\r\nfrom axiestudio import CustomComponent\r\nfrom langchain.tools import Tool\r\nfrom langchain.schema.memory import BaseMemory\r\nfrom langchain.llms.base import BaseLanguageModel\r\nfrom langchain.agents.agent import AgentExecutor\r\nfrom langchain.agents.openai_functions_agent.base import OpenAIFunctionsAgent\r\nfrom langchain.memory import CombinedMemory\r\nfrom langchain.agents.agent_toolkits.conversational_retrieval.openai_functions import (\r\n    _get_default_system_message,\r\n)\r\nfrom langchain.prompts import SystemMessagePromptTemplate\r\nfrom langchain.schema import BasePromptTemplate\r\nfrom langchain.prompts.chat import MessagesPlaceholder\r\nfrom pprint import pprint\r\nfrom axiestudio.interface.utils import extract_input_variables_from_prompt\r\nfrom langchain.callbacks.streaming_stdout_final_only import (\r\n    FinalStreamingStdOutCallbackHandler,\r\n)\r\n\r\n\r\nclass IterAgent(CustomComponent):\r\n    display_name: str = \"IterAgent \"\r\n    description: str = \"Conversational Agent that can use OpenAI's function calling API\"\r\n\r\n    def build_config(self):\r\n        return {\r\n            \"llm\": {\"display_name\": \"LLM\"},\r\n            \"memories_component\": {\"display_name\": \"Memory Container\"},\r\n            \"tools\": {\"is_list\": True, \"display_name\": \"Multi Tools\"},\r\n            \"system_message\": {\"display_name\": \"system_message PromptTemplate\"},\r\n            \"max_iterations\": {\"display_name\": \"Max Iterations\"},\r\n        }\r\n\r\n    def build(\r\n        self,\r\n        llm: BaseLanguageModel,\r\n        tools: List[Tool],\r\n        max_iterations: int = 4,\r\n        memories_component: Optional[List[BaseMemory]] = None,\r\n        system_message: Optional[SystemMessagePromptTemplate] = None,\r\n    ) -> AgentExecutor:\r\n\r\n        final_callback_handler = FinalStreamingStdOutCallbackHandler(\r\n            answer_prefix_tokens=['AI', ':'])\r\n\r\n        llm.callbacks = [final_callback_handler]\r\n        llm.streaming = True\r\n\r\n        memory_key: List[str] = []\r\n\r\n        if memories_component:\r\n            for memory in memories_component:\r\n                memory_key.extend(memory.memory_variables)\r\n\r\n        # Create a list of BaseMessagePromptTemplate instances with variable_name set\r\n        # to memory_key\r\n\r\n        memory = CombinedMemory(memories=memories_component or [])\r\n\r\n        print(\"=\" * 30)\r\n        print(\"memory keys in memories_component\")\r\n        print(\"=\" * 30)\r\n\r\n        # pprint를 사용하여 가독성 높은 출력을 생성\r\n        pprint(f\"Memory Key: {memory.memory_variables}\")\r\n\r\n        print(\"=\" * 30)\r\n\r\n        _system_message = system_message or _get_default_system_message()\r\n        prompt = OpenAIFunctionsAgent.create_prompt(\r\n            system_message=_system_message,  # type: ignore\r\n\r\n        )\r\n\r\n        agent = OpenAIFunctionsAgent(llm=llm, prompt=prompt, tools=tools)\r\n\r\n        print(\"=\" * 30)\r\n        print(\"Build Parameters\")\r\n        print(\"=\" * 30)\r\n\r\n        pprint(f\"Prompt: {prompt}\")\r\n        print(\"=\" * 30)\r\n\r\n        return AgentExecutor(\r\n            agent=agent,\r\n            tools=tools,\r\n            memory=memory,\r\n            max_iterations=max_iterations,\r\n            verbose=True,\r\n            return_intermediate_steps=True,\r\n        )\r\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": false,
+                  "dynamic": true,
+                  "info": ""
+                },
+                "max_iterations": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 4,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "max_iterations",
+                  "display_name": "Max Iterations",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": ""
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Conversational Agent that can use OpenAI's function calling API",
+              "base_classes": [
+                "AgentExecutor",
+                "Chain"
+              ],
+              "display_name": "IterAgent ",
+              "documentation": "",
+              "custom_fields": {
+                "llm": null,
+                "max_iterations": null,
+                "memories_component": null,
+                "system_message": null,
+                "tools": null
+              },
+              "output_types": [
+                "AgentExecutor"
+              ],
+              "field_formatters": {},
+              "beta": true,
+              "official": false
+            },
+            "id": "Data-kpvAb",
+            "description": "Conversational Agent that can use OpenAI's function calling API",
+            "display_name": "IterAgent "
+          },
+          "id": "Data-kpvAb",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-02-19T06:43:29.642Z",
+    "date_updated": "2024-02-20T04:55:03.397Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "23c5d1e9-66fe-4789-85da-d07be25ec3cc",
+    "user_created": {
+      "username": "yamon",
+      "first_name": "YamonCompany",
+      "last_name": "kim",
+      "id": "23c5d1e9-66fe-4789-85da-d07be25ec3cc"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Agent",
+          "id": "ccabb590-c9e8-4e56-9d6c-309955936c6c"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:12.143Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 4,
+    "converter_version": "1.0.0"
+  }
+}

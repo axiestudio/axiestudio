@@ -1,0 +1,333 @@
+{
+  "id": "b59711da-a406-4de6-8254-4bcad9050c6d",
+  "name": "Summarization OpenAI",
+  "description": "Use as a template to Summarize any File Loader using OpenAI models. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "ygorbalves",
+    "first_name": "Ygor",
+    "last_name": "Alves",
+    "id": "3785b674-1a4b-42da-9b4d-d028c7191975",
+    "full_name": "Ygor Alves"
+  },
+  "store_url": "https://www.langflow.store/store/component/b59711da-a406-4de6-8254-4bcad9050c6d",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-03-18T02:12:11.778Z",
+    "updated": "2024-03-18T02:12:11.825Z",
+    "downloaded": "2025-08-19T17:50:07.516Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "0.7.0a0",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "Docs": {
+                "type": "Record",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "Docs",
+                "display_name": "Docs",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false
+              },
+              "OpenAIKey": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "OpenAIKey",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Text\nfrom axiestudio.schema import Record\nfrom langchain_openai import ChatOpenAI\nfrom langchain.chains import MapReduceDocumentsChain, ReduceDocumentsChain\nfrom langchain_text_splitters import CharacterTextSplitter\nfrom langchain.chains import MapReduceDocumentsChain, ReduceDocumentsChain, StuffDocumentsChain, LLMChain\nimport subprocess\nimport sys\n\nclass Component(CustomComponent):\n    display_name = \"Custom Component\"\n    description = \"Use as a template to create your own component.\"\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\n    icon = \"custom_components\"\n\n    def build_config(self):\n        return {\"Docs\": {\"display_name\": \"Docs\"},\n                \"OpenAIKey\":{\"password\": True,\n                \"required\": True},\n                \"model_name\": {\n                \"display_name\": \"model_name\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"gpt-3.5-turbo\",\n                    \"gpt-4-0125-preview\",\n                    \"gpt-4\"\n                ],\n            },\n        }\n\n    def build(self, Docs: Record, OpenAIKey: str, model_name: str) -> Text:\n        \n        def install(package, cmake_args=None):\n            env = os.environ.copy()\n            if cmake_args is not None:\n                env[\"CMAKE_ARGS\"] = cmake_args\n            subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package], env=env)\n            return 1\n        \n        install(\"langchainhub\") \n        from langchain import hub\n        \n        llm = ChatOpenAI(temperature=0,openai_api_key=OpenAIKey,model_name=model_name)\n        map_template = \"\"\"The following is a set of documents\n        {docs}\n        Based on this list of docs, please identify the main themes \n        Helpful Answer:\"\"\"\n        map_prompt = PromptTemplate.from_template(map_template)\n        map_chain = LLMChain(llm=llm, prompt=map_prompt)\n        \n        map_prompt = hub.pull(\"rlm/map-prompt\")\n        map_chain = LLMChain(llm=llm, prompt=map_prompt)\n        \n        # Reduce\n        reduce_template = \"\"\"The following is set of summaries:\n        {docs}\n        Take these and distill it into a final, consolidated summary of the main themes. \n        Helpful Answer:\"\"\"\n        reduce_prompt = PromptTemplate.from_template(reduce_template)\n        \n        # Note we can also get this from the prompt hub, as noted above\n        reduce_prompt = hub.pull(\"rlm/map-prompt\")\n    \n        # Run chain\n        reduce_chain = LLMChain(llm=llm, prompt=reduce_prompt)\n        \n        # Takes a list of documents, combines them into a single string, and passes this to an LLMChain\n        combine_documents_chain = StuffDocumentsChain(\n            llm_chain=reduce_chain, document_variable_name=\"docs\"\n        )\n        \n        # Combines and iteratively reduces the mapped documents\n        reduce_documents_chain = ReduceDocumentsChain(\n            # This is final chain that is called.\n            combine_documents_chain=combine_documents_chain,\n            # If documents exceed context for `StuffDocumentsChain`\n            collapse_documents_chain=combine_documents_chain,\n            # The maximum number of tokens to group documents into.\n            token_max=4000,\n        )\n        \n        \n        # Combining documents by mapping a chain over them, then combining results\n        map_reduce_chain = MapReduceDocumentsChain(\n            # Map chain\n            llm_chain=map_chain,\n            # Reduce chain\n            reduce_documents_chain=reduce_documents_chain,\n            # The variable name in the llm_chain to put the documents in\n            document_variable_name=\"docs\",\n            # Return the results of the map steps in the output\n            return_intermediate_steps=False,\n        )\n        \n        # split_docs = text_splitter.split_documents(Docs)\n        result = map_reduce_chain.run(Docs)\n        return str(result)\n\n\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "title_case": false
+              },
+              "model_name": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "gpt-3.5-turbo",
+                  "gpt-4-0125-preview",
+                  "gpt-4"
+                ],
+                "name": "model_name",
+                "display_name": "model_name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "gpt-3.5-turbo"
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Use as a template to Summarize any File Loader using OpenAI models.",
+            "icon": "custom_components",
+            "base_classes": [
+              "Text",
+              "object",
+              "str"
+            ],
+            "display_name": "Summarization OpenAI",
+            "documentation": "http://docs.axiestudio.org/components/custom",
+            "custom_fields": {
+              "Docs": null,
+              "OpenAIKey": null,
+              "model_name": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-4DMjb",
+          "description": "Use as a template to create your own component.",
+          "display_name": "Summarization OpenAI"
+        },
+        "id": "CustomComponent-4DMjb",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "b59711da-a406-4de6-8254-4bcad9050c6d",
+    "name": "Summarization OpenAI",
+    "description": "Use as a template to Summarize any File Loader using OpenAI models.",
+    "is_component": true,
+    "liked_by_count": "34",
+    "downloads_count": "230",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "0.7.0a0",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "Docs": {
+                  "type": "Record",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "Docs",
+                  "display_name": "Docs",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false
+                },
+                "OpenAIKey": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "OpenAIKey",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Text\nfrom axiestudio.schema import Record\nfrom langchain_openai import ChatOpenAI\nfrom langchain.chains import MapReduceDocumentsChain, ReduceDocumentsChain\nfrom langchain_text_splitters import CharacterTextSplitter\nfrom langchain.chains import MapReduceDocumentsChain, ReduceDocumentsChain, StuffDocumentsChain, LLMChain\nimport subprocess\nimport sys\n\nclass Component(CustomComponent):\n    display_name = \"Custom Component\"\n    description = \"Use as a template to create your own component.\"\n    documentation: str = \"http://docs.axiestudio.org/components/custom\"\n    icon = \"custom_components\"\n\n    def build_config(self):\n        return {\"Docs\": {\"display_name\": \"Docs\"},\n                \"OpenAIKey\":{\"password\": True,\n                \"required\": True},\n                \"model_name\": {\n                \"display_name\": \"model_name\",\n                \"advanced\": False,\n                \"required\": True,\n                \"options\": [\n                    \"gpt-3.5-turbo\",\n                    \"gpt-4-0125-preview\",\n                    \"gpt-4\"\n                ],\n            },\n        }\n\n    def build(self, Docs: Record, OpenAIKey: str, model_name: str) -> Text:\n        \n        def install(package, cmake_args=None):\n            env = os.environ.copy()\n            if cmake_args is not None:\n                env[\"CMAKE_ARGS\"] = cmake_args\n            subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package], env=env)\n            return 1\n        \n        install(\"langchainhub\") \n        from langchain import hub\n        \n        llm = ChatOpenAI(temperature=0,openai_api_key=OpenAIKey,model_name=model_name)\n        map_template = \"\"\"The following is a set of documents\n        {docs}\n        Based on this list of docs, please identify the main themes \n        Helpful Answer:\"\"\"\n        map_prompt = PromptTemplate.from_template(map_template)\n        map_chain = LLMChain(llm=llm, prompt=map_prompt)\n        \n        map_prompt = hub.pull(\"rlm/map-prompt\")\n        map_chain = LLMChain(llm=llm, prompt=map_prompt)\n        \n        # Reduce\n        reduce_template = \"\"\"The following is set of summaries:\n        {docs}\n        Take these and distill it into a final, consolidated summary of the main themes. \n        Helpful Answer:\"\"\"\n        reduce_prompt = PromptTemplate.from_template(reduce_template)\n        \n        # Note we can also get this from the prompt hub, as noted above\n        reduce_prompt = hub.pull(\"rlm/map-prompt\")\n    \n        # Run chain\n        reduce_chain = LLMChain(llm=llm, prompt=reduce_prompt)\n        \n        # Takes a list of documents, combines them into a single string, and passes this to an LLMChain\n        combine_documents_chain = StuffDocumentsChain(\n            llm_chain=reduce_chain, document_variable_name=\"docs\"\n        )\n        \n        # Combines and iteratively reduces the mapped documents\n        reduce_documents_chain = ReduceDocumentsChain(\n            # This is final chain that is called.\n            combine_documents_chain=combine_documents_chain,\n            # If documents exceed context for `StuffDocumentsChain`\n            collapse_documents_chain=combine_documents_chain,\n            # The maximum number of tokens to group documents into.\n            token_max=4000,\n        )\n        \n        \n        # Combining documents by mapping a chain over them, then combining results\n        map_reduce_chain = MapReduceDocumentsChain(\n            # Map chain\n            llm_chain=map_chain,\n            # Reduce chain\n            reduce_documents_chain=reduce_documents_chain,\n            # The variable name in the llm_chain to put the documents in\n            document_variable_name=\"docs\",\n            # Return the results of the map steps in the output\n            return_intermediate_steps=False,\n        )\n        \n        # split_docs = text_splitter.split_documents(Docs)\n        result = map_reduce_chain.run(Docs)\n        return str(result)\n\n\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "title_case": false
+                },
+                "model_name": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "gpt-3.5-turbo",
+                    "gpt-4-0125-preview",
+                    "gpt-4"
+                  ],
+                  "name": "model_name",
+                  "display_name": "model_name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "gpt-3.5-turbo"
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Use as a template to Summarize any File Loader using OpenAI models.",
+              "icon": "custom_components",
+              "base_classes": [
+                "Text",
+                "object",
+                "str"
+              ],
+              "display_name": "Summarization OpenAI",
+              "documentation": "http://docs.axiestudio.org/components/custom",
+              "custom_fields": {
+                "Docs": null,
+                "OpenAIKey": null,
+                "model_name": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-4DMjb",
+            "description": "Use as a template to create your own component.",
+            "display_name": "Summarization OpenAI"
+          },
+          "id": "CustomComponent-4DMjb",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-03-18T02:12:11.778Z",
+    "date_updated": "2024-03-18T02:12:11.825Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "3785b674-1a4b-42da-9b4d-d028c7191975",
+    "user_created": {
+      "username": "ygorbalves",
+      "first_name": "Ygor",
+      "last_name": "Alves",
+      "id": "3785b674-1a4b-42da-9b4d-d028c7191975"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.485Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 10,
+    "converter_version": "1.0.0"
+  }
+}

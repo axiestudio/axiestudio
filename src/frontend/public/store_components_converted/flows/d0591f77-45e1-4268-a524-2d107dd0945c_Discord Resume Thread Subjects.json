@@ -1,0 +1,2895 @@
+{
+  "id": "d0591f77-45e1-4268-a524-2d107dd0945c",
+  "name": "Discord Resume Thread Subjects",
+  "description": "Get messages from a discord channel and resume it. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "ygorbalves",
+    "first_name": "Ygor",
+    "last_name": "Alves",
+    "id": "3785b674-1a4b-42da-9b4d-d028c7191975",
+    "full_name": "Ygor Alves"
+  },
+  "store_url": "https://www.langflow.store/store/component/d0591f77-45e1-4268-a524-2d107dd0945c",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-05-23T04:33:26.126Z",
+    "updated": "2024-05-23T04:33:26.163Z",
+    "downloaded": "2025-08-19T17:50:05.200Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "CustomComponent-qlvyg",
+        "type": "genericNode",
+        "position": {
+          "x": -880.0437428586735,
+          "y": -115.33750527214386
+        },
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "bot_name": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "bot_name",
+                "display_name": "BotName",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "channel_id": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "channel_id",
+                "display_name": "ChannelId",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "1243052002833989662"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional, Any\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom json import loads\nfrom axiestudio.schema.dotdict import dotdict\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordThreads(CustomComponent):\n    display_name = \"DiscordThreads\"\n    description = \"get the messages of discord's threads\"\n    field_order = [\"bot_name\", \"token\", \"channel_id\", \"limit\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"bot_name\": {\n                \"display_name\": \"BotName\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"limit\": {\n                \"display_name\": \"Limit\",\n                \"value\": 20,\n                \"advanced\": False,\n                \"info\": \"The value 0 means limitless\",\n                \"required\": True,\n            }\n        }\n\n    def update_state(\n        self, name: str, value: Any\n    ):\n        print(name, value, flush=True)\n        return super().update_state(name, value)\n\n    def build(self, bot_name: str, token: str, channel_id: int,  limit: int) -> str:\n        import requests\n        \n        body = {\"token\": token}\n        if channel_id:\n            body[\"channel_id\"] = channel_id\n\n        resp = requests.post(\"http://discord:7880/api/v1/listen_mention\", json=body)\n        if resp.status_code == 200:\n            user_input = loads(resp.content)\n            user_input_id, user_input_msg = user_input[\"id\"], user_input[\"content\"]\n            body = {\"token\": token, \"limit\": limit}\n            resp = requests.post(f\"http://discord:7880/api/v1/channels/{channel_id}/get_messages\", json=body)\n\n            if resp.status_code == 200:\n                messages = loads(resp.content)[1:]\n                messages.reverse()\n                messages = str([{\"sender\": message[\"author\"][\"name\"], \"message\": message[\"message\"]} for message in messages])\n\n                return f'Chat Messages: {messages}\\n\\nChat Message Order: Down to Top\\n\\nUser Input: {user_input_msg}\\nYour name: {bot_name}'\n            else:\n                raise Exception(\"Timeout exception\")\n        else:\n            raise Exception(\"Timeout exception\")\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "limit": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "20",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "limit",
+                "display_name": "Limit",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The value 0 means limitless",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "token": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "token",
+                "display_name": "Token",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "get the messages of discord's threads",
+            "icon": "Discord",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "DiscordThreads",
+            "documentation": "",
+            "custom_fields": {
+              "bot_name": null,
+              "token": null,
+              "channel_id": null,
+              "limit": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "bot_name",
+              "token",
+              "channel_id",
+              "limit"
+            ],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-qlvyg"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 553
+      },
+      {
+        "id": "CustomComponent-RTALL",
+        "type": "genericNode",
+        "position": {
+          "x": -405.08427138190257,
+          "y": -138.28619759498542
+        },
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "channel_id": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "channel_id",
+                "display_name": "ChannelId",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "1243052002833989662"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional, Any\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom json import loads\nfrom axiestudio.schema.dotdict import dotdict\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordAddEmojiReaction(CustomComponent):\n    display_name = \"DiscordAddEmojiReaction\"\n    description = \"react to discord message\"\n    field_order = [\"token\", \"channel_id\", \"message_id\", \"reaction\", \"message\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"message_id\": {\n                \"display_name\": \"MessageId\",\n                \"advanced\": False,\n                \"required\": False,\n                \"value\": None,\n            }, \"reaction\": {\n                \"display_name\": \"EmojiReaction\",\n                \"advanced\": False,\n                \"required\": False,\n                \"value\": None,\n            }, \"message\": {\n                \"display_name\": \"Message\",\n                \"advanced\": False,\n                \"required\": False,\n            }\n        }\n\n    def build(self, token: str, channel_id: int, reaction: str, message: str, message_id: Optional[int] = None) -> str:\n        import requests\n\n        body = {\"token\": token}\n        if not message_id:\n            body = {\"token\": token, \"limit\": 1}\n            resp = requests.post(f\"http://discord:7880/api/v1/channels/{channel_id}/get_messages\", json=body)\n            if resp.status_code == 200:\n                message_id = loads(resp.content)[0][\"id\"]\n            else: raise Exception(\"Could not retrieve last message\")\n        body = {\"token\": token, \"emoji\": reaction}\n        resp = requests.post(f\"http://discord:7880/api/v1/channels/{channel_id}/react/{message_id}\", json=body)\n        return message\n\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "message": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "message",
+                "display_name": "Message",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "message_id": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "message_id",
+                "display_name": "MessageId",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "reaction": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "reaction",
+                "display_name": "EmojiReaction",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "🤖"
+              },
+              "token": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "token",
+                "display_name": "Token",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "react to discord message",
+            "icon": "Discord",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "DiscordAddEmojiReaction",
+            "documentation": "",
+            "custom_fields": {
+              "token": null,
+              "channel_id": null,
+              "reaction": null,
+              "message": null,
+              "message_id": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "token",
+              "channel_id",
+              "message_id",
+              "reaction",
+              "message"
+            ],
+            "beta": false
+          },
+          "id": "CustomComponent-RTALL",
+          "description": "react to discord message",
+          "display_name": "DiscordAddEmojiReaction"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 647
+      },
+      {
+        "id": "CustomComponent-4ekup",
+        "type": "genericNode",
+        "position": {
+          "x": 1036.873777702398,
+          "y": -36.301391581876146
+        },
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "channel_id": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "channel_id",
+                "display_name": "ChannelId",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "1243052002833989662"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional, Any\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom json import loads\nfrom axiestudio.schema.dotdict import dotdict\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordRemoveEmojiReaction(CustomComponent):\n    display_name = \"DiscordRemoveEmojiReaction\"\n    description = \"remove reaction from discord message\"\n    field_order = [\"token\", \"channel_id\", \"message_id\", \"reaction\", \"message\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"message_id\": {\n                \"display_name\": \"MessageId\",\n                \"advanced\": False,\n                \"required\": False,\n                \"value\": None,\n            }, \"reaction\": {\n                \"display_name\": \"EmojiReaction\",\n                \"advanced\": False,\n                \"required\": False,\n                \"value\": None,\n            }, \"message\": {\n                \"display_name\": \"Message\",\n                \"advanced\": False,\n                \"required\": False,\n            }\n        }\n\n    def update_state(\n        self, name: str, value: Any\n    ):\n        print(name, value, flush=True)\n        return super().update_state(name, value)\n\n    def build(self, token: str, channel_id: int, reaction: str, message: str, message_id: Optional[int] = None) -> str:\n        import requests\n\n        body = {\"token\": token}\n        if not message_id:\n            body = {\"token\": token, \"limit\": 1}\n            resp = requests.post(f\"http://discord:7880/api/v1/channels/{channel_id}/get_messages\", json=body)\n            if resp.status_code == 200:\n                message_id = loads(resp.content)[0][\"id\"]\n            else: raise Exception(\"Could not retrieve last message\")\n        body = {\"token\": token, \"emoji\": reaction}\n        print(\"message_id\", message_id)\n        resp = requests.delete(f\"http://discord:7880/api/v1/channels/{channel_id}/react/{message_id}\", json=body)\n        return message\n\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "message": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "message",
+                "display_name": "Message",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "message_id": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "message_id",
+                "display_name": "MessageId",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "reaction": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "reaction",
+                "display_name": "EmojiReaction",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": "🤖"
+              },
+              "token": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "token",
+                "display_name": "Token",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "remove reaction from discord message",
+            "icon": "Discord",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "DiscordRemoveEmojiReaction",
+            "documentation": "",
+            "custom_fields": {
+              "token": null,
+              "channel_id": null,
+              "reaction": null,
+              "message": null,
+              "message_id": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "token",
+              "channel_id",
+              "message_id",
+              "reaction",
+              "message"
+            ],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-4ekup"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 647
+      },
+      {
+        "id": "OpenAIModel-5grsS",
+        "type": "genericNode",
+        "position": {
+          "x": 530.469946779462,
+          "y": -195.65328370929262
+        },
+        "data": {
+          "type": "OpenAIModel",
+          "node": {
+            "template": {
+              "input_value": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "input_value",
+                "display_name": "Input",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from typing import Optional\n\nfrom langchain_openai import ChatOpenAI\nfrom pydantic.v1 import SecretStr\n\nfrom axiestudio.base.constants import STREAM_INFO_TEXT\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.base.models.openai_constants import MODEL_NAMES\nfrom axiestudio.field_typing import NestedDict, Text\n\n\nclass OpenAIModelComponent(LCModelComponent):\n    display_name = \"OpenAI\"\n    description = \"Generates text using OpenAI LLMs.\"\n    icon = \"OpenAI\"\n\n    field_order = [\n        \"max_tokens\",\n        \"model_kwargs\",\n        \"model_name\",\n        \"openai_api_base\",\n        \"openai_api_key\",\n        \"temperature\",\n        \"input_value\",\n        \"system_message\",\n        \"stream\",\n    ]\n\n    def build_config(self):\n        return {\n            \"input_value\": {\"display_name\": \"Input\"},\n            \"max_tokens\": {\n                \"display_name\": \"Max Tokens\",\n                \"advanced\": True,\n            },\n            \"model_kwargs\": {\n                \"display_name\": \"Model Kwargs\",\n                \"advanced\": True,\n            },\n            \"model_name\": {\n                \"display_name\": \"Model Name\",\n                \"advanced\": False,\n                \"options\": MODEL_NAMES,\n            },\n            \"openai_api_base\": {\n                \"display_name\": \"OpenAI API Base\",\n                \"advanced\": True,\n                \"info\": (\n                    \"The base URL of the OpenAI API. Defaults to https://api.openai.com/v1.\\n\\n\"\n                    \"You can change this to use other APIs like JinaChat, LocalAI and Prem.\"\n                ),\n            },\n            \"openai_api_key\": {\n                \"display_name\": \"OpenAI API Key\",\n                \"info\": \"The OpenAI API Key to use for the OpenAI model.\",\n                \"advanced\": False,\n                \"password\": True,\n            },\n            \"temperature\": {\n                \"display_name\": \"Temperature\",\n                \"advanced\": False,\n                \"value\": 0.1,\n            },\n            \"stream\": {\n                \"display_name\": \"Stream\",\n                \"info\": STREAM_INFO_TEXT,\n                \"advanced\": True,\n            },\n            \"system_message\": {\n                \"display_name\": \"System Message\",\n                \"info\": \"System message to pass to the model.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        input_value: Text,\n        openai_api_key: str,\n        temperature: float,\n        model_name: str = \"gpt-4o\",\n        max_tokens: Optional[int] = 256,\n        model_kwargs: NestedDict = {},\n        openai_api_base: Optional[str] = None,\n        stream: bool = False,\n        system_message: Optional[str] = None,\n    ) -> Text:\n        if not openai_api_base:\n            openai_api_base = \"https://api.openai.com/v1\"\n        if openai_api_key:\n            api_key = SecretStr(openai_api_key)\n        else:\n            api_key = None\n\n        output = ChatOpenAI(\n            max_tokens=max_tokens,\n            model_kwargs=model_kwargs,\n            model=model_name,\n            base_url=openai_api_base,\n            api_key=api_key,\n            temperature=temperature,\n        )\n\n        return self.get_chat_result(output, stream, input_value, system_message)\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "max_tokens": {
+                "type": "int",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": 256,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "max_tokens",
+                "display_name": "Max Tokens",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "model_kwargs": {
+                "type": "NestedDict",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": {},
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "model_kwargs",
+                "display_name": "Model Kwargs",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "model_name": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": true,
+                "show": true,
+                "multiline": false,
+                "value": "gpt-3.5-turbo",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "options": [
+                  "gpt-4o",
+                  "gpt-4-turbo",
+                  "gpt-4-turbo-preview",
+                  "gpt-3.5-turbo",
+                  "gpt-3.5-turbo-0125"
+                ],
+                "name": "model_name",
+                "display_name": "Model Name",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "openai_api_base": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "openai_api_base",
+                "display_name": "OpenAI API Base",
+                "advanced": true,
+                "dynamic": false,
+                "info": "The base URL of the OpenAI API. Defaults to https://api.openai.com/v1.\n\nYou can change this to use other APIs like JinaChat, LocalAI and Prem.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "openai_api_key": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "openai_api_key",
+                "display_name": "OpenAI API Key",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The OpenAI API Key to use for the OpenAI model.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "stream": {
+                "type": "bool",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "stream",
+                "display_name": "Stream",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Stream the response from the model. Streaming works only in Chat.",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "system_message": {
+                "type": "str",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "system_message",
+                "display_name": "System Message",
+                "advanced": true,
+                "dynamic": false,
+                "info": "System message to pass to the model.",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "temperature": {
+                "type": "float",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "0.2",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "temperature",
+                "display_name": "Temperature",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "rangeSpec": {
+                  "step_type": "float",
+                  "min": -1,
+                  "max": 1,
+                  "step": 0.1
+                },
+                "load_from_db": false,
+                "title_case": false
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Generates text using OpenAI LLMs.",
+            "icon": "OpenAI",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "OpenAI",
+            "documentation": "",
+            "custom_fields": {
+              "input_value": null,
+              "openai_api_key": null,
+              "temperature": null,
+              "model_name": null,
+              "max_tokens": null,
+              "model_kwargs": null,
+              "openai_api_base": null,
+              "stream": null,
+              "system_message": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "max_tokens",
+              "model_kwargs",
+              "model_name",
+              "openai_api_base",
+              "openai_api_key",
+              "temperature",
+              "input_value",
+              "system_message",
+              "stream"
+            ],
+            "beta": false
+          },
+          "id": "OpenAIModel-5grsS"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 561
+      },
+      {
+        "id": "CustomComponent-v5mAR",
+        "type": "genericNode",
+        "position": {
+          "x": 1531.9464393700428,
+          "y": 199.25883836895196
+        },
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "channel_id": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "channel_id",
+                "display_name": "ChannelId",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "1243052002833989662"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordMentionResponse(CustomComponent):\n    display_name = \"DiscordMentionResponse\"\n    description = \"Response channel message mention\"\n    field_order = [\"token\", \"channel_id\", \"message\", \"limit\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"limit\": {\n                \"display_name\": \"Limit\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"message\": {\n                \"display_name\": \"Message\",\n                \"advanced\": False,\n                \"required\": True,\n            }\n        }\n\n    def build(self, token: str, channel_id: int, message: str, limit: int) -> str:\n        import requests\n        resp = requests.post(\n            f\"http://discord:7880/api/v1/channels/{channel_id}/mentions/last\",\n            json={\n                \"token\": token,\n                \"limit\": limit,\n            }\n        )\n        if resp.status_code == 200:\n            msg_reference = loads(resp.content)[\"id\"]\n            resp = requests.post(\n                f\"http://discord:7880/api/v1/channels/{channel_id}/send_message\",\n                json={\n                    \"token\": token,\n                    \"message\": message,\n                    \"reference\": msg_reference,\n                }\n            )\n            if resp.status_code == 200:\n                return \"Sent successfully message:\" + message\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "limit": {
+                "type": "int",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "limit",
+                "display_name": "Limit",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "value": "20"
+              },
+              "message": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "message",
+                "display_name": "Message",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "token": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "token",
+                "display_name": "Token",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Response channel message mention",
+            "icon": "Discord",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "DiscordMentionResponse",
+            "documentation": "",
+            "custom_fields": {
+              "token": null,
+              "channel_id": null,
+              "message": null,
+              "limit": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "token",
+              "channel_id",
+              "message",
+              "limit"
+            ],
+            "beta": false
+          },
+          "id": "CustomComponent-v5mAR",
+          "description": "Response channel message mention",
+          "display_name": "DiscordMentionResponse"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 553
+      },
+      {
+        "id": "CustomComponent-I5zj7",
+        "type": "genericNode",
+        "position": {
+          "x": 76.19195014043578,
+          "y": -309.22278286904907
+        },
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n        subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n        return 1\n    \n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"Join two Strings\"\n    description = \"This component sequentially join 2 Strings.\"\n    \n    def build_config(self):\n        return {\n            \"text1\": {\n                \"display_name\": \"Text 1\",\n                \"advanced\": False,\n                \"required\": True,\n            },\n            \"text2\": {\n                \"display_name\": \"Text 2\",\n                \"advanced\": False,\n                \"required\": True,\n            },\n        }\n    \n    def build(self, text1: str, text2: str) -> str:\n        \"\"\"\n        just join 2 strings :)\n        \"\"\"\n        return str(str(text1) + str(text2))",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "text1": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "text1",
+                "display_name": "Text 1",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "text2": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "text2",
+                "display_name": "Text 2",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ]
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "This component sequentially join 2 Strings.",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "Join 2 Strings",
+            "documentation": "",
+            "custom_fields": {
+              "text1": null,
+              "text2": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false,
+            "official": false
+          },
+          "id": "CustomComponent-I5zj7"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 382
+      },
+      {
+        "id": "Prompt-RBX5A",
+        "type": "genericNode",
+        "position": {
+          "x": -409.19634707639045,
+          "y": -483.72651319830254
+        },
+        "data": {
+          "type": "Prompt",
+          "node": {
+            "template": {
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langchain_core.prompts import PromptTemplate\n\nfrom axiestudio.field_typing import Prompt, TemplateField, Text\nfrom axiestudio.interface.custom.custom_component import CustomComponent\n\n\nclass PromptComponent(CustomComponent):\n    display_name: str = \"Prompt\"\n    description: str = \"Create a prompt template with dynamic variables.\"\n    icon = \"prompts\"\n\n    def build_config(self):\n        return {\n            \"template\": TemplateField(display_name=\"Template\"),\n            \"code\": TemplateField(advanced=True),\n        }\n\n    def build(\n        self,\n        template: Prompt,\n        **kwargs,\n    ) -> Text:\n        from axiestudio.base.prompts.utils import dict_values_to_string\n\n        prompt_template = PromptTemplate.from_template(Text(template))\n        kwargs = dict_values_to_string(kwargs)\n        kwargs = {k: \"\\n\".join(v) if isinstance(v, list) else v for k, v in kwargs.items()}\n        try:\n            formated_prompt = prompt_template.format(**kwargs)\n        except Exception as exc:\n            raise ValueError(f\"Error formatting prompt: {exc}\") from exc\n        self.status = f'Prompt:\\n\"{formated_prompt}\"'\n        return formated_prompt\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "template": {
+                "type": "prompt",
+                "required": false,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "value": "You are an programming especialist that has a huge knowledge on the most different languages, such as  Python | C++ | Rust | GoLang | JavaScript.\nYou were develped by the YAITEC team, a partner of axiestudio team.\n\nInput:",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "template",
+                "display_name": "Template",
+                "advanced": false,
+                "input_types": [
+                  "Text"
+                ],
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "Create a prompt template with dynamic variables.",
+            "icon": "prompts",
+            "is_input": null,
+            "is_output": null,
+            "is_composition": null,
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "name": "",
+            "display_name": "Prompt",
+            "documentation": "",
+            "custom_fields": {
+              "template": []
+            },
+            "output_types": [
+              "Text"
+            ],
+            "full_path": null,
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [],
+            "beta": false,
+            "error": null
+          },
+          "id": "Prompt-RBX5A",
+          "description": "Create a prompt template with dynamic variables.",
+          "display_name": "Prompt"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 288
+      },
+      {
+        "id": "CustomComponent-QOsd8",
+        "type": "genericNode",
+        "position": {
+          "x": -1372.9884149457798,
+          "y": 66.05310773415596
+        },
+        "data": {
+          "type": "CustomComponent",
+          "node": {
+            "template": {
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordBotName(CustomComponent):\n    display_name = \"DiscordBotName\"\n    description = \"get discord bot name\"\n    field_order = [\"token\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }\n        }\n\n    def build(self, token: str) -> str:\n        import requests\n        resp = requests.post(\"http://discord:7880/api/v1/bot_name\", json={\"token\": token})\n        if resp.status_code == 200:\n            return resp.content\n        else:\n            raise Exception(\"Timeout exception\")\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "token": {
+                "type": "str",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": false,
+                "fileTypes": [],
+                "file_path": "",
+                "password": true,
+                "name": "token",
+                "display_name": "Token",
+                "advanced": false,
+                "dynamic": false,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false,
+                "input_types": [
+                  "Text"
+                ],
+                "value": ""
+              },
+              "_type": "CustomComponent"
+            },
+            "description": "get discord bot name",
+            "icon": "Discord",
+            "base_classes": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "display_name": "DiscordBotName",
+            "documentation": "",
+            "custom_fields": {
+              "token": null
+            },
+            "output_types": [
+              "Text"
+            ],
+            "field_formatters": {},
+            "frozen": false,
+            "field_order": [
+              "token"
+            ],
+            "beta": false
+          },
+          "id": "CustomComponent-QOsd8",
+          "description": "get discord bot name",
+          "display_name": "DiscordBotName"
+        },
+        "selected": false,
+        "width": 384,
+        "height": 288
+      }
+    ],
+    "edges": [
+      {
+        "source": "CustomComponent-qlvyg",
+        "target": "CustomComponent-RTALL",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-qlvygœ}",
+        "targetHandle": "{œfieldNameœ:œmessageœ,œidœ:œCustomComponent-RTALLœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-CustomComponent-qlvyg{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-qlvygœ}-CustomComponent-RTALL{œfieldNameœ:œmessageœ,œidœ:œCustomComponent-RTALLœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "message",
+            "id": "CustomComponent-RTALL",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "CustomComponent",
+            "id": "CustomComponent-qlvyg"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 ",
+        "selected": false
+      },
+      {
+        "source": "OpenAIModel-5grsS",
+        "target": "CustomComponent-4ekup",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-5grsSœ}",
+        "targetHandle": "{œfieldNameœ:œmessageœ,œidœ:œCustomComponent-4ekupœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-OpenAIModel-5grsS{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-5grsSœ}-CustomComponent-4ekup{œfieldNameœ:œmessageœ,œidœ:œCustomComponent-4ekupœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "message",
+            "id": "CustomComponent-4ekup",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "OpenAIModel",
+            "id": "OpenAIModel-5grsS"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 ",
+        "selected": false
+      },
+      {
+        "source": "CustomComponent-4ekup",
+        "target": "CustomComponent-v5mAR",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-4ekupœ}",
+        "targetHandle": "{œfieldNameœ:œmessageœ,œidœ:œCustomComponent-v5mARœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-CustomComponent-4ekup{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-4ekupœ}-CustomComponent-v5mAR{œfieldNameœ:œmessageœ,œidœ:œCustomComponent-v5mARœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "message",
+            "id": "CustomComponent-v5mAR",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "CustomComponent",
+            "id": "CustomComponent-4ekup"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 ",
+        "selected": false
+      },
+      {
+        "source": "Prompt-RBX5A",
+        "target": "CustomComponent-I5zj7",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œPromptœ,œidœ:œPrompt-RBX5Aœ}",
+        "targetHandle": "{œfieldNameœ:œtext1œ,œidœ:œCustomComponent-I5zj7œ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-Prompt-RBX5A{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œPromptœ,œidœ:œPrompt-RBX5Aœ}-CustomComponent-I5zj7{œfieldNameœ:œtext1œ,œidœ:œCustomComponent-I5zj7œ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "text1",
+            "id": "CustomComponent-I5zj7",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "Prompt",
+            "id": "Prompt-RBX5A"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 ",
+        "selected": false
+      },
+      {
+        "source": "CustomComponent-RTALL",
+        "target": "CustomComponent-I5zj7",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-RTALLœ}",
+        "targetHandle": "{œfieldNameœ:œtext2œ,œidœ:œCustomComponent-I5zj7œ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-CustomComponent-RTALL{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-RTALLœ}-CustomComponent-I5zj7{œfieldNameœ:œtext2œ,œidœ:œCustomComponent-I5zj7œ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "text2",
+            "id": "CustomComponent-I5zj7",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "CustomComponent",
+            "id": "CustomComponent-RTALL"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 ",
+        "selected": false
+      },
+      {
+        "source": "CustomComponent-I5zj7",
+        "target": "OpenAIModel-5grsS",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-I5zj7œ}",
+        "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œOpenAIModel-5grsSœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-CustomComponent-I5zj7{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-I5zj7œ}-OpenAIModel-5grsS{œfieldNameœ:œinput_valueœ,œidœ:œOpenAIModel-5grsSœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "OpenAIModel-5grsS",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "CustomComponent",
+            "id": "CustomComponent-I5zj7"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 ",
+        "selected": false
+      },
+      {
+        "source": "CustomComponent-QOsd8",
+        "target": "CustomComponent-qlvyg",
+        "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-QOsd8œ}",
+        "targetHandle": "{œfieldNameœ:œbot_nameœ,œidœ:œCustomComponent-qlvygœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "id": "reactflow__edge-CustomComponent-QOsd8{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-QOsd8œ}-CustomComponent-qlvyg{œfieldNameœ:œbot_nameœ,œidœ:œCustomComponent-qlvygœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+        "data": {
+          "targetHandle": {
+            "fieldName": "bot_name",
+            "id": "CustomComponent-qlvyg",
+            "inputTypes": [
+              "Text"
+            ],
+            "type": "str"
+          },
+          "sourceHandle": {
+            "baseClasses": [
+              "object",
+              "str",
+              "Text"
+            ],
+            "dataType": "CustomComponent",
+            "id": "CustomComponent-QOsd8"
+          }
+        },
+        "style": {
+          "stroke": "#555"
+        },
+        "className": "stroke-gray-900 ",
+        "selected": false
+      }
+    ],
+    "viewport": {
+      "x": 561.1507504172783,
+      "y": 247.9304099796587,
+      "zoom": 0.3400927131014863
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 6
+    },
+    "OpenAIModel": {
+      "count": 1
+    },
+    "Prompt": {
+      "count": 1
+    },
+    "total": 8
+  },
+  "original": {
+    "id": "d0591f77-45e1-4268-a524-2d107dd0945c",
+    "name": "Discord Resume Thread Subjects",
+    "description": "Get messages from a discord channel and resume it.",
+    "is_component": false,
+    "liked_by_count": "2",
+    "downloads_count": "35",
+    "metadata": {
+      "CustomComponent": {
+        "count": 6
+      },
+      "OpenAIModel": {
+        "count": 1
+      },
+      "Prompt": {
+        "count": 1
+      },
+      "total": 8
+    },
+    "last_tested_version": "1.0.0a36",
+    "private": false,
+    "data": {
+      "nodes": [
+        {
+          "id": "CustomComponent-qlvyg",
+          "type": "genericNode",
+          "position": {
+            "x": -880.0437428586735,
+            "y": -115.33750527214386
+          },
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "bot_name": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "bot_name",
+                  "display_name": "BotName",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "channel_id": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "channel_id",
+                  "display_name": "ChannelId",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "1243052002833989662"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional, Any\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom json import loads\nfrom axiestudio.schema.dotdict import dotdict\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordThreads(CustomComponent):\n    display_name = \"DiscordThreads\"\n    description = \"get the messages of discord's threads\"\n    field_order = [\"bot_name\", \"token\", \"channel_id\", \"limit\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"bot_name\": {\n                \"display_name\": \"BotName\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"limit\": {\n                \"display_name\": \"Limit\",\n                \"value\": 20,\n                \"advanced\": False,\n                \"info\": \"The value 0 means limitless\",\n                \"required\": True,\n            }\n        }\n\n    def update_state(\n        self, name: str, value: Any\n    ):\n        print(name, value, flush=True)\n        return super().update_state(name, value)\n\n    def build(self, bot_name: str, token: str, channel_id: int,  limit: int) -> str:\n        import requests\n        \n        body = {\"token\": token}\n        if channel_id:\n            body[\"channel_id\"] = channel_id\n\n        resp = requests.post(\"http://discord:7880/api/v1/listen_mention\", json=body)\n        if resp.status_code == 200:\n            user_input = loads(resp.content)\n            user_input_id, user_input_msg = user_input[\"id\"], user_input[\"content\"]\n            body = {\"token\": token, \"limit\": limit}\n            resp = requests.post(f\"http://discord:7880/api/v1/channels/{channel_id}/get_messages\", json=body)\n\n            if resp.status_code == 200:\n                messages = loads(resp.content)[1:]\n                messages.reverse()\n                messages = str([{\"sender\": message[\"author\"][\"name\"], \"message\": message[\"message\"]} for message in messages])\n\n                return f'Chat Messages: {messages}\\n\\nChat Message Order: Down to Top\\n\\nUser Input: {user_input_msg}\\nYour name: {bot_name}'\n            else:\n                raise Exception(\"Timeout exception\")\n        else:\n            raise Exception(\"Timeout exception\")\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "limit": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "20",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "limit",
+                  "display_name": "Limit",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The value 0 means limitless",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "token": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "token",
+                  "display_name": "Token",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "get the messages of discord's threads",
+              "icon": "Discord",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "DiscordThreads",
+              "documentation": "",
+              "custom_fields": {
+                "bot_name": null,
+                "token": null,
+                "channel_id": null,
+                "limit": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "bot_name",
+                "token",
+                "channel_id",
+                "limit"
+              ],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-qlvyg"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 553
+        },
+        {
+          "id": "CustomComponent-RTALL",
+          "type": "genericNode",
+          "position": {
+            "x": -405.08427138190257,
+            "y": -138.28619759498542
+          },
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "channel_id": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "channel_id",
+                  "display_name": "ChannelId",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "1243052002833989662"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional, Any\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom json import loads\nfrom axiestudio.schema.dotdict import dotdict\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordAddEmojiReaction(CustomComponent):\n    display_name = \"DiscordAddEmojiReaction\"\n    description = \"react to discord message\"\n    field_order = [\"token\", \"channel_id\", \"message_id\", \"reaction\", \"message\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"message_id\": {\n                \"display_name\": \"MessageId\",\n                \"advanced\": False,\n                \"required\": False,\n                \"value\": None,\n            }, \"reaction\": {\n                \"display_name\": \"EmojiReaction\",\n                \"advanced\": False,\n                \"required\": False,\n                \"value\": None,\n            }, \"message\": {\n                \"display_name\": \"Message\",\n                \"advanced\": False,\n                \"required\": False,\n            }\n        }\n\n    def build(self, token: str, channel_id: int, reaction: str, message: str, message_id: Optional[int] = None) -> str:\n        import requests\n\n        body = {\"token\": token}\n        if not message_id:\n            body = {\"token\": token, \"limit\": 1}\n            resp = requests.post(f\"http://discord:7880/api/v1/channels/{channel_id}/get_messages\", json=body)\n            if resp.status_code == 200:\n                message_id = loads(resp.content)[0][\"id\"]\n            else: raise Exception(\"Could not retrieve last message\")\n        body = {\"token\": token, \"emoji\": reaction}\n        resp = requests.post(f\"http://discord:7880/api/v1/channels/{channel_id}/react/{message_id}\", json=body)\n        return message\n\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "message": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "message",
+                  "display_name": "Message",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "message_id": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "message_id",
+                  "display_name": "MessageId",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "reaction": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "reaction",
+                  "display_name": "EmojiReaction",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "🤖"
+                },
+                "token": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "token",
+                  "display_name": "Token",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "react to discord message",
+              "icon": "Discord",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "DiscordAddEmojiReaction",
+              "documentation": "",
+              "custom_fields": {
+                "token": null,
+                "channel_id": null,
+                "reaction": null,
+                "message": null,
+                "message_id": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "token",
+                "channel_id",
+                "message_id",
+                "reaction",
+                "message"
+              ],
+              "beta": false
+            },
+            "id": "CustomComponent-RTALL",
+            "description": "react to discord message",
+            "display_name": "DiscordAddEmojiReaction"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 647
+        },
+        {
+          "id": "CustomComponent-4ekup",
+          "type": "genericNode",
+          "position": {
+            "x": 1036.873777702398,
+            "y": -36.301391581876146
+          },
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "channel_id": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "channel_id",
+                  "display_name": "ChannelId",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "1243052002833989662"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional, Any\nfrom axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom json import loads\nfrom axiestudio.schema.dotdict import dotdict\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordRemoveEmojiReaction(CustomComponent):\n    display_name = \"DiscordRemoveEmojiReaction\"\n    description = \"remove reaction from discord message\"\n    field_order = [\"token\", \"channel_id\", \"message_id\", \"reaction\", \"message\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"message_id\": {\n                \"display_name\": \"MessageId\",\n                \"advanced\": False,\n                \"required\": False,\n                \"value\": None,\n            }, \"reaction\": {\n                \"display_name\": \"EmojiReaction\",\n                \"advanced\": False,\n                \"required\": False,\n                \"value\": None,\n            }, \"message\": {\n                \"display_name\": \"Message\",\n                \"advanced\": False,\n                \"required\": False,\n            }\n        }\n\n    def update_state(\n        self, name: str, value: Any\n    ):\n        print(name, value, flush=True)\n        return super().update_state(name, value)\n\n    def build(self, token: str, channel_id: int, reaction: str, message: str, message_id: Optional[int] = None) -> str:\n        import requests\n\n        body = {\"token\": token}\n        if not message_id:\n            body = {\"token\": token, \"limit\": 1}\n            resp = requests.post(f\"http://discord:7880/api/v1/channels/{channel_id}/get_messages\", json=body)\n            if resp.status_code == 200:\n                message_id = loads(resp.content)[0][\"id\"]\n            else: raise Exception(\"Could not retrieve last message\")\n        body = {\"token\": token, \"emoji\": reaction}\n        print(\"message_id\", message_id)\n        resp = requests.delete(f\"http://discord:7880/api/v1/channels/{channel_id}/react/{message_id}\", json=body)\n        return message\n\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "message": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "message",
+                  "display_name": "Message",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "message_id": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "message_id",
+                  "display_name": "MessageId",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "reaction": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "reaction",
+                  "display_name": "EmojiReaction",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": "🤖"
+                },
+                "token": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "token",
+                  "display_name": "Token",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "remove reaction from discord message",
+              "icon": "Discord",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "DiscordRemoveEmojiReaction",
+              "documentation": "",
+              "custom_fields": {
+                "token": null,
+                "channel_id": null,
+                "reaction": null,
+                "message": null,
+                "message_id": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "token",
+                "channel_id",
+                "message_id",
+                "reaction",
+                "message"
+              ],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-4ekup"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 647
+        },
+        {
+          "id": "OpenAIModel-5grsS",
+          "type": "genericNode",
+          "position": {
+            "x": 530.469946779462,
+            "y": -195.65328370929262
+          },
+          "data": {
+            "type": "OpenAIModel",
+            "node": {
+              "template": {
+                "input_value": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "input_value",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from typing import Optional\n\nfrom langchain_openai import ChatOpenAI\nfrom pydantic.v1 import SecretStr\n\nfrom axiestudio.base.constants import STREAM_INFO_TEXT\nfrom axiestudio.base.models.model import LCModelComponent\nfrom axiestudio.base.models.openai_constants import MODEL_NAMES\nfrom axiestudio.field_typing import NestedDict, Text\n\n\nclass OpenAIModelComponent(LCModelComponent):\n    display_name = \"OpenAI\"\n    description = \"Generates text using OpenAI LLMs.\"\n    icon = \"OpenAI\"\n\n    field_order = [\n        \"max_tokens\",\n        \"model_kwargs\",\n        \"model_name\",\n        \"openai_api_base\",\n        \"openai_api_key\",\n        \"temperature\",\n        \"input_value\",\n        \"system_message\",\n        \"stream\",\n    ]\n\n    def build_config(self):\n        return {\n            \"input_value\": {\"display_name\": \"Input\"},\n            \"max_tokens\": {\n                \"display_name\": \"Max Tokens\",\n                \"advanced\": True,\n            },\n            \"model_kwargs\": {\n                \"display_name\": \"Model Kwargs\",\n                \"advanced\": True,\n            },\n            \"model_name\": {\n                \"display_name\": \"Model Name\",\n                \"advanced\": False,\n                \"options\": MODEL_NAMES,\n            },\n            \"openai_api_base\": {\n                \"display_name\": \"OpenAI API Base\",\n                \"advanced\": True,\n                \"info\": (\n                    \"The base URL of the OpenAI API. Defaults to https://api.openai.com/v1.\\n\\n\"\n                    \"You can change this to use other APIs like JinaChat, LocalAI and Prem.\"\n                ),\n            },\n            \"openai_api_key\": {\n                \"display_name\": \"OpenAI API Key\",\n                \"info\": \"The OpenAI API Key to use for the OpenAI model.\",\n                \"advanced\": False,\n                \"password\": True,\n            },\n            \"temperature\": {\n                \"display_name\": \"Temperature\",\n                \"advanced\": False,\n                \"value\": 0.1,\n            },\n            \"stream\": {\n                \"display_name\": \"Stream\",\n                \"info\": STREAM_INFO_TEXT,\n                \"advanced\": True,\n            },\n            \"system_message\": {\n                \"display_name\": \"System Message\",\n                \"info\": \"System message to pass to the model.\",\n                \"advanced\": True,\n            },\n        }\n\n    def build(\n        self,\n        input_value: Text,\n        openai_api_key: str,\n        temperature: float,\n        model_name: str = \"gpt-4o\",\n        max_tokens: Optional[int] = 256,\n        model_kwargs: NestedDict = {},\n        openai_api_base: Optional[str] = None,\n        stream: bool = False,\n        system_message: Optional[str] = None,\n    ) -> Text:\n        if not openai_api_base:\n            openai_api_base = \"https://api.openai.com/v1\"\n        if openai_api_key:\n            api_key = SecretStr(openai_api_key)\n        else:\n            api_key = None\n\n        output = ChatOpenAI(\n            max_tokens=max_tokens,\n            model_kwargs=model_kwargs,\n            model=model_name,\n            base_url=openai_api_base,\n            api_key=api_key,\n            temperature=temperature,\n        )\n\n        return self.get_chat_result(output, stream, input_value, system_message)\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "max_tokens": {
+                  "type": "int",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": 256,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "max_tokens",
+                  "display_name": "Max Tokens",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "model_kwargs": {
+                  "type": "NestedDict",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": {},
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "model_kwargs",
+                  "display_name": "Model Kwargs",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "model_name": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": true,
+                  "show": true,
+                  "multiline": false,
+                  "value": "gpt-3.5-turbo",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "options": [
+                    "gpt-4o",
+                    "gpt-4-turbo",
+                    "gpt-4-turbo-preview",
+                    "gpt-3.5-turbo",
+                    "gpt-3.5-turbo-0125"
+                  ],
+                  "name": "model_name",
+                  "display_name": "Model Name",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "openai_api_base": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "openai_api_base",
+                  "display_name": "OpenAI API Base",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "The base URL of the OpenAI API. Defaults to https://api.openai.com/v1.\n\nYou can change this to use other APIs like JinaChat, LocalAI and Prem.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "openai_api_key": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "openai_api_key",
+                  "display_name": "OpenAI API Key",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The OpenAI API Key to use for the OpenAI model.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "stream": {
+                  "type": "bool",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "stream",
+                  "display_name": "Stream",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "Stream the response from the model. Streaming works only in Chat.",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "system_message": {
+                  "type": "str",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "system_message",
+                  "display_name": "System Message",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "System message to pass to the model.",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "temperature": {
+                  "type": "float",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "0.2",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "temperature",
+                  "display_name": "Temperature",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "rangeSpec": {
+                    "step_type": "float",
+                    "min": -1,
+                    "max": 1,
+                    "step": 0.1
+                  },
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Generates text using OpenAI LLMs.",
+              "icon": "OpenAI",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "OpenAI",
+              "documentation": "",
+              "custom_fields": {
+                "input_value": null,
+                "openai_api_key": null,
+                "temperature": null,
+                "model_name": null,
+                "max_tokens": null,
+                "model_kwargs": null,
+                "openai_api_base": null,
+                "stream": null,
+                "system_message": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "max_tokens",
+                "model_kwargs",
+                "model_name",
+                "openai_api_base",
+                "openai_api_key",
+                "temperature",
+                "input_value",
+                "system_message",
+                "stream"
+              ],
+              "beta": false
+            },
+            "id": "OpenAIModel-5grsS"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 561
+        },
+        {
+          "id": "CustomComponent-v5mAR",
+          "type": "genericNode",
+          "position": {
+            "x": 1531.9464393700428,
+            "y": 199.25883836895196
+          },
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "channel_id": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "channel_id",
+                  "display_name": "ChannelId",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "1243052002833989662"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordMentionResponse(CustomComponent):\n    display_name = \"DiscordMentionResponse\"\n    description = \"Response channel message mention\"\n    field_order = [\"token\", \"channel_id\", \"message\", \"limit\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }, \"channel_id\": {\n                \"display_name\": \"ChannelId\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"limit\": {\n                \"display_name\": \"Limit\",\n                \"advanced\": False,\n                \"required\": True,\n            }, \"message\": {\n                \"display_name\": \"Message\",\n                \"advanced\": False,\n                \"required\": True,\n            }\n        }\n\n    def build(self, token: str, channel_id: int, message: str, limit: int) -> str:\n        import requests\n        resp = requests.post(\n            f\"http://discord:7880/api/v1/channels/{channel_id}/mentions/last\",\n            json={\n                \"token\": token,\n                \"limit\": limit,\n            }\n        )\n        if resp.status_code == 200:\n            msg_reference = loads(resp.content)[\"id\"]\n            resp = requests.post(\n                f\"http://discord:7880/api/v1/channels/{channel_id}/send_message\",\n                json={\n                    \"token\": token,\n                    \"message\": message,\n                    \"reference\": msg_reference,\n                }\n            )\n            if resp.status_code == 200:\n                return \"Sent successfully message:\" + message\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "limit": {
+                  "type": "int",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "limit",
+                  "display_name": "Limit",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "value": "20"
+                },
+                "message": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "message",
+                  "display_name": "Message",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "token": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "token",
+                  "display_name": "Token",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Response channel message mention",
+              "icon": "Discord",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "DiscordMentionResponse",
+              "documentation": "",
+              "custom_fields": {
+                "token": null,
+                "channel_id": null,
+                "message": null,
+                "limit": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "token",
+                "channel_id",
+                "message",
+                "limit"
+              ],
+              "beta": false
+            },
+            "id": "CustomComponent-v5mAR",
+            "description": "Response channel message mention",
+            "display_name": "DiscordMentionResponse"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 553
+        },
+        {
+          "id": "CustomComponent-I5zj7",
+          "type": "genericNode",
+          "position": {
+            "x": 76.19195014043578,
+            "y": -309.22278286904907
+          },
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n        subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n        return 1\n    \n\nclass FileUploadComponent(CustomComponent):\n    display_name = \"Join two Strings\"\n    description = \"This component sequentially join 2 Strings.\"\n    \n    def build_config(self):\n        return {\n            \"text1\": {\n                \"display_name\": \"Text 1\",\n                \"advanced\": False,\n                \"required\": True,\n            },\n            \"text2\": {\n                \"display_name\": \"Text 2\",\n                \"advanced\": False,\n                \"required\": True,\n            },\n        }\n    \n    def build(self, text1: str, text2: str) -> str:\n        \"\"\"\n        just join 2 strings :)\n        \"\"\"\n        return str(str(text1) + str(text2))",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "text1": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "text1",
+                  "display_name": "Text 1",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "text2": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "text2",
+                  "display_name": "Text 2",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ]
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "This component sequentially join 2 Strings.",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "Join 2 Strings",
+              "documentation": "",
+              "custom_fields": {
+                "text1": null,
+                "text2": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false,
+              "official": false
+            },
+            "id": "CustomComponent-I5zj7"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 382
+        },
+        {
+          "id": "Prompt-RBX5A",
+          "type": "genericNode",
+          "position": {
+            "x": -409.19634707639045,
+            "y": -483.72651319830254
+          },
+          "data": {
+            "type": "Prompt",
+            "node": {
+              "template": {
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from langchain_core.prompts import PromptTemplate\n\nfrom axiestudio.field_typing import Prompt, TemplateField, Text\nfrom axiestudio.interface.custom.custom_component import CustomComponent\n\n\nclass PromptComponent(CustomComponent):\n    display_name: str = \"Prompt\"\n    description: str = \"Create a prompt template with dynamic variables.\"\n    icon = \"prompts\"\n\n    def build_config(self):\n        return {\n            \"template\": TemplateField(display_name=\"Template\"),\n            \"code\": TemplateField(advanced=True),\n        }\n\n    def build(\n        self,\n        template: Prompt,\n        **kwargs,\n    ) -> Text:\n        from axiestudio.base.prompts.utils import dict_values_to_string\n\n        prompt_template = PromptTemplate.from_template(Text(template))\n        kwargs = dict_values_to_string(kwargs)\n        kwargs = {k: \"\\n\".join(v) if isinstance(v, list) else v for k, v in kwargs.items()}\n        try:\n            formated_prompt = prompt_template.format(**kwargs)\n        except Exception as exc:\n            raise ValueError(f\"Error formatting prompt: {exc}\") from exc\n        self.status = f'Prompt:\\n\"{formated_prompt}\"'\n        return formated_prompt\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "template": {
+                  "type": "prompt",
+                  "required": false,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "value": "You are an programming especialist that has a huge knowledge on the most different languages, such as  Python | C++ | Rust | GoLang | JavaScript.\nYou were develped by the YAITEC team, a partner of axiestudio team.\n\nInput:",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "template",
+                  "display_name": "Template",
+                  "advanced": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "Create a prompt template with dynamic variables.",
+              "icon": "prompts",
+              "is_input": null,
+              "is_output": null,
+              "is_composition": null,
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "name": "",
+              "display_name": "Prompt",
+              "documentation": "",
+              "custom_fields": {
+                "template": []
+              },
+              "output_types": [
+                "Text"
+              ],
+              "full_path": null,
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [],
+              "beta": false,
+              "error": null
+            },
+            "id": "Prompt-RBX5A",
+            "description": "Create a prompt template with dynamic variables.",
+            "display_name": "Prompt"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 288
+        },
+        {
+          "id": "CustomComponent-QOsd8",
+          "type": "genericNode",
+          "position": {
+            "x": -1372.9884149457798,
+            "y": 66.05310773415596
+          },
+          "data": {
+            "type": "CustomComponent",
+            "node": {
+              "template": {
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio import CustomComponent\nfrom axiestudio.field_typing import Data\n\nfrom axiestudio import CustomComponent\nimport subprocess\nimport sys\nimport base64\nfrom tempfile import NamedTemporaryFile\n\ndef install(package):\n    subprocess.check_call([sys.executable, \"-m\", \"pip\", \"install\", package])\n    return 1\n\ninstall(\"requests\")\n\nclass DiscordBotName(CustomComponent):\n    display_name = \"DiscordBotName\"\n    description = \"get discord bot name\"\n    field_order = [\"token\"]\n    icon = \"Discord\"\n\n    def build_config(self) -> dict:\n        return {\n            \"token\": {\n                \"display_name\": \"Token\",\n                \"advanced\": False,\n                \"password\": True,\n                \"required\": True,\n            }\n        }\n\n    def build(self, token: str) -> str:\n        import requests\n        resp = requests.post(\"http://discord:7880/api/v1/bot_name\", json={\"token\": token})\n        if resp.status_code == 200:\n            return resp.content\n        else:\n            raise Exception(\"Timeout exception\")\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "token": {
+                  "type": "str",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": false,
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": true,
+                  "name": "token",
+                  "display_name": "Token",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false,
+                  "input_types": [
+                    "Text"
+                  ],
+                  "value": ""
+                },
+                "_type": "CustomComponent"
+              },
+              "description": "get discord bot name",
+              "icon": "Discord",
+              "base_classes": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "display_name": "DiscordBotName",
+              "documentation": "",
+              "custom_fields": {
+                "token": null
+              },
+              "output_types": [
+                "Text"
+              ],
+              "field_formatters": {},
+              "frozen": false,
+              "field_order": [
+                "token"
+              ],
+              "beta": false
+            },
+            "id": "CustomComponent-QOsd8",
+            "description": "get discord bot name",
+            "display_name": "DiscordBotName"
+          },
+          "selected": false,
+          "width": 384,
+          "height": 288
+        }
+      ],
+      "edges": [
+        {
+          "source": "CustomComponent-qlvyg",
+          "target": "CustomComponent-RTALL",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-qlvygœ}",
+          "targetHandle": "{œfieldNameœ:œmessageœ,œidœ:œCustomComponent-RTALLœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "id": "reactflow__edge-CustomComponent-qlvyg{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-qlvygœ}-CustomComponent-RTALL{œfieldNameœ:œmessageœ,œidœ:œCustomComponent-RTALLœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "message",
+              "id": "CustomComponent-RTALL",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "CustomComponent",
+              "id": "CustomComponent-qlvyg"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 ",
+          "selected": false
+        },
+        {
+          "source": "OpenAIModel-5grsS",
+          "target": "CustomComponent-4ekup",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-5grsSœ}",
+          "targetHandle": "{œfieldNameœ:œmessageœ,œidœ:œCustomComponent-4ekupœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "id": "reactflow__edge-OpenAIModel-5grsS{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-5grsSœ}-CustomComponent-4ekup{œfieldNameœ:œmessageœ,œidœ:œCustomComponent-4ekupœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "message",
+              "id": "CustomComponent-4ekup",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "OpenAIModel",
+              "id": "OpenAIModel-5grsS"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 ",
+          "selected": false
+        },
+        {
+          "source": "CustomComponent-4ekup",
+          "target": "CustomComponent-v5mAR",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-4ekupœ}",
+          "targetHandle": "{œfieldNameœ:œmessageœ,œidœ:œCustomComponent-v5mARœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "id": "reactflow__edge-CustomComponent-4ekup{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-4ekupœ}-CustomComponent-v5mAR{œfieldNameœ:œmessageœ,œidœ:œCustomComponent-v5mARœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "message",
+              "id": "CustomComponent-v5mAR",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "CustomComponent",
+              "id": "CustomComponent-4ekup"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 ",
+          "selected": false
+        },
+        {
+          "source": "Prompt-RBX5A",
+          "target": "CustomComponent-I5zj7",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œPromptœ,œidœ:œPrompt-RBX5Aœ}",
+          "targetHandle": "{œfieldNameœ:œtext1œ,œidœ:œCustomComponent-I5zj7œ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "id": "reactflow__edge-Prompt-RBX5A{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œPromptœ,œidœ:œPrompt-RBX5Aœ}-CustomComponent-I5zj7{œfieldNameœ:œtext1œ,œidœ:œCustomComponent-I5zj7œ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "text1",
+              "id": "CustomComponent-I5zj7",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "Prompt",
+              "id": "Prompt-RBX5A"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 ",
+          "selected": false
+        },
+        {
+          "source": "CustomComponent-RTALL",
+          "target": "CustomComponent-I5zj7",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-RTALLœ}",
+          "targetHandle": "{œfieldNameœ:œtext2œ,œidœ:œCustomComponent-I5zj7œ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "id": "reactflow__edge-CustomComponent-RTALL{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-RTALLœ}-CustomComponent-I5zj7{œfieldNameœ:œtext2œ,œidœ:œCustomComponent-I5zj7œ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "text2",
+              "id": "CustomComponent-I5zj7",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "CustomComponent",
+              "id": "CustomComponent-RTALL"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 ",
+          "selected": false
+        },
+        {
+          "source": "CustomComponent-I5zj7",
+          "target": "OpenAIModel-5grsS",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-I5zj7œ}",
+          "targetHandle": "{œfieldNameœ:œinput_valueœ,œidœ:œOpenAIModel-5grsSœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "id": "reactflow__edge-CustomComponent-I5zj7{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-I5zj7œ}-OpenAIModel-5grsS{œfieldNameœ:œinput_valueœ,œidœ:œOpenAIModel-5grsSœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "input_value",
+              "id": "OpenAIModel-5grsS",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "CustomComponent",
+              "id": "CustomComponent-I5zj7"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 ",
+          "selected": false
+        },
+        {
+          "source": "CustomComponent-QOsd8",
+          "target": "CustomComponent-qlvyg",
+          "sourceHandle": "{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-QOsd8œ}",
+          "targetHandle": "{œfieldNameœ:œbot_nameœ,œidœ:œCustomComponent-qlvygœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "id": "reactflow__edge-CustomComponent-QOsd8{œbaseClassesœ:[œobjectœ,œstrœ,œTextœ],œdataTypeœ:œCustomComponentœ,œidœ:œCustomComponent-QOsd8œ}-CustomComponent-qlvyg{œfieldNameœ:œbot_nameœ,œidœ:œCustomComponent-qlvygœ,œinputTypesœ:[œTextœ],œtypeœ:œstrœ}",
+          "data": {
+            "targetHandle": {
+              "fieldName": "bot_name",
+              "id": "CustomComponent-qlvyg",
+              "inputTypes": [
+                "Text"
+              ],
+              "type": "str"
+            },
+            "sourceHandle": {
+              "baseClasses": [
+                "object",
+                "str",
+                "Text"
+              ],
+              "dataType": "CustomComponent",
+              "id": "CustomComponent-QOsd8"
+            }
+          },
+          "style": {
+            "stroke": "#555"
+          },
+          "className": "stroke-gray-900 ",
+          "selected": false
+        }
+      ],
+      "viewport": {
+        "x": 561.1507504172783,
+        "y": 247.9304099796587,
+        "zoom": 0.3400927131014863
+      }
+    },
+    "date_created": "2024-05-23T04:33:26.126Z",
+    "date_updated": "2024-05-23T04:33:26.163Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "3785b674-1a4b-42da-9b4d-d028c7191975",
+    "user_created": {
+      "username": "ygorbalves",
+      "first_name": "Ygor",
+      "last_name": "Alves",
+      "id": "3785b674-1a4b-42da-9b4d-d028c7191975"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:05.838Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 58,
+    "converter_version": "1.0.0"
+  }
+}

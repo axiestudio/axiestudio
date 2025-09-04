@@ -1,0 +1,575 @@
+{
+  "id": "c3b0930a-7de7-43c6-87b5-2eb4ce5e2c33",
+  "name": "OpenAI Functions Agent",
+  "description": "This component creates an agent that uses OpenAI function calling to communicate its decisions on what actions to take integrating with its tools. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "misbah",
+    "first_name": "Menlo Park Lab",
+    "last_name": "Lab",
+    "id": "8ca3c638-244a-4d41-ae61-bc145776bd63",
+    "full_name": "Menlo Park Lab Lab"
+  },
+  "store_url": "https://www.langflow.store/store/component/c3b0930a-7de7-43c6-87b5-2eb4ce5e2c33",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-07T03:23:40.323Z",
+    "updated": "2024-09-07T03:23:40.349Z",
+    "downloaded": "2025-08-19T17:50:06.682Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "OpenAI Functions Agent",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "llm": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "llm",
+                "value": "",
+                "display_name": "Language Model",
+                "advanced": false,
+                "input_types": [
+                  "LanguageModel"
+                ],
+                "dynamic": false,
+                "info": "An OpenAI LLM.",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "tools": {
+                "trace_as_metadata": true,
+                "list": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "tools",
+                "value": "",
+                "display_name": "Tools",
+                "advanced": false,
+                "input_types": [
+                  "Tool",
+                  "BaseTool"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, Output, BoolInput\nfrom axiestudio.schema import Data\n\nfrom typing import List, Tuple\nimport os\nfrom typing import Union\n\nfrom langchain.agents import AgentExecutor\nfrom langchain.agents.format_scratchpad import format_to_openai_function_messages\nfrom langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.utils.function_calling import convert_to_openai_function\nfrom langchain_community.utilities.tavily_search import TavilySearchAPIWrapper\nfrom langchain_core.messages import AIMessage, HumanMessage\nfrom langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder\nfrom langchain_core.pydantic_v1 import BaseModel, Field\n\nfrom axiestudio.base.agents.agent import LCAgentComponent\n\nclass FunctionsAgent(LCToolsAgentComponent):\n    display_name = \"OpenAI Functions Agent\"\n    description = \"This component creates an agent that uses OpenAI function calling to communicate its decisions on what actions to take integrating with its tools.\"\n    documentation: str = \"https://github.com/langchain-ai/langchain/tree/master/templates/openai-functions-agent\"\n    icon = \"LangChain\"\n    name = \"OpenAI Functions Agent\"\n\n    inputs = LCToolsAgentComponent._base_inputs + [\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True, info=\"An OpenAI LLM.\"),\n        MessageTextInput(name=\"input_value\", display_name=\"Input Value\", value=\"Hello, World!\"),\n        MultilineInput(\n            name=\"system_prompt\",\n            display_name=\"System Prompt\",\n            info=\"System prompt for the agent.\",\n            value=\"You are a helpful assistant. \\\n        \t\t    Use tools (only if necessary) to best answer the users questions.\",\n        ),\n        MultilineInput(\n            name=\"user_prompt\", display_name=\"Prompt\", info=\"This prompt must contain 'input' key.\", value=\"If you do not have access, search for it using the available tools. {input}\"\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Response\", name=\"response\", method=\"build_agent_response\"),\n        Output(display_name=\"Agent\", name=\"agent\", method=\"build_agent\"),\n    ]\n\n    def build_agent_response(self) -> Message:\n        try:\n            os.environ[\"OPENAI_API_KEY\"] = str(self.llm.openai_api_key.get_secret_value())\n        except:\n            raise Exception(\"This component is intended to be used only with OpenAI LLM, since it uses an specific parser for OpenAI Functions Agent.\")\n\n        tools = self.tools\n        \n        llm = ChatOpenAI(temperature=0)\n        assistant_system_message = self.system_prompt\n        prompt = ChatPromptTemplate.from_messages(\n            [\n                (\"system\", assistant_system_message),\n                MessagesPlaceholder(variable_name=\"chat_history\"),\n                (\"user\", self.user_prompt),\n                MessagesPlaceholder(variable_name=\"agent_scratchpad\"),\n            ]\n        )\n        llm_with_tools = llm.bind(functions=[convert_to_openai_function(t) for t in tools])\n        \n        def _format_chat_history(chat_history: List[Tuple[str, str]]):\n            buffer = []\n            for human, ai in chat_history:\n                buffer.append(HumanMessage(content=human))\n                buffer.append(AIMessage(content=ai))\n            return buffer\n    \n        agent = (\n            {\n                \"input\": lambda x: x[\"input\"],\n                \"chat_history\": lambda x: _format_chat_history(x[\"chat_history\"]),\n                \"agent_scratchpad\": lambda x: format_to_openai_function_messages(\n                    x[\"intermediate_steps\"]\n                ),\n            }\n            | prompt\n            | llm_with_tools\n            | OpenAIFunctionsAgentOutputParser()\n        )\n        \n        class AgentInput(BaseModel):\n            input: str\n            chat_history: List[Tuple[str, str]] = Field(\n                ..., extra={\"widget\": {\"type\": \"chat\", \"input\": \"input\", \"output\": \"output\"}}\n            )\n            \n        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=bool(self.verbose)).with_types(\n            input_type=AgentInput\n        )\n        \n        result_agent = agent_executor.invoke({\"input\": self.input_value, \"chat_history\": []}, verbose=bool(self.verbose))\n                    \n        return Message(text=result_agent['output'])\n    \n    def build_agent(self) -> Union[AgentExecutor, Agent]:\n        try:\n            os.environ[\"OPENAI_API_KEY\"] = str(self.llm.openai_api_key.get_secret_value())\n        except:\n            raise Exception(\"This component is intended to be used only with OpenAI LLM, since it uses an specific parser for OpenAI Functions Agent.\")\n\n        tools = self.tools\n        \n        llm = ChatOpenAI(temperature=0)\n        assistant_system_message = self.system_prompt\n        prompt = ChatPromptTemplate.from_messages(\n            [\n                (\"system\", assistant_system_message),\n                MessagesPlaceholder(variable_name=\"chat_history\"),\n                (\"user\", self.user_prompt),\n                MessagesPlaceholder(variable_name=\"agent_scratchpad\"),\n            ]\n        )\n        llm_with_tools = llm.bind(functions=[format_tool_to_openai_function(t) for t in tools])\n        \n        def _format_chat_history(chat_history: List[Tuple[str, str]]):\n            buffer = []\n            for human, ai in chat_history:\n                buffer.append(HumanMessage(content=human))\n                buffer.append(AIMessage(content=ai))\n            return buffer\n    \n        agent = (\n            {\n                \"input\": lambda x: x[\"input\"],\n                \"chat_history\": lambda x: _format_chat_history(x[\"chat_history\"]),\n                \"agent_scratchpad\": lambda x: format_to_openai_function_messages(\n                    x[\"intermediate_steps\"]\n                ),\n            }\n            | prompt\n            | llm_with_tools\n            | OpenAIFunctionsAgentOutputParser()\n        )\n        \n        class AgentInput(BaseModel):\n            input: str\n            chat_history: List[Tuple[str, str]] = Field(\n                ..., extra={\"widget\": {\"type\": \"chat\", \"input\": \"input\", \"output\": \"output\"}}\n            )\n            \n        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=bool(self.verbose)).with_types(\n            input_type=AgentInput\n        )\n        \n        self.status = Message(text=str(agent_executor))\n        \n        return agent_executor",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "handle_parsing_errors": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "handle_parsing_errors",
+                "value": true,
+                "display_name": "Handle Parse Errors",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput"
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input Value",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "max_iterations": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "max_iterations",
+                "value": 15,
+                "display_name": "Max Iterations",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              },
+              "system_prompt": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "system_prompt",
+                "value": "You are a helpful assistant. \\\n        \t\t\t\t\t\t\tUse tools (only if necessary) to best answer the users questions.",
+                "display_name": "System Prompt",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "System prompt for the agent.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "user_prompt": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "user_prompt",
+                "value": "If you do not have access, search for it using the available tools. {input}",
+                "display_name": "Prompt",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "This prompt must contain 'input' key.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "verbose": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "verbose",
+                "value": false,
+                "display_name": "Verbose",
+                "advanced": true,
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "bool",
+                "_input_type": "BoolInput",
+                "load_from_db": false
+              }
+            },
+            "description": "This component creates an agent that uses OpenAI function calling to communicate its decisions on what actions to take integrating with its tools.",
+            "icon": "LangChain",
+            "base_classes": [
+              "Agent",
+              "AgentExecutor",
+              "Message"
+            ],
+            "display_name": "OpenAI Functions Agent",
+            "documentation": "https://github.com/langchain-ai/langchain/tree/master/templates/openai-functions-agent",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "response",
+                "display_name": "Response",
+                "method": "build_agent_response",
+                "value": "__UNDEFINED__",
+                "cache": true
+              },
+              {
+                "types": [
+                  "AgentExecutor",
+                  "Agent"
+                ],
+                "selected": "AgentExecutor",
+                "name": "agent",
+                "display_name": "Agent",
+                "method": "build_agent",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "handle_parsing_errors",
+              "verbose",
+              "max_iterations",
+              "tools",
+              "llm",
+              "input_value",
+              "system_prompt",
+              "user_prompt"
+            ],
+            "beta": false,
+            "edited": true,
+            "lf_version": "1.0.16",
+            "official": false
+          },
+          "id": "OpenAI Functions Agent-x7rtD"
+        },
+        "id": "OpenAI Functions Agent-x7rtD",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "OpenAI Functions Agent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "c3b0930a-7de7-43c6-87b5-2eb4ce5e2c33",
+    "name": "OpenAI Functions Agent",
+    "description": "This component creates an agent that uses OpenAI function calling to communicate its decisions on what actions to take integrating with its tools.",
+    "is_component": true,
+    "liked_by_count": "11",
+    "downloads_count": "95",
+    "metadata": {
+      "OpenAI Functions Agent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.16",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "OpenAI Functions Agent",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "llm": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "llm",
+                  "value": "",
+                  "display_name": "Language Model",
+                  "advanced": false,
+                  "input_types": [
+                    "LanguageModel"
+                  ],
+                  "dynamic": false,
+                  "info": "An OpenAI LLM.",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "tools": {
+                  "trace_as_metadata": true,
+                  "list": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "tools",
+                  "value": "",
+                  "display_name": "Tools",
+                  "advanced": false,
+                  "input_types": [
+                    "Tool",
+                    "BaseTool"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from axiestudio.custom import Component\nfrom axiestudio.io import MessageTextInput, Output, BoolInput\nfrom axiestudio.schema import Data\n\nfrom typing import List, Tuple\nimport os\nfrom typing import Union\n\nfrom langchain.agents import AgentExecutor\nfrom langchain.agents.format_scratchpad import format_to_openai_function_messages\nfrom langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.utils.function_calling import convert_to_openai_function\nfrom langchain_community.utilities.tavily_search import TavilySearchAPIWrapper\nfrom langchain_core.messages import AIMessage, HumanMessage\nfrom langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder\nfrom langchain_core.pydantic_v1 import BaseModel, Field\n\nfrom axiestudio.base.agents.agent import LCAgentComponent\n\nclass FunctionsAgent(LCToolsAgentComponent):\n    display_name = \"OpenAI Functions Agent\"\n    description = \"This component creates an agent that uses OpenAI function calling to communicate its decisions on what actions to take integrating with its tools.\"\n    documentation: str = \"https://github.com/langchain-ai/langchain/tree/master/templates/openai-functions-agent\"\n    icon = \"LangChain\"\n    name = \"OpenAI Functions Agent\"\n\n    inputs = LCToolsAgentComponent._base_inputs + [\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True, info=\"An OpenAI LLM.\"),\n        MessageTextInput(name=\"input_value\", display_name=\"Input Value\", value=\"Hello, World!\"),\n        MultilineInput(\n            name=\"system_prompt\",\n            display_name=\"System Prompt\",\n            info=\"System prompt for the agent.\",\n            value=\"You are a helpful assistant. \\\n        \t\t    Use tools (only if necessary) to best answer the users questions.\",\n        ),\n        MultilineInput(\n            name=\"user_prompt\", display_name=\"Prompt\", info=\"This prompt must contain 'input' key.\", value=\"If you do not have access, search for it using the available tools. {input}\"\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Response\", name=\"response\", method=\"build_agent_response\"),\n        Output(display_name=\"Agent\", name=\"agent\", method=\"build_agent\"),\n    ]\n\n    def build_agent_response(self) -> Message:\n        try:\n            os.environ[\"OPENAI_API_KEY\"] = str(self.llm.openai_api_key.get_secret_value())\n        except:\n            raise Exception(\"This component is intended to be used only with OpenAI LLM, since it uses an specific parser for OpenAI Functions Agent.\")\n\n        tools = self.tools\n        \n        llm = ChatOpenAI(temperature=0)\n        assistant_system_message = self.system_prompt\n        prompt = ChatPromptTemplate.from_messages(\n            [\n                (\"system\", assistant_system_message),\n                MessagesPlaceholder(variable_name=\"chat_history\"),\n                (\"user\", self.user_prompt),\n                MessagesPlaceholder(variable_name=\"agent_scratchpad\"),\n            ]\n        )\n        llm_with_tools = llm.bind(functions=[convert_to_openai_function(t) for t in tools])\n        \n        def _format_chat_history(chat_history: List[Tuple[str, str]]):\n            buffer = []\n            for human, ai in chat_history:\n                buffer.append(HumanMessage(content=human))\n                buffer.append(AIMessage(content=ai))\n            return buffer\n    \n        agent = (\n            {\n                \"input\": lambda x: x[\"input\"],\n                \"chat_history\": lambda x: _format_chat_history(x[\"chat_history\"]),\n                \"agent_scratchpad\": lambda x: format_to_openai_function_messages(\n                    x[\"intermediate_steps\"]\n                ),\n            }\n            | prompt\n            | llm_with_tools\n            | OpenAIFunctionsAgentOutputParser()\n        )\n        \n        class AgentInput(BaseModel):\n            input: str\n            chat_history: List[Tuple[str, str]] = Field(\n                ..., extra={\"widget\": {\"type\": \"chat\", \"input\": \"input\", \"output\": \"output\"}}\n            )\n            \n        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=bool(self.verbose)).with_types(\n            input_type=AgentInput\n        )\n        \n        result_agent = agent_executor.invoke({\"input\": self.input_value, \"chat_history\": []}, verbose=bool(self.verbose))\n                    \n        return Message(text=result_agent['output'])\n    \n    def build_agent(self) -> Union[AgentExecutor, Agent]:\n        try:\n            os.environ[\"OPENAI_API_KEY\"] = str(self.llm.openai_api_key.get_secret_value())\n        except:\n            raise Exception(\"This component is intended to be used only with OpenAI LLM, since it uses an specific parser for OpenAI Functions Agent.\")\n\n        tools = self.tools\n        \n        llm = ChatOpenAI(temperature=0)\n        assistant_system_message = self.system_prompt\n        prompt = ChatPromptTemplate.from_messages(\n            [\n                (\"system\", assistant_system_message),\n                MessagesPlaceholder(variable_name=\"chat_history\"),\n                (\"user\", self.user_prompt),\n                MessagesPlaceholder(variable_name=\"agent_scratchpad\"),\n            ]\n        )\n        llm_with_tools = llm.bind(functions=[format_tool_to_openai_function(t) for t in tools])\n        \n        def _format_chat_history(chat_history: List[Tuple[str, str]]):\n            buffer = []\n            for human, ai in chat_history:\n                buffer.append(HumanMessage(content=human))\n                buffer.append(AIMessage(content=ai))\n            return buffer\n    \n        agent = (\n            {\n                \"input\": lambda x: x[\"input\"],\n                \"chat_history\": lambda x: _format_chat_history(x[\"chat_history\"]),\n                \"agent_scratchpad\": lambda x: format_to_openai_function_messages(\n                    x[\"intermediate_steps\"]\n                ),\n            }\n            | prompt\n            | llm_with_tools\n            | OpenAIFunctionsAgentOutputParser()\n        )\n        \n        class AgentInput(BaseModel):\n            input: str\n            chat_history: List[Tuple[str, str]] = Field(\n                ..., extra={\"widget\": {\"type\": \"chat\", \"input\": \"input\", \"output\": \"output\"}}\n            )\n            \n        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=bool(self.verbose)).with_types(\n            input_type=AgentInput\n        )\n        \n        self.status = Message(text=str(agent_executor))\n        \n        return agent_executor",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "handle_parsing_errors": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "handle_parsing_errors",
+                  "value": true,
+                  "display_name": "Handle Parse Errors",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput"
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input Value",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "max_iterations": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "max_iterations",
+                  "value": 15,
+                  "display_name": "Max Iterations",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                },
+                "system_prompt": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "system_prompt",
+                  "value": "You are a helpful assistant. \\\n        \t\t\t\t\t\t\tUse tools (only if necessary) to best answer the users questions.",
+                  "display_name": "System Prompt",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "System prompt for the agent.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "user_prompt": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "user_prompt",
+                  "value": "If you do not have access, search for it using the available tools. {input}",
+                  "display_name": "Prompt",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "This prompt must contain 'input' key.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "verbose": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "verbose",
+                  "value": false,
+                  "display_name": "Verbose",
+                  "advanced": true,
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "bool",
+                  "_input_type": "BoolInput",
+                  "load_from_db": false
+                }
+              },
+              "description": "This component creates an agent that uses OpenAI function calling to communicate its decisions on what actions to take integrating with its tools.",
+              "icon": "LangChain",
+              "base_classes": [
+                "Agent",
+                "AgentExecutor",
+                "Message"
+              ],
+              "display_name": "OpenAI Functions Agent",
+              "documentation": "https://github.com/langchain-ai/langchain/tree/master/templates/openai-functions-agent",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "response",
+                  "display_name": "Response",
+                  "method": "build_agent_response",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                },
+                {
+                  "types": [
+                    "AgentExecutor",
+                    "Agent"
+                  ],
+                  "selected": "AgentExecutor",
+                  "name": "agent",
+                  "display_name": "Agent",
+                  "method": "build_agent",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "handle_parsing_errors",
+                "verbose",
+                "max_iterations",
+                "tools",
+                "llm",
+                "input_value",
+                "system_prompt",
+                "user_prompt"
+              ],
+              "beta": false,
+              "edited": true,
+              "lf_version": "1.0.16",
+              "official": false
+            },
+            "id": "OpenAI Functions Agent-x7rtD"
+          },
+          "id": "OpenAI Functions Agent-x7rtD",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-07T03:23:40.323Z",
+    "date_updated": "2024-09-07T03:23:40.349Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "8ca3c638-244a-4d41-ae61-bc145776bd63",
+    "user_created": {
+      "username": "misbah",
+      "first_name": "Menlo Park Lab",
+      "last_name": "Lab",
+      "id": "8ca3c638-244a-4d41-ae61-bc145776bd63"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:11.670Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

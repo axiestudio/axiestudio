@@ -1,0 +1,439 @@
+{
+  "id": "f096db8e-c39e-43ef-9cd1-935e3f013a7d",
+  "name": "Untitled document (4)",
+  "description": "Create, Curate, Communicate with Langflow. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "FLOW",
+  "is_component": false,
+  "author": {
+    "username": "CG007",
+    "first_name": "Anoop",
+    "last_name": "Gaggar",
+    "id": "0b3e0559-e8d3-4722-b764-f34e32b898ea",
+    "full_name": "Anoop Gaggar"
+  },
+  "store_url": "https://www.langflow.store/store/component/f096db8e-c39e-43ef-9cd1-935e3f013a7d",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-10-02T12:30:14.368Z",
+    "updated": "2024-10-02T12:40:49.626Z",
+    "downloaded": "2025-08-19T17:50:06.020Z"
+  },
+  "tags": [],
+  "technical": {
+    "last_tested_version": "1.0.17",
+    "private": true,
+    "status": "Public"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "SQLGenerator-f77jO",
+        "type": "genericNode",
+        "position": {
+          "x": 560.1817612303059,
+          "y": 205.62348898359357
+        },
+        "data": {
+          "type": "SQLGenerator",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "db": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "db",
+                "value": "",
+                "display_name": "SQLDatabase",
+                "advanced": false,
+                "input_types": [
+                  "SQLDatabase"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "llm": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "llm",
+                "value": "",
+                "display_name": "Language Model",
+                "advanced": false,
+                "input_types": [
+                  "LanguageModel"
+                ],
+                "dynamic": false,
+                "info": "",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "HandleInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langchain.chains import create_sql_query_chain\nfrom langchain_core.prompts import PromptTemplate\nfrom langchain_core.runnables import Runnable\nfrom axiestudio.base.chains.model import LCChainComponent\nfrom axiestudio.field_typing import Message\nfrom axiestudio.inputs import MultilineInput, HandleInput, IntInput\nfrom axiestudio.template import Output\n\n\nclass SQLGeneratorComponent(LCChainComponent):\n    display_name = \"Natural Language to SQL\"\n    description = \"Generate SQL from natural language.\"\n    name = \"SQLGenerator\"\n\n    inputs = [\n        MultilineInput(\n            name=\"input_value\", display_name=\"Input\", info=\"The input value to pass to the chain.\", required=True\n        ),\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True),\n        HandleInput(name=\"db\", display_name=\"SQLDatabase\", input_types=[\"SQLDatabase\"], required=True),\n        IntInput(\n            name=\"top_k\", display_name=\"Top K\", info=\"The number of results per select statement to return.\", value=5\n        ),\n        MultilineInput(name=\"prompt\", display_name=\"Prompt\", info=\"The prompt must contain `{question}`.\"),\n    ]\n\n    outputs = [Output(display_name=\"Text\", name=\"text\", method=\"invoke_chain\")]\n\n    def invoke_chain(self) -> Message:\n        if self.prompt:\n            prompt_template = PromptTemplate.from_template(template=self.prompt)\n        else:\n            prompt_template = None\n\n        if self.top_k < 1:\n            raise ValueError(\"Top K must be greater than 0.\")\n\n        if not prompt_template:\n            sql_query_chain = create_sql_query_chain(llm=self.llm, db=self.db, k=self.top_k)\n        else:\n            # Check if {question} is in the prompt\n            if \"{question}\" not in prompt_template.template or \"question\" not in prompt_template.input_variables:\n                raise ValueError(\"Prompt must contain `{question}` to be used with Natural Language to SQL.\")\n            sql_query_chain = create_sql_query_chain(llm=self.llm, db=self.db, prompt=prompt_template, k=self.top_k)\n        query_writer: Runnable = sql_query_chain | {\"query\": lambda x: x.replace(\"SQLQuery:\", \"\").strip()}\n        response = query_writer.invoke(\n            {\"question\": self.input_value}, config={\"callbacks\": self.get_langchain_callbacks()}\n        )\n        query = response.get(\"query\")\n        self.status = query\n        return query\n",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "input_value": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": true,
+                "placeholder": "",
+                "show": true,
+                "name": "input_value",
+                "value": "",
+                "display_name": "Input",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The input value to pass to the chain.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "prompt": {
+                "trace_as_input": true,
+                "multiline": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "prompt",
+                "value": "",
+                "display_name": "Prompt",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "The prompt must contain `{question}`.",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MultilineInput"
+              },
+              "top_k": {
+                "trace_as_metadata": true,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "top_k",
+                "value": 5,
+                "display_name": "Top K",
+                "advanced": false,
+                "dynamic": false,
+                "info": "The number of results per select statement to return.",
+                "title_case": false,
+                "type": "int",
+                "_input_type": "IntInput"
+              }
+            },
+            "description": "Generate SQL from natural language.",
+            "base_classes": [
+              "Message"
+            ],
+            "display_name": "Natural Language to SQL",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Message"
+                ],
+                "selected": "Message",
+                "name": "text",
+                "display_name": "Text",
+                "method": "invoke_chain",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "input_value",
+              "llm",
+              "db",
+              "top_k",
+              "prompt"
+            ],
+            "beta": false,
+            "edited": false
+          },
+          "id": "SQLGenerator-f77jO"
+        },
+        "selected": true,
+        "width": 384,
+        "height": 568,
+        "positionAbsolute": {
+          "x": 560.1817612303059,
+          "y": 205.62348898359357
+        },
+        "dragging": false
+      }
+    ],
+    "edges": [],
+    "viewport": {
+      "x": 33.18982079579854,
+      "y": 5.438030950994545,
+      "zoom": 0.7578582832551997
+    }
+  },
+  "metadata": {
+    "SQLGenerator": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "f096db8e-c39e-43ef-9cd1-935e3f013a7d",
+    "name": "Untitled document (4)",
+    "description": "Create, Curate, Communicate with Langflow.",
+    "is_component": false,
+    "liked_by_count": "0",
+    "downloads_count": "0",
+    "metadata": {
+      "SQLGenerator": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.17",
+    "private": true,
+    "data": {
+      "nodes": [
+        {
+          "id": "SQLGenerator-f77jO",
+          "type": "genericNode",
+          "position": {
+            "x": 560.1817612303059,
+            "y": 205.62348898359357
+          },
+          "data": {
+            "type": "SQLGenerator",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "db": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "db",
+                  "value": "",
+                  "display_name": "SQLDatabase",
+                  "advanced": false,
+                  "input_types": [
+                    "SQLDatabase"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "llm": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "llm",
+                  "value": "",
+                  "display_name": "Language Model",
+                  "advanced": false,
+                  "input_types": [
+                    "LanguageModel"
+                  ],
+                  "dynamic": false,
+                  "info": "",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "HandleInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "from langchain.chains import create_sql_query_chain\nfrom langchain_core.prompts import PromptTemplate\nfrom langchain_core.runnables import Runnable\nfrom axiestudio.base.chains.model import LCChainComponent\nfrom axiestudio.field_typing import Message\nfrom axiestudio.inputs import MultilineInput, HandleInput, IntInput\nfrom axiestudio.template import Output\n\n\nclass SQLGeneratorComponent(LCChainComponent):\n    display_name = \"Natural Language to SQL\"\n    description = \"Generate SQL from natural language.\"\n    name = \"SQLGenerator\"\n\n    inputs = [\n        MultilineInput(\n            name=\"input_value\", display_name=\"Input\", info=\"The input value to pass to the chain.\", required=True\n        ),\n        HandleInput(name=\"llm\", display_name=\"Language Model\", input_types=[\"LanguageModel\"], required=True),\n        HandleInput(name=\"db\", display_name=\"SQLDatabase\", input_types=[\"SQLDatabase\"], required=True),\n        IntInput(\n            name=\"top_k\", display_name=\"Top K\", info=\"The number of results per select statement to return.\", value=5\n        ),\n        MultilineInput(name=\"prompt\", display_name=\"Prompt\", info=\"The prompt must contain `{question}`.\"),\n    ]\n\n    outputs = [Output(display_name=\"Text\", name=\"text\", method=\"invoke_chain\")]\n\n    def invoke_chain(self) -> Message:\n        if self.prompt:\n            prompt_template = PromptTemplate.from_template(template=self.prompt)\n        else:\n            prompt_template = None\n\n        if self.top_k < 1:\n            raise ValueError(\"Top K must be greater than 0.\")\n\n        if not prompt_template:\n            sql_query_chain = create_sql_query_chain(llm=self.llm, db=self.db, k=self.top_k)\n        else:\n            # Check if {question} is in the prompt\n            if \"{question}\" not in prompt_template.template or \"question\" not in prompt_template.input_variables:\n                raise ValueError(\"Prompt must contain `{question}` to be used with Natural Language to SQL.\")\n            sql_query_chain = create_sql_query_chain(llm=self.llm, db=self.db, prompt=prompt_template, k=self.top_k)\n        query_writer: Runnable = sql_query_chain | {\"query\": lambda x: x.replace(\"SQLQuery:\", \"\").strip()}\n        response = query_writer.invoke(\n            {\"question\": self.input_value}, config={\"callbacks\": self.get_langchain_callbacks()}\n        )\n        query = response.get(\"query\")\n        self.status = query\n        return query\n",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "input_value": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": true,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "input_value",
+                  "value": "",
+                  "display_name": "Input",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The input value to pass to the chain.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "prompt": {
+                  "trace_as_input": true,
+                  "multiline": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "prompt",
+                  "value": "",
+                  "display_name": "Prompt",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "The prompt must contain `{question}`.",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MultilineInput"
+                },
+                "top_k": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "top_k",
+                  "value": 5,
+                  "display_name": "Top K",
+                  "advanced": false,
+                  "dynamic": false,
+                  "info": "The number of results per select statement to return.",
+                  "title_case": false,
+                  "type": "int",
+                  "_input_type": "IntInput"
+                }
+              },
+              "description": "Generate SQL from natural language.",
+              "base_classes": [
+                "Message"
+              ],
+              "display_name": "Natural Language to SQL",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Message"
+                  ],
+                  "selected": "Message",
+                  "name": "text",
+                  "display_name": "Text",
+                  "method": "invoke_chain",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "input_value",
+                "llm",
+                "db",
+                "top_k",
+                "prompt"
+              ],
+              "beta": false,
+              "edited": false
+            },
+            "id": "SQLGenerator-f77jO"
+          },
+          "selected": true,
+          "width": 384,
+          "height": 568,
+          "positionAbsolute": {
+            "x": 560.1817612303059,
+            "y": 205.62348898359357
+          },
+          "dragging": false
+        }
+      ],
+      "edges": [],
+      "viewport": {
+        "x": 33.18982079579854,
+        "y": 5.438030950994545,
+        "zoom": 0.7578582832551997
+      }
+    },
+    "date_created": "2024-10-02T12:30:14.368Z",
+    "date_updated": "2024-10-02T12:40:49.626Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "0b3e0559-e8d3-4722-b764-f34e32b898ea",
+    "user_created": {
+      "username": "CG007",
+      "first_name": "Anoop",
+      "last_name": "Gaggar",
+      "id": "0b3e0559-e8d3-4722-b764-f34e32b898ea"
+    },
+    "tags": []
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:07.812Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}

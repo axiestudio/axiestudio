@@ -1,0 +1,365 @@
+{
+  "id": "125abc7a-5902-44c3-9163-2c696defc63e",
+  "name": "Link list to Markdown",
+  "description": "Fetches HTML from URLs, parses it, and converts the HTML to Markdown. (Converted from Langflow Store for AxieStudio compatibility)",
+  "type": "COMPONENT",
+  "is_component": true,
+  "author": {
+    "username": "Roy",
+    "first_name": "Roy",
+    "last_name": "Barber",
+    "id": "d37448a0-3dae-485a-8bce-0671ce46cf30",
+    "full_name": "Roy Barber"
+  },
+  "store_url": "https://www.langflow.store/store/component/125abc7a-5902-44c3-9163-2c696defc63e",
+  "stats": {
+    "downloads": 0,
+    "likes": 0
+  },
+  "dates": {
+    "created": "2024-09-27T19:58:28.661Z",
+    "updated": "2024-09-27T19:58:28.835Z",
+    "downloaded": "2025-08-19T17:50:05.892Z"
+  },
+  "tags": [
+    {
+      "tags_id": {
+        "name": "Chain",
+        "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+      }
+    }
+  ],
+  "technical": {
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "status": "Public"
+  },
+  "data": {
+    "edges": [],
+    "nodes": [
+      {
+        "data": {
+          "type": "URLToMarkdownConverter",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "search_results": {
+                "trace_as_metadata": true,
+                "list": false,
+                "trace_as_input": true,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "search_results",
+                "value": "",
+                "display_name": "Search results with URLs",
+                "advanced": false,
+                "input_types": [
+                  "Data"
+                ],
+                "dynamic": false,
+                "info": "List of retrieved URLs from a search engine to convert to Markdown",
+                "title_case": false,
+                "type": "other",
+                "_input_type": "DataInput"
+              },
+              "code": {
+                "type": "code",
+                "required": true,
+                "placeholder": "",
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "import requests\nimport html2text\nfrom loguru import logger\nfrom bs4 import BeautifulSoup\nfrom typing import List\nfrom axiestudio.schema import Data\nfrom axiestudio.custom import Component\nfrom axiestudio.schema.dotdict import dotdict\nfrom axiestudio.io import DataInput, MessageTextInput, Output\n\nclass URLToMarkdownConverter(Component):\n    display_name = \"Link list to Markdown\"\n    description = \"Fetches HTML from URLs, parses it, and converts the HTML to Markdown.\"\n    icon = \"heading-1\"\n    inputs = [\n        DataInput(\n            name=\"search_results\",\n            display_name=\"Search results with URLs\",\n            info=\"List of retrieved URLs from a search engine to convert to Markdown\",\n        ),\n        MessageTextInput(\n            name=\"title_selector\",\n            display_name=\"Title Selector\",\n            info=\"HTML selector for the title element, e.g 'h1.blog-title'\",\n        ),\n        MessageTextInput(\n            name=\"content_selector\",\n            display_name=\"Content Selector\",\n            info=\"HTML selector for the content, e.g 'div.content\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Markdown Output\", name=\"markdown_output\", method=\"process_urls\"),\n    ]\n\n    def process_urls(self) -> List[Data]:\n        search_results: List[Data] = self.search_results\n        title_selector: str = self.title_selector\n        content_selector: str = self.content_selector\n        processed_urls = []\n        \n        for result in search_results:\n            url = result.link\n            new_item = result.data.copy()\n            \n            try:\n                logger.info(f\"Processing URL: {url}\")\n                # 1. Extract HTML from the response\n                response = requests.get(url)\n                html_content = response.text\n                # 2. Parse the HTML\n                soup = BeautifulSoup(html_content, 'html.parser')\n                # 3. Extract specific content using the provided selectors\n                title_element = soup.select_one(title_selector)\n                content_element = soup.select_one(content_selector)\n                # Check if both elements exist\n                if title_element and content_element:\n                    # Combine the relevant parts into HTML\n                    extracted_html = f\"<h1>{title_element.get_text().strip()}</h1>\\n{str(content_element)}\"\n                    \n                    # 4. Convert the extracted HTML to Markdown\n                    h = html2text.HTML2Text()\n                    h.ignore_links = True  # This will remove all hyperlinks\n                    h.ignore_images = True  # This will remove all images\n                    \n                    # Convert the content to markdown\n                    markdown_content = h.handle(extracted_html)\n                    \n                    # Remove extra newlines or empty headings (like '## ')\n                    markdown_content = markdown_content.replace(\"##\\n\\n\", \"## \").replace(\"##\\n\", \"## \")\n                    \n                    # Clean up additional unnecessary newlines\n                    markdown_content = markdown_content.replace(\"\\n\\n\", \"\\n\").strip()\n                    # Ensure headings don't have extra spaces or newlines\n                    markdown_content = markdown_content.replace(\"##  \\n\", \"## \").replace(\"##\\n\", \"## \").strip()\n                    new_item[\"markdown\"] = markdown_content\n                    processed_urls.append(Data(data=new_item))\n                else:\n                    logger.error(f\"Missing required elements in {url}\")\n            \n            except Exception as e:\n                logger.error(f\"Error processing {url}: {e}\")\n                raise\n        \n        return processed_urls",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "info": "",
+                "load_from_db": false,
+                "title_case": false
+              },
+              "content_selector": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "content_selector",
+                "value": "div.cms-content",
+                "display_name": "Content Selector",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "HTML selector for the content, e.g 'div.content",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              },
+              "title_selector": {
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "title_selector",
+                "value": "h1.blog-detail-title",
+                "display_name": "Title Selector",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "info": "HTML selector for the title element, e.g 'h1.blog-title'",
+                "title_case": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "Fetches HTML from URLs, parses it, and converts the HTML to Markdown.",
+            "icon": "heading-1",
+            "base_classes": [
+              "Data"
+            ],
+            "display_name": "Link list to Markdown",
+            "documentation": "",
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Data"
+                ],
+                "selected": "Data",
+                "name": "markdown_output",
+                "display_name": "Markdown Output",
+                "method": "process_urls",
+                "value": "__UNDEFINED__",
+                "cache": true
+              }
+            ],
+            "field_order": [
+              "search_results",
+              "title_selector",
+              "content_selector"
+            ],
+            "beta": false,
+            "edited": true,
+            "official": false
+          },
+          "id": "CustomComponent-NPinC"
+        },
+        "id": "CustomComponent-NPinC",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "genericNode"
+      }
+    ],
+    "viewport": {
+      "x": 1,
+      "y": 1,
+      "zoom": 1
+    }
+  },
+  "metadata": {
+    "CustomComponent": {
+      "count": 1
+    },
+    "total": 1
+  },
+  "original": {
+    "id": "125abc7a-5902-44c3-9163-2c696defc63e",
+    "name": "Link list to Markdown",
+    "description": "Fetches HTML from URLs, parses it, and converts the HTML to Markdown.",
+    "is_component": true,
+    "liked_by_count": "4",
+    "downloads_count": "54",
+    "metadata": {
+      "CustomComponent": {
+        "count": 1
+      },
+      "total": 1
+    },
+    "last_tested_version": "1.0.18",
+    "private": false,
+    "data": {
+      "edges": [],
+      "nodes": [
+        {
+          "data": {
+            "type": "URLToMarkdownConverter",
+            "node": {
+              "template": {
+                "_type": "Component",
+                "search_results": {
+                  "trace_as_metadata": true,
+                  "list": false,
+                  "trace_as_input": true,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "search_results",
+                  "value": "",
+                  "display_name": "Search results with URLs",
+                  "advanced": false,
+                  "input_types": [
+                    "Data"
+                  ],
+                  "dynamic": false,
+                  "info": "List of retrieved URLs from a search engine to convert to Markdown",
+                  "title_case": false,
+                  "type": "other",
+                  "_input_type": "DataInput"
+                },
+                "code": {
+                  "type": "code",
+                  "required": true,
+                  "placeholder": "",
+                  "list": false,
+                  "show": true,
+                  "multiline": true,
+                  "value": "import requests\nimport html2text\nfrom loguru import logger\nfrom bs4 import BeautifulSoup\nfrom typing import List\nfrom axiestudio.schema import Data\nfrom axiestudio.custom import Component\nfrom axiestudio.schema.dotdict import dotdict\nfrom axiestudio.io import DataInput, MessageTextInput, Output\n\nclass URLToMarkdownConverter(Component):\n    display_name = \"Link list to Markdown\"\n    description = \"Fetches HTML from URLs, parses it, and converts the HTML to Markdown.\"\n    icon = \"heading-1\"\n    inputs = [\n        DataInput(\n            name=\"search_results\",\n            display_name=\"Search results with URLs\",\n            info=\"List of retrieved URLs from a search engine to convert to Markdown\",\n        ),\n        MessageTextInput(\n            name=\"title_selector\",\n            display_name=\"Title Selector\",\n            info=\"HTML selector for the title element, e.g 'h1.blog-title'\",\n        ),\n        MessageTextInput(\n            name=\"content_selector\",\n            display_name=\"Content Selector\",\n            info=\"HTML selector for the content, e.g 'div.content\",\n        ),\n    ]\n    outputs = [\n        Output(display_name=\"Markdown Output\", name=\"markdown_output\", method=\"process_urls\"),\n    ]\n\n    def process_urls(self) -> List[Data]:\n        search_results: List[Data] = self.search_results\n        title_selector: str = self.title_selector\n        content_selector: str = self.content_selector\n        processed_urls = []\n        \n        for result in search_results:\n            url = result.link\n            new_item = result.data.copy()\n            \n            try:\n                logger.info(f\"Processing URL: {url}\")\n                # 1. Extract HTML from the response\n                response = requests.get(url)\n                html_content = response.text\n                # 2. Parse the HTML\n                soup = BeautifulSoup(html_content, 'html.parser')\n                # 3. Extract specific content using the provided selectors\n                title_element = soup.select_one(title_selector)\n                content_element = soup.select_one(content_selector)\n                # Check if both elements exist\n                if title_element and content_element:\n                    # Combine the relevant parts into HTML\n                    extracted_html = f\"<h1>{title_element.get_text().strip()}</h1>\\n{str(content_element)}\"\n                    \n                    # 4. Convert the extracted HTML to Markdown\n                    h = html2text.HTML2Text()\n                    h.ignore_links = True  # This will remove all hyperlinks\n                    h.ignore_images = True  # This will remove all images\n                    \n                    # Convert the content to markdown\n                    markdown_content = h.handle(extracted_html)\n                    \n                    # Remove extra newlines or empty headings (like '## ')\n                    markdown_content = markdown_content.replace(\"##\\n\\n\", \"## \").replace(\"##\\n\", \"## \")\n                    \n                    # Clean up additional unnecessary newlines\n                    markdown_content = markdown_content.replace(\"\\n\\n\", \"\\n\").strip()\n                    # Ensure headings don't have extra spaces or newlines\n                    markdown_content = markdown_content.replace(\"##  \\n\", \"## \").replace(\"##\\n\", \"## \").strip()\n                    new_item[\"markdown\"] = markdown_content\n                    processed_urls.append(Data(data=new_item))\n                else:\n                    logger.error(f\"Missing required elements in {url}\")\n            \n            except Exception as e:\n                logger.error(f\"Error processing {url}: {e}\")\n                raise\n        \n        return processed_urls",
+                  "fileTypes": [],
+                  "file_path": "",
+                  "password": false,
+                  "name": "code",
+                  "advanced": true,
+                  "dynamic": true,
+                  "info": "",
+                  "load_from_db": false,
+                  "title_case": false
+                },
+                "content_selector": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "content_selector",
+                  "value": "div.cms-content",
+                  "display_name": "Content Selector",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "HTML selector for the content, e.g 'div.content",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                },
+                "title_selector": {
+                  "trace_as_input": true,
+                  "trace_as_metadata": true,
+                  "load_from_db": false,
+                  "list": false,
+                  "required": false,
+                  "placeholder": "",
+                  "show": true,
+                  "name": "title_selector",
+                  "value": "h1.blog-detail-title",
+                  "display_name": "Title Selector",
+                  "advanced": false,
+                  "input_types": [
+                    "Message"
+                  ],
+                  "dynamic": false,
+                  "info": "HTML selector for the title element, e.g 'h1.blog-title'",
+                  "title_case": false,
+                  "type": "str",
+                  "_input_type": "MessageTextInput"
+                }
+              },
+              "description": "Fetches HTML from URLs, parses it, and converts the HTML to Markdown.",
+              "icon": "heading-1",
+              "base_classes": [
+                "Data"
+              ],
+              "display_name": "Link list to Markdown",
+              "documentation": "",
+              "custom_fields": {},
+              "output_types": [],
+              "pinned": false,
+              "conditional_paths": [],
+              "frozen": false,
+              "outputs": [
+                {
+                  "types": [
+                    "Data"
+                  ],
+                  "selected": "Data",
+                  "name": "markdown_output",
+                  "display_name": "Markdown Output",
+                  "method": "process_urls",
+                  "value": "__UNDEFINED__",
+                  "cache": true
+                }
+              ],
+              "field_order": [
+                "search_results",
+                "title_selector",
+                "content_selector"
+              ],
+              "beta": false,
+              "edited": true,
+              "official": false
+            },
+            "id": "CustomComponent-NPinC"
+          },
+          "id": "CustomComponent-NPinC",
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "type": "genericNode"
+        }
+      ],
+      "viewport": {
+        "x": 1,
+        "y": 1,
+        "zoom": 1
+      }
+    },
+    "date_created": "2024-09-27T19:58:28.661Z",
+    "date_updated": "2024-09-27T19:58:28.835Z",
+    "status": "Public",
+    "sort": null,
+    "user_updated": "d37448a0-3dae-485a-8bce-0671ce46cf30",
+    "user_created": {
+      "username": "Roy",
+      "first_name": "Roy",
+      "last_name": "Barber",
+      "id": "d37448a0-3dae-485a-8bce-0671ce46cf30"
+    },
+    "tags": [
+      {
+        "tags_id": {
+          "name": "Chain",
+          "id": "d442c88b-f8d0-4010-8752-16a644c7ac8e"
+        }
+      }
+    ]
+  },
+  "conversion": {
+    "converted_at": "2025-08-19T18:09:08.975Z",
+    "converted_from": "langflow",
+    "converted_to": "axiestudio",
+    "conversions_made": 8,
+    "converter_version": "1.0.0"
+  }
+}
