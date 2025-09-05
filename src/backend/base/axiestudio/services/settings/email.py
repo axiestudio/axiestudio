@@ -31,7 +31,7 @@ class EmailSettings:
         self.SMTP_PASSWORD: Optional[str] = os.getenv("AXIESTUDIO_EMAIL_SMTP_PASSWORD")
         
         # Email Configuration
-        self.FROM_EMAIL: Optional[str] = os.getenv("AXIESTUDIO_EMAIL_FROM", self.SMTP_USER)
+        self.FROM_EMAIL: Optional[str] = os.getenv("AXIESTUDIO_EMAIL_FROM_EMAIL", self.SMTP_USER)
         self.FROM_NAME: str = os.getenv("AXIESTUDIO_EMAIL_FROM_NAME", "AxieStudio")
         
         # Email Templates Configuration
@@ -130,7 +130,7 @@ EMAIL_ENV_VARS = {
     "AXIESTUDIO_EMAIL_SMTP_PORT": "SMTP server port (default: 587)",
     "AXIESTUDIO_EMAIL_SMTP_USER": "SMTP username/email address",
     "AXIESTUDIO_EMAIL_SMTP_PASSWORD": "SMTP password or app password",
-    "AXIESTUDIO_EMAIL_FROM": "From email address (default: same as SMTP_USER)",
+    "AXIESTUDIO_EMAIL_FROM_EMAIL": "From email address (default: same as SMTP_USER)",
     "AXIESTUDIO_EMAIL_FROM_NAME": "From name (default: AxieStudio)",
     "AXIESTUDIO_COMPANY_NAME": "Company name for emails (default: AxieStudio)",
     "AXIESTUDIO_COMPANY_URL": "Company URL (default: https://axiestudio.se)",
