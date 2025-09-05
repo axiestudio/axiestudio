@@ -29,18 +29,47 @@ class EmailServiceFactory:
             EmailService or ResendEmailService based on configuration
         """
         settings = EmailSettings()
-        
+
+        # Enhanced logging for production deployment visibility
+        logger.info("=" * 80)
+        logger.info("🚀 EMAIL SERVICE FACTORY - INITIALIZING EMAIL SERVICE")
+        logger.info("=" * 80)
+
+        logger.info(f"📋 Email Service Configuration Analysis:")
+        logger.info(f"   USE_RESEND_SDK: {settings.USE_RESEND_SDK}")
+        logger.info(f"   RESEND_API_KEY configured: {bool(settings.RESEND_API_KEY)}")
+        logger.info(f"   FROM_EMAIL: {settings.FROM_EMAIL}")
+        logger.info(f"   FROM_NAME: {settings.FROM_NAME}")
+
         # Check if Resend SDK should be used
         if settings.USE_RESEND_SDK and settings.RESEND_API_KEY:
-            logger.info("EMAIL FACTORY - Creating ResendEmailService (Resend SDK)")
-            return ResendEmailService()
+            logger.info("🎯 DECISION: Using Resend SDK as PRIMARY email service")
+            logger.info("✅ RESEND SDK IS THE PRIMARY EMAIL METHOD")
+            logger.info("❌ SMTP is NOT being used (Resend SDK replaced SMTP)")
+            logger.info("🔧 Initializing ResendEmailService...")
+
+            try:
+                service = ResendEmailService()
+                logger.info("✅ ResendEmailService initialized successfully")
+                logger.info("🚀 PRODUCTION STATUS: Resend SDK is ACTIVE and READY")
+                logger.info("=" * 80)
+                return service
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize ResendEmailService: {e}")
+                logger.error("🔄 Falling back to SMTP EmailService")
+                logger.info("=" * 80)
+                return EmailService()
         else:
-            # Log why we're falling back to SMTP
-            if settings.USE_RESEND_SDK and not settings.RESEND_API_KEY:
-                logger.warning("EMAIL FACTORY - USE_RESEND_SDK=true but RESEND_API_KEY not set. Falling back to SMTP.")
-            else:
-                logger.info("EMAIL FACTORY - Creating EmailService (SMTP)")
-            
+            logger.warning("⚠️ DECISION: Using SMTP for email service")
+            logger.warning("❌ RESEND SDK IS NOT PRIMARY - Check configuration!")
+
+            if not settings.USE_RESEND_SDK:
+                logger.warning("   Reason: USE_RESEND_SDK is not set to 'true'")
+            if not settings.RESEND_API_KEY:
+                logger.warning("   Reason: RESEND_API_KEY is not configured")
+
+            logger.info("🔧 Initializing SMTP EmailService...")
+            logger.info("=" * 80)
             return EmailService()
     
     @staticmethod

@@ -913,6 +913,25 @@ Besök oss på: https://axiestudio.se
             return False
 
 
-# Global email service instance - now uses factory pattern
+# Global email service instance - now uses factory pattern with enhanced logging
 from axiestudio.services.email.factory import get_email_service
+from loguru import logger
+
+logger.info("🚀" + "=" * 80)
+logger.info("🚀 AXIESTUDIO EMAIL SYSTEM - INITIALIZING GLOBAL EMAIL SERVICE")
+logger.info("🚀" + "=" * 80)
+
 email_service = get_email_service()
+
+# Log the final service type for production visibility
+service_type = type(email_service).__name__
+if "Resend" in service_type:
+    logger.info("✅ GLOBAL EMAIL SERVICE: ResendEmailService (Resend SDK PRIMARY)")
+    logger.info("🎯 EMAIL DELIVERY METHOD: Resend SDK API")
+    logger.info("❌ SMTP STATUS: Not used (Resend SDK replaced SMTP)")
+else:
+    logger.info("⚠️ GLOBAL EMAIL SERVICE: EmailService (SMTP)")
+    logger.info("🔧 EMAIL DELIVERY METHOD: SMTP Protocol")
+    logger.info("❌ RESEND SDK STATUS: Not primary (check configuration)")
+
+logger.info("🚀" + "=" * 80)

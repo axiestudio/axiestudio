@@ -46,11 +46,19 @@ class ResendEmailService:
 
     def _initialize_resend(self) -> None:
         """Initialize Resend SDK with API key."""
+        logger.info("🔧 RESEND EMAIL SERVICE - INITIALIZING")
+        logger.info("-" * 60)
+
         if self.settings.RESEND_API_KEY:
             resend.api_key = self.settings.RESEND_API_KEY
-            logger.info("RESEND SDK - Initialized with API key")
+            logger.info("✅ RESEND SDK - Successfully initialized with API key")
+            logger.info(f"📧 FROM_EMAIL: {self.settings.FROM_EMAIL}")
+            logger.info(f"👤 FROM_NAME: {self.settings.FROM_NAME}")
+            logger.info(f"🏢 COMPANY: {self.settings.COMPANY_NAME}")
+            logger.info("🚀 RESEND SDK IS READY FOR PRODUCTION EMAIL SENDING")
         else:
-            logger.error("RESEND SDK - Cannot initialize without API key")
+            logger.error("❌ RESEND SDK - Cannot initialize without API key")
+            logger.error("🔧 Check AXIESTUDIO_RESEND_API_KEY environment variable")
 
     async def health_check(self) -> Dict[str, Any]:
         """Check email service health."""
@@ -117,42 +125,80 @@ class ResendEmailService:
             if reply_to:
                 params["reply_to"] = [reply_to]
 
-            # Log email attempt
-            logger.info(f"RESEND SDK - Attempting to send email to: {to_email}")
-            logger.info(f"RESEND SDK - From: {from_address}")
-            logger.info(f"RESEND SDK - Subject: {subject}")
-            logger.info(f"RESEND SDK - Reply-to: {reply_to if reply_to else 'None'}")
+            # Enhanced logging for production deployment visibility
+            logger.info("🚀" + "=" * 78)
+            logger.info("📧 RESEND SDK - SENDING EMAIL VIA RESEND API")
+            logger.info("🚀" + "=" * 78)
+            logger.info(f"📧 TO: {to_email}")
+            logger.info(f"📤 FROM: {from_address}")
+            logger.info(f"📋 SUBJECT: {subject}")
+            logger.info(f"↩️ REPLY-TO: {reply_to if reply_to else 'None'}")
+            logger.info(f"🔧 METHOD: Resend SDK API (NOT SMTP)")
+            logger.info(f"🎯 STATUS: Sending via PRIMARY email service...")
 
             # Send email using Resend SDK
             email_response = resend.Emails.send(params)
 
-            # Log successful response - handle both dict and object formats
+            # Enhanced success logging - handle both dict and object formats
             if email_response:
                 # Handle dict response format
                 if isinstance(email_response, dict) and 'id' in email_response:
                     email_id = email_response['id']
-                    logger.info(f"RESEND SDK - Email sent successfully. ID: {email_id}")
-                    logger.info(f"RESEND SDK - Response: {email_response}")
+                    logger.info("✅" + "=" * 78)
+                    logger.info("🎉 RESEND SDK - EMAIL SENT SUCCESSFULLY!")
+                    logger.info("✅" + "=" * 78)
+                    logger.info(f"📧 EMAIL ID: {email_id}")
+                    logger.info(f"📊 FULL RESPONSE: {email_response}")
+                    logger.info(f"🚀 DELIVERY METHOD: Resend SDK API (PRIMARY)")
+                    logger.info(f"❌ SMTP NOT USED: Resend SDK is the primary method")
+                    logger.info("✅" + "=" * 78)
                     return True
                 # Handle object response format
                 elif hasattr(email_response, 'id'):
-                    logger.info(f"RESEND SDK - Email sent successfully. ID: {email_response.id}")
-                    logger.info(f"RESEND SDK - Response: {email_response}")
+                    logger.info("✅" + "=" * 78)
+                    logger.info("🎉 RESEND SDK - EMAIL SENT SUCCESSFULLY!")
+                    logger.info("✅" + "=" * 78)
+                    logger.info(f"📧 EMAIL ID: {email_response.id}")
+                    logger.info(f"📊 FULL RESPONSE: {email_response}")
+                    logger.info(f"🚀 DELIVERY METHOD: Resend SDK API (PRIMARY)")
+                    logger.info(f"❌ SMTP NOT USED: Resend SDK is the primary method")
+                    logger.info("✅" + "=" * 78)
                     return True
                 else:
-                    logger.warning(f"RESEND SDK - Unexpected response format: {email_response}")
+                    logger.warning("⚠️" + "=" * 78)
+                    logger.warning("⚠️ RESEND SDK - UNEXPECTED RESPONSE FORMAT")
+                    logger.warning("⚠️" + "=" * 78)
+                    logger.warning(f"📊 RESPONSE: {email_response}")
+                    logger.warning("⚠️" + "=" * 78)
                     return False
             else:
-                logger.error("RESEND SDK - No response received from API")
+                logger.error("❌" + "=" * 78)
+                logger.error("❌ RESEND SDK - NO RESPONSE FROM API")
+                logger.error("❌" + "=" * 78)
                 return False
 
         except Exception as e:
-            logger.error(f"RESEND SDK - Failed to send email to {to_email}: {e}")
-            logger.exception("RESEND SDK - Full exception details:")
+            logger.error("❌" + "=" * 78)
+            logger.error("❌ RESEND SDK - EMAIL SENDING FAILED")
+            logger.error("❌" + "=" * 78)
+            logger.error(f"📧 TO: {to_email}")
+            logger.error(f"❌ ERROR: {e}")
+            logger.error(f"🔧 METHOD: Resend SDK API (PRIMARY)")
+            logger.error("📋 FULL EXCEPTION DETAILS:")
+            logger.exception("Exception traceback:")
+            logger.error("❌" + "=" * 78)
             return False
 
     async def send_verification_code_email(self, email: str, username: str, verification_code: str) -> bool:
         """Send 6-digit verification code email with professional template."""
+        logger.info("🔐" + "=" * 78)
+        logger.info("🔐 RESEND SDK - SENDING VERIFICATION CODE EMAIL")
+        logger.info("🔐" + "=" * 78)
+        logger.info(f"👤 USER: {username}")
+        logger.info(f"📧 EMAIL: {email}")
+        logger.info(f"🔢 CODE: {verification_code}")
+        logger.info(f"🚀 SERVICE: Resend SDK (PRIMARY)")
+
         try:
             subject = "Verifiera ditt AxieStudio-konto"
             
