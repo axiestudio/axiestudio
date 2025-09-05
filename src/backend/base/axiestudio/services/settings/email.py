@@ -46,15 +46,19 @@ class EmailSettings:
         # Rate Limiting
         self.MAX_EMAILS_PER_HOUR: int = int(os.getenv("AXIESTUDIO_EMAIL_MAX_PER_HOUR", "100"))
         self.MAX_EMAILS_PER_DAY: int = int(os.getenv("AXIESTUDIO_EMAIL_MAX_PER_DAY", "1000"))
-        
+
         # Verification Settings
         self.VERIFICATION_CODE_EXPIRY_MINUTES: int = int(os.getenv("AXIESTUDIO_VERIFICATION_EXPIRY_MINUTES", "10"))
         self.PASSWORD_RESET_EXPIRY_HOURS: int = int(os.getenv("AXIESTUDIO_PASSWORD_RESET_EXPIRY_HOURS", "1"))
-        
+
         # Development/Testing
         self.EMAIL_ENABLED: bool = os.getenv("AXIESTUDIO_EMAIL_ENABLED", "true").lower() == "true"
         self.DEBUG_EMAIL: bool = os.getenv("AXIESTUDIO_EMAIL_DEBUG", "false").lower() == "true"
-        
+
+        # Resend SDK Configuration
+        self.RESEND_API_KEY: Optional[str] = os.getenv("AXIESTUDIO_RESEND_API_KEY")
+        self.USE_RESEND_SDK: bool = os.getenv("AXIESTUDIO_USE_RESEND_SDK", "false").lower() == "true"
+
         # Fallback configuration for development
         self._setup_fallback_config()
     
@@ -139,6 +143,8 @@ EMAIL_ENV_VARS = {
     "AXIESTUDIO_PASSWORD_RESET_EXPIRY_HOURS": "Password reset expiry (default: 1)",
     "AXIESTUDIO_EMAIL_ENABLED": "Enable email sending (default: true)",
     "AXIESTUDIO_EMAIL_DEBUG": "Debug mode - log emails (default: false)",
+    "AXIESTUDIO_RESEND_API_KEY": "Resend API key for SDK integration",
+    "AXIESTUDIO_USE_RESEND_SDK": "Use Resend SDK instead of SMTP (default: false)",
 }
 
 

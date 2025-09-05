@@ -913,5 +913,6 @@ Besök oss på: https://axiestudio.se
             return False
 
 
-# Global email service instance
-email_service = EmailService()
+# Global email service instance - now uses factory pattern
+from axiestudio.services.email.factory import get_email_service
+email_service = get_email_service()
