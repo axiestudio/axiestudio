@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { subscriptionsApi } from '@/controllers/API/queries/subscriptions';
 
 interface SubscriptionStatus {
   subscription_status: string;
@@ -26,7 +25,7 @@ interface SubscriptionStore {
   refreshStatus: () => Promise<void>;
 }
 
-let pollingInterval: NodeJS.Timeout | null = null;
+let pollingInterval: number | null = null;
 
 export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
   subscriptionStatus: null,
