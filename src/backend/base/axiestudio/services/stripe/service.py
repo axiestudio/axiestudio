@@ -51,6 +51,7 @@ class StripeService:
     async def create_customer(self, email: str, name: str) -> str:
         """Create a Stripe customer."""
         try:
+            logger.info(f"Creating Stripe customer for email: {email[:3]}***@{email.split('@')[1] if '@' in email else 'unknown'}")
             customer = stripe.Customer.create(
                 email=email,
                 name=name,
@@ -58,19 +59,36 @@ class StripeService:
             )
             logger.info(f"Created Stripe customer: {customer.id}")
             return customer.id
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe API error creating customer: {e.user_message} (Code: {e.code})")
+            raise Exception(f"Stripe customer creation failed: {e.user_message}")
         except Exception as e:
-            logger.error(f"Failed to create Stripe customer: {e}")
+            logger.error(f"Unexpected error creating Stripe customer: {e}")
             raise
     
     async def create_checkout_session(
-        self, 
-        customer_id: str, 
-        success_url: str, 
+        self,
+        customer_id: str,
+        success_url: str,
         cancel_url: str,
         trial_days: int = 7
     ) -> str:
         """Create a Stripe checkout session with trial."""
         try:
+            # FIXED: Handle trial_days = 0 case (Stripe doesn't accept 0-day trials)
+            subscription_data = {
+                'metadata': {
+                    'source': 'axiestudio'
+                }
+            }
+
+            # Only add trial if trial_days > 0 (Stripe requirement)
+            if trial_days > 0:
+                subscription_data['trial_period_days'] = trial_days
+                logger.info(f"Creating checkout with {trial_days} trial days")
+            else:
+                logger.info("Creating checkout with no trial (immediate payment)")
+
             session = stripe.checkout.Session.create(
                 customer=customer_id,
                 payment_method_types=['card'],
@@ -81,18 +99,18 @@ class StripeService:
                 mode='subscription',
                 success_url=success_url,
                 cancel_url=cancel_url,
-                subscription_data={
-                    'trial_period_days': trial_days,
-                    'metadata': {
-                        'source': 'axiestudio'
-                    }
-                },
+                subscription_data=subscription_data,
                 allow_promotion_codes=True,
             )
             logger.info(f"Created checkout session: {session.id}")
             return session.url
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe API error creating checkout session: {e.user_message} (Code: {e.code})")
+            logger.error(f"Stripe error details - customer_id: {customer_id}, price_id: {self.stripe_price_id}, trial_days: {trial_days}")
+            raise Exception(f"Stripe checkout creation failed: {e.user_message}")
         except Exception as e:
-            logger.error(f"Failed to create checkout session: {e}")
+            logger.error(f"Unexpected error creating checkout session: {e}")
+            logger.error(f"Checkout parameters - customer_id: {customer_id}, price_id: {self.stripe_price_id}, trial_days: {trial_days}")
             raise
     
     async def create_customer_portal_session(self, customer_id: str, return_url: str) -> str:

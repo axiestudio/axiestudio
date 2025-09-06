@@ -83,8 +83,13 @@ async def create_checkout_session(
         # Create Stripe customer if not exists
         stripe_customer_id = getattr(current_user, 'stripe_customer_id', None)
         if not stripe_customer_id:
-            # Use user's email (now required)
+            # Use user's email (handle case where email might be None for existing users)
             user_email = current_user.email
+            if not user_email:
+                raise HTTPException(
+                    status_code=400,
+                    detail="E-postadress krävs för prenumeration. Vänligen uppdatera din profil med en giltig e-postadress."
+                )
 
             customer_id = await stripe_service.create_customer(
                 email=user_email,
@@ -110,10 +115,15 @@ async def create_checkout_session(
         if trial_end and trial_end.tzinfo is None:
             trial_end = trial_end.replace(tzinfo=timezone.utc)
 
-        # Only give Stripe trial if user's trial hasn't expired yet
+        # FIXED: Proper trial logic for expired vs active users
         remaining_trial_days = 0
         if trial_end and now < trial_end:
-            remaining_trial_days = max(0, (trial_end - now).days)
+            # User still has active trial - give them remaining days
+            remaining_seconds = (trial_end - now).total_seconds()
+            remaining_trial_days = max(1, int(remaining_seconds / 86400))  # Minimum 1 day for Stripe
+        else:
+            # User's trial is expired or they have no trial - NO TRIAL, direct payment
+            remaining_trial_days = 0
 
         # Create checkout session with remaining trial days
         checkout_url = await stripe_service.create_checkout_session(
@@ -149,8 +159,13 @@ async def create_customer_portal(
     try:
         # Create Stripe customer if not exists
         if not current_user.stripe_customer_id:
-            # Use user's email (now required)
+            # Use user's email (handle case where email might be None for existing users)
             user_email = current_user.email
+            if not user_email:
+                raise HTTPException(
+                    status_code=400,
+                    detail="E-postadress krävs för kundportal. Vänligen uppdatera din profil med en giltig e-postadress."
+                )
 
             customer_id = await stripe_service.create_customer(
                 email=user_email,
@@ -389,7 +404,9 @@ async def get_subscription_status(current_user: CurrentActiveUser):
                 trial_expired = True
                 days_left = 0
             else:
-                days_left = (trial_end_date - now).days
+                # FIXED: Use total_seconds() for accurate days calculation
+                remaining_seconds = (trial_end_date - now).total_seconds()
+                days_left = max(0, int(remaining_seconds / 86400))  # 86400 seconds = 1 day
         else:
             # If no trial_start, assume user just signed up
             trial_start = current_user.create_at
