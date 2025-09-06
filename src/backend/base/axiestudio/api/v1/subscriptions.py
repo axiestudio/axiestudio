@@ -511,17 +511,14 @@ async def cancel_subscription(
                     if cancel_result.get("subscription_end"):
                         subscription_end_str = cancel_result.get("subscription_end").strftime("%B %d, %Y")
 
-                    import asyncio
-                    asyncio.create_task(
-                        email_service.send_subscription_cancelled_email(
-                            email=current_user.email,
-                            username=current_user.username,
-                            subscription_end_date=subscription_end_str
-                        )
+                    await email_service.send_subscription_cancelled_email(
+                        email=current_user.email,
+                        username=current_user.username,
+                        subscription_end_date=subscription_end_str
                     )
-                    logger.info(f"📧 Queued subscription cancellation email for {current_user.username}")
+                    logger.info(f"✅ Sent subscription cancellation email to {current_user.username}")
                 except Exception as e:
-                    logger.error(f"Failed to send subscription cancellation email: {e}")
+                    logger.error(f"❌ Failed to send subscription cancellation email to {current_user.username}: {e}")
 
             return {
                 "status": "success",
