@@ -106,13 +106,18 @@ async def create_checkout_session(
         now = datetime.now(timezone.utc)
 
         # Handle trial dates safely with timezone consistency
-        trial_start = getattr(current_user, 'trial_start', None) or now
-        trial_end = getattr(current_user, 'trial_end', None) or (trial_start + timedelta(days=7))
+        trial_start = getattr(current_user, 'trial_start', None)
+        trial_end = getattr(current_user, 'trial_end', None)
 
-        # Ensure timezone consistency for comparisons
-        if trial_start and trial_start.tzinfo is None:
+        # CRITICAL FIX: Ensure all datetime objects are timezone-aware
+        if trial_start is None:
+            trial_start = now
+        elif trial_start.tzinfo is None:
             trial_start = trial_start.replace(tzinfo=timezone.utc)
-        if trial_end and trial_end.tzinfo is None:
+
+        if trial_end is None:
+            trial_end = trial_start + timedelta(days=7)
+        elif trial_end.tzinfo is None:
             trial_end = trial_end.replace(tzinfo=timezone.utc)
 
         # FIXED: Proper trial logic for expired vs active users
@@ -386,6 +391,12 @@ async def get_subscription_status(current_user: CurrentActiveUser):
         subscription_end = getattr(current_user, 'subscription_end', None)
         stripe_customer_id = getattr(current_user, 'stripe_customer_id', None)
 
+        # CRITICAL FIX: Ensure timezone awareness for subscription dates
+        if subscription_start and subscription_start.tzinfo is None:
+            subscription_start = subscription_start.replace(tzinfo=timezone.utc)
+        if subscription_end and subscription_end.tzinfo is None:
+            subscription_end = subscription_end.replace(tzinfo=timezone.utc)
+
         # Calculate trial status
         trial_expired = False
         days_left = 7  # Default to 7 days if no trial_start
@@ -410,9 +421,15 @@ async def get_subscription_status(current_user: CurrentActiveUser):
         else:
             # If no trial_start, assume user just signed up
             trial_start = current_user.create_at
-            if trial_start and trial_start.tzinfo is None:
-                trial_start = trial_start.replace(tzinfo=timezone.utc)
-            trial_end = trial_start + timedelta(days=7) if trial_start else None
+            if trial_start:
+                # CRITICAL FIX: Ensure timezone awareness for create_at
+                if trial_start.tzinfo is None:
+                    trial_start = trial_start.replace(tzinfo=timezone.utc)
+                trial_end = trial_start + timedelta(days=7)
+            else:
+                # Fallback if create_at is somehow None
+                trial_start = datetime.now(timezone.utc)
+                trial_end = trial_start + timedelta(days=7)
 
         return {
             "subscription_status": subscription_status,
@@ -428,12 +445,18 @@ async def get_subscription_status(current_user: CurrentActiveUser):
 
     except Exception as e:
         logger.error(f"Error getting subscription status: {e}")
-        # Return safe defaults if there's an error
+        # Return safe defaults if there's an error with proper timezone handling
+        safe_create_at = current_user.create_at
+        if safe_create_at and safe_create_at.tzinfo is None:
+            safe_create_at = safe_create_at.replace(tzinfo=timezone.utc)
+        elif not safe_create_at:
+            safe_create_at = datetime.now(timezone.utc)
+
         return {
             "subscription_status": "trial",
             "subscription_id": None,
-            "trial_start": current_user.create_at,
-            "trial_end": current_user.create_at + timedelta(days=7) if current_user.create_at else None,
+            "trial_start": safe_create_at,
+            "trial_end": safe_create_at + timedelta(days=7),
             "trial_expired": False,
             "trial_days_left": 7,
             "subscription_start": None,
@@ -588,11 +611,10 @@ async def reactivate_subscription(
 
         # Check if subscription has expired (can't reactivate expired subscriptions)
         if current_user.subscription_end:
-            from datetime import datetime, timezone
             now = datetime.now(timezone.utc)
             subscription_end = current_user.subscription_end
 
-            # Ensure timezone awareness
+            # CRITICAL FIX: Ensure timezone awareness for subscription_end
             if subscription_end.tzinfo is None:
                 subscription_end = subscription_end.replace(tzinfo=timezone.utc)
 
