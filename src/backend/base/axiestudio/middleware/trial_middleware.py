@@ -117,7 +117,8 @@ class TrialMiddleware(BaseHTTPMiddleware):
                         )
 
                     # Additional safety check: Block if subscription status is suspicious
-                    if (user.subscription_status not in ["active", "trial"] or
+                    # FIXED: Allow "canceled" status if subscription hasn't ended yet
+                    if (user.subscription_status not in ["active", "trial", "canceled"] or
                         (user.subscription_status == "trial" and trial_status.get("trial_expired", True))):
                         logger.warning(f"🚫 BLOCKING ACCESS - Suspicious subscription status: {user.username} - {user.subscription_status}")
                         return JSONResponse(

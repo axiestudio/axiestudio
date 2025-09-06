@@ -489,17 +489,22 @@ async def cancel_subscription(
         if not current_user.subscription_id:
             raise HTTPException(status_code=400, detail="No active subscription found")
 
-        success = await stripe_service.cancel_subscription(current_user.subscription_id)
+        cancel_result = await stripe_service.cancel_subscription(current_user.subscription_id)
 
-        if success:
-            # Update user status
+        if cancel_result["success"]:
+            # FIXED: Update user status with subscription end date
             update_data = UserUpdate(
                 subscription_status="canceled",
-                subscription_id=None
+                subscription_end=cancel_result.get("subscription_end")
+                # Keep subscription_id so we can track it until it actually ends
             )
             await update_user(session, current_user.id, update_data)
 
-            return {"status": "success", "message": "Subscription cancelled"}
+            return {
+                "status": "success",
+                "message": "Subscription cancelled. You will retain access until the end of your current billing period.",
+                "subscription_end": cancel_result.get("subscription_end").isoformat() if cancel_result.get("subscription_end") else None
+            }
         else:
             raise HTTPException(status_code=500, detail="Failed to cancel subscription")
 

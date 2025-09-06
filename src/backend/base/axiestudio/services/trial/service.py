@@ -44,6 +44,25 @@ class TrialService:
                 "days_left": 0,
                 "should_cleanup": False
             }
+
+        # FIXED: Handle canceled subscriptions that are still valid until subscription_end
+        if user.subscription_status == "canceled" and user.subscription_end:
+            # Ensure timezone consistency
+            subscription_end = user.subscription_end
+            if subscription_end.tzinfo is None:
+                subscription_end = subscription_end.replace(tzinfo=timezone.utc)
+
+            # If subscription hasn't ended yet, user still has access
+            if now < subscription_end:
+                remaining_seconds = (subscription_end - now).total_seconds()
+                days_left = max(0, int(remaining_seconds / 86400))
+                return {
+                    "status": "canceled_but_active",
+                    "trial_expired": False,
+                    "days_left": days_left,
+                    "should_cleanup": False,
+                    "subscription_end": subscription_end
+                }
         
         # Calculate trial end date with timezone consistency
         trial_start = user.trial_start or user.create_at
@@ -72,22 +91,33 @@ class TrialService:
         # CRITICAL: Block access for ALL these cases:
         # 1. Trial expired AND no active subscription
         # 2. No subscription status (null/empty)
-        # 3. Subscription status is anything other than "active"
+        # 3. Subscription status is anything other than "active", "trial", or "canceled" (with valid end date)
         # 4. Trial end date is missing (suspicious)
+        # 5. Canceled subscription that has actually expired
 
         has_active_subscription = user.subscription_status == "active"
         has_valid_trial = trial_end and not trial_expired
 
+        # Check if canceled subscription is still valid
+        has_valid_canceled_subscription = False
+        if user.subscription_status == "canceled" and user.subscription_end:
+            subscription_end = user.subscription_end
+            if subscription_end.tzinfo is None:
+                subscription_end = subscription_end.replace(tzinfo=timezone.utc)
+            has_valid_canceled_subscription = now < subscription_end
+
         # Should cleanup (block access) if:
         should_cleanup = (
-            # Trial expired and no active subscription
-            (trial_expired and not has_active_subscription) or
+            # Trial expired and no active subscription and no valid canceled subscription
+            (trial_expired and not has_active_subscription and not has_valid_canceled_subscription) or
             # No subscription status at all (null, empty, or invalid)
-            (not user.subscription_status or user.subscription_status not in ["active", "trial"]) or
-            # Subscription status is not active and no valid trial
-            (user.subscription_status != "active" and not has_valid_trial) or
+            (not user.subscription_status or user.subscription_status not in ["active", "trial", "canceled"]) or
+            # Subscription status is not active/trial and no valid trial and no valid canceled subscription
+            (user.subscription_status not in ["active", "trial"] and not has_valid_trial and not has_valid_canceled_subscription) or
             # Missing trial end date for trial users (data integrity issue)
-            (user.subscription_status == "trial" and not trial_end)
+            (user.subscription_status == "trial" and not trial_end) or
+            # Canceled subscription that has expired
+            (user.subscription_status == "canceled" and user.subscription_end and now >= subscription_end)
         )
         
         return {

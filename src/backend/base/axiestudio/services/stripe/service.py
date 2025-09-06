@@ -134,15 +134,27 @@ class StripeService:
             logger.error(f"Failed to get subscription: {e}")
             return None
     
-    async def cancel_subscription(self, subscription_id: str) -> bool:
-        """Cancel a subscription."""
+    async def cancel_subscription(self, subscription_id: str) -> dict:
+        """Cancel a subscription and return subscription details."""
         try:
-            stripe.Subscription.delete(subscription_id)
-            logger.info(f"Cancelled subscription: {subscription_id}")
-            return True
+            # Cancel the subscription (this sets it to cancel at period end)
+            subscription = stripe.Subscription.modify(
+                subscription_id,
+                cancel_at_period_end=True
+            )
+
+            # Get the period end date
+            period_end = datetime.fromtimestamp(subscription.current_period_end, tz=timezone.utc)
+
+            logger.info(f"Cancelled subscription: {subscription_id}, will end at: {period_end}")
+            return {
+                "success": True,
+                "subscription_end": period_end,
+                "current_period_end": subscription.current_period_end
+            }
         except Exception as e:
             logger.error(f"Failed to cancel subscription: {e}")
-            return False
+            return {"success": False}
     
     async def handle_webhook_event(self, event_data: dict, session) -> bool:
         """Handle Stripe webhook events."""
