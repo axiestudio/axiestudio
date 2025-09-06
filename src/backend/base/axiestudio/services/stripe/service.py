@@ -63,14 +63,28 @@ class StripeService:
             raise
     
     async def create_checkout_session(
-        self, 
-        customer_id: str, 
-        success_url: str, 
+        self,
+        customer_id: str,
+        success_url: str,
         cancel_url: str,
         trial_days: int = 7
     ) -> str:
         """Create a Stripe checkout session with trial."""
         try:
+            # FIXED: Handle trial_days = 0 case (Stripe doesn't accept 0-day trials)
+            subscription_data = {
+                'metadata': {
+                    'source': 'axiestudio'
+                }
+            }
+
+            # Only add trial if trial_days > 0 (Stripe requirement)
+            if trial_days > 0:
+                subscription_data['trial_period_days'] = trial_days
+                logger.info(f"Creating checkout with {trial_days} trial days")
+            else:
+                logger.info("Creating checkout with no trial (immediate payment)")
+
             session = stripe.checkout.Session.create(
                 customer=customer_id,
                 payment_method_types=['card'],
@@ -81,12 +95,7 @@ class StripeService:
                 mode='subscription',
                 success_url=success_url,
                 cancel_url=cancel_url,
-                subscription_data={
-                    'trial_period_days': trial_days,
-                    'metadata': {
-                        'source': 'axiestudio'
-                    }
-                },
+                subscription_data=subscription_data,
                 allow_promotion_codes=True,
             )
             logger.info(f"Created checkout session: {session.id}")

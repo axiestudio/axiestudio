@@ -115,13 +115,15 @@ async def create_checkout_session(
         if trial_end and trial_end.tzinfo is None:
             trial_end = trial_end.replace(tzinfo=timezone.utc)
 
-        # Only give Stripe trial if user's trial hasn't expired yet
+        # FIXED: Proper trial logic for expired vs active users
         remaining_trial_days = 0
         if trial_end and now < trial_end:
-            # FIXED: Use total_seconds() to get accurate remaining time, then convert to days
-            # This prevents losing trial time due to .days only returning the day component
+            # User still has active trial - give them remaining days
             remaining_seconds = (trial_end - now).total_seconds()
-            remaining_trial_days = max(0, int(remaining_seconds / 86400))  # 86400 seconds = 1 day
+            remaining_trial_days = max(1, int(remaining_seconds / 86400))  # Minimum 1 day for Stripe
+        else:
+            # User's trial is expired or they have no trial - NO TRIAL, direct payment
+            remaining_trial_days = 0
 
         # Create checkout session with remaining trial days
         checkout_url = await stripe_service.create_checkout_session(
