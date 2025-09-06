@@ -318,84 +318,95 @@ Visit us at: https://axiestudio.se
             
             # Use same professional template but with link instead of code
             html_body = f"""
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Verify your AxieStudio email</title>
-    <style>
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #1a202c;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 0;
-            background-color: #f7fafc;
-        }}
-        .email-container {{
-            background: #ffffff;
-            margin: 20px;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }}
-        .header {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 40px 40px 30px;
-            text-align: center;
-        }}
-
-        .verify-button {{
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 16px 32px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            margin: 24px 0;
-        }}
-        .footer {{
-            background-color: #f7fafc;
-            padding: 30px 40px;
-            text-align: center;
-            border-top: 1px solid #e2e8f0;
-            color: #718096;
-            font-size: 14px;
-        }}
-    </style>
 </head>
-<body>
-    <div class="email-container">
-        <div class="header">
-            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;">
-            <h1>Email Verification</h1>
-            <p>Welcome to AxieStudio</p>
-        </div>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 40px 30px; text-align: center; border-radius: 12px 12px 0 0;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <div style="background: rgba(255, 255, 255, 0.15); width: 64px; height: 64px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                                            <span style="color: white; font-size: 28px; font-weight: bold;">✉️</span>
+                                        </div>
+                                        <h1 style="color: white; margin: 0 0 8px 0; font-size: 28px; font-weight: 600; line-height: 1.2;">Email Verification</h1>
+                                        <p style="color: rgba(255, 255, 255, 0.9); margin: 0; font-size: 16px; line-height: 1.4;">Welcome to AxieStudio</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-        <div class="content" style="padding: 40px;">
-            <p>Hello <strong>{username}</strong>,</p>
-            <p>Thank you for signing up for AxieStudio. Please click the button below to verify your email address:</p>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td>
+                                        <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #374151;">Hello <strong>{username}</strong>,</p>
+                                        <p style="margin: 0 0 32px 0; font-size: 16px; line-height: 1.6; color: #374151;">Thank you for signing up for AxieStudio! Please click the button below to verify your email address and activate your account.</p>
 
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{verification_link}" class="verify-button">
-                    Verify Email Address
-                </a>
-            </div>
+                                        <!-- Verify Button -->
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 32px 0;">
+                                            <tr>
+                                                <td align="center">
+                                                    <a href="{verification_link}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25);">Verify Email Address</a>
+                                                </td>
+                                            </tr>
+                                        </table>
 
-            <p style="color: #718096; font-size: 14px; margin-top: 30px;">
-                Didn't request this verification? You can safely ignore this email.
-            </p>
-        </div>
+                                        <!-- Alternative Link -->
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; margin: 24px 0;">
+                                            <tr>
+                                                <td style="padding: 20px;">
+                                                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 600;">Can't click the button? Copy and paste this link:</p>
+                                                    <p style="margin: 0; font-size: 14px; color: #3b82f6; word-break: break-all;">{verification_link}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
 
-        <div class="footer">
-            <p><strong>AxieStudio</strong> - Building the future of AI workflows</p>
-            <p>Visit us at <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
-        </div>
-    </div>
+                                        <!-- Info Note -->
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; border-radius: 4px; margin: 24px 0;">
+                                            <tr>
+                                                <td style="padding: 16px;">
+                                                    <p style="margin: 0; color: #0c4a6e; font-size: 14px; line-height: 1.5;"><strong>💡 Note:</strong> Didn't request this verification? You can safely ignore this email.</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 32px 40px; text-align: center; border-top: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 8px 0; font-weight: 600; color: #374151; font-size: 16px;">AxieStudio</p>
+                                        <p style="margin: 0; color: #6b7280; font-size: 14px;">Building the future of AI workflows</p>
+                                        <p style="margin: 12px 0 0 0; color: #6b7280; font-size: 14px;">Visit us at <a href="https://flow.axiestudio.se" style="color: #3b82f6; text-decoration: none;">flow.axiestudio.se</a></p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
             """
@@ -405,7 +416,7 @@ AxieStudio - Email Verification
 
 Hello {username},
 
-Thank you for signing up for AxieStudio. Please click the link below to verify your email address:
+Thank you for signing up for AxieStudio! Please click the link below to verify your email address and activate your account:
 
 {verification_link}
 
@@ -413,7 +424,7 @@ Didn't request this verification? You can safely ignore this email.
 
 ---
 AxieStudio - Building the future of AI workflows
-Visit us at: https://axiestudio.se
+Visit us at: https://flow.axiestudio.se
             """
 
             return await self._send_email(email, subject, text_body, html_body)
@@ -754,179 +765,182 @@ Visit us at: https://axiestudio.se
             login_time = datetime.now(timezone.utc).strftime("%B %d, %Y at %I:%M %p UTC")
 
             html_body = f"""
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New sign-in detected</title>
-    <style>
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #1a202c;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 0;
-            background-color: #f7fafc;
-        }}
-        .email-container {{
-            background: #ffffff;
-            margin: 20px;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }}
-        .header {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 40px 40px 30px;
-            text-align: center;
-        }}
-        .logo {{
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            margin: 0 auto 20px;
-        }}
-        .header h1 {{
-            color: white;
-            margin: 0 0 8px 0;
-            font-size: 28px;
-            font-weight: 600;
-        }}
-        .header p {{
-            color: rgba(255, 255, 255, 0.9);
-            margin: 0;
-            font-size: 16px;
-        }}
-        .content {{
-            padding: 40px;
-        }}
-        .security-alert {{
-            background: #fef5e7;
-            border: 1px solid #f6ad55;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
-        }}
-        .login-details {{
-            background: #f7fafc;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-        }}
-        .detail-row {{
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e2e8f0;
-        }}
-        .detail-row:last-child {{
-            border-bottom: none;
-        }}
-        .detail-label {{
-            font-weight: 600;
-            color: #4a5568;
-        }}
-        .detail-value {{
-            color: #2d3748;
-        }}
-        .action-button {{
-            display: inline-block;
-            background: #e53e3e;
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-            margin: 10px 5px;
-        }}
-        .secure-button {{
-            background: #38a169;
-        }}
-        .footer {{
-            background-color: #f7fafc;
-            padding: 30px 40px;
-            text-align: center;
-            border-top: 1px solid #e2e8f0;
-            color: #718096;
-            font-size: 14px;
-        }}
-    </style>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>New sign-in detected - AxieStudio</title>
 </head>
-<body>
-    <div class="email-container">
-        <div class="header">
-            <div class="logo">AX</div>
-            <h1>New Sign-in Detected</h1>
-            <p>Security notification for your account</p>
-        </div>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 40px 30px; text-align: center; border-radius: 12px 12px 0 0;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <div style="background: rgba(255, 255, 255, 0.15); width: 64px; height: 64px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                                            <span style="color: white; font-size: 28px; font-weight: bold;">🔒</span>
+                                        </div>
+                                        <h1 style="color: white; margin: 0 0 8px 0; font-size: 28px; font-weight: 600; line-height: 1.2;">New Sign-in Detected</h1>
+                                        <p style="color: rgba(255, 255, 255, 0.9); margin: 0; font-size: 16px; line-height: 1.4;">Security notification for your account</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-        <div class="content">
-            <p>Hello <strong>{username}</strong>,</p>
-            <p>We detected a new sign-in to your AxieStudio account. If this was you, you can safely ignore this email.</p>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td>
+                                        <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #374151;">Hello <strong>{username}</strong>,</p>
+                                        <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: #374151;">We detected a new sign-in to your AxieStudio account. If this was you, you can safely ignore this email.</p>
 
-            <div class="security-alert">
-                <strong>New sign-in on {login_time}</strong>
-            </div>
+                                        <!-- Security Alert -->
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fef3cd; border: 1px solid #f59e0b; border-radius: 8px; margin: 24px 0;">
+                                            <tr>
+                                                <td style="padding: 20px; text-align: center;">
+                                                    <p style="margin: 0; font-weight: 600; color: #92400e; font-size: 16px;">⚠️ New sign-in on {login_time}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
 
-            <div class="login-details">
-                <div class="detail-row">
-                    <span class="detail-label">Account:</span>
-                    <span class="detail-value">{email}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Time:</span>
-                    <span class="detail-value">{login_time}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">IP Address:</span>
-                    <span class="detail-value">{client_ip}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Location:</span>
-                    <span class="detail-value">{location}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Device:</span>
-                    <span class="detail-value">{device}</span>
-                </div>
-            </div>
+                                        <!-- Login Details -->
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; margin: 24px 0;">
+                                            <tr>
+                                                <td style="padding: 24px;">
+                                                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                        <tr>
+                                                            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                                                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                                    <tr>
+                                                                        <td style="font-weight: 600; color: #6b7280; font-size: 14px;">Account:</td>
+                                                                        <td align="right" style="color: #374151; font-size: 14px;">{email}</td>
+                                                                    </tr>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                                                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                                    <tr>
+                                                                        <td style="font-weight: 600; color: #6b7280; font-size: 14px;">Time:</td>
+                                                                        <td align="right" style="color: #374151; font-size: 14px;">{login_time}</td>
+                                                                    </tr>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                                                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                                    <tr>
+                                                                        <td style="font-weight: 600; color: #6b7280; font-size: 14px;">IP Address:</td>
+                                                                        <td align="right" style="color: #374151; font-size: 14px;">{client_ip}</td>
+                                                                    </tr>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                                                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                                    <tr>
+                                                                        <td style="font-weight: 600; color: #6b7280; font-size: 14px;">Location:</td>
+                                                                        <td align="right" style="color: #374151; font-size: 14px;">{location}</td>
+                                                                    </tr>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding: 8px 0;">
+                                                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                                    <tr>
+                                                                        <td style="font-weight: 600; color: #6b7280; font-size: 14px;">Device:</td>
+                                                                        <td align="right" style="color: #374151; font-size: 14px;">{device}</td>
+                                                                    </tr>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
 
-            <p><strong>If this wasn't you:</strong></p>
-            <ul>
-                <li>Change your password immediately</li>
-                <li>Review your account activity</li>
-                <li>Contact our support team</li>
-            </ul>
+                                        <p style="margin: 24px 0 16px 0; font-weight: 600; color: #374151; font-size: 16px;">If this wasn't you:</p>
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td style="padding: 4px 0;">
+                                                    <p style="margin: 0; color: #374151; font-size: 15px;">• Change your password immediately</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 4px 0;">
+                                                    <p style="margin: 0; color: #374151; font-size: 15px;">• Review your account activity</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 4px 0;">
+                                                    <p style="margin: 0; color: #374151; font-size: 15px;">• Contact our support team</p>
+                                                </td>
+                                            </tr>
+                                        </table>
 
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="https://flow.axiestudio.se/settings/security" class="action-button secure-button">
-                    Secure My Account
-                </a>
-                <a href="https://flow.axiestudio.se/settings/password" class="action-button">
-                    Change Password
-                </a>
-            </div>
+                                        <!-- Action Buttons -->
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 32px 0;">
+                                            <tr>
+                                                <td align="center">
+                                                    <table border="0" cellpadding="0" cellspacing="0">
+                                                        <tr>
+                                                            <td style="padding: 0 8px 0 0;">
+                                                                <a href="https://flow.axiestudio.se/settings/security" style="display: inline-block; background-color: #10b981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">Secure My Account</a>
+                                                            </td>
+                                                            <td style="padding: 0 0 0 8px;">
+                                                                <a href="https://flow.axiestudio.se/settings/password" style="display: inline-block; background-color: #ef4444; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">Change Password</a>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
 
-            <p style="color: #718096; font-size: 14px; margin-top: 30px;">
-                <strong>Security tip:</strong> Always log out from shared computers and use strong, unique passwords.
-            </p>
-        </div>
+                                        <!-- Security Tip -->
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; border-radius: 4px; margin: 24px 0;">
+                                            <tr>
+                                                <td style="padding: 16px;">
+                                                    <p style="margin: 0; color: #0c4a6e; font-size: 14px; line-height: 1.5;"><strong>💡 Security tip:</strong> Always log out from shared computers and use strong, unique passwords.</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-        <div class="footer">
-            <p><strong>AxieStudio</strong> - Building the future of AI workflows</p>
-            <p>Visit us at <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
-        </div>
-    </div>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 32px 40px; text-align: center; border-top: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 8px 0; font-weight: 600; color: #374151; font-size: 16px;">AxieStudio</p>
+                                        <p style="margin: 0; color: #6b7280; font-size: 14px;">Building the future of AI workflows</p>
+                                        <p style="margin: 12px 0 0 0; color: #6b7280; font-size: 14px;">Visit us at <a href="https://flow.axiestudio.se" style="color: #3b82f6; text-decoration: none;">flow.axiestudio.se</a></p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
             """
@@ -956,7 +970,7 @@ Security tip: Always log out from shared computers and use strong, unique passwo
 
 ---
 AxieStudio - Building the future of AI workflows
-Visit us at: https://axiestudio.se
+Visit us at: https://flow.axiestudio.se
             """
 
             return await self._send_email(email, subject, text_body, html_body)
