@@ -65,6 +65,7 @@ export default function SubscriptionPage(): JSX.Element {
 
   const isSubscribed = subscriptionStatus.subscription_status === "active";
   const isOnTrial = subscriptionStatus.subscription_status === "trial";
+  const isCanceled = subscriptionStatus.subscription_status === "canceled";
   const isAdmin = subscriptionStatus.subscription_status === "admin";
   const trialExpired = subscriptionStatus.trial_expired;
 

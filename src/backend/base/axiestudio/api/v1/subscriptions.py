@@ -492,11 +492,12 @@ async def cancel_subscription(
         cancel_result = await stripe_service.cancel_subscription(current_user.subscription_id)
 
         if cancel_result["success"]:
-            # FIXED: Update user status with subscription end date
+            # CRITICAL FIX: Update user status with subscription end date but KEEP subscription_id
+            # This allows users to maintain access until the billing period ends
             update_data = UserUpdate(
                 subscription_status="canceled",
                 subscription_end=cancel_result.get("subscription_end")
-                # Keep subscription_id so we can track it until it actually ends
+                # IMPORTANT: Do NOT set subscription_id=None here - keep it until subscription actually ends
             )
             await update_user(session, current_user.id, update_data)
 
