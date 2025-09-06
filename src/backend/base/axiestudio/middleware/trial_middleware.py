@@ -23,9 +23,14 @@ class TrialMiddleware(BaseHTTPMiddleware):
             "/api/v1/refresh",
             "/api/v1/users/whoami",
             "/api/v1/users/",  # Allow user creation (signup)
+            "/api/v1/email/verify",  # Allow email verification
+            "/api/v1/email/resend",  # Allow resend verification
             "/pricing",
             "/login",
             "/signup",
+            "/verify-email",
+            "/forgot-password",
+            "/reset-password",
             "/health",
             "/docs",
             "/openapi.json",
@@ -93,13 +98,32 @@ class TrialMiddleware(BaseHTTPMiddleware):
                 try:
                     trial_status = await trial_service.check_trial_status(user)
 
-                    # If trial expired and no subscription, block access
+                    # STRICT ENFORCEMENT: Block access for expired/invalid subscriptions
                     if trial_status.get("should_cleanup", False):
-                        logger.info(f"Blocking access for expired trial user: {user.username}")
+                        logger.warning(f"🚫 BLOCKING ACCESS - User: {user.username}, Status: {user.subscription_status}, Trial Expired: {trial_status.get('trial_expired', 'unknown')}")
                         return JSONResponse(
                             status_code=status.HTTP_402_PAYMENT_REQUIRED,
                             content={
-                                "detail": "Your free trial has expired. Please subscribe to continue using Axie Studio.",
+                                "detail": "Din kostnadsfria provperiod har löpt ut. Vänligen prenumerera för att fortsätta använda Axie Studio.",
+                                "trial_expired": True,
+                                "subscription_required": True,
+                                "redirect_to": "/pricing",
+                                "user_status": user.subscription_status,
+                                "trial_info": {
+                                    "expired": trial_status.get("trial_expired", True),
+                                    "days_left": trial_status.get("days_left", 0)
+                                }
+                            }
+                        )
+
+                    # Additional safety check: Block if subscription status is suspicious
+                    if (user.subscription_status not in ["active", "trial"] or
+                        (user.subscription_status == "trial" and trial_status.get("trial_expired", True))):
+                        logger.warning(f"🚫 BLOCKING ACCESS - Suspicious subscription status: {user.username} - {user.subscription_status}")
+                        return JSONResponse(
+                            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                            content={
+                                "detail": "Ogiltig prenumerationsstatus. Vänligen prenumerera för att fortsätta använda Axie Studio.",
                                 "trial_expired": True,
                                 "subscription_required": True,
                                 "redirect_to": "/pricing"

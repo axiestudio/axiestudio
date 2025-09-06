@@ -80,6 +80,27 @@ function ApiInterceptor() {
         const isAuthenticationError =
           error?.response?.status === 403 || error?.response?.status === 401;
 
+        // Handle subscription-related errors (402 Payment Required)
+        const isSubscriptionError = error?.response?.status === 402;
+
+        if (isSubscriptionError) {
+          console.warn("🚫 SUBSCRIPTION REQUIRED - Redirecting to pricing page");
+          setErrorData({
+            title: "Prenumeration krävs",
+            list: [
+              error?.response?.data?.detail ||
+              "Din kostnadsfria provperiod har löpt ut. Vänligen prenumerera för att fortsätta."
+            ]
+          });
+
+          // Redirect to pricing page after showing the error
+          setTimeout(() => {
+            window.location.href = "/pricing";
+          }, 2000);
+
+          return Promise.reject(error);
+        }
+
         const shouldRetryRefresh =
           (isAuthenticationError && !IS_AUTO_LOGIN) ||
           (isAuthenticationError && !autoLogin && autoLogin !== undefined);
