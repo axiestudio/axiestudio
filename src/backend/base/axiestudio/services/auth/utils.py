@@ -443,11 +443,11 @@ async def authenticate_user(username: str, password: str, db: AsyncSession, clie
 
         if locked_until_aware and locked_until_aware > now:
             time_remaining = locked_until_aware - now
-        logger.warning(f"Login attempt for locked account: {username} from IP: {client_ip}")
-        raise HTTPException(
-            status_code=status.HTTP_423_LOCKED,
-            detail=f"Kontot är tillfälligt låst. Försök igen om {int(time_remaining.total_seconds() / 60)} minuter."
-        )
+            logger.warning(f"Login attempt for locked account: {username} from IP: {client_ip}")
+            raise HTTPException(
+                status_code=status.HTTP_423_LOCKED,
+                detail=f"Kontot är tillfälligt låst. Försök igen om {int(time_remaining.total_seconds() / 60)} minuter."
+            )
 
     if not user.is_active:
         if not user.email_verified:
