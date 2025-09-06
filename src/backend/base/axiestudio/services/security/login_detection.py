@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any
 from sqlmodel import Session, select
 from loguru import logger
 
-from axiestudio.models.user import User
+from axiestudio.services.database.models.user.model import User
 from axiestudio.services.email.service import EmailService
 
 

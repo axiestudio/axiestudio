@@ -11,7 +11,7 @@ from loguru import logger
 
 from axiestudio.api.utils import DbSession
 from axiestudio.services.auth.utils import get_current_active_user
-from axiestudio.models.user import User
+from axiestudio.services.database.models.user.model import User
 from axiestudio.services.email.service import EmailService
 from axiestudio.services.security.login_detection import get_login_detection_service
 from axiestudio.services.notifications.trial_notifications import get_trial_notification_service
