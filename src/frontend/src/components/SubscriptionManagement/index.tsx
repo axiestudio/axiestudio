@@ -94,6 +94,7 @@ export default function SubscriptionManagement(): JSX.Element {
 
   const isOnTrial = subscriptionStatus.subscription_status === "trial";
   const isSubscribed = subscriptionStatus.subscription_status === "active";
+  const isCanceled = subscriptionStatus.subscription_status === "canceled";
   const isAdmin = subscriptionStatus.subscription_status === "admin";
   const trialExpired = subscriptionStatus.trial_expired;
 
@@ -144,7 +145,9 @@ export default function SubscriptionManagement(): JSX.Element {
           <div>
             <h3 className="font-medium">Nuvarande Plan</h3>
             <p className="text-sm text-muted-foreground">
-              {isSubscribed ? "Pro-prenumeration" : isOnTrial ? "Gratis Provperiod" : "Ingen Aktiv Plan"}
+              {isSubscribed ? "Pro-prenumeration" :
+               isCanceled ? "Avbruten prenumeration (aktiv till periodens slut)" :
+               isOnTrial ? "Gratis Provperiod" : "Ingen Aktiv Plan"}
             </p>
           </div>
           {getStatusBadge(subscriptionStatus.subscription_status)}
@@ -176,7 +179,7 @@ export default function SubscriptionManagement(): JSX.Element {
         )}
 
         {/* Expired Trial Warning */}
-        {trialExpired && !isSubscribed && (
+        {trialExpired && !isSubscribed && !isCanceled && (
           <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
             <div className="flex items-start gap-3">
               <ForwardedIconComponent name="AlertTriangle" className="h-5 w-5 text-red-500 mt-0.5" />

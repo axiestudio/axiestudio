@@ -197,7 +197,7 @@ class EmailService:
 
         <div class="footer">
             <p><strong>AxieStudio</strong> - Bygger framtiden för AI-arbetsflöden</p>
-            <p>Besök oss på <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+            <p>Besök oss på <a href="https://se.axiestudio.se" style="color: #4299e1; text-decoration: none;">se.axiestudio.se</a></p>
         </div>
     </div>
 </body>
@@ -226,7 +226,7 @@ Begärde du inte denna verifiering? Du kan säkert ignorera detta e-postmeddelan
 
 ---
 AxieStudio - Bygger framtiden för AI-arbetsflöden
-Besök oss på: https://axiestudio.se
+Besök oss på: https://se.axiestudio.se
             """
 
             success = await self._send_email(email, subject, text_body, html_body)
@@ -247,7 +247,7 @@ Besök oss på: https://axiestudio.se
         try:
             # Get frontend URL from settings
             settings_service = get_settings_service()
-            frontend_url = getattr(settings_service.settings, 'frontend_url', 'https://flow.axiestudio.se')
+            frontend_url = getattr(settings_service.settings, 'frontend_url', 'https://se.axiestudio.se')
             
             # Create verification link
             verification_link = f"{frontend_url}/verify-email?token={token}"
@@ -309,7 +309,7 @@ Besök oss på: https://axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;">
+            <img src="https://se.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;">
             <h1>E-postverifiering</h1>
             <p>Välkommen till AxieStudio</p>
         </div>
@@ -331,7 +331,7 @@ Besök oss på: https://axiestudio.se
 
         <div class="footer">
             <p><strong>AxieStudio</strong> - Building the future of AI workflows</p>
-            <p>Visit us at <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+            <p>Besök oss på <a href="https://se.axiestudio.se" style="color: #4299e1; text-decoration: none;">se.axiestudio.se</a></p>
         </div>
     </div>
 </body>
@@ -351,7 +351,7 @@ Didn't request this verification? You can safely ignore this email.
 
 ---
 AxieStudio - Building the future of AI workflows
-Visit us at: https://axiestudio.se
+Besök oss på: https://se.axiestudio.se
             """
 
             return await self._send_email(email, subject, text_body, html_body)
@@ -365,7 +365,7 @@ Visit us at: https://axiestudio.se
         try:
             # Get frontend URL from settings
             settings_service = get_settings_service()
-            frontend_url = getattr(settings_service.settings, 'frontend_url', 'https://flow.axiestudio.se')
+            frontend_url = getattr(settings_service.settings, 'frontend_url', 'https://se.axiestudio.se')
 
             # Create password reset link
             reset_link = f"{frontend_url}/reset-password?token={token}"
@@ -475,7 +475,7 @@ Visit us at: https://axiestudio.se
 
         <div class="footer">
             <p><strong>AxieStudio</strong> - Building the future of AI workflows</p>
-            <p>Visit us at <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+            <p>Besök oss på <a href="https://se.axiestudio.se" style="color: #4299e1; text-decoration: none;">se.axiestudio.se</a></p>
         </div>
     </div>
 </body>
@@ -505,7 +505,7 @@ Begäran kom från IP: {client_ip}
 
 ---
 AxieStudio - Bygger framtiden för AI-arbetsflöden
-Besök oss på: https://axiestudio.se
+Besök oss på: https://se.axiestudio.se
             """
 
             return await self._send_email(email, subject, text_body, html_body)
@@ -602,7 +602,7 @@ Besök oss på: https://axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;">
+            <img src="https://se.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;">
             <h1>Lösenordsåterställning</h1>
             <p>Ditt tillfälliga lösenord är klart</p>
         </div>
@@ -618,7 +618,7 @@ Besök oss på: https://axiestudio.se
             </div>
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="https://flow.axiestudio.se/login" class="login-button">
+                <a href="https://se.axiestudio.se/login" class="login-button">
                     Logga in på AxieStudio
                 </a>
             </div>
@@ -645,7 +645,7 @@ Besök oss på: https://axiestudio.se
 
         <div class="footer">
             <p><strong>AxieStudio</strong> - Building the future of AI workflows</p>
-            <p>Visit us at <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+            <p>Besök oss på <a href="https://se.axiestudio.se" style="color: #4299e1; text-decoration: none;">se.axiestudio.se</a></p>
         </div>
     </div>
 </body>
@@ -662,7 +662,7 @@ Vi har genererat ett tillfälligt lösenord för ditt AxieStudio-konto.
 Tillfälligt lösenord (Giltigt i 24 timmar): {temp_password}
 
 Inloggningsinstruktioner:
-1. Gå till: https://flow.axiestudio.se/login
+1. Gå till: https://se.axiestudio.se/login
 2. Användarnamn: {username}
 3. Lösenord: {temp_password}
 4. Du kommer att uppmanas att skapa ett nytt lösenord
@@ -674,7 +674,7 @@ Begäran kom från IP: {client_ip}
 
 ---
 AxieStudio - Bygger framtiden för AI-arbetsflöden
-Besök oss på: https://axiestudio.se
+Besök oss på: https://se.axiestudio.se
             """
 
             return await self._send_email(email, subject, text_body, html_body)
@@ -847,10 +847,10 @@ Besök oss på: https://axiestudio.se
             </ul>
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="https://flow.axiestudio.se/settings/security" class="action-button secure-button">
+                <a href="https://se.axiestudio.se/settings/security" class="action-button secure-button">
                     Säkra mitt konto
                 </a>
-                <a href="https://flow.axiestudio.se/settings/password" class="action-button">
+                <a href="https://se.axiestudio.se/settings/password" class="action-button">
                     Ändra lösenord
                 </a>
             </div>
@@ -862,7 +862,7 @@ Besök oss på: https://axiestudio.se
 
         <div class="footer">
             <p><strong>AxieStudio</strong> - Bygger framtidens AI-arbetsflöden</p>
-            <p>Besök oss på <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+            <p>Besök oss på <a href="https://se.axiestudio.se" style="color: #4299e1; text-decoration: none;">se.axiestudio.se</a></p>
         </div>
     </div>
 </body>
@@ -886,15 +886,15 @@ Inloggningsdetaljer:
 Om det var du kan du ignorera detta e-postmeddelande.
 
 Om det inte var du:
-1. Ändra ditt lösenord omedelbart: https://flow.axiestudio.se/settings/password
-2. Granska din kontoaktivitet: https://flow.axiestudio.se/settings/security
+1. Ändra ditt lösenord omedelbart: https://se.axiestudio.se/settings/password
+2. Granska din kontoaktivitet: https://se.axiestudio.se/settings/security
 3. Kontakta vårt supportteam: {self.settings.SUPPORT_EMAIL}
 
 Säkerhetstips: Logga alltid ut från delade datorer och använd starka, unika lösenord.
 
 ---
 AxieStudio - Bygger framtidens AI-arbetsflöden
-Besök oss på: https://axiestudio.se
+Besök oss på: https://se.axiestudio.se
             """
 
             return await self._send_email(email, subject, text_body, html_body)
@@ -991,7 +991,7 @@ Besök oss på: https://axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;">
+            <img src="https://se.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;">
             <h1>Dina inloggningsuppgifter</h1>
             <p>Få tillgång till ditt AxieStudio-konto</p>
         </div>
@@ -1012,7 +1012,7 @@ Besök oss på: https://axiestudio.se
             </div>
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="https://flow.axiestudio.se/login" class="login-button">
+                <a href="https://se.axiestudio.se/login" class="login-button">
                     Logga in på AxieStudio
                 </a>
             </div>
@@ -1029,7 +1029,7 @@ Besök oss på: https://axiestudio.se
 
         <div class="footer">
             <p><strong>AxieStudio</strong> - Building the future of AI workflows</p>
-            <p>Visit us at <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+            <p>Besök oss på <a href="https://se.axiestudio.se" style="color: #4299e1; text-decoration: none;">se.axiestudio.se</a></p>
         </div>
     </div>
 </body>
@@ -1046,7 +1046,7 @@ Som begärt, här är dina inloggningsuppgifter för AxieStudio:
 Användarnamn: {username}
 E-post: {email}
 
-För att logga in, besök: https://flow.axiestudio.se/login
+För att logga in, besök: https://se.axiestudio.se/login
 
 SÄKERHETSNOTERING: Använd ditt befintliga lösenord för att logga in. Om du har glömt ditt lösenord kan du ändra det i dina kontoinställningar efter inloggning.
 
@@ -1055,7 +1055,7 @@ Begäran kom från IP: {client_ip}
 
 ---
 AxieStudio - Bygger framtiden för AI-arbetsflöden
-Besök oss på: https://axiestudio.se
+Besök oss på: https://se.axiestudio.se
             """
 
             return await self._send_email(email, subject, text_body, html_body)
@@ -1207,7 +1207,7 @@ Besök oss på: https://axiestudio.se
             </div>
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="https://flow.axiestudio.se/pricing" class="subscribe-button">
+                <a href="https://se.axiestudio.se/pricing" class="subscribe-button">
                     Prenumerera nu - Fortsätt bygga
                 </a>
             </div>
@@ -1219,7 +1219,7 @@ Besök oss på: https://axiestudio.se
 
         <div class="footer">
             <p><strong>AxieStudio</strong> - Bygger framtidens AI-arbetsflöden</p>
-            <p>Besök oss på <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+            <p>Besök oss på <a href="https://se.axiestudio.se" style="color: #4299e1; text-decoration: none;">se.axiestudio.se</a></p>
         </div>
     </div>
 </body>
@@ -1242,13 +1242,13 @@ Vad du behåller med en prenumeration:
 ✓ Export- och säkerhetskopieringsmöjligheter
 ✓ Verktyg för teamsamarbete
 
-Prenumerera nu: https://flow.axiestudio.se/pricing
+Prenumerera nu: https://se.axiestudio.se/pricing
 
 Frågor? Vårt supportteam finns här för att hjälpa på {self.settings.SUPPORT_EMAIL}
 
 ---
 AxieStudio - Bygger framtidens AI-arbetsflöden
-Besök oss på: https://axiestudio.se
+Besök oss på: https://se.axiestudio.se
             """
 
             return await self._send_email(email, subject, text_body, html_body)
@@ -1375,7 +1375,7 @@ Besök oss på: https://axiestudio.se
             <p>Ändrat dig? Du kan återprenumerera när som helst:</p>
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="https://flow.axiestudio.se/pricing" class="resubscribe-button">
+                <a href="https://se.axiestudio.se/pricing" class="resubscribe-button">
                     Återprenumerera nu
                 </a>
             </div>
@@ -1387,7 +1387,7 @@ Besök oss på: https://axiestudio.se
 
         <div class="footer">
             <p><strong>AxieStudio</strong> - Bygger framtidens AI-arbetsflöden</p>
-            <p>Besök oss på <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+            <p>Besök oss på <a href="https://se.axiestudio.se" style="color: #4299e1; text-decoration: none;">se.axiestudio.se</a></p>
         </div>
     </div>
 </body>
@@ -1409,13 +1409,13 @@ Vad händer härnäst:
 - Du kan återprenumerera när som helst för att fortsätta
 - Inga ytterligare avgifter kommer att tas ut
 
-Ändrat dig? Återprenumerera när som helst: https://flow.axiestudio.se/pricing
+Ändrat dig? Återprenumerera när som helst: https://se.axiestudio.se/pricing
 
 Vi skulle gärna höra din feedback på {self.settings.SUPPORT_EMAIL}
 
 ---
 AxieStudio - Bygger framtidens AI-arbetsflöden
-Besök oss på: https://axiestudio.se
+Besök oss på: https://se.axiestudio.se
             """
 
             return await self._send_email(email, subject, text_body, html_body)
@@ -1585,7 +1585,7 @@ Besök oss på: https://axiestudio.se
             </div>
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="https://flow.axiestudio.se/dashboard" class="get-started-button">
+                <a href="https://se.axiestudio.se/dashboard" class="get-started-button">
                     Börja bygga nu
                 </a>
             </div>
@@ -1597,7 +1597,7 @@ Besök oss på: https://axiestudio.se
 
         <div class="footer">
             <p><strong>AxieStudio</strong> - Bygger framtidens AI-arbetsflöden</p>
-            <p>Besök oss på <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+            <p>Besök oss på <a href="https://se.axiestudio.se" style="color: #4299e1; text-decoration: none;">se.axiestudio.se</a></p>
         </div>
     </div>
 </body>
@@ -1624,13 +1624,13 @@ Nästa steg:
 3. Konfigurera ditt teamsamarbete
 4. Gå med i vår community för tips och tricks
 
-Börja bygga nu: https://flow.axiestudio.se/dashboard
+Börja bygga nu: https://se.axiestudio.se/dashboard
 
 Behöver hjälp att komma igång? Vårt supportteam är redo att hjälpa på {self.settings.SUPPORT_EMAIL}
 
 ---
 AxieStudio - Bygger framtidens AI-arbetsflöden
-Besök oss på: https://axiestudio.se
+Besök oss på: https://se.axiestudio.se
             """
 
             return await self._send_email(email, subject, text_body, html_body)

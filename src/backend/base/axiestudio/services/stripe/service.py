@@ -231,19 +231,25 @@ class StripeService:
         await self._handle_subscription_created(subscription_data, session)  # Same logic
     
     async def _handle_subscription_deleted(self, subscription_data: dict, session):
-        """Handle subscription deleted event."""
+        """Handle subscription deleted event - this happens when subscription actually ends."""
         customer_id = subscription_data.get('customer')
-        
+
         from axiestudio.services.database.models.user.crud import get_user_by_stripe_customer_id
         user = await get_user_by_stripe_customer_id(session, customer_id)
-        
+
         if user:
+            # Get the subscription end date from the webhook data
+            subscription_end = None
+            if subscription_data.get('current_period_end'):
+                subscription_end = datetime.fromtimestamp(subscription_data['current_period_end'], tz=timezone.utc)
+
             update_data = UserUpdate(
                 subscription_status='canceled',
-                subscription_id=None
+                subscription_id=None,  # Now it's safe to clear this since subscription has actually ended
+                subscription_end=subscription_end  # Set the actual end date
             )
             await update_user(session, user.id, update_data)
-            logger.info(f"Cancelled subscription for user {user.id}")
+            logger.info(f"Subscription ended for user {user.id} at {subscription_end}")
     
     async def _handle_payment_succeeded(self, invoice_data: dict, session):
         """Handle successful payment."""
