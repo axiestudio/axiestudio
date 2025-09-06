@@ -41,25 +41,8 @@ AUTO_LOGIN_ERROR = (
 )
 
 
-def ensure_timezone_aware(dt: datetime | None) -> datetime | None:
-    """
-    Ensure a datetime is timezone-aware for safe comparison.
-
-    This fixes the common issue where database datetimes are stored as naive
-    but need to be compared with timezone-aware datetimes.
-
-    Args:
-        dt: The datetime to check and potentially convert
-
-    Returns:
-        Timezone-aware datetime or None if input was None
-    """
-    if dt is None:
-        return None
-    if dt.tzinfo is None:
-        # Database datetime is naive, assume it's UTC and make it timezone-aware
-        return dt.replace(tzinfo=timezone.utc)
-    return dt
+# Import centralized timezone utility
+from axiestudio.utils.timezone import ensure_timezone_aware
 
 
 # Source: https://github.com/mrtolkien/fastapi_simple_security/blob/master/fastapi_simple_security/security_api_key.py
@@ -452,8 +435,13 @@ async def authenticate_user(username: str, password: str, db: AsyncSession, clie
         return None
 
     # Check if account is locked
-    if user.locked_until and user.locked_until > datetime.now(timezone.utc):
-        time_remaining = user.locked_until - datetime.now(timezone.utc)
+    if user.locked_until:
+        # Ensure both datetimes are timezone-aware for proper comparison
+        locked_until_aware = ensure_timezone_aware(user.locked_until)
+        now = datetime.now(timezone.utc)
+
+        if locked_until_aware and locked_until_aware > now:
+            time_remaining = locked_until_aware - now
         logger.warning(f"Login attempt for locked account: {username} from IP: {client_ip}")
         raise HTTPException(
             status_code=status.HTTP_423_LOCKED,

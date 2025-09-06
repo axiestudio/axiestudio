@@ -12,21 +12,8 @@ import asyncio
 from datetime import datetime, timezone, timedelta
 
 
-def ensure_timezone_aware(dt: datetime | None) -> datetime | None:
-    """
-    Ensure a datetime is timezone-aware.
-
-    This fixes the common issue where database datetimes are stored as naive
-    but need to be compared with timezone-aware datetimes.
-    """
-    if dt is None:
-        return None
-
-    if dt.tzinfo is None:
-        # Assume naive datetimes are in UTC (database default)
-        return dt.replace(tzinfo=timezone.utc)
-
-    return dt
+# Import centralized timezone utility
+from axiestudio.utils.timezone import ensure_timezone_aware
 
 async def automated_verification_monitor():
     """Monitor and fix email verification issues automatically."""

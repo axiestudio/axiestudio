@@ -14,27 +14,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def ensure_timezone_aware(dt: datetime | None) -> datetime | None:
-    """
-    Ensure a datetime is timezone-aware.
-
-    This fixes the common issue where database datetimes are stored as naive
-    but need to be compared with timezone-aware datetimes.
-
-    Args:
-        dt: Datetime that might be naive or aware
-
-    Returns:
-        datetime | None: Timezone-aware datetime or None
-    """
-    if dt is None:
-        return None
-
-    if dt.tzinfo is None:
-        # Assume naive datetimes are in UTC (database default)
-        return dt.replace(tzinfo=timezone.utc)
-
-    return dt
+# Import centralized timezone utility
+from axiestudio.utils.timezone import ensure_timezone_aware
 
 
 class VerificationCodeService:
