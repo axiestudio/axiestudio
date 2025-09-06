@@ -500,6 +500,28 @@ async def cancel_subscription(
             )
             await update_user(session, current_user.id, update_data)
 
+            # 📧 Send cancellation confirmation email
+            if current_user.email:
+                try:
+                    from axiestudio.services.email.service import EmailService
+                    email_service = EmailService()
+
+                    subscription_end_str = "your current billing period"
+                    if cancel_result.get("subscription_end"):
+                        subscription_end_str = cancel_result.get("subscription_end").strftime("%B %d, %Y")
+
+                    import asyncio
+                    asyncio.create_task(
+                        email_service.send_subscription_cancelled_email(
+                            email=current_user.email,
+                            username=current_user.username,
+                            subscription_end_date=subscription_end_str
+                        )
+                    )
+                    logger.info(f"📧 Queued subscription cancellation email for {current_user.username}")
+                except Exception as e:
+                    logger.error(f"Failed to send subscription cancellation email: {e}")
+
             return {
                 "status": "success",
                 "message": "Subscription cancelled. You will retain access until the end of your current billing period.",

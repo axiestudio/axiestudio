@@ -453,6 +453,10 @@ def create_app():
 
         router.include_router(mcp_router)
 
+    # Add email templates router for testing and management
+    from axiestudio.api.v1.email_templates import router as email_templates_router
+    router.include_router(email_templates_router)
+
     app.include_router(router)
     app.include_router(health_check_router)
     app.include_router(log_router)

@@ -745,6 +745,226 @@ Visit us at: https://axiestudio.se
             logger.error(f"Failed to send temporary password email to {email}: {e}")
             return False
 
+    async def send_new_login_detected_email(self, email: str, username: str, client_ip: str = "unknown", location: str = "unknown", device: str = "unknown") -> bool:
+        """Send new login detection email with professional template."""
+        try:
+            subject = "New sign-in detected to your AxieStudio account"
+
+            # Get current time for the email
+            login_time = datetime.now(timezone.utc).strftime("%B %d, %Y at %I:%M %p UTC")
+
+            html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New sign-in detected</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a202c;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+            background-color: #f7fafc;
+        }}
+        .email-container {{
+            background: #ffffff;
+            margin: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }}
+        .header {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 40px 30px;
+            text-align: center;
+        }}
+        .logo {{
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 auto 20px;
+        }}
+        .header h1 {{
+            color: white;
+            margin: 0 0 8px 0;
+            font-size: 28px;
+            font-weight: 600;
+        }}
+        .header p {{
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            font-size: 16px;
+        }}
+        .content {{
+            padding: 40px;
+        }}
+        .security-alert {{
+            background: #fef5e7;
+            border: 1px solid #f6ad55;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }}
+        .login-details {{
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }}
+        .detail-row {{
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }}
+        .detail-row:last-child {{
+            border-bottom: none;
+        }}
+        .detail-label {{
+            font-weight: 600;
+            color: #4a5568;
+        }}
+        .detail-value {{
+            color: #2d3748;
+        }}
+        .action-button {{
+            display: inline-block;
+            background: #e53e3e;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 10px 5px;
+        }}
+        .secure-button {{
+            background: #38a169;
+        }}
+        .footer {{
+            background-color: #f7fafc;
+            padding: 30px 40px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            color: #718096;
+            font-size: 14px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">AX</div>
+            <h1>New Sign-in Detected</h1>
+            <p>Security notification for your account</p>
+        </div>
+
+        <div class="content">
+            <p>Hello <strong>{username}</strong>,</p>
+            <p>We detected a new sign-in to your AxieStudio account. If this was you, you can safely ignore this email.</p>
+
+            <div class="security-alert">
+                <strong>New sign-in on {login_time}</strong>
+            </div>
+
+            <div class="login-details">
+                <div class="detail-row">
+                    <span class="detail-label">Account:</span>
+                    <span class="detail-value">{email}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Time:</span>
+                    <span class="detail-value">{login_time}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">IP Address:</span>
+                    <span class="detail-value">{client_ip}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Location:</span>
+                    <span class="detail-value">{location}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Device:</span>
+                    <span class="detail-value">{device}</span>
+                </div>
+            </div>
+
+            <p><strong>If this wasn't you:</strong></p>
+            <ul>
+                <li>Change your password immediately</li>
+                <li>Review your account activity</li>
+                <li>Contact our support team</li>
+            </ul>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="https://flow.axiestudio.se/settings/security" class="action-button secure-button">
+                    Secure My Account
+                </a>
+                <a href="https://flow.axiestudio.se/settings/password" class="action-button">
+                    Change Password
+                </a>
+            </div>
+
+            <p style="color: #718096; font-size: 14px; margin-top: 30px;">
+                <strong>Security tip:</strong> Always log out from shared computers and use strong, unique passwords.
+            </p>
+        </div>
+
+        <div class="footer">
+            <p><strong>AxieStudio</strong> - Building the future of AI workflows</p>
+            <p>Visit us at <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+        </div>
+    </div>
+</body>
+</html>
+            """
+
+            text_body = f"""
+AxieStudio - New Sign-in Detected
+
+Hello {username},
+
+We detected a new sign-in to your AxieStudio account on {login_time}.
+
+Sign-in Details:
+- Account: {email}
+- Time: {login_time}
+- IP Address: {client_ip}
+- Location: {location}
+- Device: {device}
+
+If this was you, you can safely ignore this email.
+
+If this wasn't you:
+1. Change your password immediately: https://flow.axiestudio.se/settings/password
+2. Review your account activity: https://flow.axiestudio.se/settings/security
+3. Contact our support team: {self.settings.SUPPORT_EMAIL}
+
+Security tip: Always log out from shared computers and use strong, unique passwords.
+
+---
+AxieStudio - Building the future of AI workflows
+Visit us at: https://axiestudio.se
+            """
+
+            return await self._send_email(email, subject, text_body, html_body)
+
+        except Exception as e:
+            logger.error(f"Failed to send new login detection email to {email}: {e}")
+            return False
+
     async def send_login_credentials_email(self, email: str, username: str, client_ip: str = "unknown") -> bool:
         """Send login credentials email with professional template."""
         try:
@@ -904,6 +1124,581 @@ Visit us at: https://axiestudio.se
 
         except Exception as e:
             logger.error(f"Failed to send login credentials email to {email}: {e}")
+            return False
+
+    async def send_trial_ending_email(self, email: str, username: str, days_left: int) -> bool:
+        """Send trial ending notification email."""
+        try:
+            if days_left == 1:
+                subject = "Your AxieStudio trial ends tomorrow"
+                urgency_text = "Your trial ends tomorrow"
+                urgency_color = "#e53e3e"
+            elif days_left <= 3:
+                subject = f"Your AxieStudio trial ends in {days_left} days"
+                urgency_text = f"Your trial ends in {days_left} days"
+                urgency_color = "#f6ad55"
+            else:
+                subject = f"Your AxieStudio trial ends in {days_left} days"
+                urgency_text = f"Your trial ends in {days_left} days"
+                urgency_color = "#4299e1"
+
+            html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trial ending soon</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a202c;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+            background-color: #f7fafc;
+        }}
+        .email-container {{
+            background: #ffffff;
+            margin: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }}
+        .header {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 40px 30px;
+            text-align: center;
+        }}
+        .logo {{
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 auto 20px;
+        }}
+        .header h1 {{
+            color: white;
+            margin: 0 0 8px 0;
+            font-size: 28px;
+            font-weight: 600;
+        }}
+        .header p {{
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            font-size: 16px;
+        }}
+        .content {{
+            padding: 40px;
+        }}
+        .urgency-alert {{
+            background: {urgency_color}15;
+            border: 1px solid {urgency_color};
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: {urgency_color};
+            font-weight: 600;
+            font-size: 18px;
+        }}
+        .subscribe-button {{
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+        }}
+        .features-list {{
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }}
+        .feature-item {{
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }}
+        .feature-item:last-child {{
+            border-bottom: none;
+        }}
+        .footer {{
+            background-color: #f7fafc;
+            padding: 30px 40px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            color: #718096;
+            font-size: 14px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">AX</div>
+            <h1>Trial Ending Soon</h1>
+            <p>Don't lose access to your AI workflows</p>
+        </div>
+
+        <div class="content">
+            <p>Hello <strong>{username}</strong>,</p>
+
+            <div class="urgency-alert">
+                {urgency_text}
+            </div>
+
+            <p>Your AxieStudio trial has been amazing so far! To continue building powerful AI workflows without interruption, subscribe now and keep all your progress.</p>
+
+            <div class="features-list">
+                <div class="feature-item">✓ Unlimited AI workflow creation</div>
+                <div class="feature-item">✓ Advanced automation features</div>
+                <div class="feature-item">✓ Priority customer support</div>
+                <div class="feature-item">✓ Export and backup capabilities</div>
+                <div class="feature-item">✓ Team collaboration tools</div>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="https://flow.axiestudio.se/pricing" class="subscribe-button">
+                    Subscribe Now - Keep Building
+                </a>
+            </div>
+
+            <p style="color: #718096; font-size: 14px;">
+                Questions? Our support team is here to help at {self.settings.SUPPORT_EMAIL}
+            </p>
+        </div>
+
+        <div class="footer">
+            <p><strong>AxieStudio</strong> - Building the future of AI workflows</p>
+            <p>Visit us at <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+        </div>
+    </div>
+</body>
+</html>
+            """
+
+            text_body = f"""
+AxieStudio - Trial Ending Soon
+
+Hello {username},
+
+{urgency_text.upper()}
+
+Your AxieStudio trial has been amazing so far! To continue building powerful AI workflows without interruption, subscribe now and keep all your progress.
+
+What you'll keep with a subscription:
+✓ Unlimited AI workflow creation
+✓ Advanced automation features
+✓ Priority customer support
+✓ Export and backup capabilities
+✓ Team collaboration tools
+
+Subscribe now: https://flow.axiestudio.se/pricing
+
+Questions? Our support team is here to help at {self.settings.SUPPORT_EMAIL}
+
+---
+AxieStudio - Building the future of AI workflows
+Visit us at: https://axiestudio.se
+            """
+
+            return await self._send_email(email, subject, text_body, html_body)
+
+        except Exception as e:
+            logger.error(f"Failed to send trial ending email to {email}: {e}")
+            return False
+
+    async def send_subscription_cancelled_email(self, email: str, username: str, subscription_end_date: str) -> bool:
+        """Send subscription cancellation confirmation email."""
+        try:
+            subject = "Your AxieStudio subscription has been cancelled"
+
+            html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription cancelled</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a202c;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+            background-color: #f7fafc;
+        }}
+        .email-container {{
+            background: #ffffff;
+            margin: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }}
+        .header {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 40px 30px;
+            text-align: center;
+        }}
+        .logo {{
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 auto 20px;
+        }}
+        .header h1 {{
+            color: white;
+            margin: 0 0 8px 0;
+            font-size: 28px;
+            font-weight: 600;
+        }}
+        .header p {{
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            font-size: 16px;
+        }}
+        .content {{
+            padding: 40px;
+        }}
+        .access-info {{
+            background: #e6fffa;
+            border: 1px solid #38a169;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }}
+        .resubscribe-button {{
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+        }}
+        .footer {{
+            background-color: #f7fafc;
+            padding: 30px 40px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            color: #718096;
+            font-size: 14px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">AX</div>
+            <h1>Subscription Cancelled</h1>
+            <p>We're sorry to see you go</p>
+        </div>
+
+        <div class="content">
+            <p>Hello <strong>{username}</strong>,</p>
+            <p>Your AxieStudio subscription has been successfully cancelled. We're sorry to see you go!</p>
+
+            <div class="access-info">
+                <strong>You still have access until {subscription_end_date}</strong><br>
+                <span style="color: #4a5568; font-size: 14px;">Continue using all features until your current billing period ends</span>
+            </div>
+
+            <p><strong>What happens next:</strong></p>
+            <ul>
+                <li>Your account remains active until {subscription_end_date}</li>
+                <li>All your workflows and data will be preserved</li>
+                <li>You can resubscribe anytime to continue</li>
+                <li>No further charges will be made</li>
+            </ul>
+
+            <p>Changed your mind? You can resubscribe anytime:</p>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="https://flow.axiestudio.se/pricing" class="resubscribe-button">
+                    Resubscribe Now
+                </a>
+            </div>
+
+            <p style="color: #718096; font-size: 14px;">
+                We'd love to hear your feedback at {self.settings.SUPPORT_EMAIL}
+            </p>
+        </div>
+
+        <div class="footer">
+            <p><strong>AxieStudio</strong> - Building the future of AI workflows</p>
+            <p>Visit us at <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+        </div>
+    </div>
+</body>
+</html>
+            """
+
+            text_body = f"""
+AxieStudio - Subscription Cancelled
+
+Hello {username},
+
+Your AxieStudio subscription has been successfully cancelled. We're sorry to see you go!
+
+IMPORTANT: You still have access until {subscription_end_date}
+
+What happens next:
+- Your account remains active until {subscription_end_date}
+- All your workflows and data will be preserved
+- You can resubscribe anytime to continue
+- No further charges will be made
+
+Changed your mind? Resubscribe anytime: https://flow.axiestudio.se/pricing
+
+We'd love to hear your feedback at {self.settings.SUPPORT_EMAIL}
+
+---
+AxieStudio - Building the future of AI workflows
+Visit us at: https://axiestudio.se
+            """
+
+            return await self._send_email(email, subject, text_body, html_body)
+
+        except Exception as e:
+            logger.error(f"Failed to send subscription cancelled email to {email}: {e}")
+            return False
+
+    async def send_subscription_welcome_email(self, email: str, username: str, plan_name: str = "Pro") -> bool:
+        """Send subscription welcome email."""
+        try:
+            subject = f"Welcome to AxieStudio {plan_name}! Your subscription is active"
+
+            html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to AxieStudio Pro</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a202c;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0;
+            background-color: #f7fafc;
+        }}
+        .email-container {{
+            background: #ffffff;
+            margin: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }}
+        .header {{
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+            padding: 40px 40px 30px;
+            text-align: center;
+        }}
+        .logo {{
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 auto 20px;
+        }}
+        .header h1 {{
+            color: white;
+            margin: 0 0 8px 0;
+            font-size: 28px;
+            font-weight: 600;
+        }}
+        .header p {{
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            font-size: 16px;
+        }}
+        .content {{
+            padding: 40px;
+        }}
+        .welcome-badge {{
+            background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            display: inline-block;
+            font-weight: 600;
+            margin: 20px 0;
+        }}
+        .features-grid {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }}
+        .feature-card {{
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }}
+        .get-started-button {{
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+        }}
+        .next-steps {{
+            background: #e6fffa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }}
+        .step-item {{
+            padding: 8px 0;
+            border-bottom: 1px solid #b2f5ea;
+        }}
+        .step-item:last-child {{
+            border-bottom: none;
+        }}
+        .footer {{
+            background-color: #f7fafc;
+            padding: 30px 40px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            color: #718096;
+            font-size: 14px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">AX</div>
+            <h1>Welcome to {plan_name}!</h1>
+            <p>Your subscription is now active</p>
+        </div>
+
+        <div class="content">
+            <p>Hello <strong>{username}</strong>,</p>
+
+            <div style="text-align: center;">
+                <div class="welcome-badge">🎉 AxieStudio {plan_name} Activated</div>
+            </div>
+
+            <p>Congratulations! Your AxieStudio {plan_name} subscription is now active. You now have access to all premium features and can build unlimited AI workflows.</p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <strong>Unlimited Workflows</strong><br>
+                    <span style="color: #718096; font-size: 14px;">Create as many AI workflows as you need</span>
+                </div>
+                <div class="feature-card">
+                    <strong>Advanced Features</strong><br>
+                    <span style="color: #718096; font-size: 14px;">Access all premium automation tools</span>
+                </div>
+                <div class="feature-card">
+                    <strong>Priority Support</strong><br>
+                    <span style="color: #718096; font-size: 14px;">Get help when you need it most</span>
+                </div>
+                <div class="feature-card">
+                    <strong>Export & Backup</strong><br>
+                    <span style="color: #718096; font-size: 14px;">Keep your work safe and portable</span>
+                </div>
+            </div>
+
+            <div class="next-steps">
+                <h3 style="margin-top: 0; color: #2f855a;">Next Steps:</h3>
+                <div class="step-item">1. Explore the advanced workflow builder</div>
+                <div class="step-item">2. Try the new automation features</div>
+                <div class="step-item">3. Set up your team collaboration</div>
+                <div class="step-item">4. Join our community for tips and tricks</div>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="https://flow.axiestudio.se/dashboard" class="get-started-button">
+                    Start Building Now
+                </a>
+            </div>
+
+            <p style="color: #718096; font-size: 14px;">
+                Need help getting started? Our support team is ready to assist at {self.settings.SUPPORT_EMAIL}
+            </p>
+        </div>
+
+        <div class="footer">
+            <p><strong>AxieStudio</strong> - Building the future of AI workflows</p>
+            <p>Visit us at <a href="https://axiestudio.se" style="color: #4299e1; text-decoration: none;">axiestudio.se</a></p>
+        </div>
+    </div>
+</body>
+</html>
+            """
+
+            text_body = f"""
+AxieStudio - Welcome to {plan_name}!
+
+Hello {username},
+
+🎉 Congratulations! Your AxieStudio {plan_name} subscription is now active.
+
+You now have access to:
+✓ Unlimited AI workflows
+✓ Advanced automation features
+✓ Priority customer support
+✓ Export and backup capabilities
+✓ Team collaboration tools
+
+Next Steps:
+1. Explore the advanced workflow builder
+2. Try the new automation features
+3. Set up your team collaboration
+4. Join our community for tips and tricks
+
+Start building now: https://flow.axiestudio.se/dashboard
+
+Need help getting started? Our support team is ready to assist at {self.settings.SUPPORT_EMAIL}
+
+---
+AxieStudio - Building the future of AI workflows
+Visit us at: https://axiestudio.se
+            """
+
+            return await self._send_email(email, subject, text_body, html_body)
+
+        except Exception as e:
+            logger.error(f"Failed to send subscription welcome email to {email}: {e}")
             return False
 
     async def _send_email(self, to_email: str, subject: str, text_body: str, html_body: str) -> bool:

@@ -47,11 +47,12 @@ async def login_to_get_access_token(
 ):
     auth_settings = get_settings_service().auth_settings
 
-    # Get client IP for security logging
+    # Get client IP and user agent for security logging
     client_ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("User-Agent", "unknown")
 
     try:
-        user = await authenticate_user(form_data.username, form_data.password, db, client_ip)
+        user = await authenticate_user(form_data.username, form_data.password, db, client_ip, user_agent)
     except Exception as exc:
         if isinstance(exc, HTTPException):
             raise

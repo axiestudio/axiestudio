@@ -183,16 +183,16 @@ class StripeService:
         customer_id = subscription_data.get('customer')
         subscription_id = subscription_data.get('id')
         status = subscription_data.get('status')
-        
+
         # Find user by Stripe customer ID
         from axiestudio.services.database.models.user.crud import get_user_by_stripe_customer_id
         user = await get_user_by_stripe_customer_id(session, customer_id)
-        
+
         if user:
             trial_end = None
             if subscription_data.get('trial_end'):
                 trial_end = datetime.fromtimestamp(subscription_data['trial_end'], tz=timezone.utc)
-            
+
             update_data = UserUpdate(
                 subscription_id=subscription_id,
                 subscription_status=status,
@@ -202,6 +202,27 @@ class StripeService:
             )
             await update_user(session, user.id, update_data)
             logger.info(f"Updated user {user.id} with subscription {subscription_id}")
+
+            # 📧 Send welcome email for new subscriptions
+            if user.email and status == 'active':
+                try:
+                    from axiestudio.services.email.service import EmailService
+                    email_service = EmailService()
+
+                    # Get plan name from subscription metadata or default to "Pro"
+                    plan_name = subscription_data.get('metadata', {}).get('plan_name', 'Pro')
+
+                    import asyncio
+                    asyncio.create_task(
+                        email_service.send_subscription_welcome_email(
+                            email=user.email,
+                            username=user.username,
+                            plan_name=plan_name
+                        )
+                    )
+                    logger.info(f"📧 Queued subscription welcome email for {user.username}")
+                except Exception as e:
+                    logger.error(f"Failed to send subscription welcome email: {e}")
     
     async def _handle_subscription_updated(self, subscription_data: dict, session):
         """Handle subscription updated event."""
