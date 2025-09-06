@@ -115,13 +115,28 @@ async def create_checkout_session(
         if trial_end and now < trial_end:
             remaining_trial_days = max(0, (trial_end - now).days)
 
-        # Create checkout session with remaining trial days
-        checkout_url = await stripe_service.create_checkout_session(
-            customer_id=customer_id,
-            success_url=request.success_url,
-            cancel_url=request.cancel_url,
-            trial_days=remaining_trial_days
-        )
+        # 🔧 OPTION A FIX: Immediate payment for expired trial users
+        # If user has remaining trial days, give them the remaining time
+        # If user has expired trial (0 days), they pay immediately with no additional trial
+
+        # Create checkout session with conditional trial
+        if remaining_trial_days > 0:
+            # User still has active trial - give them remaining days
+            logger.info(f"Creating checkout with {remaining_trial_days} remaining trial days for user {current_user.id}")
+            checkout_url = await stripe_service.create_checkout_session(
+                customer_id=customer_id,
+                success_url=request.success_url,
+                cancel_url=request.cancel_url,
+                trial_days=remaining_trial_days
+            )
+        else:
+            # User has expired trial - immediate payment, no additional trial
+            logger.info(f"Creating immediate payment checkout for expired trial user {current_user.id}")
+            checkout_url = await stripe_service.create_checkout_session_immediate(
+                customer_id=customer_id,
+                success_url=request.success_url,
+                cancel_url=request.cancel_url
+            )
         
         return CheckoutResponse(checkout_url=checkout_url)
         

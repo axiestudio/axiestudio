@@ -37,11 +37,16 @@ from axiestudio.interface.utils import setup_llm_caching
 from axiestudio.logging.logger import configure
 from axiestudio.middleware import ContentSizeLimitMiddleware
 try:
-    from axiestudio.middleware.trial_middleware import TrialMiddleware
+    from axiestudio.middleware.trial_middleware import TrialMiddleware, EnhancedTrialMiddleware
+    from axiestudio.middleware.security_middleware import SecurityMiddleware
     TRIAL_MIDDLEWARE_AVAILABLE = True
+    SECURITY_MIDDLEWARE_AVAILABLE = True
 except ImportError:
     TRIAL_MIDDLEWARE_AVAILABLE = False
+    SECURITY_MIDDLEWARE_AVAILABLE = False
     TrialMiddleware = None
+    EnhancedTrialMiddleware = None
+    SecurityMiddleware = None
 
 # Import verification middleware
 try:
@@ -378,13 +383,20 @@ def create_app():
     )
     app.add_middleware(JavaScriptMIMETypeMiddleware)
 
-    # Add trial middleware if available
+    # Add security middleware first (outermost layer)
+    if SECURITY_MIDDLEWARE_AVAILABLE:
+        app.add_middleware(SecurityMiddleware)
+        logger.info("🛡️ Security middleware enabled")
+
+    # Add enhanced trial middleware
     if TRIAL_MIDDLEWARE_AVAILABLE:
-        app.add_middleware(TrialMiddleware)
+        app.add_middleware(EnhancedTrialMiddleware)
+        logger.info("🔒 Enhanced trial protection middleware enabled")
 
     # Add verification middleware if available
     if VERIFICATION_MIDDLEWARE_AVAILABLE:
         add_verification_middleware(app)
+        logger.info("✅ Verification middleware enabled")
 
     @app.middleware("http")
     async def check_boundary(request: Request, call_next):
@@ -500,26 +512,82 @@ def setup_sentry(app: FastAPI) -> None:
 
 
 def setup_static_files(app: FastAPI, static_files_dir: Path) -> None:
-    """Setup the static files directory.
+    """Setup the static files directory with trial access control.
 
     Args:
         app (FastAPI): FastAPI app.
         static_files_dir (str): Path to the static files directory.
     """
-    app.mount(
-        "/",
-        StaticFiles(directory=static_files_dir, html=True),
-        name="static",
-    )
 
-    @app.exception_handler(404)
-    async def custom_404_handler(_request, _exc):
-        path = anyio.Path(static_files_dir) / "index.html"
+    # Create a custom route handler for the root path that checks trial status
+    @app.get("/{path:path}")
+    async def serve_frontend_with_trial_check(request: Request, path: str):
+        """Serve frontend files with trial access control."""
 
-        if not await path.exists():
-            msg = f"File at path {path} does not exist."
-            raise RuntimeError(msg)
-        return FileResponse(path)
+        # Allow certain paths without trial checks
+        exempt_paths = {
+            "pricing", "login", "signup", "health", "docs", "openapi.json"
+        }
+
+        # Check if this is an API request (should not be handled here)
+        if path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
+
+        # Allow exempt paths
+        if path in exempt_paths or path.startswith("static/"):
+            return await serve_static_file(static_files_dir, path or "index.html")
+
+        # For all other paths, check trial status if user is authenticated
+        auth_token = request.cookies.get("access_token_as")
+        if auth_token:
+            try:
+                from axiestudio.services.deps import get_db_service
+                from axiestudio.services.auth.utils import get_current_user_by_jwt
+                from axiestudio.services.trial.service import trial_service
+
+                db_service = get_db_service()
+                if db_service:
+                    async with db_service.with_session() as session:
+                        try:
+                            user = await get_current_user_by_jwt(auth_token, session)
+                            if user and not user.is_superuser:
+                                trial_status = await trial_service.check_trial_status(user)
+                                if trial_status.get("should_cleanup", False):
+                                    # Redirect expired trial users to pricing
+                                    from fastapi.responses import RedirectResponse
+                                    return RedirectResponse(url="/pricing", status_code=302)
+                        except Exception as e:
+                            logger.debug(f"Error checking trial status in static handler: {e}")
+                            # On error, serve the file (frontend will handle auth)
+                            pass
+            except Exception as e:
+                logger.debug(f"Error in static file trial check: {e}")
+                # On error, serve the file
+                pass
+
+        # Serve the requested file or index.html for SPA routing
+        return await serve_static_file(static_files_dir, path or "index.html")
+
+
+async def serve_static_file(static_files_dir: Path, file_path: str):
+    """Serve a static file from the directory."""
+    from fastapi.responses import FileResponse
+    import anyio
+
+    # Handle SPA routing - serve index.html for non-existent files
+    full_path = static_files_dir / file_path
+
+    if not await anyio.Path(full_path).exists():
+        # If file doesn't exist, serve index.html (SPA routing)
+        index_path = static_files_dir / "index.html"
+        if await anyio.Path(index_path).exists():
+            return FileResponse(index_path)
+        else:
+            raise HTTPException(status_code=404, detail="File not found")
+
+    return FileResponse(full_path)
+
+
 
 
 def get_static_files_dir():

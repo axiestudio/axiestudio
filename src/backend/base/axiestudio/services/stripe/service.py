@@ -63,9 +63,9 @@ class StripeService:
             raise
     
     async def create_checkout_session(
-        self, 
-        customer_id: str, 
-        success_url: str, 
+        self,
+        customer_id: str,
+        success_url: str,
         cancel_url: str,
         trial_days: int = 7
     ) -> str:
@@ -89,10 +89,43 @@ class StripeService:
                 },
                 allow_promotion_codes=True,
             )
-            logger.info(f"Created checkout session: {session.id}")
+            logger.info(f"Created checkout session with {trial_days} trial days: {session.id}")
             return session.url
         except Exception as e:
             logger.error(f"Failed to create checkout session: {e}")
+            raise
+
+    async def create_checkout_session_immediate(
+        self,
+        customer_id: str,
+        success_url: str,
+        cancel_url: str
+    ) -> str:
+        """Create a Stripe checkout session for immediate payment (no trial)."""
+        try:
+            session = stripe.checkout.Session.create(
+                customer=customer_id,
+                payment_method_types=['card'],
+                line_items=[{
+                    'price': self.stripe_price_id,
+                    'quantity': 1,
+                }],
+                mode='subscription',
+                success_url=success_url,
+                cancel_url=cancel_url,
+                subscription_data={
+                    # No trial_period_days = immediate payment
+                    'metadata': {
+                        'source': 'axiestudio',
+                        'trial_status': 'expired'
+                    }
+                },
+                allow_promotion_codes=True,
+            )
+            logger.info(f"Created immediate payment checkout session: {session.id}")
+            return session.url
+        except Exception as e:
+            logger.error(f"Failed to create immediate payment checkout session: {e}")
             raise
     
     async def create_customer_portal_session(self, customer_id: str, return_url: str) -> str:

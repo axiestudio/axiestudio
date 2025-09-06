@@ -80,6 +80,8 @@ function ApiInterceptor() {
         const isAuthenticationError =
           error?.response?.status === 403 || error?.response?.status === 401;
 
+        const isTrialExpiredError = error?.response?.status === 402;
+
         const shouldRetryRefresh =
           (isAuthenticationError && !IS_AUTO_LOGIN) ||
           (isAuthenticationError && !autoLogin && autoLogin !== undefined);
@@ -106,6 +108,32 @@ function ApiInterceptor() {
         }
 
         await clearBuildVerticesState(error);
+
+        // Handle trial expiration (HTTP 402) - SWEDISH
+        if (isTrialExpiredError) {
+          const errorData = error?.response?.data as { trial_expired?: boolean; redirect_to?: string };
+          if (errorData?.trial_expired) {
+            // Show trial expired message in Swedish
+            const setErrorData = useAlertStore.getState().setErrorData;
+            setErrorData({
+              title: "🚨 Provperiod Utgången",
+              list: [
+                "Din 7-dagars gratisperiod har slutat",
+                "Prenumerera nu för att fortsätta använda Axie Studio",
+                " Få obegränsade AI/ML-arbetsflöden",
+                " Tillgång till avancerade komponenter",
+                " Prioriterad support inkluderad",
+                " Export- och delningsmöjligheter"
+              ]
+            });
+
+            // Redirect to pricing page after a delay
+            setTimeout(() => {
+              window.location.href = errorData.redirect_to || "/pricing";
+            }, 3000);
+          }
+          return Promise.reject(error);
+        }
 
         if (!isAuthenticationError) {
           return Promise.reject(error);

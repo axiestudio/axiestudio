@@ -26,7 +26,16 @@ class TrialService:
     async def check_trial_status(self, user: User) -> dict:
         """Check if user's trial is active, expired, or if they have a subscription."""
         now = datetime.now(timezone.utc)
-        
+
+        # 🔧 ADMIN FIX: Superusers/admins bypass all trial restrictions
+        if user.is_superuser:
+            return {
+                "status": "admin",
+                "trial_expired": False,
+                "days_left": 999999,  # Unlimited for admins
+                "should_cleanup": False
+            }
+
         # If user has active subscription, they're good
         if user.subscription_status == "active":
             return {
