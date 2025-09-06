@@ -10,6 +10,27 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from axiestudio.services.database.models.user.model import User
 from axiestudio.services.database.models.user.crud import get_user_by_id
+
+
+def ensure_timezone_aware(dt: datetime | None) -> datetime | None:
+    """
+    Ensure a datetime is timezone-aware for safe comparison.
+
+    This fixes the common issue where database datetimes are stored as naive
+    but need to be compared with timezone-aware datetimes.
+
+    Args:
+        dt: The datetime to check and potentially convert
+
+    Returns:
+        Timezone-aware datetime or None if input was None
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        # Database datetime is naive, assume it's UTC and make it timezone-aware
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 try:
     from axiestudio.services.deps import get_db_service
 except ImportError:
@@ -49,11 +70,9 @@ class TrialService:
         trial_start = user.trial_start or user.create_at
         trial_end = user.trial_end or (trial_start + timedelta(days=self.trial_duration_days))
 
-        # Ensure timezone consistency for comparisons
-        if trial_start and trial_start.tzinfo is None:
-            trial_start = trial_start.replace(tzinfo=timezone.utc)
-        if trial_end and trial_end.tzinfo is None:
-            trial_end = trial_end.replace(tzinfo=timezone.utc)
+        # Ensure timezone consistency for comparisons using the helper function
+        trial_start = ensure_timezone_aware(trial_start)
+        trial_end = ensure_timezone_aware(trial_end)
 
         # Check if trial has expired
         trial_expired = now > trial_end if trial_end else False
@@ -72,12 +91,10 @@ class TrialService:
     
     async def get_expired_trial_users(self, session: AsyncSession) -> List[User]:
         """Get all users whose trials have expired and don't have active subscriptions."""
-        now = datetime.now(timezone.utc)
-        cutoff_date = now - timedelta(days=self.trial_duration_days)
-        
         # Find users whose trial has expired
+        # We fetch all non-active subscription users and filter using check_trial_status
+        # which properly handles timezone comparisons
         stmt = select(User).where(
-            User.create_at < cutoff_date,
             User.subscription_status != "active",
             User.is_superuser == False  # Don't cleanup superusers
         )
@@ -146,9 +163,8 @@ class TrialService:
             # Calculate new trial end date with timezone consistency
             current_trial_end = user.trial_end or (user.trial_start + timedelta(days=self.trial_duration_days))
 
-            # Ensure timezone consistency
-            if current_trial_end and current_trial_end.tzinfo is None:
-                current_trial_end = current_trial_end.replace(tzinfo=timezone.utc)
+            # Ensure timezone consistency using the helper function
+            current_trial_end = ensure_timezone_aware(current_trial_end)
 
             new_trial_end = current_trial_end + timedelta(days=additional_days)
             

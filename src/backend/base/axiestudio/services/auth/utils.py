@@ -452,8 +452,9 @@ async def authenticate_user(username: str, password: str, db: AsyncSession, clie
         return None
 
     # Check if account is locked
-    if user.locked_until and user.locked_until > datetime.now(timezone.utc):
-        time_remaining = user.locked_until - datetime.now(timezone.utc)
+    locked_until_aware = ensure_timezone_aware(user.locked_until)
+    if locked_until_aware and locked_until_aware > datetime.now(timezone.utc):
+        time_remaining = locked_until_aware - datetime.now(timezone.utc)
         logger.warning(f"Login attempt for locked account: {username} from IP: {client_ip}")
         raise HTTPException(
             status_code=status.HTTP_423_LOCKED,
