@@ -80,6 +80,29 @@ function ApiInterceptor() {
         const isAuthenticationError =
           error?.response?.status === 403 || error?.response?.status === 401;
 
+        // Handle subscription/trial expired errors (402 Payment Required)
+        const isSubscriptionError = error?.response?.status === 402;
+
+        if (isSubscriptionError) {
+          const errorData = error?.response?.data as any;
+
+          // Check if this is a trial expiration error
+          if (errorData?.trial_expired && errorData?.redirect_to) {
+            // Show subscription required alert
+            setErrorData({
+              title: "Subscription Required",
+              list: [errorData?.detail || "Your free trial has expired. Please subscribe to continue using Axie Studio."]
+            });
+
+            // Redirect to pricing page after a short delay
+            setTimeout(() => {
+              window.location.href = errorData.redirect_to;
+            }, 2000);
+
+            return Promise.reject(error);
+          }
+        }
+
         const shouldRetryRefresh =
           (isAuthenticationError && !IS_AUTO_LOGIN) ||
           (isAuthenticationError && !autoLogin && autoLogin !== undefined);

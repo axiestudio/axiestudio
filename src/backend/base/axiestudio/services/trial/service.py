@@ -26,7 +26,16 @@ class TrialService:
     async def check_trial_status(self, user: User) -> dict:
         """Check if user's trial is active, expired, or if they have a subscription."""
         now = datetime.now(timezone.utc)
-        
+
+        # Superusers bypass all subscription checks
+        if user.is_superuser:
+            return {
+                "status": "admin",
+                "trial_expired": False,
+                "days_left": 0,
+                "should_cleanup": False
+            }
+
         # If user has active subscription, they're good
         if user.subscription_status == "active":
             return {
@@ -38,7 +47,13 @@ class TrialService:
         
         # Calculate trial end date with timezone consistency
         trial_start = user.trial_start or user.create_at
-        trial_end = user.trial_end or (trial_start + timedelta(days=self.trial_duration_days))
+        # For trial users, trial_end should be explicitly set - don't auto-calculate for security
+        # Only auto-calculate if user has no trial_end AND subscription_status is not "trial"
+        if user.subscription_status == "trial" and not user.trial_end:
+            # This is a data integrity issue - trial users MUST have trial_end
+            trial_end = None
+        else:
+            trial_end = user.trial_end or (trial_start + timedelta(days=self.trial_duration_days))
 
         # Ensure timezone consistency for comparisons
         if trial_start and trial_start.tzinfo is None:
@@ -49,9 +64,27 @@ class TrialService:
         # Check if trial has expired
         trial_expired = now > trial_end if trial_end else False
         days_left = max(0, (trial_end - now).days) if trial_end else 0
-        
-        # Should cleanup if trial expired and no subscription
-        should_cleanup = trial_expired and user.subscription_status != "active"
+
+        # CRITICAL: Block access for ALL these cases:
+        # 1. Trial expired AND no active subscription
+        # 2. No subscription status (null/empty)
+        # 3. Subscription status is anything other than "active"
+        # 4. Trial end date is missing (suspicious)
+
+        has_active_subscription = user.subscription_status == "active"
+        has_valid_trial = trial_end and not trial_expired
+
+        # Should cleanup (block access) if:
+        should_cleanup = (
+            # Trial expired and no active subscription
+            (trial_expired and not has_active_subscription) or
+            # No subscription status at all (null, empty, or invalid)
+            (not user.subscription_status or user.subscription_status not in ["active", "trial"]) or
+            # Subscription status is not active and no valid trial
+            (user.subscription_status != "active" and not has_valid_trial) or
+            # Missing trial end date for trial users (data integrity issue)
+            (user.subscription_status == "trial" and not trial_end)
+        )
         
         return {
             "status": "trial" if not trial_expired else "expired",
