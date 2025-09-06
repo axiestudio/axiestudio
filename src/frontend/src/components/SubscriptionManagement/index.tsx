@@ -1,21 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DialogClose } from "@radix-ui/react-dialog";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
-import { useGetSubscriptionStatus, useCreateCustomerPortal, useCancelSubscription } from "@/controllers/API/queries/subscriptions";
+import { useGetSubscriptionStatus, useCreateCustomerPortal, useCancelSubscription, useReactivateSubscription } from "@/controllers/API/queries/subscriptions";
 import useAlertStore from "@/stores/alertStore";
+import { useSubscriptionStore } from "@/stores/subscriptionStore";
 
 export default function SubscriptionManagement(): JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
   const setErrorData = useAlertStore((state) => state.setErrorData);
   const setSuccessData = useAlertStore((state) => state.setSuccessData);
-  
+
   const { data: subscriptionStatus, refetch } = useGetSubscriptionStatus();
   const { mutate: createCustomerPortal } = useCreateCustomerPortal();
   const { mutate: cancelSubscription } = useCancelSubscription();
+  const { mutate: reactivateSubscription } = useReactivateSubscription();
+
+  // Real-time subscription status updates
+  const { startPolling, stopPolling, refreshStatus } = useSubscriptionStore();
+
+  useEffect(() => {
+    // Start polling for real-time updates when component mounts
+    startPolling();
+
+    // Cleanup polling when component unmounts
+    return () => {
+      stopPolling();
+    };
+  }, [startPolling, stopPolling]);
 
   const handleManageSubscription = () => {
     setIsLoading(true);
@@ -41,12 +56,34 @@ export default function SubscriptionManagement(): JSX.Element {
         setSuccessData({
           title: "Prenumeration Avbruten",
         });
+        // Refresh both query cache and real-time store
         refetch();
+        refreshStatus();
       },
       onError: (error) => {
         setErrorData({
           title: "Avbokningsfel",
           list: [error?.response?.data?.detail || "Misslyckades att avbryta prenumeration"],
+        });
+      },
+    });
+  };
+
+  const handleReactivateSubscription = () => {
+    reactivateSubscription(undefined, {
+      onSuccess: () => {
+        setSuccessData({
+          title: "Prenumeration Återaktiverad",
+          list: ["Din prenumeration är nu aktiv igen!"],
+        });
+        // Refresh both query cache and real-time store
+        refetch();
+        refreshStatus();
+      },
+      onError: (error) => {
+        setErrorData({
+          title: "Återaktiveringsfel",
+          list: [error?.response?.data?.detail || "Misslyckades att återaktivera prenumeration"],
         });
       },
     });
@@ -149,6 +186,11 @@ export default function SubscriptionManagement(): JSX.Element {
                isCanceled ? "Avbruten prenumeration (aktiv till periodens slut)" :
                isOnTrial ? "Gratis Provperiod" : "Ingen Aktiv Plan"}
             </p>
+            {isCanceled && subscriptionStatus.subscription_end && (
+              <p className="text-xs text-orange-600 mt-1">
+                Åtkomst till: {formatDate(subscriptionStatus.subscription_end)}
+              </p>
+            )}
           </div>
           {getStatusBadge(subscriptionStatus.subscription_status)}
         </div>
@@ -268,6 +310,36 @@ export default function SubscriptionManagement(): JSX.Element {
                   <DialogClose asChild>
                     <Button variant="destructive" onClick={handleCancelSubscription}>
                       Avbryt Prenumeration
+                    </Button>
+                  </DialogClose>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {isCanceled && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="default" size="sm" className="bg-green-600 hover:bg-green-700">
+                  <ForwardedIconComponent name="RotateCcw" className="h-4 w-4 mr-2" />
+                  Återaktivera Prenumeration
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Återaktivera Prenumeration</DialogTitle>
+                  <DialogDescription>
+                    Vill du återaktivera din prenumeration? Din prenumeration kommer att fortsätta och du behåller åtkomst till alla Pro-funktioner.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button variant="outline">Avbryt</Button>
+                  </DialogClose>
+                  <DialogClose asChild>
+                    <Button variant="default" onClick={handleReactivateSubscription} className="bg-green-600 hover:bg-green-700">
+                      <ForwardedIconComponent name="CheckCircle" className="h-4 w-4 mr-2" />
+                      Återaktivera Nu
                     </Button>
                   </DialogClose>
                 </DialogFooter>

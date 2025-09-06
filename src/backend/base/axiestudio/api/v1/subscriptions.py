@@ -532,3 +532,64 @@ async def cancel_subscription(
     except Exception as e:
         logger.error(f"Failed to cancel subscription for user {current_user.id}: {e}")
         raise HTTPException(status_code=500, detail="Misslyckades med att avbryta prenumeration. Vänligen försök igen eller kontakta support.")
+
+
+@router.post("/reactivate")
+async def reactivate_subscription(
+    current_user: CurrentActiveUser,
+    session: DbSession,
+):
+    """Reactivate a canceled subscription."""
+    if not stripe_service.is_configured():
+        raise HTTPException(status_code=503, detail="Stripe är inte konfigurerat. Vänligen kontakta support.")
+
+    try:
+        # Check if user has a canceled subscription
+        if not current_user.subscription_id:
+            raise HTTPException(status_code=400, detail="Ingen prenumeration hittades")
+
+        if current_user.subscription_status != "canceled":
+            raise HTTPException(status_code=400, detail="Prenumerationen är inte avbruten")
+
+        # Reactivate the subscription in Stripe
+        reactivate_result = await stripe_service.reactivate_subscription(current_user.subscription_id)
+
+        if reactivate_result["success"]:
+            # Update user status back to active
+            update_data = UserUpdate(
+                subscription_status="active",
+                subscription_end=reactivate_result.get("subscription_end")
+            )
+            await update_user(session, current_user.id, update_data)
+
+            # Send reactivation confirmation email
+            if current_user.email:
+                try:
+                    from axiestudio.services.email.service import EmailService
+                    email_service = EmailService()
+
+                    # Format subscription end date for email
+                    subscription_end_date = "okänt datum"
+                    if reactivate_result.get("subscription_end"):
+                        subscription_end_date = reactivate_result["subscription_end"].strftime("%d %B %Y")
+
+                    await email_service.send_subscription_reactivated_email(
+                        email=current_user.email,
+                        username=current_user.username,
+                        subscription_end_date=subscription_end_date
+                    )
+                    logger.info(f"✅ Sent subscription reactivation email to {current_user.username}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to send subscription reactivation email to {current_user.username}: {e}")
+
+            return {
+                "status": "success",
+                "message": "Prenumeration återaktiverad! Du kommer att fortsätta ha åtkomst till Pro-funktioner.",
+                "subscription_end": reactivate_result.get("subscription_end").isoformat() if reactivate_result.get("subscription_end") else None
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Misslyckades med att återaktivera prenumeration")
+
+    except Exception as e:
+        logger.error(f"Failed to reactivate subscription for user {current_user.id}: {e}")
+        raise HTTPException(status_code=500, detail="Misslyckades med att återaktivera prenumeration. Vänligen försök igen eller kontakta support.")
