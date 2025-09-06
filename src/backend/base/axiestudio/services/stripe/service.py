@@ -155,6 +155,29 @@ class StripeService:
         except Exception as e:
             logger.error(f"Failed to cancel subscription: {e}")
             return {"success": False}
+
+    async def reactivate_subscription(self, subscription_id: str) -> dict:
+        """Reactivate a canceled subscription (remove cancel_at_period_end)."""
+        try:
+            # Remove the cancellation by setting cancel_at_period_end to False
+            subscription = stripe.Subscription.modify(
+                subscription_id,
+                cancel_at_period_end=False
+            )
+
+            # Get the period end date
+            period_end = datetime.fromtimestamp(subscription.current_period_end, tz=timezone.utc)
+
+            logger.info(f"Reactivated subscription: {subscription_id}, will continue until: {period_end}")
+            return {
+                "success": True,
+                "subscription_end": period_end,
+                "current_period_end": subscription.current_period_end,
+                "status": subscription.status
+            }
+        except Exception as e:
+            logger.error(f"Failed to reactivate subscription: {e}")
+            return {"success": False, "error": str(e)}
     
     async def handle_webhook_event(self, event_data: dict, session) -> bool:
         """Handle Stripe webhook events."""

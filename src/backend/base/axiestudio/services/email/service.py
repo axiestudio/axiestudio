@@ -1500,6 +1500,152 @@ Visit us at: https://axiestudio.se
             logger.error(f"Failed to send subscription cancelled email to {email}: {e}")
             return False
 
+    async def send_subscription_reactivated_email(self, email: str, username: str, subscription_end_date: str) -> bool:
+        """Send subscription reactivation confirmation email."""
+        try:
+            subject = "Your AxieStudio subscription has been reactivated"
+
+            html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription reactivated</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }}
+        .container {{
+            background-color: white;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        .header {{
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }}
+        .logo {{
+            font-size: 24px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 10px;
+        }}
+        .title {{
+            font-size: 28px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin: 0;
+        }}
+        .content {{
+            margin-bottom: 30px;
+        }}
+        .highlight {{
+            background-color: #dbeafe;
+            padding: 20px;
+            border-radius: 6px;
+            border-left: 4px solid #2563eb;
+            margin: 20px 0;
+        }}
+        .button {{
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 20px 0;
+        }}
+        .footer {{
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #6b7280;
+            font-size: 14px;
+        }}
+        .success-icon {{
+            font-size: 48px;
+            color: #10b981;
+            text-align: center;
+            margin-bottom: 20px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">AxieStudio</div>
+            <h1 class="title">Subscription Reactivated! 🎉</h1>
+        </div>
+
+        <div class="success-icon">✅</div>
+
+        <div class="content">
+            <p>Hi {username},</p>
+
+            <p>Great news! Your AxieStudio subscription has been successfully reactivated.</p>
+
+            <div class="highlight">
+                <strong>Your subscription is now active again!</strong><br>
+                You now have full access to all Pro features until {subscription_end_date}.
+            </div>
+
+            <p>You can now enjoy:</p>
+            <ul>
+                <li>Unlimited AI conversations</li>
+                <li>Advanced flow creation tools</li>
+                <li>Priority support</li>
+                <li>All premium features</li>
+            </ul>
+
+            <div style="text-align: center;">
+                <a href="https://flow.axiestudio.se/dashboard" class="button">Access Your Dashboard</a>
+            </div>
+
+            <p>If you have any questions or need assistance, our support team is here to help.</p>
+
+            <p>Welcome back!</p>
+            <p>The AxieStudio Team</p>
+        </div>
+
+        <div class="footer">
+            <p>This email was sent to {email}</p>
+            <p>AxieStudio - AI-Powered Flow Creation Platform</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+            # Send the email
+            success = await self._send_email(
+                to_email=email,
+                subject=subject,
+                html_content=html_body
+            )
+
+            if success:
+                logger.info(f"✅ Sent subscription reactivation email to {email}")
+                return True
+            else:
+                logger.error(f"❌ Failed to send subscription reactivation email to {email}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Failed to send subscription reactivation email to {email}: {e}")
+            return False
+
     async def send_subscription_welcome_email(self, email: str, username: str, plan_name: str = "Pro") -> bool:
         """Send subscription welcome email."""
         try:
