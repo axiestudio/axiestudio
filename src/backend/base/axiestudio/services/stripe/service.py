@@ -13,7 +13,7 @@ except ImportError:
 
 from loguru import logger
 
-from axiestudio.services.database.models.user.model import User, UserUpdate
+from axiestudio.services.database.models.user.model import UserUpdate
 from axiestudio.services.database.models.user.crud import update_user
 
 
@@ -166,27 +166,105 @@ class StripeService:
             return {"success": False}
 
     async def reactivate_subscription(self, subscription_id: str) -> dict:
-        """Reactivate a canceled subscription (remove cancel_at_period_end)."""
+        """
+        🔄 ROBUST SUBSCRIPTION REACTIVATION
+
+        Reactivates a canceled subscription with comprehensive error handling.
+        Validates subscription state and handles all Stripe edge cases.
+        """
         try:
-            # Remove the cancellation by setting cancel_at_period_end to False
-            subscription = stripe.Subscription.modify(
-                subscription_id,
-                cancel_at_period_end=False
-            )
+            logger.info(f"🔄 Attempting to reactivate subscription: {subscription_id}")
 
-            # Get the period end date
-            period_end = datetime.fromtimestamp(subscription.current_period_end, tz=timezone.utc)
+            # STEP 1: Retrieve current subscription to validate state
+            try:
+                current_subscription = stripe.Subscription.retrieve(subscription_id)
+            except stripe.error.InvalidRequestError as e:
+                logger.error(f"❌ Invalid subscription ID {subscription_id}: {e}")
+                return {
+                    "success": False,
+                    "error": f"Prenumeration hittades inte: {subscription_id}"
+                }
 
-            logger.info(f"Reactivated subscription: {subscription_id}, will continue until: {period_end}")
+            # STEP 2: Validate subscription can be reactivated
+            if current_subscription.status not in ["active", "past_due"]:
+                logger.warning(f"⚠️  Cannot reactivate subscription {subscription_id} with status: {current_subscription.status}")
+                return {
+                    "success": False,
+                    "error": f"Prenumeration kan inte återaktiveras från status: {current_subscription.status}"
+                }
+
+            # Check if subscription is actually canceled (has cancel_at_period_end=True)
+            if not current_subscription.cancel_at_period_end:
+                logger.warning(f"⚠️  Subscription {subscription_id} is not canceled (cancel_at_period_end=False)")
+                return {
+                    "success": False,
+                    "error": "Prenumerationen är inte avbruten och behöver inte återaktiveras"
+                }
+
+            # STEP 3: Reactivate by removing cancellation
+            try:
+                subscription = stripe.Subscription.modify(
+                    subscription_id,
+                    cancel_at_period_end=False
+                )
+                logger.info(f"✅ Successfully modified subscription {subscription_id}")
+            except stripe.error.StripeError as e:
+                logger.error(f"❌ Stripe error modifying subscription {subscription_id}: {e}")
+                return {
+                    "success": False,
+                    "error": f"Stripe-fel vid återaktivering: {e.user_message or str(e)}"
+                }
+
+            # STEP 4: Calculate subscription end date
+            try:
+                period_end = datetime.fromtimestamp(subscription.current_period_end, tz=timezone.utc)
+            except (ValueError, OSError) as e:
+                logger.error(f"❌ Error parsing period end timestamp: {e}")
+                # Fallback: use current time + 30 days
+                period_end = datetime.now(timezone.utc) + timedelta(days=30)
+
+            # STEP 5: Validate reactivation was successful
+            if subscription.cancel_at_period_end:
+                logger.error(f"❌ Reactivation failed - subscription {subscription_id} still has cancel_at_period_end=True")
+                return {
+                    "success": False,
+                    "error": "Återaktivering misslyckades - prenumerationen är fortfarande avbruten"
+                }
+
+            logger.info(f"🎉 Successfully reactivated subscription: {subscription_id}, continues until: {period_end}")
             return {
                 "success": True,
                 "subscription_end": period_end,
                 "current_period_end": subscription.current_period_end,
-                "status": subscription.status
+                "status": subscription.status,
+                "cancel_at_period_end": subscription.cancel_at_period_end,
+                "reactivated_at": datetime.now(timezone.utc)
+            }
+
+        except stripe.error.AuthenticationError as e:
+            logger.error(f"❌ Stripe authentication error: {e}")
+            return {
+                "success": False,
+                "error": "Stripe-autentiseringsfel. Kontakta support."
+            }
+        except stripe.error.RateLimitError as e:
+            logger.error(f"❌ Stripe rate limit error: {e}")
+            return {
+                "success": False,
+                "error": "För många förfrågningar till Stripe. Försök igen om en stund."
+            }
+        except stripe.error.StripeError as e:
+            logger.error(f"❌ General Stripe error during reactivation: {e}")
+            return {
+                "success": False,
+                "error": f"Stripe-fel: {e.user_message or 'Okänt fel'}"
             }
         except Exception as e:
-            logger.error(f"Failed to reactivate subscription: {e}")
-            return {"success": False, "error": str(e)}
+            logger.error(f"❌ Unexpected error during subscription reactivation: {e}")
+            return {
+                "success": False,
+                "error": f"Oväntat fel vid återaktivering: {str(e)}"
+            }
     
     async def handle_webhook_event(self, event_data: dict, session) -> bool:
         """Handle Stripe webhook events."""

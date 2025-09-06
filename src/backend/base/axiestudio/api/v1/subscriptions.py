@@ -539,30 +539,84 @@ async def reactivate_subscription(
     current_user: CurrentActiveUser,
     session: DbSession,
 ):
-    """Reactivate a canceled subscription."""
+    """
+    🔄 ROBUST SUBSCRIPTION REACTIVATION ENDPOINT
+
+    Reactivates a canceled subscription with comprehensive validation and error handling.
+    Handles all edge cases and provides detailed error messages.
+    """
+    # Rate limiting check
+    if not check_rate_limit(str(current_user.id), "reactivate-subscription"):
+        raise HTTPException(
+            status_code=429,
+            detail="För många återaktiveringsförfrågningar. Vänligen vänta några minuter innan du försöker igen."
+        )
+
     if not stripe_service.is_configured():
         raise HTTPException(status_code=503, detail="Stripe är inte konfigurerat. Vänligen kontakta support.")
 
     try:
-        # Check if user has a canceled subscription
+        # COMPREHENSIVE VALIDATION
+
+        # Check if user has any subscription
         if not current_user.subscription_id:
-            raise HTTPException(status_code=400, detail="Ingen prenumeration hittades")
+            logger.warning(f"Reactivation attempt by user {current_user.id} with no subscription_id")
+            raise HTTPException(
+                status_code=400,
+                detail="Ingen prenumeration hittades. Du behöver först skapa en prenumeration."
+            )
 
+        # Check if subscription is actually canceled
         if current_user.subscription_status != "canceled":
-            raise HTTPException(status_code=400, detail="Prenumerationen är inte avbruten")
+            logger.warning(f"Reactivation attempt by user {current_user.id} with status: {current_user.subscription_status}")
 
-        # Reactivate the subscription in Stripe
+            if current_user.subscription_status == "active":
+                raise HTTPException(
+                    status_code=400,
+                    detail="Din prenumeration är redan aktiv. Ingen återaktivering behövs."
+                )
+            elif current_user.subscription_status == "trial":
+                raise HTTPException(
+                    status_code=400,
+                    detail="Du är för närvarande på en provperiod. Återaktivering är inte tillämplig."
+                )
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Prenumerationen kan inte återaktiveras från status: {current_user.subscription_status}"
+                )
+
+        # Check if subscription has expired (can't reactivate expired subscriptions)
+        if current_user.subscription_end:
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+            subscription_end = current_user.subscription_end
+
+            # Ensure timezone awareness
+            if subscription_end.tzinfo is None:
+                subscription_end = subscription_end.replace(tzinfo=timezone.utc)
+
+            if now >= subscription_end:
+                logger.warning(f"Reactivation attempt by user {current_user.id} for expired subscription (ended: {subscription_end})")
+                raise HTTPException(
+                    status_code=400,
+                    detail="Prenumerationen har redan löpt ut och kan inte återaktiveras. Vänligen skapa en ny prenumeration."
+                )
+
+        # STRIPE REACTIVATION
+        logger.info(f"Attempting to reactivate subscription {current_user.subscription_id} for user {current_user.id}")
         reactivate_result = await stripe_service.reactivate_subscription(current_user.subscription_id)
 
-        if reactivate_result["success"]:
-            # Update user status back to active
+        if reactivate_result.get("success"):
+            # DATABASE UPDATE
             update_data = UserUpdate(
                 subscription_status="active",
                 subscription_end=reactivate_result.get("subscription_end")
             )
             await update_user(session, current_user.id, update_data)
+            logger.info(f"✅ Updated user {current_user.id} status to active")
 
-            # Send reactivation confirmation email
+            # EMAIL NOTIFICATION (Non-blocking)
             if current_user.email:
                 try:
                     from axiestudio.services.email.service import EmailService
@@ -580,16 +634,32 @@ async def reactivate_subscription(
                     )
                     logger.info(f"✅ Sent subscription reactivation email to {current_user.username}")
                 except Exception as e:
+                    # Email failure should not block the reactivation
                     logger.error(f"❌ Failed to send subscription reactivation email to {current_user.username}: {e}")
 
+            # SUCCESS RESPONSE
             return {
                 "status": "success",
                 "message": "Prenumeration återaktiverad! Du kommer att fortsätta ha åtkomst till Pro-funktioner.",
-                "subscription_end": reactivate_result.get("subscription_end").isoformat() if reactivate_result.get("subscription_end") else None
+                "subscription_end": reactivate_result.get("subscription_end").isoformat() if reactivate_result.get("subscription_end") else None,
+                "reactivated_at": datetime.now(timezone.utc).isoformat()
             }
         else:
-            raise HTTPException(status_code=500, detail="Misslyckades med att återaktivera prenumeration")
+            # Stripe reactivation failed
+            error_msg = reactivate_result.get("error", "Okänd Stripe-fel")
+            logger.error(f"Stripe reactivation failed for user {current_user.id}: {error_msg}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Misslyckades med att återaktivera prenumeration i Stripe: {error_msg}"
+            )
 
+    except HTTPException:
+        # Re-raise HTTP exceptions (they have proper error messages)
+        raise
     except Exception as e:
-        logger.error(f"Failed to reactivate subscription for user {current_user.id}: {e}")
-        raise HTTPException(status_code=500, detail="Misslyckades med att återaktivera prenumeration. Vänligen försök igen eller kontakta support.")
+        # Catch-all for unexpected errors
+        logger.error(f"Unexpected error during reactivation for user {current_user.id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Ett oväntat fel uppstod vid återaktivering. Vänligen försök igen eller kontakta support."
+        )
