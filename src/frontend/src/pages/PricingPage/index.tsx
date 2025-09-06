@@ -52,6 +52,7 @@ export default function PricingPage(): JSX.Element {
 
   const isOnTrial = subscriptionStatus?.subscription_status === "trial";
   const isSubscribed = subscriptionStatus?.subscription_status === "active";
+  const isCanceled = subscriptionStatus?.subscription_status === "canceled";
   const trialExpired = subscriptionStatus?.trial_expired;
 
   return (
@@ -109,6 +110,14 @@ export default function PricingPage(): JSX.Element {
             </CardContent>
             <CardFooter>
               {isOnTrial && !trialExpired ? (
+                <Button
+                  onClick={handleContinueToApp}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Fortsätt till App
+                </Button>
+              ) : isCanceled ? (
                 <Button
                   onClick={handleContinueToApp}
                   className="w-full"
@@ -185,15 +194,30 @@ export default function PricingPage(): JSX.Element {
                   </p>
                 </div>
               )}
+              {isCanceled && (
+                <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                  <p className="text-sm text-orange-700 dark:text-orange-300">
+                    Din prenumeration är avbruten men fortfarande aktiv till {subscriptionStatus?.subscription_end ? new Date(subscriptionStatus.subscription_end).toLocaleDateString('sv-SE') : 'slutet av din faktureringsperiod'}. Du kan återaktivera när som helst!
+                  </p>
+                </div>
+              )}
             </CardContent>
             <CardFooter>
               {isSubscribed ? (
                 <Button disabled className="w-full">
                   Nuvarande Plan
                 </Button>
+              ) : isCanceled ? (
+                <Button
+                  onClick={handleSubscribe}
+                  disabled={isLoading}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  {isLoading ? "Bearbetar..." : "Återaktivera Prenumeration"}
+                </Button>
               ) : (
-                <Button 
-                  onClick={handleSubscribe} 
+                <Button
+                  onClick={handleSubscribe}
                   disabled={isLoading}
                   className="w-full bg-blue-500 hover:bg-blue-600"
                 >
