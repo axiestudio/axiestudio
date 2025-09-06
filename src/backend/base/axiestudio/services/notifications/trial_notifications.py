@@ -9,9 +9,9 @@ from typing import List, Optional
 from sqlmodel import Session, select
 from loguru import logger
 
-from axiestudio.models.user import User
+from axiestudio.services.database.models.user.model import User
 from axiestudio.services.email.service import EmailService
-from axiestudio.services.trial.service import get_trial_service
+from axiestudio.services.trial.service import trial_service
 
 
 class TrialNotificationService:
@@ -26,7 +26,7 @@ class TrialNotificationService:
     
     def __init__(self):
         self.email_service = EmailService()
-        self.trial_service = get_trial_service()
+        self.trial_service = trial_service
         self._sent_notifications = set()  # Simple in-memory cache
     
     async def check_and_send_trial_notifications(self, session: Session) -> int:
