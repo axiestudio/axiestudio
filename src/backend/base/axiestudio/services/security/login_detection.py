@@ -180,9 +180,15 @@ class LoginDetectionService:
             
             # Check if it's been a while since last login
             if hasattr(user, 'last_login_at') and user.last_login_at:
-                time_since_last = datetime.now(timezone.utc) - user.last_login_at
-                if time_since_last > timedelta(days=7):
-                    return True  # Been a while
+                # Ensure timezone-aware comparison to prevent offset-naive vs offset-aware errors
+                from axiestudio.utils.timezone import ensure_timezone_aware
+                last_login_aware = ensure_timezone_aware(user.last_login_at)
+                now = datetime.now(timezone.utc)
+
+                if last_login_aware:
+                    time_since_last = now - last_login_aware
+                    if time_since_last > timedelta(days=7):
+                        return True  # Been a while
             
             return False
             
