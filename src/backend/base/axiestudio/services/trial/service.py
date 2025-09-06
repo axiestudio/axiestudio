@@ -47,13 +47,12 @@ class TrialService:
         
         # Calculate trial end date with timezone consistency
         trial_start = user.trial_start or user.create_at
-        # For trial users, trial_end should be explicitly set - don't auto-calculate for security
-        # Only auto-calculate if user has no trial_end AND subscription_status is not "trial"
-        if user.subscription_status == "trial" and not user.trial_end:
-            # This is a data integrity issue - trial users MUST have trial_end
-            trial_end = None
-        else:
-            trial_end = user.trial_end or (trial_start + timedelta(days=self.trial_duration_days))
+        # FIXED: Always calculate trial_end if missing, regardless of subscription_status
+        # This prevents the contradiction where trial_end=None but user has "trial" status
+        trial_end = user.trial_end
+        if not trial_end and trial_start:
+            # Auto-calculate trial_end if missing (7 days from trial_start)
+            trial_end = trial_start + timedelta(days=self.trial_duration_days)
 
         # Ensure timezone consistency for comparisons
         if trial_start and trial_start.tzinfo is None:
@@ -63,7 +62,12 @@ class TrialService:
 
         # Check if trial has expired
         trial_expired = now > trial_end if trial_end else False
-        days_left = max(0, (trial_end - now).days) if trial_end else 0
+        # FIXED: Use total_seconds() for accurate days calculation
+        if trial_end:
+            remaining_seconds = (trial_end - now).total_seconds()
+            days_left = max(0, int(remaining_seconds / 86400))  # 86400 seconds = 1 day
+        else:
+            days_left = 0
 
         # CRITICAL: Block access for ALL these cases:
         # 1. Trial expired AND no active subscription
