@@ -211,6 +211,20 @@ class StripeService:
             )
             await update_user(session, user.id, update_data)
             logger.info(f"Updated user {user.id} with subscription {subscription_id}")
+
+            # Send subscription welcome email (Swedish)
+            if status == 'active' and user.email:
+                try:
+                    from axiestudio.services.email.service import EmailService
+                    email_service = EmailService()
+                    await email_service.send_subscription_welcome_email(
+                        email=user.email,
+                        username=user.username,
+                        plan_name="Pro"  # Default plan name
+                    )
+                    logger.info(f"✅ Sent subscription welcome email to {user.username}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to send subscription welcome email to {user.username}: {e}")
     
     async def _handle_subscription_updated(self, subscription_data: dict, session):
         """Handle subscription updated event."""

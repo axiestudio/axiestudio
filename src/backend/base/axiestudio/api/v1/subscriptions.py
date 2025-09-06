@@ -500,6 +500,26 @@ async def cancel_subscription(
             )
             await update_user(session, current_user.id, update_data)
 
+            # Send subscription cancellation email (Swedish)
+            if current_user.email:
+                try:
+                    from axiestudio.services.email.service import EmailService
+                    email_service = EmailService()
+
+                    # Format subscription end date for email
+                    subscription_end_date = "okänt datum"
+                    if cancel_result.get("subscription_end"):
+                        subscription_end_date = cancel_result["subscription_end"].strftime("%d %B %Y")
+
+                    await email_service.send_subscription_cancelled_email(
+                        email=current_user.email,
+                        username=current_user.username,
+                        subscription_end_date=subscription_end_date
+                    )
+                    logger.info(f"✅ Sent subscription cancellation email to {current_user.username}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to send subscription cancellation email to {current_user.username}: {e}")
+
             return {
                 "status": "success",
                 "message": "Prenumeration avbruten. Du behåller åtkomst till slutet av din nuvarande faktureringsperiod.",

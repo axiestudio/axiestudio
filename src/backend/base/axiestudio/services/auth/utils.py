@@ -440,9 +440,10 @@ async def create_refresh_token(refresh_token: str, db: AsyncSession):
         ) from e
 
 
-async def authenticate_user(username: str, password: str, db: AsyncSession, client_ip: str = "unknown") -> User | None:
-    """Enhanced authentication with enterprise security features."""
+async def authenticate_user(username: str, password: str, db: AsyncSession, client_ip: str = "unknown", user_agent: str = "unknown") -> User | None:
+    """Enhanced authentication with enterprise security features and login detection."""
     from loguru import logger
+    from axiestudio.services.security.login_detection import get_login_detection_service
 
     user = await get_user_by_username(db, username)
 
@@ -507,6 +508,20 @@ async def authenticate_user(username: str, password: str, db: AsyncSession, clie
 
         logger.info(f"Successful login for user: {username} from IP: {client_ip}")
         await db.commit()
+
+        # Track login for security notifications (Swedish app)
+        try:
+            login_detection_service = get_login_detection_service()
+            await login_detection_service.track_login(
+                session=db,
+                user=user,
+                client_ip=client_ip,
+                user_agent=user_agent
+            )
+        except Exception as e:
+            logger.error(f"Failed to track login for security notifications: {e}")
+            # Don't fail the login if tracking fails
+
         return user
     else:
         # Failed login - increment failed attempts
