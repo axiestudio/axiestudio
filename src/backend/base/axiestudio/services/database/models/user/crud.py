@@ -14,19 +14,40 @@ from typing import List
 
 async def get_user_by_username(db: AsyncSession, username: str) -> User | None:
     stmt = select(User).where(User.username == username)
-    return (await db.exec(stmt)).first()
+    user = (await db.exec(stmt)).first()
+
+    # CRITICAL FIX: Force refresh user object to get latest subscription status
+    # This prevents stale data issues when webhooks update subscription status
+    if user:
+        await db.refresh(user)
+
+    return user
 
 
 async def get_user_by_id(db: AsyncSession, user_id: UUID) -> User | None:
     if isinstance(user_id, str):
         user_id = UUID(user_id)
     stmt = select(User).where(User.id == user_id)
-    return (await db.exec(stmt)).first()
+    user = (await db.exec(stmt)).first()
+
+    # CRITICAL FIX: Force refresh user object to get latest subscription status
+    # This prevents stale data issues when webhooks update subscription status
+    if user:
+        await db.refresh(user)
+
+    return user
 
 
 async def get_user_by_stripe_customer_id(db: AsyncSession, stripe_customer_id: str) -> User | None:
     stmt = select(User).where(User.stripe_customer_id == stripe_customer_id)
-    return (await db.exec(stmt)).first()
+    user = (await db.exec(stmt)).first()
+
+    # CRITICAL FIX: Force refresh user object to get latest subscription status
+    # This prevents stale data issues when webhooks update subscription status
+    if user:
+        await db.refresh(user)
+
+    return user
 
 
 async def update_user(db: AsyncSession, user_id: UUID, user: UserUpdate) -> User:
@@ -76,7 +97,14 @@ async def update_user_last_login_at(user_id: UUID, db: AsyncSession):
 async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
     """Get user by email address."""
     stmt = select(User).where(User.email == email)
-    return (await db.exec(stmt)).first()
+    user = (await db.exec(stmt)).first()
+
+    # CRITICAL FIX: Force refresh user object to get latest subscription status
+    # This prevents stale data issues when webhooks update subscription status
+    if user:
+        await db.refresh(user)
+
+    return user
 
 
 async def get_users_by_signup_ip(db: AsyncSession, signup_ip: str, limit: int = 10) -> List[User]:

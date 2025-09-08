@@ -221,6 +221,11 @@ async def get_current_user_by_jwt(
             detail="User not found or is inactive.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # CRITICAL FIX: Force refresh user object from database to get latest subscription status
+    # This prevents stale data issues when webhooks update subscription status
+    await db.refresh(user)
+
     return user
 
 

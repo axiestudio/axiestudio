@@ -5,12 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CheckCircle, Crown, ArrowRight, Loader2 } from "lucide-react";
 import { api } from "@/controllers/API/api";
 import { getURL } from "@/controllers/API/helpers/constants";
+import { useSubscriptionStore } from "@/stores/subscriptionStore";
 
 export default function SubscriptionSuccessPage(): JSX.Element {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isVerifying, setIsVerifying] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState<'success' | 'error' | 'pending'>('pending');
+  const { refreshStatus, startFastPolling } = useSubscriptionStore();
 
   useEffect(() => {
     // Get session_id from URL parameters
@@ -23,6 +25,19 @@ export default function SubscriptionSuccessPage(): JSX.Element {
           await api.get(`${getURL("SUBSCRIPTIONS")}/success?session_id=${sessionId}`);
           setVerificationStatus('success');
           console.log('✅ Subscription verified and activated');
+
+          // CRITICAL FIX: Immediately refresh subscription status to get latest data
+          // This ensures user gets immediate access without waiting for polling
+          try {
+            await refreshStatus();
+            console.log('✅ Subscription status refreshed immediately');
+
+            // Start fast polling to catch any delayed webhook updates
+            startFastPolling();
+            console.log('🚀 Started fast polling for subscription updates');
+          } catch (refreshError) {
+            console.warn('⚠️ Failed to refresh subscription status:', refreshError);
+          }
         } catch (error) {
           console.error('❌ Subscription verification failed:', error);
           setVerificationStatus('error');
@@ -36,6 +51,18 @@ export default function SubscriptionSuccessPage(): JSX.Element {
       // No session ID, assume success from webhook
       setIsVerifying(false);
       setVerificationStatus('success');
+
+      // CRITICAL FIX: Also refresh status when no session ID (webhook success)
+      try {
+        refreshStatus();
+        console.log('✅ Subscription status refreshed for webhook success');
+
+        // Start fast polling to catch any delayed webhook updates
+        startFastPolling();
+        console.log('🚀 Started fast polling for webhook success');
+      } catch (refreshError) {
+        console.warn('⚠️ Failed to refresh subscription status:', refreshError);
+      }
     }
 
     // Auto-redirect after 10 seconds
