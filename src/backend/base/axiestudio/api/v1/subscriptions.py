@@ -473,6 +473,7 @@ async def subscription_success(
     current_user: CurrentActiveUser = Depends(get_current_active_user),
     session: DbSession = Depends(get_session)
 ):
+    # CRITICAL FIX: Correct FastAPI dependency injection syntax
     """Handle successful subscription - additional safety net for immediate activation."""
     try:
         if not stripe_service.is_configured():
