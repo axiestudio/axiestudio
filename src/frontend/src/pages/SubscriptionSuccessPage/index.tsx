@@ -1,20 +1,52 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Crown, ArrowRight } from "lucide-react";
+import { CheckCircle, Crown, ArrowRight, Loader2 } from "lucide-react";
+import { api } from "@/controllers/API";
+import { getURL } from "@/utils";
 
 export default function SubscriptionSuccessPage(): JSX.Element {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [verificationMessage, setVerificationMessage] = useState('Verifierar din prenumeration...');
 
   useEffect(() => {
+    const sessionId = searchParams.get('session_id');
+
+    // Verify subscription with backend
+    const verifySubscription = async () => {
+      if (sessionId) {
+        try {
+          const response = await api.get(`${getURL()}/api/v1/subscriptions/success?session_id=${sessionId}`);
+          if (response.status === 200) {
+            setVerificationStatus('success');
+            setVerificationMessage('Prenumeration bekräftad! Välkommen till AxieStudio Pro!');
+          } else {
+            setVerificationStatus('error');
+            setVerificationMessage('Kunde inte verifiera prenumeration. Kontakta support om problemet kvarstår.');
+          }
+        } catch (error) {
+          console.error('Subscription verification error:', error);
+          setVerificationStatus('error');
+          setVerificationMessage('Verifieringsfel. Din prenumeration kan fortfarande vara aktiv.');
+        }
+      } else {
+        setVerificationStatus('success');
+        setVerificationMessage('Prenumeration aktiverad!');
+      }
+    };
+
+    verifySubscription();
+
     // Auto-redirect after 10 seconds
     const timer = setTimeout(() => {
       navigate("/");
     }, 10000);
 
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const handleContinue = () => {
     navigate("/");
@@ -25,13 +57,17 @@ export default function SubscriptionSuccessPage(): JSX.Element {
       <Card className="max-w-md w-full text-center">
         <CardHeader className="pb-4">
           <div className="mx-auto mb-4 w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-            <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            {verificationStatus === 'loading' ? (
+              <Loader2 className="h-8 w-8 text-green-600 dark:text-green-400 animate-spin" />
+            ) : (
+              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            )}
           </div>
           <CardTitle className="text-2xl text-green-900 dark:text-green-100">
-            Välkommen till Pro!
+            {verificationStatus === 'loading' ? 'Verifierar...' : 'Välkommen till Pro!'}
           </CardTitle>
           <CardDescription className="text-green-700 dark:text-green-300">
-            Din prenumeration har aktiverats framgångsrikt
+            {verificationMessage}
           </CardDescription>
         </CardHeader>
         

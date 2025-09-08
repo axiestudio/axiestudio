@@ -6,11 +6,12 @@ from typing import Annotated
 from collections import defaultdict
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, Query
 from pydantic import BaseModel
 from loguru import logger
 
 from axiestudio.api.utils import CurrentActiveUser, DbSession
+from axiestudio.services.auth.utils import get_current_active_user
 from axiestudio.services.stripe.service import stripe_service
 from axiestudio.services.database.models.user.crud import update_user
 from axiestudio.services.database.models.user.model import UserUpdate
@@ -685,3 +686,66 @@ async def reactivate_subscription(
             status_code=500,
             detail="Ett oväntat fel uppstod vid återaktivering. Vänligen försök igen eller kontakta support."
         )
+
+
+@router.get("/success")
+async def subscription_success(
+    session_id: str = Query(..., description="Stripe checkout session ID"),
+    current_user: Annotated[dict, Depends(get_current_active_user)] = None,
+    session: DbSession = Depends()
+):
+    """
+    Subscription success endpoint - Additional verification layer for Swedish version.
+
+    This endpoint provides an extra safety net to ensure users get immediate access
+    after successful Stripe payments, complementing the checkout.session.completed webhook.
+    """
+    try:
+        logger.info(f"🎯 Swedish subscription success verification for session: {session_id}")
+
+        if not session_id:
+            raise HTTPException(status_code=400, detail="Session ID krävs")
+
+        # Verify the session with Stripe
+        try:
+            import stripe
+            checkout_session = stripe.checkout.Session.retrieve(session_id)
+
+            if checkout_session.payment_status == 'paid' and checkout_session.customer:
+                # Find user by Stripe customer ID
+                from axiestudio.services.database.models.user.crud import get_user_by_stripe_customer_id, update_user
+                from axiestudio.services.database.models.user.model import UserUpdate
+
+                user = await get_user_by_stripe_customer_id(session, checkout_session.customer)
+
+                if user and user.subscription_status != 'active':
+                    # Ensure user is activated (safety net)
+                    update_data = UserUpdate(
+                        subscription_status='active',
+                        subscription_id=checkout_session.subscription
+                    )
+                    await update_user(session, user.id, update_data)
+                    logger.info(f"✅ Swedish safety net: User {user.id} activated via success endpoint")
+
+                return {
+                    "status": "success",
+                    "message": "Prenumeration bekräftad! Välkommen till AxieStudio Pro!",
+                    "payment_status": checkout_session.payment_status,
+                    "customer_id": checkout_session.customer
+                }
+            else:
+                return {
+                    "status": "pending",
+                    "message": "Betalning behandlas fortfarande...",
+                    "payment_status": checkout_session.payment_status
+                }
+
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe error in Swedish success endpoint: {e}")
+            raise HTTPException(status_code=400, detail=f"Stripe-fel: {str(e)}")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in Swedish subscription success endpoint: {e}")
+        raise HTTPException(status_code=500, detail="Internt serverfel")

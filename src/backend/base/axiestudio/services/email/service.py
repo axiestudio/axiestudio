@@ -160,7 +160,8 @@ class EmailService:
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AX</div>
+            <img src="https://se.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AX</div>
             <h1>E-postverifiering</h1>
             <p>Välkommen till AxieStudio</p>
         </div>
@@ -440,7 +441,8 @@ Besök oss på: https://se.axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AX</div>
+            <img src="https://se.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AX</div>
             <h1>Lösenordsåterställning</h1>
             <p>Säker lösenordsåterställning för ditt konto</p>
         </div>
@@ -803,7 +805,8 @@ Besök oss på: https://se.axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AX</div>
+            <img src="https://se.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AX</div>
             <h1>Ny inloggning upptäckt</h1>
             <p>Säkerhetsmeddelande för ditt konto</p>
         </div>
@@ -1184,7 +1187,8 @@ Besök oss på: https://se.axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AX</div>
+            <img src="https://se.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AX</div>
             <h1>Provperioden slutar snart</h1>
             <p>Förlora inte tillgången till dina AI-arbetsflöden</p>
         </div>
@@ -1350,7 +1354,8 @@ Besök oss på: https://se.axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AX</div>
+            <img src="https://se.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AX</div>
             <h1>Prenumeration avbruten</h1>
             <p>Vi är ledsna att se dig gå</p>
         </div>
@@ -1509,7 +1514,8 @@ Besök oss på: https://se.axiestudio.se
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">AxieStudio</div>
+            <img src="https://se.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AxieStudio</div>
             <h1 class="title">Subscription Reactivated! 🎉</h1>
         </div>
 
@@ -1689,7 +1695,8 @@ Besök oss på: https://se.axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AX</div>
+            <img src="https://se.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AX</div>
             <h1>Välkommen till {plan_name}!</h1>
             <p>Din prenumeration är nu aktiv</p>
         </div>
