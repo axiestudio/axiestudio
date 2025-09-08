@@ -41,6 +41,25 @@ export default defineConfig(({ mode }) => {
     base: BASENAME || "",
     build: {
       outDir: "build",
+      // Optimize build for memory usage
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Split vendor chunks to reduce memory usage
+            vendor: ['react', 'react-dom'],
+            ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-popover'],
+            flow: ['@xyflow/react'],
+            utils: ['lodash', 'axios', 'clsx']
+          }
+        },
+        // Reduce memory usage during build
+        maxParallelFileOps: 2,
+      },
+      // Reduce chunk size warnings threshold
+      chunkSizeWarningLimit: 1000,
+      // Optimize for production
+      minify: 'esbuild',
+      sourcemap: false,
     },
     define: {
       "process.env.BACKEND_URL": JSON.stringify(

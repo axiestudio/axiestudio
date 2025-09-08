@@ -47,22 +47,29 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 COPY ./uv.lock ./pyproject.toml ./README.md ./
 COPY ./src/backend/base/uv.lock ./src/backend/base/pyproject.toml ./src/backend/base/README.md ./src/backend/base/
 
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
     uv sync --frozen --no-install-project --no-editable --extra postgresql
 
 COPY ./src /app/src
 
 COPY src/frontend /tmp/src/frontend
 WORKDIR /tmp/src/frontend
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci \
-    && NODE_OPTIONS="--max-old-space-size=8192" npm run build \
+
+# Clear any existing cache and install dependencies
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    npm cache clean --force \
+    && npm ci --no-audit --no-fund --prefer-offline
+
+# Build frontend with optimized memory settings
+RUN NODE_OPTIONS="--max-old-space-size=6144 --max-semi-space-size=128" \
+    npm run build \
     && cp -r build /app/src/backend/base/axiestudio/frontend \
-    && rm -rf /tmp/src/frontend
+    && rm -rf /tmp/src/frontend \
+    && npm cache clean --force
 
 WORKDIR /app
 
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
     uv sync --frozen --no-editable --extra postgresql
 
 ################################
