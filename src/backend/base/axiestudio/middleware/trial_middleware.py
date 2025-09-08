@@ -94,7 +94,11 @@ class TrialMiddleware(BaseHTTPMiddleware):
                 if user.is_superuser:
                     return await call_next(request)
 
-                # Check trial status
+                # CRITICAL: Always allow active subscribers - no further checks needed
+                if user.subscription_status == "active":
+                    return await call_next(request)
+
+                # Check trial status for non-active users
                 try:
                     trial_status = await trial_service.check_trial_status(user)
 

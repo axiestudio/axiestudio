@@ -399,11 +399,15 @@ async def get_subscription_status(current_user: CurrentActiveUser):
         if subscription_end and subscription_end.tzinfo is None:
             subscription_end = subscription_end.replace(tzinfo=timezone.utc)
 
-        # Calculate trial status
+        # Calculate trial status - CRITICAL: Active subscribers should never show as trial expired
         trial_expired = False
         days_left = 7  # Default to 7 days if no trial_start
 
-        if trial_start:
+        # CRITICAL FIX: If user has active subscription, trial status is irrelevant
+        if subscription_status == "active":
+            trial_expired = False  # Active subscribers are never "trial expired"
+            days_left = 0  # No trial days left because they have active subscription
+        elif trial_start:
             trial_end_date = trial_end or (trial_start + timedelta(days=7))
             now = datetime.now(timezone.utc)
 
