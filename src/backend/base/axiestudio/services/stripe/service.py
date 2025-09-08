@@ -347,14 +347,32 @@ class StripeService:
         if user:
             trial_end = None
             if subscription_data.get('trial_end'):
-                trial_end = datetime.fromtimestamp(subscription_data['trial_end'], tz=timezone.utc)
-            
+                trial_end_value = subscription_data['trial_end']
+                if isinstance(trial_end_value, datetime):
+                    trial_end = trial_end_value.replace(tzinfo=timezone.utc) if trial_end_value.tzinfo is None else trial_end_value
+                else:
+                    trial_end = datetime.fromtimestamp(trial_end_value, tz=timezone.utc)
+
+            # Handle current_period_start - could be datetime or timestamp
+            period_start_value = subscription_data['current_period_start']
+            if isinstance(period_start_value, datetime):
+                subscription_start = period_start_value.replace(tzinfo=timezone.utc) if period_start_value.tzinfo is None else period_start_value
+            else:
+                subscription_start = datetime.fromtimestamp(period_start_value, tz=timezone.utc)
+
+            # Handle current_period_end - could be datetime or timestamp
+            period_end_value = subscription_data['current_period_end']
+            if isinstance(period_end_value, datetime):
+                subscription_end = period_end_value.replace(tzinfo=timezone.utc) if period_end_value.tzinfo is None else period_end_value
+            else:
+                subscription_end = datetime.fromtimestamp(period_end_value, tz=timezone.utc)
+
             update_data = UserUpdate(
                 subscription_id=subscription_id,
                 subscription_status=status,
                 trial_end=trial_end,
-                subscription_start=datetime.fromtimestamp(subscription_data['current_period_start'], tz=timezone.utc),
-                subscription_end=datetime.fromtimestamp(subscription_data['current_period_end'], tz=timezone.utc)
+                subscription_start=subscription_start,
+                subscription_end=subscription_end
             )
             await update_user(session, user.id, update_data)
             logger.info(f"Updated user {user.id} with subscription {subscription_id}")
@@ -388,7 +406,11 @@ class StripeService:
             # Get the subscription end date from the webhook data
             subscription_end = None
             if subscription_data.get('current_period_end'):
-                subscription_end = datetime.fromtimestamp(subscription_data['current_period_end'], tz=timezone.utc)
+                period_end_value = subscription_data['current_period_end']
+                if isinstance(period_end_value, datetime):
+                    subscription_end = period_end_value.replace(tzinfo=timezone.utc) if period_end_value.tzinfo is None else period_end_value
+                else:
+                    subscription_end = datetime.fromtimestamp(period_end_value, tz=timezone.utc)
 
             update_data = UserUpdate(
                 subscription_status='canceled',
