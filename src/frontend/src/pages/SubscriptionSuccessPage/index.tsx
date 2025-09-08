@@ -1,20 +1,50 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Crown, ArrowRight } from "lucide-react";
+import { CheckCircle, Crown, ArrowRight, Loader2 } from "lucide-react";
+import { api } from "@/controllers/API/api";
+import { getURL } from "@/controllers/API/helpers/constants";
 
 export default function SubscriptionSuccessPage(): JSX.Element {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [verificationStatus, setVerificationStatus] = useState<'success' | 'error' | 'pending'>('pending');
 
   useEffect(() => {
+    // Get session_id from URL parameters
+    const sessionId = searchParams.get('session_id');
+
+    if (sessionId) {
+      // Call backend to verify and activate subscription
+      const verifySubscription = async () => {
+        try {
+          await api.get(`${getURL("SUBSCRIPTIONS")}/success?session_id=${sessionId}`);
+          setVerificationStatus('success');
+          console.log('✅ Subscription verified and activated');
+        } catch (error) {
+          console.error('❌ Subscription verification failed:', error);
+          setVerificationStatus('error');
+        } finally {
+          setIsVerifying(false);
+        }
+      };
+
+      verifySubscription();
+    } else {
+      // No session ID, assume success from webhook
+      setIsVerifying(false);
+      setVerificationStatus('success');
+    }
+
     // Auto-redirect after 10 seconds
     const timer = setTimeout(() => {
       navigate("/");
     }, 10000);
 
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const handleContinue = () => {
     navigate("/");
@@ -25,13 +55,24 @@ export default function SubscriptionSuccessPage(): JSX.Element {
       <Card className="max-w-md w-full text-center">
         <CardHeader className="pb-4">
           <div className="mx-auto mb-4 w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-            <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            {isVerifying ? (
+              <Loader2 className="h-8 w-8 text-blue-600 dark:text-blue-400 animate-spin" />
+            ) : verificationStatus === 'success' ? (
+              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            ) : (
+              <CheckCircle className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
+            )}
           </div>
           <CardTitle className="text-2xl text-green-900 dark:text-green-100">
-            Welcome to Pro!
+            {isVerifying ? "Activating..." : "Welcome to Pro!"}
           </CardTitle>
           <CardDescription className="text-green-700 dark:text-green-300">
-            Your subscription has been successfully activated
+            {isVerifying
+              ? "We're activating your subscription..."
+              : verificationStatus === 'success'
+              ? "Your subscription has been successfully activated"
+              : "Your subscription is being processed"
+            }
           </CardDescription>
         </CardHeader>
         

@@ -222,7 +222,8 @@ class EmailService:
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AX</div>
+            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AX</div>
             <h1>Email Verification</h1>
             <p>Welcome to AxieStudio</p>
         </div>
@@ -513,7 +514,8 @@ Visit us at: https://flow.axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AX</div>
+            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AX</div>
             <h1>Password Reset</h1>
             <p>Secure password reset for your account</p>
         </div>
@@ -1260,7 +1262,8 @@ Visit us at: https://axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AX</div>
+            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AX</div>
             <h1>Trial Ending Soon</h1>
             <p>Don't lose access to your AI workflows</p>
         </div>
@@ -1426,7 +1429,8 @@ Visit us at: https://axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AX</div>
+            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AX</div>
             <h1>Subscription Cancelled</h1>
             <p>We're sorry to see you go</p>
         </div>
@@ -1585,7 +1589,8 @@ Visit us at: https://axiestudio.se
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">AxieStudio</div>
+            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AxieStudio</div>
             <h1 class="title">Subscription Reactivated! 🎉</h1>
         </div>
 
@@ -1765,7 +1770,8 @@ Visit us at: https://axiestudio.se
 <body>
     <div class="email-container">
         <div class="header">
-            <div class="logo">AX</div>
+            <img src="https://flow.axiestudio.se/logo192.png" alt="AxieStudio Logo" style="width: 48px; height: 48px; margin: 0 auto 16px auto; display: block; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo" style="display: none;">AX</div>
             <h1>Welcome to {plan_name}!</h1>
             <p>Your subscription is now active</p>
         </div>

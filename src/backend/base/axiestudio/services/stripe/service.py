@@ -14,7 +14,7 @@ except ImportError:
 from loguru import logger
 
 from axiestudio.services.database.models.user.model import UserUpdate
-from axiestudio.services.database.models.user.crud import update_user
+from axiestudio.services.database.models.user.crud import update_user, get_user_by_stripe_customer_id
 
 
 class StripeService:
@@ -262,8 +262,12 @@ class StripeService:
         try:
             event_type = event_data.get('type')
             data = event_data.get('data', {}).get('object', {})
-            
-            if event_type == 'customer.subscription.created':
+
+            logger.info(f"🔔 Processing Stripe webhook: {event_type}")
+
+            if event_type == 'checkout.session.completed':
+                await self._handle_checkout_completed(data, session)
+            elif event_type == 'customer.subscription.created':
                 await self._handle_subscription_created(data, session)
             elif event_type == 'customer.subscription.updated':
                 await self._handle_subscription_updated(data, session)
@@ -273,12 +277,87 @@ class StripeService:
                 await self._handle_payment_succeeded(data, session)
             elif event_type == 'invoice.payment_failed':
                 await self._handle_payment_failed(data, session)
-            
+            else:
+                logger.info(f"⚠️ Unhandled webhook event type: {event_type}")
+
             return True
         except Exception as e:
             logger.error(f"Failed to handle webhook event: {e}")
             return False
-    
+
+    async def _handle_checkout_completed(self, checkout_data: dict, session):
+        """Handle checkout session completed event - CRITICAL for immediate subscription activation."""
+        try:
+            customer_id = checkout_data.get('customer')
+            subscription_id = checkout_data.get('subscription')
+
+            logger.info(f"🎉 Checkout completed - Customer: {customer_id}, Subscription: {subscription_id}")
+
+            if not customer_id:
+                logger.error("No customer ID in checkout session")
+                return
+
+            # Find user by Stripe customer ID
+
+            user = await get_user_by_stripe_customer_id(session, customer_id)
+            if not user:
+                logger.error(f"User not found for Stripe customer {customer_id}")
+                return
+
+            # If there's a subscription ID, get the subscription details
+            if subscription_id:
+                subscription_data = await self.get_subscription(subscription_id)
+                if subscription_data:
+                    # Extract subscription details
+                    status = subscription_data.get('status', 'active')
+                    current_period_start = subscription_data.get('current_period_start')
+                    current_period_end = subscription_data.get('current_period_end')
+
+                    # Convert timestamps to datetime objects
+                    subscription_start = None
+                    subscription_end = None
+                    if current_period_start:
+                        subscription_start = datetime.fromtimestamp(current_period_start, tz=timezone.utc)
+                    if current_period_end:
+                        subscription_end = datetime.fromtimestamp(current_period_end, tz=timezone.utc)
+
+                    # Update user with subscription details
+                    update_data = UserUpdate(
+                        subscription_status='active',  # Force active status on successful checkout
+                        subscription_id=subscription_id,
+                        subscription_start=subscription_start,
+                        subscription_end=subscription_end
+                    )
+
+                    await update_user(session, user.id, update_data)
+                    logger.info(f"✅ IMMEDIATE ACTIVATION - User {user.username} subscription activated via checkout.session.completed")
+
+                    # Send welcome email
+                    if user.email:
+                        try:
+                            from axiestudio.services.email.service import EmailService
+                            email_service = EmailService()
+
+                            import asyncio
+                            asyncio.create_task(
+                                email_service.send_subscription_welcome_email(
+                                    email=user.email,
+                                    username=user.username,
+                                    plan_name="Pro"
+                                )
+                            )
+                            logger.info(f"📧 Queued welcome email for {user.username}")
+                        except Exception as e:
+                            logger.error(f"Failed to send welcome email: {e}")
+                else:
+                    logger.error(f"Could not retrieve subscription {subscription_id}")
+            else:
+                # No subscription ID - this might be a one-time payment or setup
+                logger.warning("Checkout completed without subscription ID")
+
+        except Exception as e:
+            logger.error(f"Error handling checkout completed: {e}")
+
     async def _handle_subscription_created(self, subscription_data: dict, session):
         """Handle subscription created event."""
         customer_id = subscription_data.get('customer')

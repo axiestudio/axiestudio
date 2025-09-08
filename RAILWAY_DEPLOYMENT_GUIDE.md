@@ -28,6 +28,7 @@ This guide will help you deploy Axie Studio with Stripe subscription functionali
 2. Click **Add endpoint**
 3. Set endpoint URL: `https://your-app-name.railway.app/api/v1/subscriptions/webhook`
 4. Select these events:
+   - `checkout.session.completed` ⭐ **CRITICAL - Required for immediate subscription activation**
    - `customer.subscription.created`
    - `customer.subscription.updated`
    - `customer.subscription.deleted`

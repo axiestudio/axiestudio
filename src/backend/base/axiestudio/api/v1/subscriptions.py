@@ -6,11 +6,13 @@ from typing import Annotated
 from collections import defaultdict
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel
 from loguru import logger
 
 from axiestudio.api.utils import CurrentActiveUser, DbSession
+from axiestudio.services.auth.utils import get_current_active_user
+from axiestudio.services.deps import get_session
 from axiestudio.services.stripe.service import stripe_service
 from axiestudio.services.database.models.user.crud import update_user
 from axiestudio.services.database.models.user.model import UserUpdate
@@ -463,6 +465,61 @@ async def get_subscription_status(current_user: CurrentActiveUser):
             "subscription_end": None,
             "has_stripe_customer": False
         }
+
+
+@router.get("/success")
+async def subscription_success(
+    session_id: str = Query(..., description="Stripe checkout session ID"),
+    current_user: CurrentActiveUser = Depends(get_current_active_user),
+    session: DbSession = Depends(get_session)
+):
+    """Handle successful subscription - additional safety net for immediate activation."""
+    try:
+        if not stripe_service.is_configured():
+            raise HTTPException(status_code=503, detail="Stripe is not configured")
+
+        logger.info(f"🎉 Processing subscription success for user {current_user.username}, session: {session_id}")
+
+        # Retrieve the checkout session from Stripe
+        import stripe
+        checkout_session = stripe.checkout.Session.retrieve(session_id)
+
+        if not checkout_session:
+            raise HTTPException(status_code=404, detail="Checkout session not found")
+
+        # Verify this session belongs to the current user
+        if checkout_session.customer != current_user.stripe_customer_id:
+            logger.warning(f"Session customer mismatch: {checkout_session.customer} != {current_user.stripe_customer_id}")
+            raise HTTPException(status_code=403, detail="Session does not belong to current user")
+
+        # If there's a subscription, ensure user is activated
+        if checkout_session.subscription:
+            subscription_data = await stripe_service.get_subscription(checkout_session.subscription)
+            if subscription_data and subscription_data.get('status') in ['active', 'trialing']:
+                # Force update user status to active
+                update_data = UserUpdate(
+                    subscription_status='active',
+                    subscription_id=checkout_session.subscription
+                )
+                await update_user(session, current_user.id, update_data)
+                logger.info(f"✅ SUCCESS ENDPOINT - Activated user {current_user.username} subscription")
+
+                return {
+                    "success": True,
+                    "message": "Subscription successfully activated",
+                    "subscription_status": "active",
+                    "subscription_id": checkout_session.subscription
+                }
+
+        return {
+            "success": True,
+            "message": "Checkout session processed",
+            "status": checkout_session.status
+        }
+
+    except Exception as e:
+        logger.error(f"Error processing subscription success: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to process subscription success: {str(e)}")
 
 
 @router.post("/webhook")
