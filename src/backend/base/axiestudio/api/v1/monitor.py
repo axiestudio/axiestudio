@@ -62,10 +62,10 @@ async def get_message_sessions(
 async def get_messages(
     session: DbSession,
     flow_id: UUID | None = Query(None),
-    session_id: Annotated[str | None, Query()] = None,
-    sender: Annotated[str | None, Query()] = None,
-    sender_name: Annotated[str | None, Query()] = None,
-    order_by: Annotated[str | None, Query()] = "timestamp",
+    session_id: str | None = Query(None),
+    sender: str | None = Query(None),
+    sender_name: str | None = Query(None),
+    order_by: str | None = Query("timestamp"),
 ) -> list[MessageResponse]:
     try:
         stmt = select(MessageTable)
@@ -131,8 +131,9 @@ async def update_message(
 )
 async def update_session_id(
     old_session_id: str,
-    new_session_id: Annotated[str, Query(..., description="The new session ID to update to")],
+    *,
     session: DbSession,
+    new_session_id: str = Query(..., description="The new session ID to update to"),
 ) -> list[MessageResponse]:
     try:
         # Get all messages with the old session ID

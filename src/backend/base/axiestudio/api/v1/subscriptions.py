@@ -469,9 +469,9 @@ async def get_subscription_status(current_user: CurrentActiveUser):
 
 @router.get("/success")
 async def subscription_success(
-    session_id: str = Query(..., description="Stripe checkout session ID"),
-    current_user: CurrentActiveUser = Depends(get_current_active_user),
-    session: DbSession = Depends(get_session)
+    current_user: CurrentActiveUser,
+    session: DbSession,
+    session_id: str = Query(..., description="Stripe checkout session ID")
 ):
     # CRITICAL FIX: Correct FastAPI dependency injection syntax
     """Handle successful subscription - additional safety net for immediate activation."""

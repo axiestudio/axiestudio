@@ -4,7 +4,7 @@ Allows testing and previewing all email templates
 """
 
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Annotated, Optional
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from loguru import logger
@@ -36,8 +36,8 @@ class EmailTemplateResponse(BaseModel):
 @router.post("/test", response_model=EmailTemplateResponse)
 async def test_email_template(
     request: TestEmailRequest,
-    current_user: User = Depends(get_current_active_user),
-    session: DbSession = None
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    session: DbSession
 ):
     """
     Test any email template by sending it to a specified email address.
@@ -244,8 +244,8 @@ async def get_available_templates():
 
 @router.post("/test-login-detection")
 async def test_login_detection(
-    current_user: User = Depends(get_current_active_user),
-    session: DbSession = None
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    session: DbSession
 ):
     """Test the login detection system by simulating a new login."""
     try:
@@ -280,8 +280,8 @@ async def test_login_detection(
 
 @router.post("/test-trial-notifications")
 async def test_trial_notifications(
-    current_user: User = Depends(get_current_active_user),
-    session: DbSession = None
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    session: DbSession
 ):
     """Test the trial notification system."""
     try:
@@ -310,8 +310,8 @@ async def test_trial_notifications(
 
 @router.get("/stats")
 async def get_email_stats(
-    current_user: User = Depends(get_current_active_user),
-    session: DbSession = None
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    session: DbSession
 ):
     """Get email and notification statistics."""
     try:
