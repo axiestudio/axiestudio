@@ -223,7 +223,12 @@ jobs:
     steps:
       - name: Free up disk space
         run: |
-          echo "Cleaning up disk space..."
+          echo "🧹 AGGRESSIVE DISK CLEANUP - Starting cleanup..."
+          echo "Disk space before cleanup:"
+          df -h
+
+          # Remove large system directories
+          echo "🗑️ Removing system directories..."
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
@@ -231,15 +236,39 @@ jobs:
           sudo rm -rf /usr/local/share/boost
           sudo rm -rf /usr/local/lib/node_modules
           sudo rm -rf /opt/microsoft
+          sudo rm -rf /usr/share/swift
+          sudo rm -rf /usr/local/graalvm
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /usr/local/lib/heroku
+
+          # Clean Docker aggressively
+          echo "🐳 Docker cleanup..."
           sudo docker system prune -af --volumes
+          sudo docker builder prune -af
+          sudo docker image prune -af
+          sudo docker container prune -f
+          sudo docker volume prune -f
+          sudo docker network prune -f
+
+          # Clean package managers
+          echo "📦 Package manager cleanup..."
           sudo apt-get autoremove -y
           sudo apt-get autoclean
           sudo apt-get clean
-          # Clear npm cache
           sudo npm cache clean --force 2>/dev/null || true
-          # Clear yarn cache if exists
           sudo yarn cache clean 2>/dev/null || true
-          echo "Disk space after cleanup:"
+          sudo pip cache purge 2>/dev/null || true
+
+          # Clean temp directories
+          echo "🗂️ Temp directory cleanup..."
+          sudo rm -rf /tmp/*
+          sudo rm -rf /var/tmp/*
+          sudo rm -rf ~/.cache
+          sudo rm -rf ~/.npm
+          sudo rm -rf ~/.yarn
+
+          echo "✅ Cleanup complete! Disk space after cleanup:"
           df -h
 
       - name: Check out the code at a specific ref
@@ -276,6 +305,12 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Clear Docker buildx cache
+        run: |
+          echo "🧹 Clearing Docker buildx cache..."
+          docker buildx prune -af
+          docker system df
 
       - name: Build and Push to Docker Hub
         uses: docker/build-push-action@v6

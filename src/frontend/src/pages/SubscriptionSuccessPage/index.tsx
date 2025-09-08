@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Crown, ArrowRight, Loader2 } from "lucide-react";
 import { api } from "@/controllers/API";
-import { getURL } from "@/utils";
+import { getURL } from "@/controllers/API/helpers/constants";
 
 export default function SubscriptionSuccessPage(): JSX.Element {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ export default function SubscriptionSuccessPage(): JSX.Element {
     const verifySubscription = async () => {
       if (sessionId) {
         try {
-          const response = await api.get(`${getURL()}/api/v1/subscriptions/success?session_id=${sessionId}`);
+          const response = await api.get(`${getURL("SUBSCRIPTIONS")}/success?session_id=${sessionId}`);
           if (response.status === 200) {
             setVerificationStatus('success');
             setVerificationMessage('Prenumeration bekräftad! Välkommen till AxieStudio Pro!');
