@@ -691,9 +691,9 @@ async def reactivate_subscription(
 
 @router.get("/success")
 async def subscription_success(
-    session_id: str = Query(..., description="Stripe checkout session ID"),
     current_user: CurrentActiveUser,
-    session: DbSession
+    session: DbSession,
+    session_id: str = Query(..., description="Stripe checkout session ID")
 ):
     """
     Subscription success endpoint - Additional verification layer for Swedish version.

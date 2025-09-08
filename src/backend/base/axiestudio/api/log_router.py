@@ -72,9 +72,9 @@ async def stream_logs(
 
 @log_router.get("/logs")
 async def logs(
-    lines_before: Annotated[int, Query(description="The number of logs before the timestamp or the last log")] = 0,
-    lines_after: Annotated[int, Query(description="The number of logs after the timestamp")] = 0,
-    timestamp: Annotated[int, Query(description="The timestamp to start getting logs from")] = 0,
+    lines_before: int = Query(0, description="The number of logs before the timestamp or the last log"),
+    lines_after: int = Query(0, description="The number of logs after the timestamp"),
+    timestamp: int = Query(0, description="The timestamp to start getting logs from"),
 ):
     global log_buffer  # noqa: PLW0602
     if log_buffer.enabled() is False:

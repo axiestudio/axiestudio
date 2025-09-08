@@ -477,9 +477,9 @@ async def experimental_run_flow(
     flow_id: UUID,
     inputs: list[InputValueRequest] | None = None,
     outputs: list[str] | None = None,
-    tweaks: Annotated[Tweaks | None, Body(embed=True)] = None,
-    stream: Annotated[bool, Body(embed=True)] = False,
-    session_id: Annotated[None | str, Body(embed=True)] = None,
+    tweaks: Tweaks | None = Body(None, embed=True),
+    stream: bool = Body(False, embed=True),
+    session_id: None | str = Body(None, embed=True),
     api_key_user: Annotated[UserRead, Depends(api_key_security)],
 ) -> RunResponse:
     """Executes a specified flow by ID with optional input values, output selection, tweaks, and streaming capability.
