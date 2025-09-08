@@ -131,6 +131,7 @@ async def update_message(
 )
 async def update_session_id(
     old_session_id: str,
+    *,
     new_session_id: str = Query(..., description="The new session ID to update to"),
     session: DbSession,
 ) -> list[MessageResponse]:
