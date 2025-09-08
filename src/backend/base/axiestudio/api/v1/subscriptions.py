@@ -691,7 +691,7 @@ async def reactivate_subscription(
 @router.get("/success")
 async def subscription_success(
     session_id: str = Query(..., description="Stripe checkout session ID"),
-    current_user: Annotated[dict, Depends(get_current_active_user)] = None,
+    current_user: Annotated[dict, Depends(get_current_active_user)],
     session: DbSession = Depends()
 ):
     """
