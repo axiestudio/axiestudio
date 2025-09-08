@@ -66,6 +66,12 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     // FIXED: Include "canceled" as a valid status since canceled subscriptions can still be active until period end
     const hasValidStatus = ["active", "trial", "admin", "canceled"].includes(subscriptionStatus.subscription_status);
 
+    // CRITICAL: Never block active subscribers
+    if (isSubscribed) {
+      // Active subscribers always have access, regardless of trial status
+      return <>{children}</>;
+    }
+
     // Block access for ANY of these conditions:
     const shouldBlock = (
       // Trial expired and no active subscription and no valid canceled subscription
