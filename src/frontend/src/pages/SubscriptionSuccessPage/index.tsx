@@ -5,11 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CheckCircle, Crown, ArrowRight, Loader2 } from "lucide-react";
 import { api } from "@/controllers/API";
 import { getURL } from "@/controllers/API/helpers/constants";
+import { useSubscriptionStore } from "@/stores/subscriptionStore";
 
 export default function SubscriptionSuccessPage(): JSX.Element {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const { refreshStatus, startFastPolling } = useSubscriptionStore();
   const [verificationMessage, setVerificationMessage] = useState('Verifierar din prenumeration...');
 
   useEffect(() => {
@@ -23,6 +25,19 @@ export default function SubscriptionSuccessPage(): JSX.Element {
           if (response.status === 200) {
             setVerificationStatus('success');
             setVerificationMessage('Prenumeration bekräftad! Välkommen till AxieStudio Pro!');
+
+            // CRITICAL FIX: Immediately refresh subscription status to get latest data
+            // This ensures user gets immediate access without waiting for polling
+            try {
+              await refreshStatus();
+              console.log('✅ Subscription status refreshed immediately');
+
+              // Start fast polling to catch any delayed webhook updates
+              startFastPolling();
+              console.log('🚀 Started fast polling for subscription updates');
+            } catch (refreshError) {
+              console.warn('⚠️ Failed to refresh subscription status:', refreshError);
+            }
           } else {
             setVerificationStatus('error');
             setVerificationMessage('Kunde inte verifiera prenumeration. Kontakta support om problemet kvarstår.');
@@ -35,6 +50,18 @@ export default function SubscriptionSuccessPage(): JSX.Element {
       } else {
         setVerificationStatus('success');
         setVerificationMessage('Prenumeration aktiverad!');
+
+        // CRITICAL FIX: Also refresh status when no session ID (webhook success)
+        try {
+          refreshStatus();
+          console.log('✅ Subscription status refreshed for webhook success');
+
+          // Start fast polling to catch any delayed webhook updates
+          startFastPolling();
+          console.log('🚀 Started fast polling for webhook success');
+        } catch (refreshError) {
+          console.warn('⚠️ Failed to refresh subscription status:', refreshError);
+        }
       }
     };
 
