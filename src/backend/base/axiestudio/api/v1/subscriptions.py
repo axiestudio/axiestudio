@@ -12,6 +12,7 @@ from loguru import logger
 
 from axiestudio.api.utils import CurrentActiveUser, DbSession
 from axiestudio.services.auth.utils import get_current_active_user
+from axiestudio.services.deps import get_session
 from axiestudio.services.stripe.service import stripe_service
 from axiestudio.services.database.models.user.crud import update_user
 from axiestudio.services.database.models.user.model import UserUpdate
@@ -691,8 +692,8 @@ async def reactivate_subscription(
 @router.get("/success")
 async def subscription_success(
     session_id: str = Query(..., description="Stripe checkout session ID"),
-    current_user: Annotated[dict, Depends(get_current_active_user)],
-    session: DbSession = Depends()
+    current_user: CurrentActiveUser = Depends(get_current_active_user),
+    session: DbSession = Depends(get_session)
 ):
     """
     Subscription success endpoint - Additional verification layer for Swedish version.
