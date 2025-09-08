@@ -250,13 +250,13 @@ async def get_current_user_for_websocket(
     )
 
 
-async def get_current_active_user(current_user: Annotated[User, Depends(get_current_user)]):
+async def get_current_active_user(current_user: User = Depends(get_current_user)):
     if not current_user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inaktiv användare")
     return current_user
 
 
-async def get_current_active_superuser(current_user: Annotated[User, Depends(get_current_user)]) -> User:
+async def get_current_active_superuser(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inaktiv användare")
     if not current_user.is_superuser:
@@ -674,7 +674,7 @@ async def get_current_user_mcp(
     )
 
 
-async def get_current_active_user_mcp(current_user: Annotated[User, Depends(get_current_user_mcp)]):
+async def get_current_active_user_mcp(current_user: User = Depends(get_current_user_mcp)):
     """MCP-specific active user dependency.
 
     This dependency is temporary and will be removed once MCP is fully integrated.
