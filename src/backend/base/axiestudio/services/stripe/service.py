@@ -351,7 +351,17 @@ class StripeService:
 
                     # CRITICAL: Force refresh to ensure we have the latest data after commit
                     await session.refresh(user)
-                    logger.info(f"🔄 User {user.username} refreshed after commit - final status: {user.subscription_status}")
+
+                    # CRITICAL: Additional database-level refresh to bypass any caching
+                    from sqlalchemy import text
+                    await session.execute(text("SELECT 1"))  # Force session sync
+                    await session.refresh(user)
+
+                    logger.info(f"🔄 User {user.username} DOUBLE-REFRESHED after commit - final status: {user.subscription_status}")
+
+                    # CRITICAL: Flush all pending changes to ensure immediate visibility
+                    await session.flush()
+                    logger.info(f"🚀 Session flushed - user {user.username} subscription changes are now immediately visible")
 
                     # Send welcome email
                     if user.email:
@@ -429,7 +439,17 @@ class StripeService:
 
             # CRITICAL: Force refresh to ensure we have the latest data after commit
             await session.refresh(user)
-            logger.info(f"🔄 User {user.username} refreshed after subscription creation - final status: {user.subscription_status}")
+
+            # CRITICAL: Additional database-level refresh to bypass any caching
+            from sqlalchemy import text
+            await session.execute(text("SELECT 1"))  # Force session sync
+            await session.refresh(user)
+
+            logger.info(f"🔄 User {user.username} DOUBLE-REFRESHED after subscription creation - final status: {user.subscription_status}")
+
+            # CRITICAL: Flush all pending changes to ensure immediate visibility
+            await session.flush()
+            logger.info(f"🚀 Session flushed - user {user.username} subscription creation changes are now immediately visible")
 
             # 📧 Send welcome email for new subscriptions
             if user.email and status == 'active':

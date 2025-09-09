@@ -371,7 +371,13 @@ async def get_subscription_status(current_user: CurrentActiveUser, session: DbSe
     try:
         # CRITICAL: Force refresh user data to get absolute latest subscription status
         await session.refresh(current_user)
-        logger.debug(f"🔄 User {current_user.username} refreshed for status check - subscription_status: {current_user.subscription_status}")
+
+        # CRITICAL: Additional database-level refresh to bypass any caching
+        from sqlalchemy import text
+        await session.execute(text("SELECT 1"))  # Force session sync
+        await session.refresh(current_user)
+
+        logger.debug(f"🔄 DOUBLE-REFRESHED User {current_user.username} for status check - subscription_status: {current_user.subscription_status}")
         # Superusers don't have subscriptions - they have unlimited access
         if current_user.is_superuser:
             return {
