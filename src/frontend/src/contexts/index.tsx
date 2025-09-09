@@ -6,6 +6,7 @@ import { CustomWrapper } from "@/customization/custom-wrapper";
 import { TooltipProvider } from "../components/ui/tooltip";
 import { ApiInterceptor } from "../controllers/API/api";
 import { AuthProvider } from "./authContext";
+import { RealtimeSubscriptionProvider } from "../components/providers/RealtimeSubscriptionProvider";
 
 export default function ContextWrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient();
@@ -16,12 +17,14 @@ export default function ContextWrapper({ children }: { children: ReactNode }) {
         <GradientWrapper>
           <QueryClientProvider client={queryClient}>
             <AuthProvider>
-              <TooltipProvider skipDelayDuration={0}>
-                <ReactFlowProvider>
-                  <ApiInterceptor />
-                  {children}
-                </ReactFlowProvider>
-              </TooltipProvider>
+              <RealtimeSubscriptionProvider>
+                <TooltipProvider skipDelayDuration={0}>
+                  <ReactFlowProvider>
+                    <ApiInterceptor />
+                    {children}
+                  </ReactFlowProvider>
+                </TooltipProvider>
+              </RealtimeSubscriptionProvider>
             </AuthProvider>
           </QueryClientProvider>
         </GradientWrapper>

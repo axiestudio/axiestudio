@@ -4,7 +4,6 @@ import { RouterProvider } from "react-router-dom";
 import { LoadingPage } from "./pages/LoadingPage";
 import router from "./routes";
 import { useDarkStore } from "./stores/darkStore";
-import { RealtimeSubscriptionProvider } from "./components/providers/RealtimeSubscriptionProvider";
 
 export default function App() {
   const dark = useDarkStore((state) => state.dark);
@@ -17,9 +16,7 @@ export default function App() {
   }, [dark]);
   return (
     <Suspense fallback={<LoadingPage />}>
-      <RealtimeSubscriptionProvider>
-        <RouterProvider router={router} />
-      </RealtimeSubscriptionProvider>
+      <RouterProvider router={router} />
     </Suspense>
   );
 }
