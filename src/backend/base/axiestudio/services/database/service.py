@@ -186,13 +186,8 @@ class DatabaseService(Service):
         if self.settings_service.settings.use_noop_database:
             yield NoopSession()
         else:
-            # CRITICAL FIX: Use READ COMMITTED isolation to prevent race conditions
-            async with AsyncSession(
-                self.engine,
-                expire_on_commit=False,
-                # Force READ COMMITTED isolation level to see committed changes immediately
-                bind=self.engine.execution_options(isolation_level="READ_COMMITTED")
-            ) as session:
+            # ENTERPRISE PATTERN: Standard session with proper error handling
+            async with AsyncSession(self.engine, expire_on_commit=False) as session:
                 try:
                     yield session
                 except exc.SQLAlchemyError as db_exc:

@@ -433,23 +433,9 @@ class StripeService:
             logger.info(f"✅ SUBSCRIPTION CREATED - Updated user {user.username} with subscription {subscription_id}, status: {status}")
             logger.info(f"🔍 DEBUG - User {user.username} subscription created with: status={status}, id={subscription_id}, start={subscription_start}, end={subscription_end}")
 
-            # CRITICAL: Commit the transaction immediately
+            # ENTERPRISE PATTERN: Explicit commit with proper logging
             await session.commit()
-            logger.info(f"💾 Database transaction committed for user {user.username} subscription creation")
-
-            # CRITICAL: Force refresh to ensure we have the latest data after commit
-            await session.refresh(user)
-
-            # CRITICAL: Additional database-level refresh to bypass any caching
-            from sqlalchemy import text
-            await session.execute(text("SELECT 1"))  # Force session sync
-            await session.refresh(user)
-
-            logger.info(f"🔄 User {user.username} DOUBLE-REFRESHED after subscription creation - final status: {user.subscription_status}")
-
-            # CRITICAL: Flush all pending changes to ensure immediate visibility
-            await session.flush()
-            logger.info(f"🚀 Session flushed - user {user.username} subscription creation changes are now immediately visible")
+            logger.info(f"✅ User {user.username} subscription created - status: {status}")
 
             # 📧 Send welcome email for new subscriptions
             if user.email and status == 'active':
