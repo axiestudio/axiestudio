@@ -302,7 +302,7 @@ class StripeService:
                 return
 
             # Find user by Stripe customer ID
-
+            from axiestudio.services.database.models.user.crud import get_user_by_stripe_customer_id
             user = await get_user_by_stripe_customer_id(session, customer_id)
             if not user:
                 logger.error(f"User not found for Stripe customer {customer_id}")
@@ -317,13 +317,21 @@ class StripeService:
                     current_period_start = subscription_data.get('current_period_start')
                     current_period_end = subscription_data.get('current_period_end')
 
-                    # Convert timestamps to datetime objects
+                    # Convert timestamps to datetime objects - FIXED: Handle both datetime and timestamp
                     subscription_start = None
                     subscription_end = None
+
                     if current_period_start:
-                        subscription_start = datetime.fromtimestamp(current_period_start, tz=timezone.utc)
+                        if isinstance(current_period_start, datetime):
+                            subscription_start = current_period_start.replace(tzinfo=timezone.utc) if current_period_start.tzinfo is None else current_period_start
+                        else:
+                            subscription_start = datetime.fromtimestamp(current_period_start, tz=timezone.utc)
+
                     if current_period_end:
-                        subscription_end = datetime.fromtimestamp(current_period_end, tz=timezone.utc)
+                        if isinstance(current_period_end, datetime):
+                            subscription_end = current_period_end.replace(tzinfo=timezone.utc) if current_period_end.tzinfo is None else current_period_end
+                        else:
+                            subscription_end = datetime.fromtimestamp(current_period_end, tz=timezone.utc)
 
                     # Update user with subscription details
                     update_data = UserUpdate(
@@ -335,6 +343,11 @@ class StripeService:
 
                     await update_user(session, user.id, update_data)
                     logger.info(f"✅ IMMEDIATE ACTIVATION - User {user.username} subscription activated via checkout.session.completed")
+                    logger.info(f"🔍 DEBUG - User {user.username} updated with: status={update_data.subscription_status}, id={update_data.subscription_id}, start={update_data.subscription_start}, end={update_data.subscription_end}")
+
+                    # CRITICAL: Commit the transaction immediately to ensure data is persisted
+                    await session.commit()
+                    logger.info(f"💾 Database transaction committed for user {user.username}")
 
                     # Send welcome email
                     if user.email:
@@ -403,7 +416,12 @@ class StripeService:
                 subscription_end=subscription_end
             )
             await update_user(session, user.id, update_data)
-            logger.info(f"Updated user {user.id} with subscription {subscription_id}")
+            logger.info(f"✅ SUBSCRIPTION CREATED - Updated user {user.username} with subscription {subscription_id}, status: {status}")
+            logger.info(f"🔍 DEBUG - User {user.username} subscription created with: status={status}, id={subscription_id}, start={subscription_start}, end={subscription_end}")
+
+            # CRITICAL: Commit the transaction immediately
+            await session.commit()
+            logger.info(f"💾 Database transaction committed for user {user.username} subscription creation")
 
             # 📧 Send welcome email for new subscriptions
             if user.email and status == 'active':
