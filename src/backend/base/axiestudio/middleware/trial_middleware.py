@@ -79,10 +79,8 @@ class TrialMiddleware(BaseHTTPMiddleware):
                 logger.warning("Database service not available, skipping trial check")
                 return await call_next(request)
 
-            # CRITICAL FIX: Use session_scope for auto-commit behavior
-            # This ensures we see the latest data from webhook commits
-            from axiestudio.services.deps import session_scope
-            async with session_scope() as session:
+            # ENTERPRISE PATTERN: Read-only session for middleware checks
+            async with db_service.with_session() as session:
                 try:
                     user = await get_current_user_by_jwt(token, session)
                 except Exception as e:
@@ -97,16 +95,10 @@ class TrialMiddleware(BaseHTTPMiddleware):
                 if user.is_superuser:
                     return await call_next(request)
 
-                # CRITICAL FIX: Force refresh user to get absolute latest subscription status
-                # This prevents race conditions between webhook updates and access checks
+                # ENTERPRISE PATTERN: Single efficient refresh with latest data
+                # This ensures we see committed changes from webhooks
                 await session.refresh(user)
-
-                # CRITICAL: Additional database-level refresh to bypass any caching
-                from sqlalchemy import text
-                await session.execute(text("SELECT 1"))  # Force session sync
-                await session.refresh(user)
-
-                logger.debug(f"🔄 DOUBLE-REFRESHED user {user.username} - subscription_status: {user.subscription_status}")
+                logger.debug(f"🔄 User {user.username} subscription status: {user.subscription_status}")
 
                 # CRITICAL: Always allow active subscribers - no further checks needed
                 if user.subscription_status == "active":

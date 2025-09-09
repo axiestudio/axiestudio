@@ -369,15 +369,9 @@ async def debug_database_schema(session: DbSession):
 async def get_subscription_status(current_user: CurrentActiveUser, session: DbSession):
     """Get current user's subscription status with real-time verification."""
     try:
-        # CRITICAL: Force refresh user data to get absolute latest subscription status
+        # ENTERPRISE PATTERN: Single efficient refresh for latest data
         await session.refresh(current_user)
-
-        # CRITICAL: Additional database-level refresh to bypass any caching
-        from sqlalchemy import text
-        await session.execute(text("SELECT 1"))  # Force session sync
-        await session.refresh(current_user)
-
-        logger.debug(f"🔄 DOUBLE-REFRESHED User {current_user.username} for status check - subscription_status: {current_user.subscription_status}")
+        logger.debug(f"🔄 User {current_user.username} subscription status: {current_user.subscription_status}")
         # Superusers don't have subscriptions - they have unlimited access
         if current_user.is_superuser:
             return {
@@ -559,15 +553,23 @@ async def get_realtime_subscription_status(current_user: CurrentActiveUser, sess
 
 @router.post("/webhook")
 async def stripe_webhook(request: Request, session: DbSession):
-    """Handle Stripe webhook events."""
+    """
+    ENTERPRISE-GRADE Stripe webhook handler with proper transaction management.
+
+    Features:
+    - Idempotency with database-backed deduplication
+    - Explicit transaction boundaries
+    - Proper error handling and rollback
+    - Performance optimized
+    """
     try:
         payload = await request.body()
         sig_header = request.headers.get('stripe-signature')
         webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
-        
+
         if not webhook_secret:
             raise HTTPException(status_code=500, detail="Webhook-hemlighet inte konfigurerad")
-        
+
         # Verify webhook signature
         import stripe
         try:
@@ -578,55 +580,66 @@ async def stripe_webhook(request: Request, session: DbSession):
             raise HTTPException(status_code=400, detail="Ogiltig nyttolast")
         except stripe.error.SignatureVerificationError:
             raise HTTPException(status_code=400, detail="Ogiltig signatur")
-        
-        # CRITICAL FIX: Webhook deduplication to prevent race conditions
+
+        # ENTERPRISE PATTERN: Database-backed idempotency (more reliable than cache)
         event_id = event.get('id')
         if event_id:
-            from axiestudio.services.deps import get_cache_service
-            cache_service = get_cache_service()
-            cache_key = f"webhook_processed:{event_id}"
+            # Check if webhook already processed using database
+            from sqlalchemy import text
+            result = await session.execute(
+                text("SELECT id FROM webhook_events WHERE stripe_event_id = :event_id"),
+                {"event_id": event_id}
+            )
+            if result.first():
+                logger.info(f"🔄 Webhook {event_id} already processed - skipping")
+                return {"status": "success", "message": "Already processed"}
 
-            # Check if we've already processed this webhook
-            try:
-                cached_result = await cache_service.get(cache_key) if hasattr(cache_service, 'get') else cache_service.get(cache_key)
-                if cached_result and cached_result != "CACHE_MISS":
-                    logger.info(f"Webhook {event_id} already processed, skipping")
-                    return {"status": "success", "message": "Already processed"}
-            except Exception:
-                # Cache service might be sync, try sync version
-                try:
-                    cached_result = cache_service.get(cache_key)
-                    if cached_result and cached_result != "CACHE_MISS":
-                        logger.info(f"Webhook {event_id} already processed, skipping")
-                        return {"status": "success", "message": "Already processed"}
-                except Exception:
-                    pass  # Continue without cache if it fails
+            # Record webhook processing start
+            await session.execute(
+                text("INSERT INTO webhook_events (stripe_event_id, status, created_at) VALUES (:event_id, 'processing', NOW())"),
+                {"event_id": event_id}
+            )
+            await session.commit()  # Commit immediately to prevent duplicates
 
-        # CRITICAL FIX: Database-level concurrency control per customer
-        customer_id = event.get('data', {}).get('object', {}).get('customer')
-        if customer_id:
-            from axiestudio.utils.concurrency import lock_manager
-            async with lock_manager.lock(f"webhook_customer_{customer_id}"):
-                success = await stripe_service.handle_webhook_event(event, session)
-
-                # Mark webhook as processed
-                if event_id and success:
-                    try:
-                        if hasattr(cache_service, 'set'):
-                            await cache_service.set(cache_key, "processed", expire=86400)  # 24 hours
-                        else:
-                            cache_service.set(cache_key, "processed", expire=86400)
-                    except Exception:
-                        pass  # Continue even if cache fails
-        else:
-            # No customer_id, process without locking
+        # ENTERPRISE PATTERN: Database transaction with proper error handling
+        try:
+            # Process the webhook event
             success = await stripe_service.handle_webhook_event(event, session)
 
-        if success:
-            return {"status": "success"}
-        else:
-            raise HTTPException(status_code=500, detail="Misslyckades med att bearbeta webhook")
-            
+            if success:
+                # Mark webhook as completed
+                if event_id:
+                    await session.execute(
+                        text("UPDATE webhook_events SET status = 'completed', completed_at = NOW() WHERE stripe_event_id = :event_id"),
+                        {"event_id": event_id}
+                    )
+
+                # CRITICAL: Explicit commit for webhook processing
+                await session.commit()
+                logger.info(f"✅ Webhook {event_id} processed successfully")
+                return {"status": "success"}
+            else:
+                # Mark webhook as failed
+                if event_id:
+                    await session.execute(
+                        text("UPDATE webhook_events SET status = 'failed', completed_at = NOW() WHERE stripe_event_id = :event_id"),
+                        {"event_id": event_id}
+                    )
+                    await session.commit()
+                raise HTTPException(status_code=500, detail="Misslyckades med att bearbeta webhook")
+
+        except Exception as processing_error:
+            # Rollback on any error
+            await session.rollback()
+            if event_id:
+                # Mark as failed in separate transaction
+                await session.execute(
+                    text("UPDATE webhook_events SET status = 'failed', error_message = :error, completed_at = NOW() WHERE stripe_event_id = :event_id"),
+                    {"event_id": event_id, "error": str(processing_error)}
+                )
+                await session.commit()
+            raise
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Webhook-fel: {str(e)}")
 
