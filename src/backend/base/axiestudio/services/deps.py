@@ -144,12 +144,25 @@ def get_db_service() -> DatabaseService:
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Retrieves an async session from the database service.
 
+    CRITICAL FIX: Ensures session auto-commits to prevent race conditions
+    between webhook processing and access control middleware.
+
     Yields:
-        AsyncSession: An async session object.
+        AsyncSession: An async session object with auto-commit enabled.
 
     """
-    async with get_db_service().with_session() as session:
-        yield session
+    db_service = get_db_service()
+    async with db_service.with_session() as session:
+        try:
+            yield session
+            # CRITICAL: Auto-commit to ensure data is immediately visible
+            # This prevents race conditions between webhook updates and middleware checks
+            await session.commit()
+            logger.debug("🔄 Session auto-committed to prevent race conditions")
+        except Exception as e:
+            logger.error(f"Session error, rolling back: {e}")
+            await session.rollback()
+            raise
 
 
 @asynccontextmanager
