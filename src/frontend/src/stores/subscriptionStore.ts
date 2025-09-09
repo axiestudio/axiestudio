@@ -140,9 +140,11 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
     set({ isPolling: false });
   },
 
-  refreshStatus: async () => {
+  refreshStatus: async (useRealtime: boolean = false) => {
     try {
-      const response = await fetch('/api/v1/subscriptions/status', {
+      const endpoint = useRealtime ? '/api/v1/subscriptions/status/realtime' : '/api/v1/subscriptions/status';
+
+      const response = await fetch(endpoint, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -152,6 +154,15 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
       if (response.ok) {
         const status = await response.json();
         get().setSubscriptionStatus(status);
+
+        if (useRealtime) {
+          console.log('🔄 Real-time subscription status updated:', {
+            status: status.subscription_status,
+            realtime_check: status.realtime_check,
+            stripe_verification: status.stripe_verification,
+            timestamp: status.check_timestamp
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to refresh subscription status:', error);
@@ -173,7 +184,8 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
       pollCount++;
 
       try {
-        const response = await fetch('/api/v1/subscriptions/status', {
+        // Use real-time endpoint for fast polling to get most accurate data
+        const response = await fetch('/api/v1/subscriptions/status/realtime', {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
@@ -183,6 +195,12 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
         if (response.ok) {
           const status = await response.json();
           get().setSubscriptionStatus(status);
+
+          console.log(`🚀 Fast poll ${pollCount}/${maxPolls}:`, {
+            status: status.subscription_status,
+            realtime: status.realtime_check,
+            stripe_verified: status.stripe_verification
+          });
 
           // Stop fast polling if subscription becomes active
           if (status.subscription_status === 'active') {
@@ -196,6 +214,23 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
         }
       } catch (error) {
         console.error('Failed to fast poll subscription status:', error);
+
+        // Fallback to standard endpoint if real-time fails
+        try {
+          const fallbackResponse = await fetch('/api/v1/subscriptions/status', {
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (fallbackResponse.ok) {
+            const status = await fallbackResponse.json();
+            get().setSubscriptionStatus(status);
+          }
+        } catch (fallbackError) {
+          console.error('Fallback subscription status check also failed:', fallbackError);
+        }
       }
 
       // Stop fast polling after max attempts

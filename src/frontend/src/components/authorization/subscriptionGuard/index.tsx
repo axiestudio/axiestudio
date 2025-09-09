@@ -4,6 +4,7 @@ import { LoadingPage } from "@/pages/LoadingPage";
 import { useGetSubscriptionStatus } from "@/controllers/API/queries/subscriptions";
 import useAuthStore from "@/stores/authStore";
 import useAlertStore from "@/stores/alertStore";
+import { useRealtimeSubscriptionContext } from "@/components/providers/RealtimeSubscriptionProvider";
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
@@ -14,8 +15,9 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const setErrorData = useAlertStore((state) => state.setErrorData);
-  
-  const { data: subscriptionStatus, isLoading, error } = useGetSubscriptionStatus();
+
+  const { data: subscriptionStatus, isLoading, error, refetch } = useGetSubscriptionStatus();
+  const { forceRefresh } = useRealtimeSubscriptionContext();
 
   useEffect(() => {
     // If not authenticated, let auth guard handle it
@@ -30,11 +32,17 @@ export const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
       return;
     }
 
+    // CRITICAL: Force refresh subscription status when guard is mounted
+    // This ensures we always have the latest subscription data
+    if (isAuthenticated && !isAdmin) {
+      forceRefresh('subscription guard mounted').catch(console.error);
+    }
+
     // If we have subscription data or error, stop checking
     if (subscriptionStatus || error) {
       setIsChecking(false);
     }
-  }, [isAuthenticated, isAdmin, subscriptionStatus, error]);
+  }, [isAuthenticated, isAdmin, subscriptionStatus, error, forceRefresh]);
 
   // Not authenticated - let auth guard handle
   if (!isAuthenticated) {

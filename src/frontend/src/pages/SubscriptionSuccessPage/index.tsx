@@ -6,12 +6,14 @@ import { CheckCircle, Crown, ArrowRight, Loader2 } from "lucide-react";
 import { api } from "@/controllers/API";
 import { getURL } from "@/controllers/API/helpers/constants";
 import { useSubscriptionStore } from "@/stores/subscriptionStore";
+import { useRealtimeSubscriptionContext, triggerSubscriptionRefresh } from "@/components/providers/RealtimeSubscriptionProvider";
 
 export default function SubscriptionSuccessPage(): JSX.Element {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const { refreshStatus, startFastPolling } = useSubscriptionStore();
+  const { forceRefresh } = useRealtimeSubscriptionContext();
   const [verificationMessage, setVerificationMessage] = useState('Verifierar din prenumeration...');
 
   useEffect(() => {
@@ -26,15 +28,26 @@ export default function SubscriptionSuccessPage(): JSX.Element {
             setVerificationStatus('success');
             setVerificationMessage('Prenumeration bekräftad! Välkommen till AxieStudio Pro!');
 
-            // CRITICAL FIX: Immediately refresh subscription status to get latest data
-            // This ensures user gets immediate access without waiting for polling
+            // CRITICAL FIX: Multi-layer subscription refresh for maximum reliability
             try {
-              await refreshStatus();
-              console.log('✅ Subscription status refreshed immediately');
+              console.log('🚀 Starting comprehensive subscription verification...');
 
-              // Start fast polling to catch any delayed webhook updates
+              // 1. Immediate store refresh
+              await refreshStatus();
+              console.log('✅ Store subscription status refreshed');
+
+              // 2. Real-time provider refresh
+              await forceRefresh('payment success verification');
+              console.log('✅ Real-time subscription status refreshed');
+
+              // 3. Trigger cross-tab synchronization
+              triggerSubscriptionRefresh('payment success');
+              console.log('✅ Cross-tab subscription sync triggered');
+
+              // 4. Start fast polling for webhook updates
               startFastPolling();
-              console.log('🚀 Started fast polling for subscription updates');
+              console.log('🚀 Fast polling started for webhook updates');
+
             } catch (refreshError) {
               console.warn('⚠️ Failed to refresh subscription status:', refreshError);
             }
