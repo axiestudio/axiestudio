@@ -323,7 +323,16 @@ class StripeService:
                 )
 
                 await update_user(session, user.id, update_data)
-                logger.info(f"✅ IMMEDIATE ACTIVATION: User {user.id} subscription activated via checkout.session.completed")
+                logger.info(f"✅ IMMEDIATE ACTIVATION: User {user.username} subscription activated via checkout.session.completed")
+                logger.info(f"🔍 DEBUG - User {user.username} updated with: status={update_data.subscription_status}, id={update_data.subscription_id}")
+
+                # CRITICAL: Commit the transaction immediately to ensure data is persisted
+                await session.commit()
+                logger.info(f"💾 Database transaction committed for user {user.username}")
+
+                # CRITICAL: Force refresh to ensure we have the latest data after commit
+                await session.refresh(user)
+                logger.info(f"🔄 User {user.username} refreshed after commit - final status: {user.subscription_status}")
 
                 # Send Swedish welcome email
                 if user.email:
@@ -381,7 +390,16 @@ class StripeService:
                 subscription_end=subscription_end
             )
             await update_user(session, user.id, update_data)
-            logger.info(f"Updated user {user.id} with subscription {subscription_id}")
+            logger.info(f"✅ SUBSCRIPTION CREATED - Updated user {user.username} with subscription {subscription_id}, status: {status}")
+            logger.info(f"🔍 DEBUG - User {user.username} subscription created with: status={status}, id={subscription_id}, start={subscription_start}, end={subscription_end}")
+
+            # CRITICAL: Commit the transaction immediately
+            await session.commit()
+            logger.info(f"💾 Database transaction committed for user {user.username} subscription creation")
+
+            # CRITICAL: Force refresh to ensure we have the latest data after commit
+            await session.refresh(user)
+            logger.info(f"🔄 User {user.username} refreshed after subscription creation - final status: {user.subscription_status}")
 
             # Send subscription welcome email (Swedish)
             if status == 'active' and user.email:

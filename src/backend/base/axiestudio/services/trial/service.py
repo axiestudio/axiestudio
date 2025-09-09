@@ -38,6 +38,7 @@ class TrialService:
 
         # If user has active subscription, they're good
         if user.subscription_status == "active":
+            logger.info(f"✅ User {user.username} has active subscription - granting access")
             return {
                 "status": "subscribed",
                 "trial_expired": False,
@@ -130,7 +131,11 @@ class TrialService:
             # Canceled subscription that has expired
             (user.subscription_status == "canceled" and user.subscription_end and now >= subscription_end)
         )
-        
+
+        # CRITICAL DEBUG: Log why access is being blocked
+        if should_cleanup:
+            logger.warning(f"🚫 BLOCKING ACCESS for user {user.username}: subscription_status={user.subscription_status}, subscription_id={user.subscription_id}, trial_expired={trial_expired}, has_active_subscription={has_active_subscription}, has_valid_trial={has_valid_trial}, has_valid_canceled_subscription={has_valid_canceled_subscription}")
+
         return {
             "status": "trial" if not trial_expired else "expired",
             "trial_expired": trial_expired,
