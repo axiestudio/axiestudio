@@ -94,8 +94,14 @@ class TrialMiddleware(BaseHTTPMiddleware):
                 if user.is_superuser:
                     return await call_next(request)
 
+                # CRITICAL FIX: Force refresh user to get absolute latest subscription status
+                # This prevents race conditions between webhook updates and access checks
+                await session.refresh(user)
+                logger.debug(f"🔄 Refreshed user {user.username} - subscription_status: {user.subscription_status}")
+
                 # CRITICAL: Always allow active subscribers - no further checks needed
                 if user.subscription_status == "active":
+                    logger.info(f"✅ User {user.username} has active subscription - allowing access")
                     return await call_next(request)
 
                 # Check trial status for non-active users

@@ -349,6 +349,10 @@ class StripeService:
                     await session.commit()
                     logger.info(f"💾 Database transaction committed for user {user.username}")
 
+                    # CRITICAL: Force refresh to ensure we have the latest data after commit
+                    await session.refresh(user)
+                    logger.info(f"🔄 User {user.username} refreshed after commit - final status: {user.subscription_status}")
+
                     # Send welcome email
                     if user.email:
                         try:
@@ -422,6 +426,10 @@ class StripeService:
             # CRITICAL: Commit the transaction immediately
             await session.commit()
             logger.info(f"💾 Database transaction committed for user {user.username} subscription creation")
+
+            # CRITICAL: Force refresh to ensure we have the latest data after commit
+            await session.refresh(user)
+            logger.info(f"🔄 User {user.username} refreshed after subscription creation - final status: {user.subscription_status}")
 
             # 📧 Send welcome email for new subscriptions
             if user.email and status == 'active':
