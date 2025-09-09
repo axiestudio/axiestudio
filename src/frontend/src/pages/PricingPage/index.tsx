@@ -216,13 +216,25 @@ export default function PricingPage(): JSX.Element {
                   {isLoading ? "Bearbetar..." : "Återaktivera Prenumeration"}
                 </Button>
               ) : (
-                <Button
-                  onClick={handleSubscribe}
-                  disabled={isLoading}
-                  className="w-full bg-blue-500 hover:bg-blue-600"
-                >
-                  {isLoading ? "Bearbetar..." : "Starta Prenumeration"}
-                </Button>
+                <div className="w-full space-y-3">
+                  <Button
+                    onClick={handleSubscribe}
+                    disabled={isLoading}
+                    className="w-full bg-blue-500 hover:bg-blue-600"
+                  >
+                    {isLoading ? "Bearbetar..." : isOnTrial ? "Uppgradera Nu" : "Starta Prenumeration"}
+                  </Button>
+                  {isOnTrial && (
+                    <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded text-xs">
+                      <p className="text-green-700 dark:text-green-300 font-medium">
+                        🚀 Omedelbar uppgradering - inga extra provdagar
+                      </p>
+                      <p className="text-green-600 dark:text-green-400 mt-1">
+                        Övergå direkt till Pro-prenumeration
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
             </CardFooter>
           </Card>

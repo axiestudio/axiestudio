@@ -195,7 +195,7 @@ export default function SubscriptionManagement(): JSX.Element {
           {getStatusBadge(subscriptionStatus.subscription_status)}
         </div>
 
-        {/* Trial Information */}
+        {/* Trial Information - ENTERPRISE UX (SVENSKA) */}
         {isOnTrial && (
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <div className="flex items-start gap-3">
@@ -211,9 +211,19 @@ export default function SubscriptionManagement(): JSX.Element {
                   }
                 </p>
                 {!trialExpired && (
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                    Provperiod slutar: {formatDate(subscriptionStatus.trial_end)}
-                  </p>
+                  <>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                      Provperiod slutar: {formatDate(subscriptionStatus.trial_end)}
+                    </p>
+                    <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                      <p className="text-xs text-green-700 dark:text-green-300 font-medium">
+                        💡 Uppgradera nu och få omedelbar tillgång till Pro-funktioner!
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        Du kommer att övergå direkt till betald prenumeration utan extra provdagar.
+                      </p>
+                    </div>
+                  </>
                 )}
               </div>
             </div>

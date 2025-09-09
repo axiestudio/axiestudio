@@ -297,9 +297,9 @@ class StripeService:
             return False
 
     async def _handle_checkout_completed(self, checkout_data: dict, session):
-        """Handle checkout.session.completed event - CRITICAL for immediate subscription activation."""
+        """Handle checkout.session.completed event - ENTERPRISE TRIAL-TO-PAID UPGRADE (SVENSKA)."""
         try:
-            logger.info("🎉 Checkout completed event received")
+            logger.info("🚀 ENTERPRISE CHECKOUT (SVENSKA): Prov-till-betald uppgradering slutförd")
 
             customer_id = checkout_data.get('customer')
             subscription_id = checkout_data.get('subscription')
