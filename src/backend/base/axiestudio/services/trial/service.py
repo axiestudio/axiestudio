@@ -52,8 +52,9 @@ class TrialService:
             if subscription_end.tzinfo is None:
                 subscription_end = subscription_end.replace(tzinfo=timezone.utc)
 
-            # If subscription hasn't ended yet, user still has access
-            if now < subscription_end:
+            # CRITICAL FIX: Only allow canceled access if user has a subscription_id
+            # This prevents access after subscription has actually been deleted
+            if user.subscription_id and now < subscription_end:
                 remaining_seconds = (subscription_end - now).total_seconds()
                 days_left = max(0, int(remaining_seconds / 86400))
                 return {
@@ -61,6 +62,16 @@ class TrialService:
                     "trial_expired": False,
                     "days_left": days_left,
                     "should_cleanup": False,
+                    "subscription_end": subscription_end
+                }
+            elif not user.subscription_id:
+                # Subscription was actually deleted - no more access
+                logger.info(f"User {user.username} has canceled status but no subscription_id - subscription was deleted")
+                return {
+                    "status": "subscription_ended",
+                    "trial_expired": True,
+                    "days_left": 0,
+                    "should_cleanup": True,
                     "subscription_end": subscription_end
                 }
         

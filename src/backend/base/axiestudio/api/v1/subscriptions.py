@@ -493,9 +493,49 @@ async def stripe_webhook(request: Request, session: DbSession):
         except stripe.error.SignatureVerificationError:
             raise HTTPException(status_code=400, detail="Ogiltig signatur")
         
-        # Handle the event
-        success = await stripe_service.handle_webhook_event(event, session)
-        
+        # CRITICAL FIX: Webhook deduplication to prevent race conditions
+        event_id = event.get('id')
+        if event_id:
+            from axiestudio.services.deps import get_cache_service
+            cache_service = get_cache_service()
+            cache_key = f"webhook_processed:{event_id}"
+
+            # Check if we've already processed this webhook
+            try:
+                cached_result = await cache_service.get(cache_key) if hasattr(cache_service, 'get') else cache_service.get(cache_key)
+                if cached_result and cached_result != "CACHE_MISS":
+                    logger.info(f"Webhook {event_id} already processed, skipping")
+                    return {"status": "success", "message": "Already processed"}
+            except Exception:
+                # Cache service might be sync, try sync version
+                try:
+                    cached_result = cache_service.get(cache_key)
+                    if cached_result and cached_result != "CACHE_MISS":
+                        logger.info(f"Webhook {event_id} already processed, skipping")
+                        return {"status": "success", "message": "Already processed"}
+                except Exception:
+                    pass  # Continue without cache if it fails
+
+        # CRITICAL FIX: Database-level concurrency control per customer
+        customer_id = event.get('data', {}).get('object', {}).get('customer')
+        if customer_id:
+            from axiestudio.utils.concurrency import lock_manager
+            async with lock_manager.lock(f"webhook_customer_{customer_id}"):
+                success = await stripe_service.handle_webhook_event(event, session)
+
+                # Mark webhook as processed
+                if event_id and success:
+                    try:
+                        if hasattr(cache_service, 'set'):
+                            await cache_service.set(cache_key, "processed", expire=86400)  # 24 hours
+                        else:
+                            cache_service.set(cache_key, "processed", expire=86400)
+                    except Exception:
+                        pass  # Continue even if cache fails
+        else:
+            # No customer_id, process without locking
+            success = await stripe_service.handle_webhook_event(event, session)
+
         if success:
             return {"status": "success"}
         else:
