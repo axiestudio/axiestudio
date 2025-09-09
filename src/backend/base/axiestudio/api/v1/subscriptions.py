@@ -122,22 +122,22 @@ async def create_checkout_session(
         elif trial_end.tzinfo is None:
             trial_end = trial_end.replace(tzinfo=timezone.utc)
 
-        # FIXED: Proper trial logic for expired vs active users
+        # ENTERPRISE FIX: Trial-to-Paid Immediate Upgrade Logic
+        # When users subscribe during trial, they should get immediate paid access
+        # without additional trial days (prevents double-billing for trial period)
         remaining_trial_days = 0
-        if trial_end and now < trial_end:
-            # User still has active trial - give them remaining days
-            remaining_seconds = (trial_end - now).total_seconds()
-            remaining_trial_days = max(1, int(remaining_seconds / 86400))  # Minimum 1 day for Stripe
-        else:
-            # User's trial is expired or they have no trial - NO TRIAL, direct payment
-            remaining_trial_days = 0
 
-        # Create checkout session with remaining trial days
+        # CRITICAL: Always set trial_days=0 for immediate upgrade
+        # This ensures users transition directly from trial to paid subscription
+        # without getting additional free days they've already used
+        logger.info(f"🚀 ENTERPRISE UPGRADE: User {current_user.username} upgrading from trial to paid - NO additional trial days")
+
+        # Create checkout session with ZERO trial days for immediate upgrade
         checkout_url = await stripe_service.create_checkout_session(
             customer_id=customer_id,
             success_url=request.success_url,
             cancel_url=request.cancel_url,
-            trial_days=remaining_trial_days
+            trial_days=0  # ENTERPRISE PATTERN: Immediate paid subscription
         )
         
         return CheckoutResponse(checkout_url=checkout_url)

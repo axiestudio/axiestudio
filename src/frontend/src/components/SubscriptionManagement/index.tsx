@@ -195,7 +195,7 @@ export default function SubscriptionManagement(): JSX.Element {
           {getStatusBadge(subscriptionStatus.subscription_status)}
         </div>
 
-        {/* Trial Information */}
+        {/* Trial Information - ENTERPRISE UX */}
         {isOnTrial && (
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <div className="flex items-start gap-3">
@@ -205,15 +205,25 @@ export default function SubscriptionManagement(): JSX.Element {
                   Free Trial Active
                 </h4>
                 <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  {trialExpired 
+                  {trialExpired
                     ? "Your trial has expired. Subscribe to continue using Axie Studio."
                     : `You have ${subscriptionStatus.trial_days_left} days left in your free trial.`
                   }
                 </p>
                 {!trialExpired && (
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                    Trial ends: {formatDate(subscriptionStatus.trial_end)}
-                  </p>
+                  <>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                      Trial ends: {formatDate(subscriptionStatus.trial_end)}
+                    </p>
+                    <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                      <p className="text-xs text-green-700 dark:text-green-300 font-medium">
+                        💡 Upgrade now for immediate Pro access!
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        You'll transition directly to paid subscription without extra trial days.
+                      </p>
+                    </div>
+                  </>
                 )}
               </div>
             </div>

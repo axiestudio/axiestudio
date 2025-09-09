@@ -216,13 +216,25 @@ export default function PricingPage(): JSX.Element {
                   {isLoading ? "Processing..." : "Reactivate Subscription"}
                 </Button>
               ) : (
-                <Button
-                  onClick={handleSubscribe}
-                  disabled={isLoading}
-                  className="w-full bg-blue-500 hover:bg-blue-600"
-                >
-                  {isLoading ? "Processing..." : "Start Subscription"}
-                </Button>
+                <div className="w-full space-y-3">
+                  <Button
+                    onClick={handleSubscribe}
+                    disabled={isLoading}
+                    className="w-full bg-blue-500 hover:bg-blue-600"
+                  >
+                    {isLoading ? "Processing..." : isOnTrial ? "Upgrade Now" : "Start Subscription"}
+                  </Button>
+                  {isOnTrial && (
+                    <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded text-xs">
+                      <p className="text-green-700 dark:text-green-300 font-medium">
+                        🚀 Immediate upgrade - no additional trial days
+                      </p>
+                      <p className="text-green-600 dark:text-green-400 mt-1">
+                        Transition directly to Pro subscription
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
             </CardFooter>
           </Card>

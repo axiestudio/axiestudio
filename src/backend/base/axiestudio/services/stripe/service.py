@@ -290,12 +290,12 @@ class StripeService:
             return False
 
     async def _handle_checkout_completed(self, checkout_data: dict, session):
-        """Handle checkout session completed event - CRITICAL for immediate subscription activation."""
+        """Handle checkout session completed event - ENTERPRISE TRIAL-TO-PAID UPGRADE."""
         try:
             customer_id = checkout_data.get('customer')
             subscription_id = checkout_data.get('subscription')
 
-            logger.info(f"🎉 Checkout completed - Customer: {customer_id}, Subscription: {subscription_id}")
+            logger.info(f"🚀 ENTERPRISE CHECKOUT: Trial-to-paid upgrade completed - Customer: {customer_id}, Subscription: {subscription_id}")
 
             if not customer_id:
                 logger.error("No customer ID in checkout session")
@@ -333,16 +333,16 @@ class StripeService:
                         else:
                             subscription_end = datetime.fromtimestamp(current_period_end, tz=timezone.utc)
 
-                    # Update user with subscription details
+                    # ENTERPRISE PATTERN: Immediate trial-to-paid transition
                     update_data = UserUpdate(
-                        subscription_status='active',  # Force active status on successful checkout
+                        subscription_status='active',  # ENTERPRISE: Immediate paid status
                         subscription_id=subscription_id,
                         subscription_start=subscription_start,
                         subscription_end=subscription_end
                     )
 
                     await update_user(session, user.id, update_data)
-                    logger.info(f"✅ IMMEDIATE ACTIVATION - User {user.username} subscription activated via checkout.session.completed")
+                    logger.info(f"🚀 ENTERPRISE UPGRADE: User {user.username} transitioned from trial to active subscription - NO additional trial days")
                     logger.info(f"🔍 DEBUG - User {user.username} updated with: status={update_data.subscription_status}, id={update_data.subscription_id}, start={update_data.subscription_start}, end={update_data.subscription_end}")
 
                     # CRITICAL: Commit the transaction immediately to ensure data is persisted
