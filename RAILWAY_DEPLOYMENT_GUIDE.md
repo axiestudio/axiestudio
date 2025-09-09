@@ -32,6 +32,8 @@ This guide will help you deploy Axie Studio with Stripe subscription functionali
    - `customer.subscription.created`
    - `customer.subscription.updated`
    - `customer.subscription.deleted`
+   - `invoice.finalized` ✅ **FIXED - Handles invoice finalization**
+   - `invoice.paid` ✅ **FIXED - Handles invoice payment confirmation**
    - `invoice.payment_succeeded`
    - `invoice.payment_failed`
 5. Copy the **Webhook Secret** (starts with `whsec_`)

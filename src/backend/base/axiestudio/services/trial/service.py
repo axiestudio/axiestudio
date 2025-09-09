@@ -45,6 +45,28 @@ class TrialService:
                 "should_cleanup": False
             }
 
+        # CRITICAL FIX: Graceful degradation during Stripe outages
+        # If user has subscription_id but we can't verify with Stripe, give benefit of doubt
+        if user.subscription_id and user.subscription_status in ["active", "canceled"]:
+            # Check if subscription_end is in the future (user paid for access)
+            if user.subscription_end:
+                subscription_end = user.subscription_end
+                if subscription_end.tzinfo is None:
+                    subscription_end = subscription_end.replace(tzinfo=timezone.utc)
+
+                if now < subscription_end:
+                    # User has paid subscription that hasn't expired - allow access even if Stripe is down
+                    remaining_seconds = (subscription_end - now).total_seconds()
+                    days_left = max(0, int(remaining_seconds / 86400))
+                    return {
+                        "status": "subscription_grace_period",
+                        "trial_expired": False,
+                        "days_left": days_left,
+                        "should_cleanup": False,
+                        "subscription_end": subscription_end,
+                        "grace_period": True  # Indicates this is fallback during service issues
+                    }
+
         # FIXED: Handle canceled subscriptions that are still valid until subscription_end
         if user.subscription_status == "canceled" and user.subscription_end:
             # Ensure timezone consistency
@@ -52,8 +74,9 @@ class TrialService:
             if subscription_end.tzinfo is None:
                 subscription_end = subscription_end.replace(tzinfo=timezone.utc)
 
-            # If subscription hasn't ended yet, user still has access
-            if now < subscription_end:
+            # CRITICAL FIX: Only allow canceled access if user has a subscription_id
+            # This prevents access after subscription has actually been deleted
+            if user.subscription_id and now < subscription_end:
                 remaining_seconds = (subscription_end - now).total_seconds()
                 days_left = max(0, int(remaining_seconds / 86400))
                 return {
@@ -61,6 +84,16 @@ class TrialService:
                     "trial_expired": False,
                     "days_left": days_left,
                     "should_cleanup": False,
+                    "subscription_end": subscription_end
+                }
+            elif not user.subscription_id:
+                # Subscription was actually deleted - no more access
+                logger.info(f"User {user.username} has canceled status but no subscription_id - subscription was deleted")
+                return {
+                    "status": "subscription_ended",
+                    "trial_expired": True,
+                    "days_left": 0,
+                    "should_cleanup": True,
                     "subscription_end": subscription_end
                 }
         

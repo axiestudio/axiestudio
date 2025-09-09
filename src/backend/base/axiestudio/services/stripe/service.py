@@ -277,6 +277,10 @@ class StripeService:
                 await self._handle_payment_succeeded(data, session)
             elif event_type == 'invoice.payment_failed':
                 await self._handle_payment_failed(data, session)
+            elif event_type == 'invoice.finalized':
+                await self._handle_invoice_finalized(data, session)
+            elif event_type == 'invoice.paid':
+                await self._handle_invoice_paid(data, session)
             else:
                 logger.info(f"⚠️ Unhandled webhook event type: {event_type}")
 
@@ -423,29 +427,91 @@ class StripeService:
                     logger.error(f"Failed to send subscription welcome email: {e}")
     
     async def _handle_subscription_updated(self, subscription_data: dict, session):
-        """Handle subscription updated event."""
-        await self._handle_subscription_created(subscription_data, session)  # Same logic
-    
-    async def _handle_subscription_deleted(self, subscription_data: dict, session):
-        """Handle subscription deleted event - this happens when subscription actually ends."""
+        """Handle subscription updated event - CRITICAL: Handle reactivation scenarios properly."""
         customer_id = subscription_data.get('customer')
+        subscription_id = subscription_data.get('id')
+        status = subscription_data.get('status')
+        cancel_at_period_end = subscription_data.get('cancel_at_period_end', False)
 
         from axiestudio.services.database.models.user.crud import get_user_by_stripe_customer_id
         user = await get_user_by_stripe_customer_id(session, customer_id)
 
         if user:
+            # Handle current_period_start and current_period_end
+            period_start_value = subscription_data['current_period_start']
+            if isinstance(period_start_value, datetime):
+                subscription_start = period_start_value.replace(tzinfo=timezone.utc) if period_start_value.tzinfo is None else period_start_value
+            else:
+                subscription_start = datetime.fromtimestamp(period_start_value, tz=timezone.utc)
+
+            period_end_value = subscription_data['current_period_end']
+            if isinstance(period_end_value, datetime):
+                subscription_end = period_end_value.replace(tzinfo=timezone.utc) if period_end_value.tzinfo is None else period_end_value
+            else:
+                subscription_end = datetime.fromtimestamp(period_end_value, tz=timezone.utc)
+
+            # CRITICAL FIX: Handle reactivation vs cancellation scenarios
+            if cancel_at_period_end:
+                # User canceled - subscription will end at period end
+                new_status = 'canceled'
+                # Keep the subscription_end as the actual end date
+                logger.info(f"🚫 Subscription {subscription_id} canceled, will end at {subscription_end}")
+            else:
+                # Subscription is active (could be reactivation or normal update)
+                if user.subscription_status == 'canceled' and status == 'active':
+                    # This is a reactivation - subscription continues beyond current period
+                    new_status = 'active'
+                    logger.info(f"🔄 Subscription {subscription_id} reactivated for user {user.username}")
+                else:
+                    # Normal subscription update
+                    new_status = status
+                    logger.info(f"📝 Subscription {subscription_id} updated to status: {status}")
+
+            update_data = UserUpdate(
+                subscription_id=subscription_id,
+                subscription_status=new_status,
+                subscription_start=subscription_start,
+                subscription_end=subscription_end
+            )
+            await update_user(session, user.id, update_data)
+            logger.info(f"Updated user {user.id} subscription via webhook - Status: {new_status}, End: {subscription_end}")
+    
+    async def _handle_subscription_deleted(self, subscription_data: dict, session):
+        """Handle subscription deleted event - this happens when subscription actually ends."""
+        customer_id = subscription_data.get('customer')
+        deleted_subscription_id = subscription_data.get('id')
+
+        from axiestudio.services.database.models.user.crud import get_user_by_stripe_customer_id
+        user = await get_user_by_stripe_customer_id(session, customer_id)
+
+        if user:
+            # CRITICAL FIX: Only clear subscription_id if it matches the deleted subscription
+            # This prevents race conditions when user creates new subscription immediately
+            should_clear_subscription_id = (
+                user.subscription_id == deleted_subscription_id or
+                user.subscription_id is None
+            )
+
             # Get the subscription end date from the webhook data
             subscription_end = None
             if subscription_data.get('current_period_end'):
                 subscription_end = datetime.fromtimestamp(subscription_data['current_period_end'], tz=timezone.utc)
 
-            update_data = UserUpdate(
-                subscription_status='canceled',
-                subscription_id=None,  # Now it's safe to clear this since subscription has actually ended
-                subscription_end=subscription_end  # Set the actual end date
-            )
+            if should_clear_subscription_id:
+                update_data = UserUpdate(
+                    subscription_status='canceled',
+                    subscription_id=None,  # Safe to clear since this subscription actually ended
+                    subscription_end=subscription_end
+                )
+                logger.info(f"🗑️ Subscription {deleted_subscription_id} ended for user {user.username} - cleared subscription_id")
+            else:
+                # User has a different subscription now - don't clear subscription_id
+                logger.info(f"🗑️ Old subscription {deleted_subscription_id} ended for user {user.username}, but user has new subscription {user.subscription_id}")
+                # Don't update anything - user has moved to a new subscription
+                return
+
             await update_user(session, user.id, update_data)
-            logger.info(f"Subscription ended for user {user.id} at {subscription_end}")
+            logger.info(f"Subscription {deleted_subscription_id} ended for user {user.id} at {subscription_end}")
     
     async def _handle_payment_succeeded(self, invoice_data: dict, session):
         """Handle successful payment."""
@@ -458,14 +524,94 @@ class StripeService:
     async def _handle_payment_failed(self, invoice_data: dict, session):
         """Handle failed payment."""
         customer_id = invoice_data.get('customer')
-        
+
         from axiestudio.services.database.models.user.crud import get_user_by_stripe_customer_id
         user = await get_user_by_stripe_customer_id(session, customer_id)
-        
+
         if user:
             update_data = UserUpdate(subscription_status='past_due')
             await update_user(session, user.id, update_data)
             logger.info(f"Marked user {user.id} as past due")
+
+    async def _handle_invoice_finalized(self, invoice_data: dict, session):
+        """Handle invoice finalized event."""
+        try:
+            customer_id = invoice_data.get('customer')
+            subscription_id = invoice_data.get('subscription')
+            invoice_id = invoice_data.get('id')
+
+            logger.info(f"📄 Invoice finalized - Invoice: {invoice_id}, Customer: {customer_id}, Subscription: {subscription_id}")
+
+            if not customer_id:
+                logger.warning("No customer ID in invoice finalized event")
+                return
+
+            # Find user by Stripe customer ID
+            user = await get_user_by_stripe_customer_id(session, customer_id)
+            if not user:
+                logger.warning(f"User not found for Stripe customer {customer_id} in invoice.finalized")
+                return
+
+            # If there's a subscription, ensure user subscription data is up to date
+            if subscription_id:
+                subscription_data = await self.get_subscription(subscription_id)
+                if subscription_data:
+                    # Update user subscription status if needed
+                    current_status = subscription_data.get('status')
+                    if current_status in ['active', 'trialing']:
+                        update_data = UserUpdate(
+                            subscription_status=current_status,
+                            subscription_id=subscription_id
+                        )
+                        await update_user(session, user.id, update_data)
+                        logger.info(f"✅ Updated user {user.username} subscription status to {current_status} via invoice.finalized")
+
+        except Exception as e:
+            logger.error(f"Error handling invoice finalized: {e}")
+
+    async def _handle_invoice_paid(self, invoice_data: dict, session):
+        """Handle invoice paid event."""
+        try:
+            customer_id = invoice_data.get('customer')
+            subscription_id = invoice_data.get('subscription')
+            invoice_id = invoice_data.get('id')
+            amount_paid = invoice_data.get('amount_paid', 0) / 100  # Convert from cents to dollars
+
+            logger.info(f"💰 Invoice paid - Invoice: {invoice_id}, Customer: {customer_id}, Subscription: {subscription_id}, Amount: ${amount_paid}")
+
+            if not customer_id:
+                logger.warning("No customer ID in invoice paid event")
+                return
+
+            # Find user by Stripe customer ID
+            user = await get_user_by_stripe_customer_id(session, customer_id)
+            if not user:
+                logger.warning(f"User not found for Stripe customer {customer_id} in invoice.paid")
+                return
+
+            # If there's a subscription, ensure user is activated and subscription data is current
+            if subscription_id:
+                subscription_data = await self.get_subscription(subscription_id)
+                if subscription_data:
+                    status = subscription_data.get('status')
+                    current_period_start = subscription_data.get('current_period_start')
+                    current_period_end = subscription_data.get('current_period_end')
+
+                    # Update user with latest subscription information
+                    update_data = UserUpdate(
+                        subscription_status='active',  # Invoice paid means subscription is active
+                        subscription_id=subscription_id,
+                        subscription_start=current_period_start,
+                        subscription_end=current_period_end
+                    )
+
+                    await update_user(session, user.id, update_data)
+                    logger.info(f"✅ Updated user {user.username} subscription to active via invoice.paid")
+
+        except Exception as e:
+            logger.error(f"Error handling invoice paid: {e}")
+
+
 
 
 # Global instance

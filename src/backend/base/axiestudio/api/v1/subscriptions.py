@@ -529,15 +529,15 @@ async def subscription_success(
 
 @router.post("/webhook")
 async def stripe_webhook(request: Request, session: DbSession):
-    """Handle Stripe webhook events."""
+    """Handle Stripe webhook events with deduplication and error handling."""
     try:
         payload = await request.body()
         sig_header = request.headers.get('stripe-signature')
         webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET')
-        
+
         if not webhook_secret:
             raise HTTPException(status_code=500, detail="Webhook secret not configured")
-        
+
         # Verify webhook signature
         import stripe
         try:
@@ -548,16 +548,60 @@ async def stripe_webhook(request: Request, session: DbSession):
             raise HTTPException(status_code=400, detail="Invalid payload")
         except stripe.error.SignatureVerificationError:
             raise HTTPException(status_code=400, detail="Invalid signature")
-        
-        # Handle the event
-        success = await stripe_service.handle_webhook_event(event, session)
-        
+
+        # CRITICAL FIX: Webhook deduplication
+        event_id = event.get('id')
+        if event_id:
+            # Check if we've already processed this webhook
+            from axiestudio.services.deps import get_cache_service
+            from axiestudio.services.cache.base import AsyncBaseCacheService
+            import asyncio
+
+            cache_service = get_cache_service()
+            cache_key = f"webhook_processed:{event_id}"
+
+            # Handle both sync and async cache services
+            if isinstance(cache_service, AsyncBaseCacheService):
+                cached_result = await cache_service.get(cache_key)
+            else:
+                cached_result = await asyncio.to_thread(cache_service.get, cache_key)
+
+            if cached_result and cached_result != "CACHE_MISS":
+                logger.info(f"🔄 Webhook {event_id} already processed - skipping")
+                return {"status": "success", "message": "Already processed"}
+
+            # Mark as processing (cache services handle expiration internally)
+            if isinstance(cache_service, AsyncBaseCacheService):
+                await cache_service.set(cache_key, "processing")
+            else:
+                await asyncio.to_thread(cache_service.set, cache_key, "processing")
+
+        # CRITICAL FIX: Database-level locking for webhook processing
+        from axiestudio.utils.concurrency import KeyedMemoryLockManager
+        lock_manager = KeyedMemoryLockManager()
+
+        # Create lock key based on customer ID to prevent concurrent updates
+        customer_id = event.get('data', {}).get('object', {}).get('customer')
+        lock_key = f"webhook_customer_{customer_id}" if customer_id else f"webhook_event_{event_id}"
+
+        with lock_manager.lock(lock_key):
+            # Handle the event with concurrency protection
+            success = await stripe_service.handle_webhook_event(event, session)
+
+            if success and event_id:
+                # Mark as successfully processed
+                if isinstance(cache_service, AsyncBaseCacheService):
+                    await cache_service.set(f"webhook_processed:{event_id}", "completed")
+                else:
+                    await asyncio.to_thread(cache_service.set, f"webhook_processed:{event_id}", "completed")
+
         if success:
             return {"status": "success"}
         else:
             raise HTTPException(status_code=500, detail="Failed to process webhook")
-            
+
     except Exception as e:
+        logger.error(f"Webhook processing error: {e}")
         raise HTTPException(status_code=500, detail=f"Webhook error: {str(e)}")
 
 
