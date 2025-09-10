@@ -191,9 +191,49 @@ export default function SubscriptionManagement(): JSX.Element {
                 Åtkomst till: {formatDate(subscriptionStatus.subscription_end)}
               </p>
             )}
+            {isSubscribed && subscriptionStatus.subscription_end && (
+              <p className="text-xs text-green-600 mt-1">
+                Nästa fakturering: {formatDate(subscriptionStatus.subscription_end)}
+              </p>
+            )}
           </div>
           {getStatusBadge(subscriptionStatus.subscription_status)}
         </div>
+
+        {/* Professional Subscription Information */}
+        {isSubscribed && (
+          <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+            <div className="flex items-start gap-3">
+              <ForwardedIconComponent name="CheckCircle" className="h-5 w-5 text-green-500 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium text-green-900 dark:text-green-100">
+                  Pro-prenumeration Aktiv
+                </h4>
+                <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                  Du har full åtkomst till alla Axie Studio Pro-funktioner.
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-4 text-xs">
+                  {subscriptionStatus.subscription_id && (
+                    <div>
+                      <span className="font-medium text-green-800 dark:text-green-200">Prenumerations-ID:</span>
+                      <p className="text-green-600 dark:text-green-400 font-mono">
+                        {subscriptionStatus.subscription_id.substring(0, 12)}...
+                      </p>
+                    </div>
+                  )}
+                  {subscriptionStatus.subscription_start && (
+                    <div>
+                      <span className="font-medium text-green-800 dark:text-green-200">Startdatum:</span>
+                      <p className="text-green-600 dark:text-green-400">
+                        {formatDate(subscriptionStatus.subscription_start)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Trial Information - ENTERPRISE UX (SVENSKA) */}
         {isOnTrial && (

@@ -135,11 +135,9 @@ async def create_checkout_session(
         if is_on_trial:
             # PROVPERIODANVÄNDARE UPPGRADERAR: Omedelbar betalning utan ytterligare provdagar
             remaining_trial_days = 0
-            logger.info(f"🚀 PROVPERIOD UPPGRADERING: Användare {current_user.username} uppgraderar från provperiod - omedelbar betalning")
         else:
             # ICKE-PROVPERIODANVÄNDARE: Användare med utgången provperiod eller direktprenumeration
             remaining_trial_days = 0
-            logger.info(f"🔄 DIREKT PRENUMERATION: Användare {current_user.username} skapar betald prenumeration (status: {current_user.subscription_status})")
 
         # Skapa checkout-session - alltid trial_days=0 för omedelbar betalning
         # Detta är korrekt eftersom endast användare som behöver betala når denna endpoint
@@ -468,7 +466,6 @@ async def get_subscription_status(current_user: CurrentActiveUser, session: DbSe
             "verification_timestamp": datetime.now(timezone.utc).timestamp()
         }
 
-        logger.info(f"📊 Subscription status response for {current_user.username}: {subscription_status} (trial_expired: {trial_expired}, days_left: {max(0, days_left)})")
         return response_data
 
     except Exception as e:
@@ -516,46 +513,8 @@ async def get_realtime_subscription_status(current_user: CurrentActiveUser, sess
         await session.execute(text("SELECT 1"))  # Force session sync
         await session.refresh(current_user)
 
-        logger.info(f"🔄 REALTIME DOUBLE-REFRESHED: User {current_user.username} - subscription_status: {current_user.subscription_status}")
-
-        # Get standard subscription status
-        standard_response = await get_subscription_status(current_user, session)
-
-        # Add real-time verification metadata
-        realtime_metadata = {
-            "realtime_check": True,
-            "check_timestamp": datetime.now(timezone.utc).isoformat(),
-            "database_refresh_count": 1,
-            "verification_method": "database_refresh"
-        }
-
-        # If user has active subscription, verify with Stripe for extra confidence
-        if (current_user.subscription_status == "active" and
-            current_user.subscription_id and
-            stripe_service.is_configured()):
-            try:
-                # Quick Stripe verification
-                stripe_subscription = await stripe_service.get_subscription(current_user.subscription_id)
-                if stripe_subscription:
-                    stripe_status = stripe_subscription.get('status')
-                    realtime_metadata.update({
-                        "stripe_verification": True,
-                        "stripe_status": stripe_status,
-                        "stripe_matches_db": stripe_status == current_user.subscription_status
-                    })
-                    logger.info(f"✅ Stripe verification for {current_user.username}: DB={current_user.subscription_status}, Stripe={stripe_status}")
-            except Exception as stripe_error:
-                logger.warning(f"⚠️ Stripe verification failed for {current_user.username}: {stripe_error}")
-                realtime_metadata.update({
-                    "stripe_verification": False,
-                    "stripe_error": str(stripe_error)
-                })
-
-        # Combine standard response with real-time metadata
-        response = {**standard_response, **realtime_metadata}
-
-        logger.info(f"📊 Real-time subscription status for {current_user.username}: {current_user.subscription_status}")
-        return response
+        # Get standard subscription status with database refresh
+        return await get_subscription_status(current_user, session)
 
     except Exception as e:
         logger.error(f"Error in real-time subscription status check: {e}")
@@ -696,9 +655,8 @@ async def cancel_subscription(
                         username=current_user.username,
                         subscription_end_date=subscription_end_date
                     )
-                    logger.info(f"✅ Sent subscription cancellation email to {current_user.username}")
                 except Exception as e:
-                    logger.error(f"❌ Failed to send subscription cancellation email to {current_user.username}: {e}")
+                    logger.error(f"Failed to send subscription cancellation email: {e}")
 
             return {
                 "status": "success",
@@ -782,7 +740,6 @@ async def reactivate_subscription(
                 )
 
         # STRIPE REACTIVATION
-        logger.info(f"Attempting to reactivate subscription {current_user.subscription_id} for user {current_user.id}")
         reactivate_result = await stripe_service.reactivate_subscription(current_user.subscription_id)
 
         if reactivate_result.get("success"):
@@ -810,10 +767,9 @@ async def reactivate_subscription(
                         username=current_user.username,
                         subscription_end_date=subscription_end_date
                     )
-                    logger.info(f"✅ Sent subscription reactivation email to {current_user.username}")
                 except Exception as e:
                     # Email failure should not block the reactivation
-                    logger.error(f"❌ Failed to send subscription reactivation email to {current_user.username}: {e}")
+                    logger.error(f"Failed to send subscription reactivation email: {e}")
 
             # SUCCESS RESPONSE
             return {
@@ -856,7 +812,7 @@ async def subscription_success(
     after successful Stripe payments, complementing the checkout.session.completed webhook.
     """
     try:
-        logger.info(f"🎯 Swedish subscription success verification for session: {session_id}")
+        # Subscription success verification
 
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID krävs")

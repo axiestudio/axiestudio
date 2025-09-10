@@ -30,8 +30,8 @@ interface SubscriptionStore {
   startFastPolling: () => void; // For immediate post-payment polling
 }
 
-let pollingInterval: number | null = null;
-let fastPollingInterval: number | null = null;
+let pollingInterval: NodeJS.Timeout | null = null;
+let fastPollingInterval: NodeJS.Timeout | null = null;
 
 export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
   subscriptionStatus: null,
@@ -83,13 +83,11 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
           get().setSubscriptionStatus(status);
         } else if (response.status === 401) {
           // User not authenticated - stop polling
-          console.warn('🔐 User not authenticated, stopping subscription polling');
           get().stopPolling();
           get().setError('Authentication required');
         } else if (response.status >= 500) {
           // Server error - implement exponential backoff
           const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 30000); // Max 30 seconds
-          console.warn(`🔄 Server error (${response.status}), retrying in ${backoffDelay}ms`);
 
           set({ retryCount: retryCount + 1 });
 
@@ -100,12 +98,9 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
           }, backoffDelay);
           return;
         } else {
-          console.error(`❌ Subscription status poll failed: ${response.status}`);
           get().setError(`Failed to fetch status: ${response.status}`);
         }
       } catch (error) {
-        console.error('❌ Failed to poll subscription status:', error);
-
         // Implement retry logic for network errors
         const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 30000);
         set({
@@ -154,18 +149,8 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
       if (response.ok) {
         const status = await response.json();
         get().setSubscriptionStatus(status);
-
-        if (useRealtime) {
-          console.log('🔄 Real-time subscription status updated:', {
-            status: status.subscription_status,
-            realtime_check: status.realtime_check,
-            stripe_verification: status.stripe_verification,
-            timestamp: status.check_timestamp
-          });
-        }
       }
     } catch (error) {
-      console.error('Failed to refresh subscription status:', error);
       throw error;
     }
   },
@@ -196,15 +181,8 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
           const status = await response.json();
           get().setSubscriptionStatus(status);
 
-          console.log(`🚀 Fast poll ${pollCount}/${maxPolls}:`, {
-            status: status.subscription_status,
-            realtime: status.realtime_check,
-            stripe_verified: status.stripe_verification
-          });
-
           // Stop fast polling if subscription becomes active
           if (status.subscription_status === 'active') {
-            console.log('✅ Subscription activated! Stopping fast polling.');
             if (fastPollingInterval) {
               clearInterval(fastPollingInterval);
               fastPollingInterval = null;
@@ -213,8 +191,6 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
           }
         }
       } catch (error) {
-        console.error('Failed to fast poll subscription status:', error);
-
         // Fallback to standard endpoint if real-time fails
         try {
           const fallbackResponse = await fetch('/api/v1/subscriptions/status', {
@@ -229,13 +205,12 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
             get().setSubscriptionStatus(status);
           }
         } catch (fallbackError) {
-          console.error('Fallback subscription status check also failed:', fallbackError);
+          // Silent fallback failure
         }
       }
 
       // Stop fast polling after max attempts
       if (pollCount >= maxPolls) {
-        console.log('⏰ Fast polling timeout reached. Switching to normal polling.');
         if (fastPollingInterval) {
           clearInterval(fastPollingInterval);
           fastPollingInterval = null;
