@@ -227,10 +227,10 @@ export default function PricingPage(): JSX.Element {
                   {isOnTrial && (
                     <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded text-xs">
                       <p className="text-green-700 dark:text-green-300 font-medium">
-                        🚀 Immediate upgrade - no additional trial days
+                        🚀 Upgrade from trial
                       </p>
                       <p className="text-green-600 dark:text-green-400 mt-1">
-                        Transition directly to Pro subscription
+                        Get immediate access to all Pro features
                       </p>
                     </div>
                   )}

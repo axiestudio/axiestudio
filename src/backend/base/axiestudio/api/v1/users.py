@@ -165,9 +165,19 @@ async def _create_admin_user(user: UserCreate, session: DbSession) -> User:
     # Don't override these - let the admin panel control them
     # new_user.is_active and new_user.is_superuser are already set from user input
 
-    # Admin-created users don't get trial fields - they're managed manually
-    # No trial_start, trial_end, subscription_status set
-    # No signup_ip, device_fingerprint set
+    # ADMIN USERS: Set proper subscription status to avoid edge cases
+    # Admin users get unlimited access but need proper status for consistency
+    if new_user.is_superuser:
+        new_user.subscription_status = "admin"  # Clear admin status
+    else:
+        # Non-superuser admin-created users get trial (rare case)
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone.utc)
+        new_user.trial_start = now
+        new_user.trial_end = now + timedelta(days=7)
+        new_user.subscription_status = "trial"
+
+    # No signup_ip, device_fingerprint set for admin-created users
 
     session.add(new_user)
     await session.commit()

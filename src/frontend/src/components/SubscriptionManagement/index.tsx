@@ -220,7 +220,7 @@ export default function SubscriptionManagement(): JSX.Element {
                         💡 Upgrade now for immediate Pro access!
                       </p>
                       <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                        You'll transition directly to paid subscription without extra trial days.
+                        Get full access to all Pro features directly after payment.
                       </p>
                     </div>
                   </>

@@ -140,14 +140,17 @@ class TrialService:
                 subscription_end = subscription_end.replace(tzinfo=timezone.utc)
             has_valid_canceled_subscription = now < subscription_end
 
+        # VALID SUBSCRIPTION STATUSES: Include "admin" for admin users
+        valid_subscription_statuses = ["active", "trial", "canceled", "admin"]
+
         # Should cleanup (block access) if:
         should_cleanup = (
             # Trial expired and no active subscription and no valid canceled subscription
             (trial_expired and not has_active_subscription and not has_valid_canceled_subscription) or
             # No subscription status at all (null, empty, or invalid)
-            (not user.subscription_status or user.subscription_status not in ["active", "trial", "canceled"]) or
-            # Subscription status is not active/trial and no valid trial and no valid canceled subscription
-            (user.subscription_status not in ["active", "trial"] and not has_valid_trial and not has_valid_canceled_subscription) or
+            (not user.subscription_status or user.subscription_status not in valid_subscription_statuses) or
+            # Subscription status is not active/trial/admin and no valid trial and no valid canceled subscription
+            (user.subscription_status not in ["active", "trial", "admin"] and not has_valid_trial and not has_valid_canceled_subscription) or
             # Missing trial end date for trial users (data integrity issue)
             (user.subscription_status == "trial" and not trial_end) or
             # Canceled subscription that has expired

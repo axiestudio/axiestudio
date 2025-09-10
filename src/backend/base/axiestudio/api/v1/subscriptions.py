@@ -122,22 +122,32 @@ async def create_checkout_session(
         elif trial_end.tzinfo is None:
             trial_end = trial_end.replace(tzinfo=timezone.utc)
 
-        # ENTERPRISE FIX: Trial-to-Paid Immediate Upgrade Logic
-        # When users subscribe during trial, they should get immediate paid access
-        # without additional trial days (prevents double-billing for trial period)
-        remaining_trial_days = 0
+        # CORRECT ENTERPRISE TRIAL SYSTEM:
+        # - New users get 7-day APP-MANAGED trial (no Stripe trial)
+        # - Trial users upgrading get immediate paid subscription (trial_days=0)
+        # - This prevents double-billing while maintaining proper trial experience
 
-        # CRITICAL: Always set trial_days=0 for immediate upgrade
-        # This ensures users transition directly from trial to paid subscription
-        # without getting additional free days they've already used
-        logger.info(f"🚀 ENTERPRISE UPGRADE: User {current_user.username} upgrading from trial to paid - NO additional trial days")
+        # CRITICAL LOGIC: Only users who need to pay should reach this endpoint
+        # New users should use the app for 7 days BEFORE needing to subscribe
 
-        # Create checkout session with ZERO trial days for immediate upgrade
+        is_on_trial = current_user.subscription_status == "trial"
+
+        if is_on_trial:
+            # TRIAL USER UPGRADING: Immediate payment without additional trial days
+            remaining_trial_days = 0
+            logger.info(f"🚀 TRIAL UPGRADE: User {current_user.username} upgrading from trial - immediate payment")
+        else:
+            # NON-TRIAL USER: User with expired trial or direct subscription
+            remaining_trial_days = 0
+            logger.info(f"🔄 DIRECT SUBSCRIPTION: User {current_user.username} creating paid subscription (status: {current_user.subscription_status})")
+
+        # Create checkout session - always trial_days=0 for immediate payment
+        # This is correct since only users who need to pay reach this endpoint
         checkout_url = await stripe_service.create_checkout_session(
             customer_id=customer_id,
             success_url=request.success_url,
             cancel_url=request.cancel_url,
-            trial_days=0  # ENTERPRISE PATTERN: Immediate paid subscription
+            trial_days=remaining_trial_days  # Always 0 - immediate payment
         )
         
         return CheckoutResponse(checkout_url=checkout_url)

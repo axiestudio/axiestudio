@@ -91,18 +91,19 @@ class TrialMiddleware(BaseHTTPMiddleware):
                 if not user:
                     return await call_next(request)
 
-                # Skip trial check for superusers
-                if user.is_superuser:
-                    return await call_next(request)
-
                 # ENTERPRISE PATTERN: Single efficient refresh with latest data
                 # This ensures we see committed changes from webhooks
                 await session.refresh(user)
                 logger.debug(f"🔄 User {user.username} subscription status: {user.subscription_status}")
 
-                # CRITICAL: Always allow active subscribers - no further checks needed
-                if user.subscription_status == "active":
-                    logger.info(f"✅ User {user.username} has active subscription - allowing access")
+                # CRITICAL: Skip trial check for superusers (check after refresh to get latest data)
+                if user.is_superuser:
+                    logger.info(f"✅ ADMIN ACCESS: User {user.username} is superuser - bypassing all subscription checks")
+                    return await call_next(request)
+
+                # CRITICAL: Always allow active subscribers and admin users - no further checks needed
+                if user.subscription_status in ["active", "admin"]:
+                    logger.info(f"✅ User {user.username} has {user.subscription_status} subscription - allowing access")
                     return await call_next(request)
 
                 # Check trial status for non-active users
