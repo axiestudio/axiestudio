@@ -43,8 +43,8 @@ export default function SubscriptionManagement(): JSX.Element {
       onError: (error) => {
         setIsLoading(false);
         setErrorData({
-          title: "Portalfel",
-          list: [error?.response?.data?.detail || "Misslyckades att öppna kundportal"],
+          title: "Portal Error",
+          list: [error?.response?.data?.detail || "Failed to open customer portal"],
         });
       },
     });
@@ -54,7 +54,7 @@ export default function SubscriptionManagement(): JSX.Element {
     cancelSubscription(undefined, {
       onSuccess: () => {
         setSuccessData({
-          title: "Prenumeration Avbruten",
+          title: "Subscription Cancelled",
         });
         // Refresh both query cache and real-time store
         refetch();
@@ -62,8 +62,8 @@ export default function SubscriptionManagement(): JSX.Element {
       },
       onError: (error) => {
         setErrorData({
-          title: "Avbokningsfel",
-          list: [error?.response?.data?.detail || "Misslyckades att avbryta prenumeration"],
+          title: "Cancellation Error",
+          list: [error?.response?.data?.detail || "Failed to cancel subscription"],
         });
       },
     });
@@ -73,8 +73,8 @@ export default function SubscriptionManagement(): JSX.Element {
     reactivateSubscription(undefined, {
       onSuccess: () => {
         setSuccessData({
-          title: "Prenumeration Återaktiverad",
-          list: ["Din prenumeration är nu aktiv igen!"],
+          title: "Subscription Reactivated",
+          list: ["Your subscription is now active again!"],
         });
         // Refresh both query cache and real-time store
         refetch();
@@ -82,8 +82,8 @@ export default function SubscriptionManagement(): JSX.Element {
       },
       onError: (error) => {
         setErrorData({
-          title: "Återaktiveringsfel",
-          list: [error?.response?.data?.detail || "Misslyckades att återaktivera prenumeration"],
+          title: "Reactivation Error",
+          list: [error?.response?.data?.detail || "Failed to reactivate subscription"],
         });
       },
     });
@@ -109,7 +109,7 @@ export default function SubscriptionManagement(): JSX.Element {
   };
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return "Ej tillgänglig";
+    if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString();
   };
 
@@ -119,11 +119,11 @@ export default function SubscriptionManagement(): JSX.Element {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ForwardedIconComponent name="CreditCard" className="h-5 w-5" />
-            Prenumeration
+            Subscription
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">Laddar prenumerationsinformation...</p>
+          <p className="text-muted-foreground">Loading subscription information...</p>
         </CardContent>
       </Card>
     );
@@ -142,10 +142,10 @@ export default function SubscriptionManagement(): JSX.Element {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ForwardedIconComponent name="Shield" className="h-5 w-5" />
-            Administratörskonto
+            Administrator Account
           </CardTitle>
           <CardDescription>
-            Du har full administrativ åtkomst till Axie Studio
+            You have full administrative access to Axie Studio
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -153,10 +153,10 @@ export default function SubscriptionManagement(): JSX.Element {
             <ForwardedIconComponent name="Crown" className="h-5 w-5 text-blue-500" />
             <div>
               <h4 className="font-medium text-blue-900 dark:text-blue-100">
-                Administratörsåtkomst
+                Administrator Access
               </h4>
               <p className="text-sm text-blue-700 dark:text-blue-300">
-                Du har obegränsad åtkomst till alla Axie Studio-funktioner som administratör.
+                You have unlimited access to all Axie Studio features as an administrator.
               </p>
             </div>
           </div>
@@ -170,10 +170,10 @@ export default function SubscriptionManagement(): JSX.Element {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ForwardedIconComponent name="CreditCard" className="h-5 w-5" />
-          Prenumerationshantering
+          Subscription Management
         </CardTitle>
         <CardDescription>
-          Hantera din Axie Studio-prenumeration och fakturering
+          Manage your Axie Studio subscription and billing
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -235,32 +235,32 @@ export default function SubscriptionManagement(): JSX.Element {
           </div>
         )}
 
-        {/* Trial Information - ENTERPRISE UX (SVENSKA) */}
+        {/* Trial Information - ENTERPRISE UX */}
         {isOnTrial && (
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <div className="flex items-start gap-3">
               <ForwardedIconComponent name="Crown" className="h-5 w-5 text-blue-500 mt-0.5" />
               <div>
                 <h4 className="font-medium text-blue-900 dark:text-blue-100">
-                  Gratis Provperiod Aktiv
+                  Free Trial Active
                 </h4>
                 <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
                   {trialExpired
-                    ? "Din provperiod har gått ut. Prenumerera för att fortsätta använda Axie Studio."
-                    : `Du har ${subscriptionStatus.trial_days_left} dagar kvar av din gratis provperiod.`
+                    ? "Your trial has expired. Subscribe to continue using Axie Studio."
+                    : `You have ${subscriptionStatus.trial_days_left} days left in your free trial.`
                   }
                 </p>
                 {!trialExpired && (
                   <>
                     <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                      Provperiod slutar: {formatDate(subscriptionStatus.trial_end)}
+                      Trial ends: {formatDate(subscriptionStatus.trial_end)}
                     </p>
                     <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
                       <p className="text-xs text-green-700 dark:text-green-300 font-medium">
-                        💡 Uppgradera nu för omedelbar Pro-åtkomst!
+                        💡 Upgrade now for immediate Pro access!
                       </p>
                       <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                        Få full åtkomst till alla Pro-funktioner direkt efter betalning.
+                        Get full access to all Pro features directly after payment.
                       </p>
                     </div>
                   </>
@@ -277,17 +277,17 @@ export default function SubscriptionManagement(): JSX.Element {
               <ForwardedIconComponent name="AlertTriangle" className="h-5 w-5 text-red-500 mt-0.5" />
               <div>
                 <h4 className="font-medium text-red-900 dark:text-red-100">
-                  Provperiod Utgången
+                  Trial Expired
                 </h4>
                 <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                  Din gratis provperiod har slutat. Prenumerera för att fortsätta använda Axie Studio.
+                  Your free trial has ended. Subscribe to continue using Axie Studio.
                 </p>
                 <Button 
                   size="sm" 
                   className="mt-3"
                   onClick={() => window.location.href = "/pricing"}
                 >
-                  Visa Priser
+                  View Pricing
                 </Button>
               </div>
             </div>
@@ -300,7 +300,7 @@ export default function SubscriptionManagement(): JSX.Element {
             <div className="flex items-center gap-2">
               <ForwardedIconComponent name="Calendar" className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm">
-                Nästa fakturering: {formatDate(subscriptionStatus.subscription_end)}
+                Next billing: {formatDate(subscriptionStatus.subscription_end)}
               </span>
             </div>
           </div>
@@ -314,7 +314,7 @@ export default function SubscriptionManagement(): JSX.Element {
               className="flex-1"
             >
               <ForwardedIconComponent name="Crown" className="h-4 w-4 mr-2" />
-              Uppgradera till Pro
+              Upgrade to Pro
             </Button>
           )}
           
@@ -323,7 +323,7 @@ export default function SubscriptionManagement(): JSX.Element {
               onClick={() => window.location.href = "/pricing"}
               className="flex-1"
             >
-              Prenumerera Nu
+              Subscribe Now
             </Button>
           )}
 
@@ -335,7 +335,7 @@ export default function SubscriptionManagement(): JSX.Element {
               className="flex-1"
             >
               <ForwardedIconComponent name="ExternalLink" className="h-4 w-4 mr-2" />
-              {isLoading ? "Öppnar..." : "Hantera Fakturering"}
+              {isLoading ? "Opening..." : "Manage Billing"}
             </Button>
           )}
 
@@ -343,23 +343,23 @@ export default function SubscriptionManagement(): JSX.Element {
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="destructive" size="sm">
-                  Avbryt Prenumeration
+                  Cancel Subscription
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Avbryt Prenumeration</DialogTitle>
+                  <DialogTitle>Cancel Subscription</DialogTitle>
                   <DialogDescription>
-                    Är du säker på att du vill avbryta din prenumeration? Du kommer att förlora åtkomst till Pro-funktioner i slutet av din nuvarande faktureringsperiod.
+                    Are you sure you want to cancel your subscription? You'll lose access to Pro features at the end of your current billing period.
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
                   <DialogClose asChild>
-                    <Button variant="outline">Behåll Prenumeration</Button>
+                    <Button variant="outline">Keep Subscription</Button>
                   </DialogClose>
                   <DialogClose asChild>
                     <Button variant="destructive" onClick={handleCancelSubscription}>
-                      Avbryt Prenumeration
+                      Cancel Subscription
                     </Button>
                   </DialogClose>
                 </DialogFooter>
@@ -372,24 +372,24 @@ export default function SubscriptionManagement(): JSX.Element {
               <DialogTrigger asChild>
                 <Button variant="default" size="sm" className="bg-green-600 hover:bg-green-700">
                   <ForwardedIconComponent name="RotateCcw" className="h-4 w-4 mr-2" />
-                  Återaktivera Prenumeration
+                  Reactivate Subscription
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Återaktivera Prenumeration</DialogTitle>
+                  <DialogTitle>Reactivate Subscription</DialogTitle>
                   <DialogDescription>
-                    Vill du återaktivera din prenumeration? Din prenumeration kommer att fortsätta och du behåller åtkomst till alla Pro-funktioner.
+                    Would you like to reactivate your subscription? Your subscription will continue and you'll keep access to all Pro features.
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
                   <DialogClose asChild>
-                    <Button variant="outline">Avbryt</Button>
+                    <Button variant="outline">Cancel</Button>
                   </DialogClose>
                   <DialogClose asChild>
                     <Button variant="default" onClick={handleReactivateSubscription} className="bg-green-600 hover:bg-green-700">
                       <ForwardedIconComponent name="CheckCircle" className="h-4 w-4 mr-2" />
-                      Återaktivera Nu
+                      Reactivate Now
                     </Button>
                   </DialogClose>
                 </DialogFooter>

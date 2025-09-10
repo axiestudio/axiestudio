@@ -382,7 +382,7 @@ async def get_subscription_status(current_user: CurrentActiveUser, session: DbSe
         logger.debug(f"🔄 User {current_user.username} subscription status: {current_user.subscription_status}")
         # ADMIN USERS: Superusers have unlimited access without subscription checks
         if current_user.is_superuser:
-            logger.info(f"✅ ADMIN ACCESS: User {current_user.username} is superuser - unlimited access granted")
+            # Admin access granted
             return {
                 "subscription_status": "admin",
                 "subscription_id": None,
@@ -561,7 +561,7 @@ async def stripe_webhook(request: Request, session: DbSession):
                 {"event_id": event_id}
             )
             if result.first():
-                logger.info(f"🔄 Webhook {event_id} already processed - skipping")
+                # Webhook already processed
                 return {"status": "success", "message": "Already processed"}
 
             # Record webhook processing start
@@ -586,7 +586,7 @@ async def stripe_webhook(request: Request, session: DbSession):
 
                 # CRITICAL: Explicit commit for webhook processing
                 await session.commit()
-                logger.info(f"✅ Webhook {event_id} processed successfully")
+                # Webhook processed successfully
                 return {"status": "success"}
             else:
                 # Mark webhook as failed
@@ -749,7 +749,7 @@ async def reactivate_subscription(
                 subscription_end=reactivate_result.get("subscription_end")
             )
             await update_user(session, current_user.id, update_data)
-            logger.info(f"✅ Updated user {current_user.id} status to active")
+            # User status updated to active
 
             # EMAIL NOTIFICATION (Non-blocking)
             if current_user.email:
@@ -836,7 +836,7 @@ async def subscription_success(
                         subscription_id=checkout_session.subscription
                     )
                     await update_user(session, user.id, update_data)
-                    logger.info(f"✅ Swedish safety net: User {user.id} activated via success endpoint")
+                    # User activated via success endpoint
 
                 return {
                     "status": "success",
