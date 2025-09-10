@@ -122,22 +122,32 @@ async def create_checkout_session(
         elif trial_end.tzinfo is None:
             trial_end = trial_end.replace(tzinfo=timezone.utc)
 
-        # ENTERPRISE FIX: Trial-to-Paid Immediate Upgrade Logic (SWEDISH)
-        # När användare prenumererar under provperioden ska de få omedelbar betald åtkomst
-        # utan ytterligare provdagar (förhindrar dubbelfakturering för provperiod)
-        remaining_trial_days = 0
+        # KORREKT ENTERPRISE TRIAL SYSTEM (SVENSKA):
+        # - Nya användare får 7-dagars APP-HANTERAD provperiod (ingen Stripe-provperiod)
+        # - Provperiodanvändare som uppgraderar får omedelbar betald prenumeration (trial_days=0)
+        # - Detta förhindrar dubbelfakturering samtidigt som det bibehåller korrekt provperiodupplevelse
 
-        # KRITISKT: Sätt alltid trial_days=0 för omedelbar uppgradering
-        # Detta säkerställer att användare övergår direkt från prov till betald prenumeration
-        # utan att få ytterligare gratis dagar de redan använt
-        logger.info(f"🚀 ENTERPRISE UPPGRADERING (SVENSKA): Användare {current_user.username} uppgraderar från prov till betald - INGA ytterligare provdagar")
+        # KRITISK LOGIK: Endast användare som uppgraderar från provperiod ska nå denna endpoint
+        # Nya användare ska använda appen i 7 dagar INNAN de behöver prenumerera
 
-        # Skapa checkout-session med NOLL provdagar för omedelbar uppgradering
+        is_on_trial = current_user.subscription_status == "trial"
+
+        if is_on_trial:
+            # PROVPERIODANVÄNDARE UPPGRADERAR: Omedelbar betalning utan ytterligare provdagar
+            remaining_trial_days = 0
+            logger.info(f"🚀 PROVPERIOD UPPGRADERING: Användare {current_user.username} uppgraderar från provperiod - omedelbar betalning")
+        else:
+            # ICKE-PROVPERIODANVÄNDARE: Användare med utgången provperiod eller direktprenumeration
+            remaining_trial_days = 0
+            logger.info(f"🔄 DIREKT PRENUMERATION: Användare {current_user.username} skapar betald prenumeration (status: {current_user.subscription_status})")
+
+        # Skapa checkout-session - alltid trial_days=0 för omedelbar betalning
+        # Detta är korrekt eftersom endast användare som behöver betala når denna endpoint
         checkout_url = await stripe_service.create_checkout_session(
             customer_id=customer_id,
             success_url=request.success_url,
             cancel_url=request.cancel_url,
-            trial_days=0  # ENTERPRISE MÖNSTER: Omedelbar betald prenumeration
+            trial_days=remaining_trial_days  # Alltid 0 - omedelbar betalning
         )
         
         return CheckoutResponse(checkout_url=checkout_url)
@@ -372,8 +382,9 @@ async def get_subscription_status(current_user: CurrentActiveUser, session: DbSe
         # ENTERPRISE PATTERN: Single efficient refresh for latest data
         await session.refresh(current_user)
         logger.debug(f"🔄 User {current_user.username} subscription status: {current_user.subscription_status}")
-        # Superusers don't have subscriptions - they have unlimited access
+        # ADMIN USERS: Superusers have unlimited access without subscription checks
         if current_user.is_superuser:
+            logger.info(f"✅ ADMIN ACCESS: User {current_user.username} is superuser - unlimited access granted")
             return {
                 "subscription_status": "admin",
                 "subscription_id": None,

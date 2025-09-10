@@ -217,10 +217,10 @@ export default function SubscriptionManagement(): JSX.Element {
                     </p>
                     <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
                       <p className="text-xs text-green-700 dark:text-green-300 font-medium">
-                        💡 Uppgradera nu och få omedelbar tillgång till Pro-funktioner!
+                        💡 Uppgradera nu för omedelbar Pro-åtkomst!
                       </p>
                       <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                        Du kommer att övergå direkt till betald prenumeration utan extra provdagar.
+                        Få full åtkomst till alla Pro-funktioner direkt efter betalning.
                       </p>
                     </div>
                   </>
