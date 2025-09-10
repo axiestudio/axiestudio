@@ -26,8 +26,8 @@ interface SubscriptionStore {
   startFastPolling: () => void; // For immediate post-payment polling
 }
 
-let pollingInterval: number | null = null;
-let fastPollingInterval: number | null = null;
+let pollingInterval: NodeJS.Timeout | null = null;
+let fastPollingInterval: NodeJS.Timeout | null = null;
 
 export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
   subscriptionStatus: null,
@@ -65,7 +65,7 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
           get().setSubscriptionStatus(status);
         }
       } catch (error) {
-        console.error('Failed to poll subscription status:', error);
+        // Silent polling failure
       }
     }, 30000); // 30 seconds
   },
@@ -97,17 +97,8 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
         const status = await response.json();
         get().setSubscriptionStatus(status);
 
-        if (useRealtime) {
-          console.log('🔄 Real-time subscription status updated:', {
-            status: status.subscription_status,
-            realtime_check: status.realtime_check,
-            stripe_verification: status.stripe_verification,
-            timestamp: status.check_timestamp
-          });
-        }
       }
     } catch (error) {
-      console.error('Failed to refresh subscription status:', error);
       throw error;
     }
   },
@@ -138,15 +129,8 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
           const status = await response.json();
           get().setSubscriptionStatus(status);
 
-          console.log(`🚀 Fast poll ${pollCount}/${maxPolls}:`, {
-            status: status.subscription_status,
-            realtime: status.realtime_check,
-            stripe_verified: status.stripe_verification
-          });
-
           // Stop fast polling if subscription becomes active
           if (status.subscription_status === 'active') {
-            console.log('✅ Subscription activated! Stopping fast polling.');
             if (fastPollingInterval) {
               clearInterval(fastPollingInterval);
               fastPollingInterval = null;
@@ -155,8 +139,6 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
           }
         }
       } catch (error) {
-        console.error('Failed to fast poll subscription status:', error);
-
         // Fallback to standard endpoint if real-time fails
         try {
           const fallbackResponse = await fetch('/api/v1/subscriptions/status', {
@@ -171,13 +153,12 @@ export const useSubscriptionStore = create<SubscriptionStore>((set, get) => ({
             get().setSubscriptionStatus(status);
           }
         } catch (fallbackError) {
-          console.error('Fallback subscription status check also failed:', fallbackError);
+          // Silent fallback failure
         }
       }
 
       // Stop fast polling after max attempts
       if (pollCount >= maxPolls) {
-        console.log('⏰ Fast polling timeout reached. Switching to normal polling.');
         if (fastPollingInterval) {
           clearInterval(fastPollingInterval);
           fastPollingInterval = null;

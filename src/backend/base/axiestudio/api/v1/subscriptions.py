@@ -135,11 +135,9 @@ async def create_checkout_session(
         if is_on_trial:
             # TRIAL USER UPGRADING: Immediate payment without additional trial days
             remaining_trial_days = 0
-            logger.info(f"🚀 TRIAL UPGRADE: User {current_user.username} upgrading from trial - immediate payment")
         else:
             # NON-TRIAL USER: User with expired trial or direct subscription
             remaining_trial_days = 0
-            logger.info(f"🔄 DIRECT SUBSCRIPTION: User {current_user.username} creating paid subscription (status: {current_user.subscription_status})")
 
         # Create checkout session - always trial_days=0 for immediate payment
         # This is correct since only users who need to pay reach this endpoint
@@ -509,7 +507,7 @@ async def get_realtime_subscription_status(current_user: CurrentActiveUser, sess
     try:
         # CRITICAL: Multiple refresh attempts to ensure latest data
         await session.refresh(current_user)
-        logger.info(f"🔄 Real-time status check for user {current_user.username}")
+        # Real-time status check
 
         # Get standard subscription status
         standard_response = await get_subscription_status(current_user, session)
@@ -536,7 +534,7 @@ async def get_realtime_subscription_status(current_user: CurrentActiveUser, sess
                         "stripe_status": stripe_status,
                         "stripe_matches_db": stripe_status == current_user.subscription_status
                     })
-                    logger.info(f"✅ Stripe verification for {current_user.username}: DB={current_user.subscription_status}, Stripe={stripe_status}")
+                    # Stripe verification successful
             except Exception as stripe_error:
                 logger.warning(f"⚠️ Stripe verification failed for {current_user.username}: {stripe_error}")
                 realtime_metadata.update({
@@ -591,7 +589,7 @@ async def subscription_success(
                     subscription_id=checkout_session.subscription
                 )
                 await update_user(session, current_user.id, update_data)
-                logger.info(f"✅ SUCCESS ENDPOINT - Activated user {current_user.username} subscription")
+                # Subscription activated successfully
 
                 return {
                     "success": True,
@@ -651,7 +649,7 @@ async def stripe_webhook(request: Request, session: DbSession):
                 {"event_id": event_id}
             )
             if result.first():
-                logger.info(f"🔄 Webhook {event_id} already processed - skipping")
+                # Webhook already processed
                 return {"status": "success", "message": "Already processed"}
 
             # Record webhook processing start
@@ -676,7 +674,7 @@ async def stripe_webhook(request: Request, session: DbSession):
 
                 # CRITICAL: Explicit commit for webhook processing
                 await session.commit()
-                logger.info(f"✅ Webhook {event_id} processed successfully")
+                # Webhook processed successfully
                 return {"status": "success"}
             else:
                 # Mark webhook as failed
@@ -745,9 +743,8 @@ async def cancel_subscription(
                         username=current_user.username,
                         subscription_end_date=subscription_end_str
                     )
-                    logger.info(f"✅ Sent subscription cancellation email to {current_user.username}")
                 except Exception as e:
-                    logger.error(f"❌ Failed to send subscription cancellation email to {current_user.username}: {e}")
+                    logger.error(f"Failed to send subscription cancellation email: {e}")
 
             return {
                 "status": "success",
@@ -841,7 +838,7 @@ async def reactivate_subscription(
                 subscription_end=reactivate_result.get("subscription_end")
             )
             await update_user(session, current_user.id, update_data)
-            logger.info(f"✅ Updated user {current_user.id} status to active")
+            # User status updated to active
 
             # EMAIL NOTIFICATION (Non-blocking)
             if current_user.email:
@@ -859,10 +856,9 @@ async def reactivate_subscription(
                         username=current_user.username,
                         subscription_end_date=subscription_end_date
                     )
-                    logger.info(f"✅ Sent subscription reactivation email to {current_user.username}")
                 except Exception as e:
                     # Email failure should not block the reactivation
-                    logger.error(f"❌ Failed to send subscription reactivation email to {current_user.username}: {e}")
+                    logger.error(f"Failed to send subscription reactivation email: {e}")
 
             # SUCCESS RESPONSE
             return {
