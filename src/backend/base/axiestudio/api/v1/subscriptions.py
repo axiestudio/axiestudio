@@ -565,9 +565,10 @@ async def stripe_webhook(request: Request, session: DbSession):
                 return {"status": "success", "message": "Already processed"}
 
             # Record webhook processing start
+            event_type = event.get('type', 'unknown')
             await session.execute(
-                text("INSERT INTO webhook_events (stripe_event_id, status, created_at) VALUES (:event_id, 'processing', NOW())"),
-                {"event_id": event_id}
+                text("INSERT INTO webhook_events (stripe_event_id, event_type, status, created_at) VALUES (:event_id, :event_type, 'processing', NOW())"),
+                {"event_id": event_id, "event_type": event_type}
             )
             await session.commit()  # Commit immediately to prevent duplicates
 
