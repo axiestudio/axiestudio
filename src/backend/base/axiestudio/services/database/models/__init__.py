@@ -6,6 +6,7 @@ from .message import MessageTable
 from .transactions import TransactionTable
 from .user import User
 from .variable import Variable
+from .webhook import WebhookEvent
 
 __all__ = [
     "ApiKey",
@@ -16,4 +17,5 @@ __all__ = [
     "TransactionTable",
     "User",
     "Variable",
+    "WebhookEvent",
 ]
