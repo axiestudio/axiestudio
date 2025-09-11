@@ -1,6 +1,6 @@
 """Merge heads to fix multiple heads issue - MAIN BRANCH
 
-Revision ID: merge_heads_main
+Revision ID: a1b2c3d4e5f6
 Revises: 67f73f05b2ef, def789ghi012
 Create Date: 2025-09-11 14:30:00.000000
 
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "merge_heads_main"
+revision: str = "a1b2c3d4e5f6"
 down_revision: Union[str, None] = ("67f73f05b2ef", "def789ghi012")
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
