@@ -422,10 +422,11 @@ class DatabaseService(Service):
                 logger.exception("Error checking migrations")
 
                 # Special handling for webhook_events table schema mismatch
+                # THIS FIX RUNS REGARDLESS OF fix PARAMETER - IT'S A KNOWN COMPATIBILITY ISSUE
                 if "webhook_events" in str(exc) and ("created_at" in str(exc) or "stripe_event_id" in str(exc)):
                     logger.warning("🚨 WEBHOOK_EVENTS SCHEMA MISMATCH DETECTED")
-                    logger.warning("💡 This is a known issue with webhook_events table schema")
-                    logger.warning("🔧 Attempting automatic fix...")
+                    logger.warning("💡 This is a known compatibility issue - applying automatic fix...")
+                    logger.warning("🔧 CRITICAL: Fixing webhook_events schema regardless of fix parameter")
 
                     try:
                         # Try to fix the webhook_events schema automatically
@@ -436,8 +437,11 @@ class DatabaseService(Service):
                         logger.info("✅ Migration check passed after webhook_events fix")
                         return
                     except Exception as fix_exc:
-                        logger.error(f"❌ Failed to auto-fix webhook_events schema: {fix_exc}")
-                        logger.error("💡 Please run the fix_webhook_events_migration.py script manually")
+                        logger.error(f"❌ CRITICAL: Failed to auto-fix webhook_events schema: {fix_exc}")
+                        logger.error("💡 This is a blocking issue - application cannot start")
+                        # Still raise the error since this is critical
+                        msg = f"CRITICAL: webhook_events schema fix failed. {fix_exc}\nOriginal error: {exc}"
+                        raise RuntimeError(msg) from exc
 
                 if not fix:
                     msg = f"There's a mismatch between the models and the database.\n{exc}"
