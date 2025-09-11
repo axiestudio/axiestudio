@@ -38,6 +38,20 @@ async def initialize_database(*, fix_migration: bool = False) -> None:
         raise RuntimeError(msg) from exc
     try:
         await database_service.run_migrations(fix=fix_migration)
+    except KeyError as exc:
+        # Handle missing revision error (e.g., '67f73f05b2ef' not found in revision map)
+        if "67f73f05b2ef" in str(exc):
+            logger.warning("🚨 MISSING REVISION DETECTED: '67f73f05b2ef' not found in revision map")
+            logger.warning("💡 This indicates corrupted Alembic state - resetting alembic_version table")
+            async with session_getter(database_service) as session:
+                await session.exec(text("DROP TABLE IF EXISTS alembic_version"))
+                await session.commit()
+            logger.info("✅ Successfully dropped alembic_version table")
+            logger.warning("💡 Skipping migration retry - conditional table creation will handle missing tables")
+            # Don't retry migrations, let the conditional table creation handle it
+            return
+        else:
+            raise
     except CommandError as exc:
         # if "overlaps with other requested revisions" or "Can't locate revision identified by"
         # are not in the exception, we can't handle it

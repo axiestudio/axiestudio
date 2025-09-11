@@ -1,14 +1,14 @@
-"""Merge heads to fix multiple heads issue
+"""Merge heads to fix multiple heads issue - MASTER BRANCH
 
-Revision ID: merge_heads_fix
+Revision ID: b2c3d4e5f6a7
 Revises: 67f73f05b2ef, def789ghi012
 Create Date: 2025-09-11 14:00:00.000000
 
-This merge migration resolves the multiple heads issue caused by:
+This merge migration resolves the multiple heads issue for MASTER BRANCH (Swedish) caused by:
 - 67f73f05b2ef (webhook_events table creation)
 - def789ghi012 (email verification fields)
 
-The merge ensures both features work together without conflicts.
+The merge ensures both features work together without conflicts on the Swedish version.
 """
 from typing import Sequence, Union
 
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "merge_heads_fix"
+revision: str = "b2c3d4e5f6a7"
 down_revision: Union[str, None] = ("67f73f05b2ef", "def789ghi012")
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
