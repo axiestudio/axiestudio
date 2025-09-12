@@ -5,6 +5,7 @@ This module serves as the single source of truth for MCP functionality.
 
 import asyncio
 import base64
+import os
 from collections.abc import Awaitable, Callable
 from contextvars import ContextVar
 from functools import wraps
@@ -80,11 +81,16 @@ async def handle_list_resources(project_id=None):
         storage_service = get_storage_service()
         settings_service = get_settings_service()
 
-        # Build full URL from settings
-        host = getattr(settings_service.settings, "host", "localhost")
-        port = getattr(settings_service.settings, "port", 3000)
-
-        base_url = f"http://{host}:{port}".rstrip("/")
+        # Build full URL from settings - use FRONTEND_URL if available for production
+        frontend_url = os.getenv("FRONTEND_URL")
+        if frontend_url:
+            # Use production URL from environment
+            base_url = frontend_url.rstrip("/")
+        else:
+            # Fallback to local development settings
+            host = getattr(settings_service.settings, "host", "localhost")
+            port = getattr(settings_service.settings, "port", 7860)
+            base_url = f"http://{host}:{port}".rstrip("/")
 
         async with session_scope() as session:
             # Build query based on whether project_id is provided

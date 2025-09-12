@@ -228,8 +228,9 @@ export default function SubscriptionPage(): JSX.Element {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-3">
-              {!isSubscribed && !trialExpired && (
-                <Button 
+              {/* Show "Upgrade to Pro" only for trial users (not canceled) */}
+              {!isSubscribed && !isCanceled && !trialExpired && (
+                <Button
                   onClick={() => window.location.href = "/pricing"}
                   className="flex-1"
                 >
@@ -237,14 +238,26 @@ export default function SubscriptionPage(): JSX.Element {
                   Upgrade to Pro
                 </Button>
               )}
-              
-              {trialExpired && (
-                <Button 
+
+              {/* Show "Subscribe Now" for expired trials */}
+              {trialExpired && !isCanceled && (
+                <Button
                   onClick={() => window.location.href = "/pricing"}
                   className="flex-1"
                 >
                   <ForwardedIconComponent name="Zap" className="h-4 w-4 mr-2" />
                   Subscribe Now
+                </Button>
+              )}
+
+              {/* Show "Reactivate Subscription" for canceled users */}
+              {isCanceled && (
+                <Button
+                  onClick={() => window.location.href = "/pricing"}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  <ForwardedIconComponent name="RotateCcw" className="h-4 w-4 mr-2" />
+                  Reactivate Subscription
                 </Button>
               )}
 

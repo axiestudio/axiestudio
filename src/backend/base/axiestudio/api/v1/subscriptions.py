@@ -410,17 +410,31 @@ async def get_subscription_status(current_user: CurrentActiveUser, session: DbSe
         if subscription_end and subscription_end.tzinfo is None:
             subscription_end = subscription_end.replace(tzinfo=timezone.utc)
 
-        # Calculate trial status - CRITICAL: Active subscribers should never show as trial expired
+        # Calculate trial status and days_left - CRITICAL: Handle different subscription states correctly
         trial_expired = False
         days_left = 7  # Default to 7 days if no trial_start
+        now = datetime.now(timezone.utc)
 
-        # CRITICAL FIX: If user has active subscription, trial status is irrelevant
+        # CRITICAL FIX: Calculate days_left based on subscription status
         if subscription_status == "active":
             trial_expired = False  # Active subscribers are never "trial expired"
             days_left = 0  # No trial days left because they have active subscription
+        elif subscription_status == "canceled" and subscription_end:
+            # CRITICAL FIX: For canceled subscriptions, calculate days until subscription_end
+            trial_expired = False  # Canceled users with remaining time are not "trial expired"
+            if subscription_end.tzinfo is None:
+                subscription_end = subscription_end.replace(tzinfo=timezone.utc)
+
+            if now >= subscription_end:
+                days_left = 0  # Subscription has expired
+            else:
+                # Calculate remaining days until subscription ends
+                remaining_seconds = (subscription_end - now).total_seconds()
+                days_left = max(0, int(remaining_seconds / 86400))  # 86400 seconds = 1 day
+                logger.info(f"🔄 Canceled subscription for {current_user.username}: {days_left} days remaining until {subscription_end}")
         elif trial_start:
+            # For trial users, calculate trial days
             trial_end_date = trial_end or (trial_start + timedelta(days=7))
-            now = datetime.now(timezone.utc)
 
             # Ensure timezone consistency for comparisons
             if trial_start.tzinfo is None:
@@ -455,7 +469,8 @@ async def get_subscription_status(current_user: CurrentActiveUser, session: DbSe
             "trial_start": trial_start,
             "trial_end": trial_end,
             "trial_expired": trial_expired,
-            "trial_days_left": max(0, days_left),
+            "trial_days_left": max(0, days_left) if subscription_status == "trial" else None,
+            "days_left": max(0, days_left),  # Universal days_left field for all subscription types
             "subscription_start": subscription_start,
             "subscription_end": subscription_end,
             "has_stripe_customer": bool(stripe_customer_id),
@@ -736,8 +751,9 @@ async def cancel_subscription(
                     email_service = EmailService()
 
                     subscription_end_str = "your current billing period"
-                    if cancel_result.get("subscription_end"):
-                        subscription_end_str = cancel_result.get("subscription_end").strftime("%B %d, %Y")
+                    subscription_end_date = cancel_result.get("subscription_end")
+                    if subscription_end_date and hasattr(subscription_end_date, 'strftime'):
+                        subscription_end_str = subscription_end_date.strftime("%B %d, %Y")
 
                     await email_service.send_subscription_cancelled_email(
                         email=current_user.email,

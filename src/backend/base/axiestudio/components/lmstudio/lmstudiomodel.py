@@ -65,7 +65,7 @@ class LMStudioModelComponent(LCModelComponent):
             name="base_url",
             display_name="Base URL",
             advanced=False,
-            info="Endpoint of the LM Studio API. Defaults to 'http://localhost:1234/v1' if not specified.",
+            info="Endpoint of the LM Studio API. You can customize this to point to your own LM Studio instance.",
             value="http://localhost:1234/v1",
         ),
         SecretStrInput(

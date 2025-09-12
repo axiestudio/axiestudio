@@ -8,6 +8,7 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, SQLModel, Column, DateTime, Text
+from sqlalchemy import text
 
 
 class WebhookEventBase(SQLModel):
@@ -16,7 +17,7 @@ class WebhookEventBase(SQLModel):
     event_type: str = Field(description="Type of Stripe event (e.g., checkout.session.completed)")
     status: str = Field(default="processing", description="Processing status: processing, completed, failed")
     error_message: Optional[str] = Field(default=None, sa_column=Column(Text), description="Error message if processing failed")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True)))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(DateTime(timezone=True), nullable=False, server_default=text('NOW()')))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True)))
 
 

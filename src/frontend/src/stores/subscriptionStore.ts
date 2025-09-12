@@ -7,6 +7,7 @@ interface SubscriptionStatus {
   trial_end: string | null;
   trial_expired: boolean;
   trial_days_left: number | null;
+  days_left?: number; // For canceled subscriptions - days until subscription_end
   subscription_start: string | null;
   subscription_end: string | null;
   has_stripe_customer: boolean;

@@ -22,7 +22,8 @@ from typing_extensions import override
 
 from axiestudio.serialization.constants import MAX_ITEMS_LENGTH, MAX_TEXT_LENGTH
 from axiestudio.services.settings.constants import VARIABLES_TO_GET_FROM_ENVIRONMENT
-from axiestudio.utils.util_strings import is_valid_database_url
+# Temporarily removed to fix circular import
+# from axiestudio.utils.util_strings import is_valid_database_url
 
 # BASE_COMPONENTS_PATH = str(Path(__file__).parent / "components")
 BASE_COMPONENTS_PATH = str(Path(__file__).parent.parent.parent / "components")
@@ -354,9 +355,10 @@ class Settings(BaseSettings):
     @field_validator("database_url", mode="after")
     @classmethod
     def set_database_url(cls, value, info):
-        if value and not is_valid_database_url(value):
-            msg = f"Invalid database_url provided: '{value}'"
-            raise ValueError(msg)
+        # Temporarily removed validation to fix circular import
+        # if value and not is_valid_database_url(value):
+        #     msg = f"Invalid database_url provided: '{value}'"
+        #     raise ValueError(msg)
 
         logger.debug("No database_url provided, trying AXIESTUDIO_DATABASE_URL env variable")
         if axiestudio_database_url := os.getenv("AXIESTUDIO_DATABASE_URL"):

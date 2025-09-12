@@ -358,11 +358,18 @@ async def install_mcp_config(
             if not project:
                 raise HTTPException(status_code=404, detail="Project not found")
 
-        # Get settings service to build the SSE URL
-        settings_service = get_settings_service()
-        host = getattr(settings_service.settings, "host", "localhost")
-        port = getattr(settings_service.settings, "port", 3000)
-        base_url = f"http://{host}:{port}".rstrip("/")
+        # Get settings service to build the SSE URL - use FRONTEND_URL if available for production
+        frontend_url = os.getenv("FRONTEND_URL")
+        if frontend_url:
+            # Use production URL from environment
+            base_url = frontend_url.rstrip("/")
+        else:
+            # Fallback to local development settings
+            settings_service = get_settings_service()
+            host = getattr(settings_service.settings, "host", "localhost")
+            port = getattr(settings_service.settings, "port", 7860)
+            base_url = f"http://{host}:{port}".rstrip("/")
+
         sse_url = f"{base_url}/api/v1/mcp/project/{project_id}/sse"
 
         # Determine command and args based on operating system
@@ -376,9 +383,10 @@ async def install_mcp_config(
         if is_wsl:
             logger.debug("WSL detected, using Windows-specific configuration")
 
-            # If we're in WSL and the host is localhost, we might need to adjust the URL
+            # If we're in WSL and using localhost, we might need to adjust the URL
             # so Windows applications can reach the WSL service
-            if host in {"localhost", "127.0.0.1"}:
+            # Only do this if we're using local development (not production FRONTEND_URL)
+            if not frontend_url and "localhost" in base_url:
                 try:
                     # Try to get the WSL IP address for host.docker.internal or similar access
 
@@ -395,7 +403,7 @@ async def install_mcp_config(
                         wsl_ip = stdout.decode().strip().split()[0]  # Get first IP address
                         logger.debug("Using WSL IP for external access: %s", wsl_ip)
                         # Replace the localhost with the WSL IP in the URL
-                        sse_url = sse_url.replace(f"http://{host}:{port}", f"http://{wsl_ip}:{port}")
+                        sse_url = sse_url.replace("localhost", wsl_ip)
                 except OSError as e:
                     logger.warning("Failed to get WSL IP address: %s. Using default URL.", str(e))
 

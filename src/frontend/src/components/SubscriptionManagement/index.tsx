@@ -74,7 +74,6 @@ export default function SubscriptionManagement(): JSX.Element {
       onSuccess: () => {
         setSuccessData({
           title: "Subscription Reactivated",
-          list: ["Your subscription is now active again!"],
         });
         // Refresh both query cache and real-time store
         refetch();
@@ -189,6 +188,11 @@ export default function SubscriptionManagement(): JSX.Element {
             {isCanceled && subscriptionStatus.subscription_end && (
               <p className="text-xs text-orange-600 mt-1">
                 Access until: {formatDate(subscriptionStatus.subscription_end)}
+                {subscriptionStatus.days_left && subscriptionStatus.days_left > 0 && (
+                  <span className="ml-2 font-medium">
+                    ({subscriptionStatus.days_left} days remaining)
+                  </span>
+                )}
               </p>
             )}
             {isSubscribed && subscriptionStatus.subscription_end && (
@@ -308,8 +312,9 @@ export default function SubscriptionManagement(): JSX.Element {
 
         {/* Action Buttons */}
         <div className="flex gap-3 pt-4 border-t">
-          {!isSubscribed && !trialExpired && (
-            <Button 
+          {/* Show "Upgrade to Pro" only for trial users (not canceled) */}
+          {!isSubscribed && !isCanceled && !trialExpired && (
+            <Button
               onClick={() => window.location.href = "/pricing"}
               className="flex-1"
             >
@@ -317,9 +322,10 @@ export default function SubscriptionManagement(): JSX.Element {
               Upgrade to Pro
             </Button>
           )}
-          
-          {trialExpired && (
-            <Button 
+
+          {/* Show "Subscribe Now" for expired trials */}
+          {trialExpired && !isCanceled && (
+            <Button
               onClick={() => window.location.href = "/pricing"}
               className="flex-1"
             >
@@ -327,9 +333,21 @@ export default function SubscriptionManagement(): JSX.Element {
             </Button>
           )}
 
+          {/* Show "Reactivate Subscription" for canceled users */}
+          {isCanceled && (
+            <Button
+              onClick={handleReactivateSubscription}
+              disabled={isLoading}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+            >
+              <ForwardedIconComponent name="RotateCcw" className="h-4 w-4 mr-2" />
+              {isLoading ? "Reactivating..." : "Reactivate Subscription"}
+            </Button>
+          )}
+
           {subscriptionStatus.has_stripe_customer && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleManageSubscription}
               disabled={isLoading}
               className="flex-1"

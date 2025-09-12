@@ -118,20 +118,58 @@ class StripeService:
             raise
     
     async def get_subscription(self, subscription_id: str) -> Optional[dict]:
-        """Get subscription details from Stripe."""
+        """Get subscription details from Stripe with robust error handling."""
         try:
             subscription = stripe.Subscription.retrieve(subscription_id)
+
+            # ROBUST HANDLING: Handle None/invalid timestamps
+            current_period_start = None
+            current_period_end = None
+            trial_start = None
+            trial_end = None
+
+            # Safe timestamp conversion with validation
+            if hasattr(subscription, 'current_period_start') and subscription.current_period_start:
+                try:
+                    current_period_start = datetime.fromtimestamp(subscription.current_period_start, tz=timezone.utc)
+                except (ValueError, OSError, TypeError) as e:
+                    logger.warning(f"Invalid current_period_start timestamp: {subscription.current_period_start}, error: {e}")
+
+            if hasattr(subscription, 'current_period_end') and subscription.current_period_end:
+                try:
+                    current_period_end = datetime.fromtimestamp(subscription.current_period_end, tz=timezone.utc)
+                except (ValueError, OSError, TypeError) as e:
+                    logger.warning(f"Invalid current_period_end timestamp: {subscription.current_period_end}, error: {e}")
+
+            if hasattr(subscription, 'trial_start') and subscription.trial_start:
+                try:
+                    trial_start = datetime.fromtimestamp(subscription.trial_start, tz=timezone.utc)
+                except (ValueError, OSError, TypeError) as e:
+                    logger.warning(f"Invalid trial_start timestamp: {subscription.trial_start}, error: {e}")
+
+            if hasattr(subscription, 'trial_end') and subscription.trial_end:
+                try:
+                    trial_end = datetime.fromtimestamp(subscription.trial_end, tz=timezone.utc)
+                except (ValueError, OSError, TypeError) as e:
+                    logger.warning(f"Invalid trial_end timestamp: {subscription.trial_end}, error: {e}")
+
             return {
                 'id': subscription.id,
                 'status': subscription.status,
-                'current_period_start': datetime.fromtimestamp(subscription.current_period_start, tz=timezone.utc),
-                'current_period_end': datetime.fromtimestamp(subscription.current_period_end, tz=timezone.utc),
-                'trial_start': datetime.fromtimestamp(subscription.trial_start, tz=timezone.utc) if subscription.trial_start else None,
-                'trial_end': datetime.fromtimestamp(subscription.trial_end, tz=timezone.utc) if subscription.trial_end else None,
+                'current_period_start': current_period_start,
+                'current_period_end': current_period_end,
+                'trial_start': trial_start,
+                'trial_end': trial_end,
                 'customer_id': subscription.customer
             }
+        except stripe.error.InvalidRequestError as e:
+            logger.error(f"Invalid Stripe subscription request for {subscription_id}: {e}")
+            return None
+        except stripe.error.StripeError as e:
+            logger.error(f"Stripe API error getting subscription {subscription_id}: {e}")
+            return None
         except Exception as e:
-            logger.error(f"Failed to get subscription: {e}")
+            logger.error(f"Unexpected error getting subscription {subscription_id}: {e}")
             return None
     
     async def cancel_subscription(self, subscription_id: str) -> dict:
